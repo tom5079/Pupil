@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.preference.PreferenceScreen
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <PreferenceCategory
+        app:title="@string/settings_search_title">
+
+        <ListPreference
+            app:key="per_page"
+            app:title="@string/settings_galleries_per_page"
+            app:entries="@array/settings_galleries_per_page"
+            app:entryValues="@array/settings_galleries_per_page"
+            app:defaultValue="25"
+            app:useSimpleSummaryProvider="true"/>
+
+        <EditTextPreference
+            app:key="default_query"
+            app:title="@string/settings_default_query"
+            app:defaultValue=""
+            app:useSimpleSummaryProvider="true"/>
+
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        app:title="Cache">
+
+        <Preference
+            app:title="Delete Cache"
+            app:key="delete_cache"/>
+
+    </PreferenceCategory>
+
+</androidx.preference.PreferenceScreen>

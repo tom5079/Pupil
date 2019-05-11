@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<dimen name="appbar_padding">64dp</dimen>
+	<dimen name="progress_view_offset">80dp</dimen>
+</resources>

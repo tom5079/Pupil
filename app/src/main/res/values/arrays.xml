@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string-array name="settings_galleries_per_page">
+        <item>10</item>
+        <item>25</item>
+        <item>50</item>
+    </string-array>
+    <!-- Reply Preference -->
+    <string-array name="reply_entries">
+        <item>Reply</item>
+        <item>Reply to all</item>
+    </string-array>
+
+    <string-array name="reply_values">
+        <item>reply</item>
+        <item>reply_all</item>
+    </string-array>
+
+    <string-array name="languages">
+        <item>indonesian|Bahasa Indonesia</item>
+        <item>catalan|català</item>
+        <item>cebuano|Cebuano</item>
+        <item>czech|Čeština</item>
+        <item>danish|Dansk</item>
+        <item>german|Deutsch</item>
+        <item>estonian|eesti</item>
+        <item>english|English</item>
+        <item>spanish|Español</item>
+        <item>esperanto|Esperanto</item>
+        <item>french|Français</item>
+        <item>italian|Italiano</item>
+        <item>latin|Latina</item>
+        <item>hungarian|magyar</item>
+        <item>dutch|Nederlands</item>
+        <item>norwegian|norsk</item>
+        <item>polish|polski</item>
+        <item>portuguese|Português</item>
+        <item>romanian|română</item>
+        <item>albanian|shqip</item>
+        <item>slovak|Slovenčina</item>
+        <item>finnish|Suomi</item>
+        <item>swedish|Svenska</item>
+        <item>tagalog|Tagalog</item>
+        <item>vietnamese|tiếng việt</item>
+        <item>turkish|Türkçe</item>
+        <item>greek|Ελληνικά</item>
+        <item>mongolian|Монгол</item>
+        <item>russian|Русский</item>
+        <item>ukrainian|Українська</item>
+        <item>hebrew|עברית</item>
+        <item>arabic|العربية</item>
+        <item>persian|فارسی</item>
+        <item>thai|ไทย</item>
+        <item>korean|한국어</item>
+        <item>chinese|中文</item>
+        <item>japanese|日本語</item>
+    </string-array>
+
+</resources>
