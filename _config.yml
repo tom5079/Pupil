@@ -1,6 +1,18 @@
-theme: jekyll-theme-cayman
+# Setup
+title:        Project or Site name
+tagline:      A responsive theme for your project on GitHub Pages
+baseurl:      "/Pupil"
+paginate:     1
+locale:       "en"
 
-title: Pupil
-description: Hitomi.la viewer for Android
+# About/contact
+author:
+  name:       Author name
+  url:        http://yourhomepage.com 
 
-baseurl: "/Pupil"
+# Gems
+gems:
+  - jekyll-paginate
+
+#Others
+markdown: kramdown
