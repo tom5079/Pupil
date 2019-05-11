@@ -11,3 +11,6 @@
 /build
 /captures
 .externalNativeBuild
+
+#Github pages
+/gh-pages
