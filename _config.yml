@@ -1,18 +1,5 @@
-# Setup
+theme: jekyll-theme-cayman
+
 title:        Pupil
 tagline:      Hitomi.la viewer for Android
 baseurl:      "/Pupil"
-paginate:     1
-locale:       "en"
-
-# About/contact
-author:
-  name:       tom5079
-  url:        http://yourhomepage.com 
-
-# Gems
-gems:
-  - jekyll-paginate
-
-#Others
-markdown: kramdown
