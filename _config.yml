@@ -1,13 +1,13 @@
 # Setup
-title:        Project or Site name
-tagline:      A responsive theme for your project on GitHub Pages
+title:        Pupil
+tagline:      Hitomi.la viewer for Android
 baseurl:      "/Pupil"
 paginate:     1
 locale:       "en"
 
 # About/contact
 author:
-  name:       Author name
+  name:       tom5079
   url:        http://yourhomepage.com 
 
 # Gems
