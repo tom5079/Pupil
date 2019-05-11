@@ -3,3 +3,10 @@ theme: jekyll-theme-cayman
 title:        Pupil
 tagline:      Hitomi.la viewer for Android
 baseurl:      "/Pupil"
+
+show_downloads: true
+google_analytics: UA-119938781-2
+
+github:
+  app_url: http://www.naver.com/
+  issue_url: https://github.com/tom5079/Pupil-issue/issues/new/choose
