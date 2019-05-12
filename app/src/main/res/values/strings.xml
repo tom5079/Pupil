@@ -1,5 +1,16 @@
 <resources>
+    <string name="warning">Warning</string>
+
     <string name="app_name">Pupil</string>
+
+    <string name="permission_explain">Denying any permission can deactivate some functions</string>
+
+    <string name="release_url">https://api.github.com/repos/tom5079/Pupil-issue/releases</string>
+    <string name="release_name">Pupil-v(\\d+\\.)+\\d+\\.apk</string>
+
+    <string name="update_title">Update available</string>
+    <string name="update_message">Version %1$s is available!\n(current version is %2$s)\nDo you want to update?</string>
+    <string name="update_notification_description">Downloading apk&#8230;</string>
 
     <string name="main_settings">Settings</string>
     <string name="main_search">Search</string>
@@ -26,7 +37,6 @@
 
     <string name="settings_delete_cache">Delete Cache</string>
     <string name="settings_delete_cache_summary">Currently using %1$d%2$s of cache</string>
-    <string name="settings_delete_cache_alert_title">Warning</string>
     <string name="settings_delete_cache_alert_message">Deleting cache can affect image loading speed. Do you want to continue?</string>
 
 </resources>

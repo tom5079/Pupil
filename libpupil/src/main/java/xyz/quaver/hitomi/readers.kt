@@ -3,6 +3,8 @@ package xyz.quaver.hitomi
 import kotlinx.serialization.ImplicitReflectionSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonConfiguration
+import kotlinx.serialization.list
 import kotlinx.serialization.parseList
 import org.jsoup.Jsoup
 import java.net.URL
@@ -21,7 +23,6 @@ data class Reader(
     val images: List<Pair<URL, GalleryInfo?>>
 )
 //Set header `Referer` to reader url to avoid 403 error
-@UseExperimental(ImplicitReflectionSerializer::class)
 fun getReader(galleryID: Int) : Reader {
     val readerUrl = "https://hitomi.la/reader/$galleryID.html"
     val galleryInfoUrl = "https://ltn.hitomi.la/galleries/$galleryID.js"
@@ -36,8 +37,10 @@ fun getReader(galleryID: Int) : Reader {
 
     val galleryInfo = ArrayList<GalleryInfo?>()
 
-    galleryInfo.addAll(Json.parseList(
-            Regex("""\[.+\]""").find(
+    galleryInfo.addAll(
+        Json(JsonConfiguration.Stable).parse(
+            GalleryInfo.serializer().list,
+            Regex("""\[.+]""").find(
                 URL(galleryInfoUrl).readText()
             )?.value ?: "[]"
         )

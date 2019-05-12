@@ -1,14 +1,27 @@
 package xyz.quaver.pupil
 
+import android.Manifest
+import android.app.DownloadManager
+import android.content.BroadcastReceiver
+import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
+import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.net.Uri
 import android.os.Bundle
+import android.os.Environment
 import android.preference.PreferenceManager
 import android.text.*
 import android.text.style.AlignmentSpan
+import android.util.Log
 import android.view.View
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
 import androidx.core.content.res.ResourcesCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -22,10 +35,14 @@ import xyz.quaver.hitomi.*
 import xyz.quaver.pupil.adapters.GalleryBlockAdapter
 import xyz.quaver.pupil.types.TagSuggestion
 import xyz.quaver.pupil.util.SetLineOverlap
+import xyz.quaver.pupil.util.checkUpdate
+import xyz.quaver.pupil.util.getApkUrl
+import java.io.File
 import javax.net.ssl.HttpsURLConnection
 
 class MainActivity : AppCompatActivity() {
 
+    private val PERMISSION_REQUEST_CODE = 4585
     private val galleries = ArrayList<Pair<GalleryBlock, Bitmap?>>()
 
     private var isLoading = false
@@ -34,6 +51,10 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
+        checkPermission()
+
+        update()
 
         main_appbar_layout.addOnOffsetChangedListener(
             AppBarLayout.OnOffsetChangedListener { _, p1 ->
@@ -56,6 +77,79 @@ class MainActivity : AppCompatActivity() {
         setupRecyclerView()
         setupSearchBar()
         fetchGalleries(query)
+    }
+
+    private fun checkPermission() {
+        val permissions = arrayOf(
+            Manifest.permission.WRITE_EXTERNAL_STORAGE
+        )
+
+        if (permissions.any { ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED }) {
+            if (permissions.any { ActivityCompat.shouldShowRequestPermissionRationale(this, it) })
+                AlertDialog.Builder(this).apply {
+                    setTitle(R.string.warning)
+                    setMessage(R.string.permission_explain)
+                    setPositiveButton(android.R.string.ok) { _, _ -> }
+                }.show()
+            else
+                ActivityCompat.requestPermissions(this, permissions, PERMISSION_REQUEST_CODE)
+        }
+    }
+
+    private fun update() {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED)
+            return
+
+        CoroutineScope(Dispatchers.Default).launch {
+            val update =
+                checkUpdate(getString(R.string.release_url), BuildConfig.VERSION_NAME) ?: return@launch
+
+            val (url, fileName) = getApkUrl(update, getString(R.string.release_name)) ?: return@launch
+
+            val dialog = AlertDialog.Builder(this@MainActivity).apply {
+                setTitle(R.string.update_title)
+                setMessage(getString(R.string.update_message, update["tag_name"], BuildConfig.VERSION_NAME))
+                setPositiveButton(android.R.string.yes) { _, _ ->
+                    val dest = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), fileName)
+                    val desturi =
+                        FileProvider.getUriForFile(
+                            applicationContext,
+                            "xyz.quaver.pupil.provider",
+                            dest
+                        )
+
+                    if (dest.exists())
+                        dest.delete()
+
+                    val request = DownloadManager.Request(Uri.parse(url)).apply {
+                        setDescription(getString(R.string.update_notification_description))
+                        setTitle(getString(R.string.app_name))
+                        setDestinationUri(Uri.fromFile(dest))
+                    }
+
+                    val manager = getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
+                    val id = manager.enqueue(request)
+
+                    registerReceiver(object: BroadcastReceiver() {
+                        override fun onReceive(context: Context?, intent: Intent?) {
+                            val install = Intent(Intent.ACTION_VIEW).apply {
+                                flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_GRANT_READ_URI_PERMISSION
+                                setDataAndType(desturi, manager.getMimeTypeForDownloadedFile(id))
+                            }
+
+                            startActivity(install)
+                            unregisterReceiver(this)
+                            finish()
+                        }
+                    }, IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE))
+                }
+                setNegativeButton(android.R.string.no) { _, _ ->}
+            }
+
+            launch(Dispatchers.Main) {
+                dialog.show()
+            }
+        }
     }
 
     private fun setupRecyclerView() {

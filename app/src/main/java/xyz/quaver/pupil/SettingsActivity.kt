@@ -51,8 +51,8 @@ class SettingsActivity : AppCompatActivity() {
 
                 setOnPreferenceClickListener {
                     AlertDialog.Builder(context).apply {
-                        setTitle(getString(R.string.settings_delete_cache_alert_title))
-                        setMessage(getString(R.string.settings_delete_cache_alert_message))
+                        setTitle(R.string.warning)
+                        setMessage(R.string.settings_delete_cache_alert_message)
                         setPositiveButton(android.R.string.yes) { _, _ ->
                             with(context.cacheDir) {
                                 if (exists())
