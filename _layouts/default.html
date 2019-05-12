@@ -26,7 +26,7 @@
       <h2 class="project-tagline">{{ page.description | default: site.description | default: site.github.project_tagline }}</h2>
       {% if site.show_downloads %}
         <a href="{{ site.github.app_url }}" class="btn">Download app</a>
-        <a href="{{ site.github.issue_url }}" class="btn">Having a problem?</a>
+        <a href="{{ site.github.issue_url }}" target="_blank" class="btn">Having a problem?</a>
       {% endif %}
     </header>
 
