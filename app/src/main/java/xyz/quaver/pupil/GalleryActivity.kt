@@ -27,6 +27,10 @@ class GalleryActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_gallery)
 
+        window.setFlags(
+            WindowManager.LayoutParams.FLAG_SECURE,
+            WindowManager.LayoutParams.FLAG_SECURE)
+
         galleryID = intent.getIntExtra("GALLERY_ID", 0)
         CoroutineScope(Dispatchers.Unconfined).launch {
             reader = async(Dispatchers.IO) {
