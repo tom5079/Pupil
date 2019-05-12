@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Pupil</string>
+    <string name="galleryblock_language">言語: %1$s</string>
+    <string name="galleryblock_series">シリーズ: %1$s</string>
+    <string name="galleryblock_type">タイプ: %1$s</string>
+    <string name="main_no_result">結果なし</string>
+    <string name="main_search">検索</string>
+    <string name="search_hint">ギャラリー検索</string>
+    <string name="settings_cache_title">キャッシュ</string>
+    <string name="settings_clear_cache">キャッシュクリア</string>
+    <string name="settings_clear_cache_alert_message">キャッシュをクリアするとイメージのロード速度に影響を与えます。実行しますか？</string>
+    <string name="settings_clear_cache_summary">キャッシュサイズ: %1$d%2$s</string>
+    <string name="settings_default_query">デフォルト検索キーワード</string>
+    <string name="permission_explain">権限を拒否すると一部の機能が利用できません</string>
+    <string name="settings_galleries_per_page">一回にロードするギャラリー数</string>
+    <string name="settings_search_title">検索設定</string>
+    <string name="settings_title">設定</string>
+    <string name="update_message">新バージョン%1$sをリリースしました\n(現バージョン: %2$s)\nアップデートしますか？</string>
+    <string name="update_notification_description">アップデートダウンロード中</string>
+    <string name="update_title">新しいアップデートがあります</string>
+    <string name="warning">注意</string>
+</resources>

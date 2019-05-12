@@ -38,7 +38,7 @@ class SettingsActivity : AppCompatActivity() {
                 suffixIndex++
             }
 
-            return getString(R.string.settings_delete_cache_summary, size, suffix[suffixIndex])
+            return getString(R.string.settings_clear_cache_summary, size, suffix[suffixIndex])
         }
 
         override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
@@ -52,7 +52,7 @@ class SettingsActivity : AppCompatActivity() {
                 setOnPreferenceClickListener {
                     AlertDialog.Builder(context).apply {
                         setTitle(R.string.warning)
-                        setMessage(R.string.settings_delete_cache_alert_message)
+                        setMessage(R.string.settings_clear_cache_alert_message)
                         setPositiveButton(android.R.string.yes) { _, _ ->
                             with(context.cacheDir) {
                                 if (exists())

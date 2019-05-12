@@ -22,10 +22,10 @@
     </PreferenceCategory>
 
     <PreferenceCategory
-        app:title="Cache">
+        app:title="@string/settings_cache_title">
 
         <Preference
-            app:title="Delete Cache"
+            app:title="@string/settings_clear_cache"
             app:key="delete_cache"/>
 
     </PreferenceCategory>
