@@ -24,6 +24,7 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.core.content.res.ResourcesCompat
+import androidx.core.view.GravityCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.arlib.floatingsearchview.FloatingSearchView
@@ -31,6 +32,7 @@ import com.arlib.floatingsearchview.suggestions.model.SearchSuggestion
 import com.arlib.floatingsearchview.util.view.SearchInputView
 import com.google.android.material.appbar.AppBarLayout
 import kotlinx.android.synthetic.main.activity_main.*
+import kotlinx.android.synthetic.main.activity_main_content.*
 import kotlinx.coroutines.*
 import xyz.quaver.hitomi.*
 import xyz.quaver.pupil.adapters.GalleryBlockAdapter
@@ -80,9 +82,22 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        main_nav_view.setNavigationItemSelectedListener {
+            Log.d("Pupil", it.itemId.toString())
+
+            true
+        }
+
         setupRecyclerView()
         setupSearchBar()
         fetchGalleries(query)
+    }
+
+    override fun onBackPressed() {
+        if (main_drawer_layout.isDrawerOpen(GravityCompat.START))
+            main_drawer_layout.closeDrawer(GravityCompat.START)
+        else
+            super.onBackPressed()
     }
 
     private fun checkPermission() {
@@ -299,6 +314,8 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
             })
+
+            attachNavigationDrawerToMenuButton(main_drawer_layout)
         }
     }
 
