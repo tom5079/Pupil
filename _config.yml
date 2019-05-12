@@ -8,5 +8,5 @@ show_downloads: true
 google_analytics: UA-119938781-2
 
 github:
-  app_url: http://www.naver.com/
+  app_url: https://github.com/tom5079/Pupil-issue/releases/download/1.0.0/Pupil-v1.0.0.apk
   issue_url: https://github.com/tom5079/Pupil-issue/issues/new/choose
