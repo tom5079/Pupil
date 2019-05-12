@@ -25,11 +25,12 @@ class GalleryActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_gallery)
 
         window.setFlags(
             WindowManager.LayoutParams.FLAG_SECURE,
             WindowManager.LayoutParams.FLAG_SECURE)
+
+        setContentView(R.layout.activity_gallery)
 
         galleryID = intent.getIntExtra("GALLERY_ID", 0)
         CoroutineScope(Dispatchers.Unconfined).launch {
