@@ -1,7 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <item android:title="Test"
-        android:id="@+id/test"/>
+    <group android:checkableBehavior="single">
+        <item android:id="@+id/main_drawer_home"
+            android:title="@string/main_drawer_home"
+            android:checked="true"
+            android:icon="@drawable/ic_home"/>
+
+        <item android:id="@+id/main_drawer_history"
+            android:title="@string/main_drawer_history"
+            android:icon="@drawable/ic_history"/>
+    </group>
 
 </menu>

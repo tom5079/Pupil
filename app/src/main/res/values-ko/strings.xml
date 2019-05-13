@@ -6,7 +6,7 @@
     <string name="permission_explain">권한을 거부하면 일부 기능이 작동하지 않을 수 있습니다</string>
     <string name="search_hint">갤러리 검색</string>
     <string name="settings_default_query">기본 검색어</string>
-    <string name="settings_clear_cache">캐시 정리하기</string>
+    <string name="settings_clear_image_cache">이미지 캐시 정리하기</string>
     <string name="settings_clear_cache_alert_message">캐시를 정리하면 이미지 로딩속도가 느려질 수 있습니다. 계속하시겠습니까?</string>
     <string name="settings_clear_cache_summary">현재 캐시 사용량: %1$d%2$s</string>
     <string name="settings_galleries_per_page">한 번에 로드할 갤러리 수</string>
@@ -22,4 +22,9 @@
     <string name="settings_image_loading_title">이미지 로딩</string>
     <string name="settings_use_hiyobi_summary">속도 향상을 위해 가능하면 hiyobi.me에서 이미지 로드</string>
     <string name="settings_use_hiyobi_title">hiyobi.me 사용</string>
+    <string name="settings_clear_history">히스토리 삭제</string>
+    <string name="settings_clear_history_alert_message">히스토리를 삭제하시겠습니까?</string>
+    <string name="settings_clear_history_summary">히스토리 %1$d개 저장됨</string>
+    <string name="main_drawer_history">히스토리</string>
+    <string name="main_drawer_home">홈</string>
 </resources>

@@ -25,8 +25,12 @@
         app:title="@string/settings_cache_title">
 
         <Preference
-            app:title="@string/settings_clear_cache"
-            app:key="delete_cache"/>
+            app:title="@string/settings_clear_image_cache"
+            app:key="delete_image_cache"/>
+
+        <Preference
+            app:title="@string/settings_clear_history"
+            app:key="clear_history"/>
 
     </PreferenceCategory>
 

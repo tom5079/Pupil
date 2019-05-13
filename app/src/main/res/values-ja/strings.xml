@@ -7,7 +7,7 @@
     <string name="main_search">検索</string>
     <string name="search_hint">ギャラリー検索</string>
     <string name="settings_cache_title">キャッシュ</string>
-    <string name="settings_clear_cache">キャッシュクリア</string>
+    <string name="settings_clear_image_cache">イメージキャッシュクリア</string>
     <string name="settings_clear_cache_alert_message">キャッシュをクリアするとイメージのロード速度に影響を与えます。実行しますか？</string>
     <string name="settings_clear_cache_summary">キャッシュサイズ: %1$d%2$s</string>
     <string name="settings_default_query">デフォルト検索キーワード</string>
@@ -22,4 +22,9 @@
     <string name="settings_image_loading_title">イメージロード</string>
     <string name="settings_use_hiyobi_summary">ロード速度を向上させるためhiyobi.meからイメージロード</string>
     <string name="settings_use_hiyobi_title">hiyobi.meからロード</string>
+    <string name="settings_clear_history">履歴の削除</string>
+    <string name="settings_clear_history_alert_message">履歴を削除しますか？</string>
+    <string name="settings_clear_history_summary">履歴数: %1$d</string>
+    <string name="main_drawer_history">履歴</string>
+    <string name="main_drawer_home">トップ</string>
 </resources>

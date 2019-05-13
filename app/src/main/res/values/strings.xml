@@ -18,6 +18,9 @@
     <string name="main_search">Search</string>
     <string name="main_no_result">No result</string>
 
+    <string name="main_drawer_home">Home</string>
+    <string name="main_drawer_history">History</string>
+
     <string name="update_title">Update available</string>
     <string name="update_message">Version %1$s is available!\n(current version is %2$s)\nDo you want to update?</string>
     <string name="update_notification_description">Downloading apk&#8230;</string>
@@ -33,9 +36,12 @@
     <string name="settings_galleries_per_page">Galleries per page</string>
     <string name="settings_default_query">Default query</string>
     <string name="settings_cache_title">Cache</string>
-    <string name="settings_clear_cache">Clear cache</string>
+    <string name="settings_clear_image_cache">Clear image cache</string>
     <string name="settings_clear_cache_summary">Currently using %1$d%2$s of cache</string>
     <string name="settings_clear_cache_alert_message">Deleting cache can affect image loading speed. Do you want to continue?</string>
+    <string name="settings_clear_history">Clear history</string>
+    <string name="settings_clear_history_alert_message">Do you want to clear histories?</string>
+    <string name="settings_clear_history_summary">%1$d histories saved</string>
     <string name="settings_image_loading_title">Image Loading</string>
     <string name="settings_use_hiyobi_title">Use hiyobi.me</string>
     <string name="settings_use_hiyobi_summary">Load images from hiyobi.me to improve loading speed (if available)</string>

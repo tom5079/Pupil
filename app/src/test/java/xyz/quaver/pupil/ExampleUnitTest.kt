@@ -1,7 +1,7 @@
 package xyz.quaver.pupil
 
+import kotlinx.serialization.ImplicitReflectionSerializer
 import org.junit.Test
-import xyz.quaver.pupil.util.checkUpdate
 
 /**
  * Example local unit test, which will execute on the development machine (host).
@@ -12,8 +12,9 @@ import xyz.quaver.pupil.util.checkUpdate
 class ExampleUnitTest {
 
     @Test
+    @ImplicitReflectionSerializer
     fun test() {
-        print(checkUpdate("https://api.github.com/repos/tom5079/Pupil-issue/releases", "0.0.1"))
+
     }
 
 }

@@ -15,7 +15,6 @@ import android.os.Environment
 import android.preference.PreferenceManager
 import android.text.*
 import android.text.style.AlignmentSpan
-import android.util.Log
 import android.view.View
 import android.view.WindowManager
 import androidx.appcompat.app.AlertDialog
@@ -37,6 +36,7 @@ import kotlinx.coroutines.*
 import xyz.quaver.hitomi.*
 import xyz.quaver.pupil.adapters.GalleryBlockAdapter
 import xyz.quaver.pupil.types.TagSuggestion
+import xyz.quaver.pupil.util.Histories
 import xyz.quaver.pupil.util.SetLineOverlap
 import xyz.quaver.pupil.util.checkUpdate
 import xyz.quaver.pupil.util.getApkUrl
@@ -45,13 +45,16 @@ import javax.net.ssl.HttpsURLConnection
 
 class MainActivity : AppCompatActivity() {
 
-    private val PERMISSION_REQUEST_CODE = 4585
+    private val permissionRequestCode = 4585
     private val galleries = ArrayList<Pair<GalleryBlock, Bitmap?>>()
 
-    private var isLoading = false
     private var query = ""
 
+    private var galleryIDs: Deferred<List<Int>>? = null
+    private var loadingJob: Job? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
+        Histories.default = Histories(File(cacheDir, "histories.json"))
         super.onCreate(savedInstanceState)
 
         window.setFlags(
@@ -75,15 +78,33 @@ class MainActivity : AppCompatActivity() {
             setProgressViewOffset(false, 0, resources.getDimensionPixelSize(R.dimen.progress_view_offset))
 
             setOnRefreshListener {
-                runBlocking {
-                    cleanJob?.join()
+                CoroutineScope(Dispatchers.Main).launch {
+                    cancelFetch()
+                    clearGalleries()
+                    fetchGalleries(query)
+                    loadBlocks()
                 }
-                fetchGalleries(query, true)
             }
         }
 
         main_nav_view.setNavigationItemSelectedListener {
-            Log.d("Pupil", it.itemId.toString())
+            CoroutineScope(Dispatchers.Main).launch {
+                main_drawer_layout.closeDrawers()
+
+                cancelFetch()
+                clearGalleries()
+                when(it.itemId) {
+                    R.id.main_drawer_home -> {
+                        query = query.replace("HISTORY", "")
+                        fetchGalleries(query)
+                    }
+                    R.id.main_drawer_history -> {
+                        query += "HISTORY"
+                        fetchGalleries(query)
+                    }
+                }
+                loadBlocks()
+            }
 
             true
         }
@@ -91,6 +112,7 @@ class MainActivity : AppCompatActivity() {
         setupRecyclerView()
         setupSearchBar()
         fetchGalleries(query)
+        loadBlocks()
     }
 
     override fun onBackPressed() {
@@ -113,7 +135,7 @@ class MainActivity : AppCompatActivity() {
                     setPositiveButton(android.R.string.ok) { _, _ -> }
                 }.show()
             else
-                ActivityCompat.requestPermissions(this, permissions, PERMISSION_REQUEST_CODE)
+                ActivityCompat.requestPermissions(this, permissions, permissionRequestCode)
         }
     }
 
@@ -183,6 +205,8 @@ class MainActivity : AppCompatActivity() {
 
                     //TODO: Maybe sprinke some transitions will be nice :D
                     startActivity(intent)
+
+                    Histories.default.add(galleryID)
                 }
             }
             addOnScrollListener(
@@ -192,9 +216,9 @@ class MainActivity : AppCompatActivity() {
 
                         val layoutManager = recyclerView.layoutManager as LinearLayoutManager
 
-                        if (!isLoading)
+                        if (loadingJob?.isActive != true)
                             if (layoutManager.findLastCompletelyVisibleItemPosition() == galleries.size)
-                                fetchGalleries(query)
+                                loadBlocks()
                     }
                 }
             )
@@ -311,7 +335,9 @@ class MainActivity : AppCompatActivity() {
                     if (query != this@MainActivity.query) {
                         this@MainActivity.query = query
 
-                        fetchGalleries(query, true)
+                        cancelFetch()
+                        clearGalleries()
+                        fetchGalleries(query)
                     }
                 }
             })
@@ -320,94 +346,96 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private val cache = ArrayList<Int>()
-    private var currentFetchingJob: Job? = null
-    private var cleanJob: Job? = null
-
     private fun cancelFetch() {
-        isLoading = false
-
         runBlocking {
-            cleanJob?.join()
-            currentFetchingJob?.cancelAndJoin()
+            galleryIDs?.cancelAndJoin()
+            loadingJob?.cancelAndJoin()
         }
     }
 
-    private fun fetchGalleries(query: String, clear: Boolean = false) {
+    private fun clearGalleries() {
+        galleries.clear()
+
+        main_recyclerview.adapter?.notifyDataSetChanged()
+
+        main_noresult.visibility = View.INVISIBLE
+        main_progressbar.show()
+        main_swipe_layout.isRefreshing = false
+    }
+
+    private fun fetchGalleries(query: String, from: Int = 0) {
         val preference = PreferenceManager.getDefaultSharedPreferences(this)
         val perPage = preference.getString("per_page", "25")?.toInt() ?: 25
         val defaultQuery = preference.getString("default_query", "")!!
 
-        if (clear) {
-            cancelFetch()
-            cleanJob = CoroutineScope(Dispatchers.Main).launch {
-                cache.clear()
-                galleries.clear()
+        galleryIDs = null
 
-                main_recyclerview.adapter?.notifyDataSetChanged()
-
-                main_noresult.visibility = View.INVISIBLE
-                main_progressbar.show()
-                main_swipe_layout.isRefreshing = false
-            }
-        }
-
-        if (isLoading)
+        if (galleryIDs?.isActive == true)
             return
 
-        isLoading = true
+        galleryIDs = CoroutineScope(Dispatchers.IO).async {
+            when {
+                query.contains("HISTORY") ->
+                    Histories.default.toList()
+                query.isEmpty() and defaultQuery.isEmpty() ->
+                    fetchNozomi(start = from, count = perPage)
+                else ->
+                    doSearch("$defaultQuery $query")
+            }
+        }
+    }
 
-        currentFetchingJob = CoroutineScope(Dispatchers.IO).launch {
-            try {
-                val galleryIDs: List<Int>
+    private fun loadBlocks() {
+        val preference = PreferenceManager.getDefaultSharedPreferences(this)
+        val perPage = preference.getString("per_page", "25")?.toInt() ?: 25
+        val defaultQuery = preference.getString("default_query", "")!!
 
-                cleanJob?.join()
+        loadingJob = CoroutineScope(Dispatchers.IO).launch {
+            val galleryIDs = galleryIDs?.await()
 
-                if (query.isEmpty() && defaultQuery.isEmpty())
-                    galleryIDs = fetchNozomi(start = galleries.size, count = perPage)
-                else {
-                    if (cache.isEmpty())
-                        cache.addAll(doSearch("$defaultQuery $query"))
-
-                    galleryIDs = cache.slice(galleries.size until Math.min(galleries.size + perPage, cache.size))
-
-                    with(main_recyclerview.adapter as GalleryBlockAdapter) {
-                        noMore = galleries.size + perPage >= cache.size
-                    }
+            if (galleryIDs.isNullOrEmpty()) { //No result
+                withContext(Dispatchers.Main) {
+                    main_noresult.visibility = View.VISIBLE
+                    main_progressbar.hide()
                 }
 
-                if (query.isNotEmpty() and defaultQuery.isNotEmpty() and cache.isNullOrEmpty()) {
+                return@launch
+            }
+
+            if (query.isEmpty() and defaultQuery.isEmpty())
+                fetchGalleries("", galleries.size+perPage)
+            else
+                with(main_recyclerview.adapter as GalleryBlockAdapter) {
+                    noMore = galleries.size + perPage >= galleryIDs.size
+                }
+
+            when {
+                query.isEmpty() and defaultQuery.isEmpty() ->
+                    galleryIDs
+                else ->
+                    galleryIDs.slice(galleries.size until Math.min(galleries.size+perPage, galleryIDs.size))
+            }.chunked(4).forEach { chunked ->
+                chunked.map {
+                    async {
+                        val galleryBlock = getGalleryBlock(it)
+                        val thumbnail: Bitmap
+
+                        with(galleryBlock.thumbnails[0].openConnection() as HttpsURLConnection) {
+                            thumbnail = BitmapFactory.decodeStream(inputStream)
+                        }
+
+                        Pair(galleryBlock, thumbnail)
+                    }
+                }.forEach {
+                    val galleryBlock = it.await()
+
                     withContext(Dispatchers.Main) {
-                        main_noresult.visibility = View.VISIBLE
                         main_progressbar.hide()
+
+                        galleries.add(galleryBlock)
+                        main_recyclerview.adapter?.notifyItemInserted(galleries.size - 1)
                     }
                 }
-
-                galleryIDs.chunked(4).forEach { chunked ->
-                    chunked.map {
-                        async {
-                            val galleryBlock = getGalleryBlock(it)
-                            val thumbnail: Bitmap
-
-                            with(galleryBlock.thumbnails[0].openConnection() as HttpsURLConnection) {
-                                thumbnail = BitmapFactory.decodeStream(inputStream)
-                            }
-
-                            Pair(galleryBlock, thumbnail)
-                        }
-                    }.forEach {
-                        val galleryBlock = it.await()
-
-                        withContext(Dispatchers.Main) {
-                            main_progressbar.hide()
-
-                            galleries.add(galleryBlock)
-                            main_recyclerview.adapter?.notifyItemInserted(galleries.size - 1)
-                        }
-                    }
-                }
-            } finally {
-                isLoading = false
             }
         }
     }

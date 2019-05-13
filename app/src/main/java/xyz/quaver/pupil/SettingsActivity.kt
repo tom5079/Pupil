@@ -7,6 +7,8 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
+import xyz.quaver.pupil.util.Histories
+import java.io.File
 
 class SettingsActivity : AppCompatActivity() {
 
@@ -35,8 +37,8 @@ class SettingsActivity : AppCompatActivity() {
             "TB" //really?
         )
 
-        private fun getCacheSize() : String {
-            var size = context!!.cacheDir.walk().map { it.length() }.sum()
+        private fun getCacheSize(dir: File) : String {
+            var size = dir.walk().map { it.length() }.sum()
             var suffixIndex = 0
 
             while (size >= 1024) {
@@ -50,22 +52,43 @@ class SettingsActivity : AppCompatActivity() {
         override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
             setPreferencesFromResource(R.xml.root_preferences, rootKey)
 
-            with(findPreference<Preference>("delete_cache")) {
+            with(findPreference<Preference>("delete_image_cache")) {
                 this ?: return@with
 
-                summary = getCacheSize()
+                val dir = File(context.cacheDir, "imageCache")
+
+                summary = getCacheSize(dir)
 
                 setOnPreferenceClickListener {
                     AlertDialog.Builder(context).apply {
                         setTitle(R.string.warning)
                         setMessage(R.string.settings_clear_cache_alert_message)
                         setPositiveButton(android.R.string.yes) { _, _ ->
-                            with(context.cacheDir) {
-                                if (exists())
-                                    deleteRecursively()
-                            }
+                            if (dir.exists())
+                                dir.deleteRecursively()
 
-                            summary = getCacheSize()
+                            summary = getCacheSize(dir)
+                        }
+                        setNegativeButton(android.R.string.no) { _, _ -> }
+                    }.show()
+
+                    true
+                }
+            }
+            with(findPreference<Preference>("clear_history")) {
+                this ?: return@with
+
+                val histories = Histories.default
+
+                summary = getString(R.string.settings_clear_history_summary, histories.size)
+
+                setOnPreferenceClickListener {
+                    AlertDialog.Builder(context).apply {
+                        setTitle(R.string.warning)
+                        setMessage(R.string.settings_clear_history_alert_message)
+                        setPositiveButton(android.R.string.yes) { _, _ ->
+                            histories.clear()
+                            summary = getString(R.string.settings_clear_history_summary, histories.size)
                         }
                         setNegativeButton(android.R.string.no) { _, _ -> }
                     }.show()

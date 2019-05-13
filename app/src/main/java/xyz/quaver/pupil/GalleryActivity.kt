@@ -11,11 +11,9 @@ import kotlinx.coroutines.*
 import xyz.quaver.hitomi.Reader
 import xyz.quaver.hitomi.getReader
 import xyz.quaver.hitomi.getReferer
-import xyz.quaver.hiyobi.hiyobi
 import xyz.quaver.pupil.adapters.GalleryAdapter
 import java.io.File
 import java.io.FileOutputStream
-import java.lang.Exception
 import java.net.URL
 import javax.net.ssl.HttpsURLConnection
 
