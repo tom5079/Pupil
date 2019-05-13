@@ -10,16 +10,20 @@ import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.os.Environment
 import android.preference.PreferenceManager
 import android.text.*
 import android.text.style.AlignmentSpan
+import android.util.Log
 import android.view.View
 import android.view.WindowManager
+import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
+import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.core.content.res.ResourcesCompat
@@ -33,6 +37,9 @@ import com.google.android.material.appbar.AppBarLayout
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.activity_main_content.*
 import kotlinx.coroutines.*
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.content
+import ru.noties.markwon.Markwon
 import xyz.quaver.hitomi.*
 import xyz.quaver.pupil.adapters.GalleryBlockAdapter
 import xyz.quaver.pupil.types.TagSuggestion
@@ -41,7 +48,10 @@ import xyz.quaver.pupil.util.SetLineOverlap
 import xyz.quaver.pupil.util.checkUpdate
 import xyz.quaver.pupil.util.getApkUrl
 import java.io.File
+import java.lang.StringBuilder
+import java.util.*
 import javax.net.ssl.HttpsURLConnection
+import kotlin.collections.ArrayList
 
 class MainActivity : AppCompatActivity() {
 
@@ -65,7 +75,7 @@ class MainActivity : AppCompatActivity() {
 
         checkPermission()
 
-        update()
+        checkUpdate()
 
         main_appbar_layout.addOnOffsetChangedListener(
             AppBarLayout.OnOffsetChangedListener { _, p1 ->
@@ -139,7 +149,50 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun update() {
+    private fun checkUpdate() {
+
+        fun extractReleaseNote(update: JsonObject, locale: String) : String {
+            val markdown = update["body"]!!.content
+
+            val target = when(locale) {
+                "ko" -> "한국어"
+                "ja" -> "日本語"
+                else -> "English"
+            }
+
+            val releaseNote = Regex("^# Release Note.+$")
+            val language = Regex("^## $target$")
+            val end = Regex("^#.+$")
+
+            var releaseNoteFlag = false
+            var languageFlag = false
+
+            val result = StringBuilder()
+
+            for(line in markdown.split('\n')) {
+                if (releaseNote.matches(line)) {
+                    releaseNoteFlag = true
+                    continue
+                }
+
+                if (releaseNoteFlag) {
+                    if (language.matches(line)) {
+                        languageFlag = true
+                        continue
+                    }
+                }
+
+                if (languageFlag) {
+                    if (end.matches(line))
+                        break
+
+                    result.append(line+"\n")
+                }
+            }
+
+            return getString(R.string.update_release_note, update["tag_name"]?.content, result.toString())
+        }
+
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED)
             return
 
@@ -151,8 +204,13 @@ class MainActivity : AppCompatActivity() {
 
             val dialog = AlertDialog.Builder(this@MainActivity).apply {
                 setTitle(R.string.update_title)
-                setMessage(getString(R.string.update_message, update["tag_name"], BuildConfig.VERSION_NAME))
+                val msg = extractReleaseNote(update, Locale.getDefault().language)
+                setMessage(Markwon.create(context).toMarkdown(msg))
                 setPositiveButton(android.R.string.yes) { _, _ ->
+                    Toast.makeText(
+                        context, getString(R.string.update_download_started), Toast.LENGTH_SHORT
+                    ).show()
+
                     val dest = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), fileName)
                     val desturi =
                         FileProvider.getUriForFile(
@@ -168,6 +226,7 @@ class MainActivity : AppCompatActivity() {
                         setDescription(getString(R.string.update_notification_description))
                         setTitle(getString(R.string.app_name))
                         setDestinationUri(Uri.fromFile(dest))
+                        setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE)
                     }
 
                     val manager = getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager

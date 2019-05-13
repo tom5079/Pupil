@@ -12,7 +12,6 @@
     <string name="settings_galleries_per_page">한 번에 로드할 갤러리 수</string>
     <string name="settings_search_title">검색 설정</string>
     <string name="settings_title">설정</string>
-    <string name="update_message">버전 %1$s이 출시되었습니다.\n(현재 %2$s)\n업데이트 하시겠습니까?</string>
     <string name="update_notification_description">apk 다운로드중&#8230;</string>
     <string name="update_title">업데이트가 있습니다!</string>
     <string name="warning">경고</string>
@@ -27,4 +26,6 @@
     <string name="settings_clear_history_summary">히스토리 %1$d개 저장됨</string>
     <string name="main_drawer_history">히스토리</string>
     <string name="main_drawer_home">홈</string>
+    <string name="update_download_started">다운로드 중</string>
+    <string name="update_release_note"># 릴리즈 노트(v%1$s)\n%2$s</string>
 </resources>

@@ -13,6 +13,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import xyz.quaver.hiyobi.getReader
 import java.io.File
+import java.util.*
 
 /**
  * Instrumented test, which will execute on an Android device.
@@ -40,6 +41,5 @@ class ExampleInstrumentedTest {
 
     @Test
     fun test_doSearch() {
-        getReader(1414061)
     }
 }

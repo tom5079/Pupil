@@ -15,7 +15,6 @@
     <string name="settings_galleries_per_page">一回にロードするギャラリー数</string>
     <string name="settings_search_title">検索設定</string>
     <string name="settings_title">設定</string>
-    <string name="update_message">新バージョン%1$sをリリースしました\n(現バージョン: %2$s)\nアップデートしますか？</string>
     <string name="update_notification_description">アップデートダウンロード中</string>
     <string name="update_title">新しいアップデートがあります</string>
     <string name="warning">注意</string>
@@ -27,4 +26,6 @@
     <string name="settings_clear_history_summary">履歴数: %1$d</string>
     <string name="main_drawer_history">履歴</string>
     <string name="main_drawer_home">トップ</string>
+    <string name="update_download_started">ダウンロード中</string>
+    <string name="update_release_note"># リリースノート(v%1$s)\n%2$s</string>
 </resources>
