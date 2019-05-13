@@ -18,7 +18,7 @@
     <string name="update_notification_description">アップデートダウンロード中</string>
     <string name="update_title">新しいアップデートがあります</string>
     <string name="warning">注意</string>
-    <string name="settings_image_loading_title">イメージロード</string>
+    <string name="settings_miscellaneous_title">その他</string>
     <string name="settings_use_hiyobi_summary">ロード速度を向上させるためhiyobi.meからイメージロード</string>
     <string name="settings_use_hiyobi_title">hiyobi.meからロード</string>
     <string name="settings_clear_history">履歴の削除</string>
@@ -28,4 +28,6 @@
     <string name="main_drawer_home">トップ</string>
     <string name="update_download_started">ダウンロード中</string>
     <string name="update_release_note"># リリースノート(v%1$s)\n%2$s</string>
+    <string name="settings_security_mode_title">セキュリティーモード</string>
+    <string name="settings_security_mode_summary">アプリ履歴でアプリの画面を表示しない</string>
 </resources>

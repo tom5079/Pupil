@@ -1,6 +1,7 @@
 package xyz.quaver.pupil
 
 import android.os.Bundle
+import android.preference.PreferenceManager
 import android.view.MenuItem
 import android.view.WindowManager
 import androidx.appcompat.app.AlertDialog
@@ -25,6 +26,18 @@ class SettingsActivity : AppCompatActivity() {
             .replace(R.id.settings, SettingsFragment())
             .commit()
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
+    }
+
+    override fun onResume() {
+        val preferences = PreferenceManager.getDefaultSharedPreferences(this)
+
+        if (preferences.getBoolean("security_mode", false))
+            window.setFlags(
+                WindowManager.LayoutParams.FLAG_SECURE,
+                WindowManager.LayoutParams.FLAG_SECURE)
+        else
+            window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
+        super.onResume()
     }
 
     class SettingsFragment : PreferenceFragmentCompat() {

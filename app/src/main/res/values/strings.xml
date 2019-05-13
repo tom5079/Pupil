@@ -43,8 +43,10 @@
     <string name="settings_clear_history">Clear history</string>
     <string name="settings_clear_history_alert_message">Do you want to clear histories?</string>
     <string name="settings_clear_history_summary">%1$d histories saved</string>
-    <string name="settings_image_loading_title">Image Loading</string>
+    <string name="settings_miscellaneous_title">Miscellaneous</string>
     <string name="settings_use_hiyobi_title">Use hiyobi.me</string>
     <string name="settings_use_hiyobi_summary">Load images from hiyobi.me to improve loading speed (if available)</string>
+    <string name="settings_security_mode_title">Enable security mode</string>
+    <string name="settings_security_mode_summary">Enable security mode to make the screen invisible on recent app window</string>
 
 </resources>

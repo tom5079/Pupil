@@ -35,12 +35,18 @@
     </PreferenceCategory>
 
     <PreferenceCategory
-        app:title="@string/settings_image_loading_title">
+        app:title="@string/settings_miscellaneous_title">
 
         <SwitchPreference
             app:key="use_hiyobi"
             app:title="@string/settings_use_hiyobi_title"
             app:summary="@string/settings_use_hiyobi_summary"/>
+
+        <SwitchPreference
+            app:key="security_mode"
+            app:title="@string/settings_security_mode_title"
+            app:summary="@string/settings_security_mode_summary"
+            app:defaultValue="true"/>
 
     </PreferenceCategory>
 

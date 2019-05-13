@@ -56,6 +56,18 @@ class GalleryActivity : AppCompatActivity() {
         loadImages()
     }
 
+    override fun onResume() {
+        val preferences = android.preference.PreferenceManager.getDefaultSharedPreferences(this)
+
+        if (preferences.getBoolean("security_mode", false))
+            window.setFlags(
+                WindowManager.LayoutParams.FLAG_SECURE,
+                WindowManager.LayoutParams.FLAG_SECURE)
+        else
+            window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
+        super.onResume()
+    }
+
     override fun onDestroy() {
         super.onDestroy()
         loadJob?.cancel()

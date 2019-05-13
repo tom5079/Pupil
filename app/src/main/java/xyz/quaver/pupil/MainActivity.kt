@@ -67,10 +67,6 @@ class MainActivity : AppCompatActivity() {
         Histories.default = Histories(File(cacheDir, "histories.json"))
         super.onCreate(savedInstanceState)
 
-        window.setFlags(
-            WindowManager.LayoutParams.FLAG_SECURE,
-            WindowManager.LayoutParams.FLAG_SECURE)
-
         setContentView(R.layout.activity_main)
 
         checkPermission()
@@ -130,6 +126,18 @@ class MainActivity : AppCompatActivity() {
             main_drawer_layout.closeDrawer(GravityCompat.START)
         else
             super.onBackPressed()
+    }
+
+    override fun onResume() {
+        val preferences = PreferenceManager.getDefaultSharedPreferences(this)
+
+        if (preferences.getBoolean("security_mode", false))
+            window.setFlags(
+                WindowManager.LayoutParams.FLAG_SECURE,
+                WindowManager.LayoutParams.FLAG_SECURE)
+        else
+            window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
+        super.onResume()
     }
 
     private fun checkPermission() {

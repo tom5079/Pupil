@@ -18,7 +18,7 @@
     <string name="main_no_result">결과 없음</string>
     <string name="main_search">검색</string>
     <string name="settings_cache_title">캐시</string>
-    <string name="settings_image_loading_title">이미지 로딩</string>
+    <string name="settings_miscellaneous_title">기타</string>
     <string name="settings_use_hiyobi_summary">속도 향상을 위해 가능하면 hiyobi.me에서 이미지 로드</string>
     <string name="settings_use_hiyobi_title">hiyobi.me 사용</string>
     <string name="settings_clear_history">히스토리 삭제</string>
@@ -28,4 +28,6 @@
     <string name="main_drawer_home">홈</string>
     <string name="update_download_started">다운로드 중</string>
     <string name="update_release_note"># 릴리즈 노트(v%1$s)\n%2$s</string>
+    <string name="settings_security_mode_summary">최근 앱 목록 창에서 앱 화면을 보이지 않게 합니다</string>
+    <string name="settings_security_mode_title">보안 모드 활성화</string>
 </resources>
