@@ -1,18 +1,21 @@
 package xyz.quaver.pupil.adapters
 
-import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
 import android.widget.LinearLayout
 import androidx.cardview.widget.CardView
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.chip.Chip
 import kotlinx.android.synthetic.main.item_galleryblock.view.*
+import kotlinx.coroutines.*
 import xyz.quaver.hitomi.GalleryBlock
 import xyz.quaver.hitomi.toTag
 import xyz.quaver.pupil.R
+import java.io.File
 
-class GalleryBlockAdapter(private val galleries: List<Pair<GalleryBlock, Bitmap?>>) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+class GalleryBlockAdapter(private val galleries: List<Pair<GalleryBlock, Deferred<String>>>) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     private enum class ViewType {
         VIEW_ITEM,
@@ -70,21 +73,47 @@ class GalleryBlockAdapter(private val galleries: List<Pair<GalleryBlock, Bitmap?
                 }.toMap()
                 val (gallery, thumbnail) = galleries[position]
 
-                val artists = gallery.artists.ifEmpty { listOf("N/A") }
-                val series = gallery.series.ifEmpty { listOf("N/A") }
+                val artists = gallery.artists
+                val series = gallery.series
 
                 setOnClickListener {
                     callback?.invoke(gallery.id, gallery.title)
                 }
 
-                galleryblock_thumbnail.setImageBitmap(thumbnail)
+                CoroutineScope(Dispatchers.Default).launch {
+                    val bitmap = BitmapFactory.decodeFile(thumbnail.await())
+
+                    CoroutineScope(Dispatchers.Main).launch {
+                        galleryblock_thumbnail.setImageBitmap(bitmap)
+                    }
+                }
                 galleryblock_title.text = gallery.title
-                galleryblock_artist.text = artists.joinToString(", ") { it.wordCapitalize() }
-                galleryblock_series.text =
-                    resources.getString(R.string.galleryblock_series, series.joinToString(", ") { it.wordCapitalize() })
+                with(galleryblock_artist) {
+                    text = artists.joinToString(", ") { it.wordCapitalize() }
+                    visibility = when {
+                        artists.isNotEmpty() -> View.VISIBLE
+                        else -> View.GONE
+                    }
+                }
+                with(galleryblock_series) {
+                    text =
+                        resources.getString(
+                            R.string.galleryblock_series,
+                            series.joinToString(", ") { it.wordCapitalize() })
+                    visibility = when {
+                        series.isNotEmpty() -> View.VISIBLE
+                        else -> View.GONE
+                    }
+                }
                 galleryblock_type.text = resources.getString(R.string.galleryblock_type, gallery.type).wordCapitalize()
-                galleryblock_language.text =
-                    resources.getString(R.string.galleryblock_language, languages[gallery.language])
+                with(galleryblock_language) {
+                    text =
+                        resources.getString(R.string.galleryblock_language, languages[gallery.language])
+                    visibility = when {
+                        gallery.language.isNotEmpty() -> View.VISIBLE
+                        else -> View.GONE
+                    }
+                }
 
                 galleryblock_tag_group.removeAllViews()
                 gallery.relatedTags.forEach {

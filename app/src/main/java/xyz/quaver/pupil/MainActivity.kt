@@ -7,23 +7,18 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.PackageManager
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.net.Uri
-import android.os.Build
 import android.os.Bundle
 import android.os.Environment
 import android.preference.PreferenceManager
 import android.text.*
 import android.text.style.AlignmentSpan
-import android.util.Log
 import android.view.View
 import android.view.WindowManager
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
-import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.core.content.res.ResourcesCompat
@@ -48,7 +43,7 @@ import xyz.quaver.pupil.util.SetLineOverlap
 import xyz.quaver.pupil.util.checkUpdate
 import xyz.quaver.pupil.util.getApkUrl
 import java.io.File
-import java.lang.StringBuilder
+import java.io.FileOutputStream
 import java.util.*
 import javax.net.ssl.HttpsURLConnection
 import kotlin.collections.ArrayList
@@ -56,7 +51,7 @@ import kotlin.collections.ArrayList
 class MainActivity : AppCompatActivity() {
 
     private val permissionRequestCode = 4585
-    private val galleries = ArrayList<Pair<GalleryBlock, Bitmap?>>()
+    private val galleries = ArrayList<Pair<GalleryBlock, Deferred<String>>>()
 
     private var query = ""
 
@@ -66,6 +61,11 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         Histories.default = Histories(File(cacheDir, "histories.json"))
         super.onCreate(savedInstanceState)
+
+        window.setFlags(
+            WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
+            WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS
+        )
 
         setContentView(R.layout.activity_main)
 
@@ -81,7 +81,11 @@ class MainActivity : AppCompatActivity() {
         )
 
         with(main_swipe_layout) {
-            setProgressViewOffset(false, 0, resources.getDimensionPixelSize(R.dimen.progress_view_offset))
+            setProgressViewOffset(
+                false,
+                resources.getDimensionPixelSize(R.dimen.progress_view_start),
+                resources.getDimensionPixelSize(R.dimen.progress_view_offset)
+            )
 
             setOnRefreshListener {
                 CoroutineScope(Dispatchers.Main).launch {
@@ -485,10 +489,19 @@ class MainActivity : AppCompatActivity() {
                 chunked.map {
                     async {
                         val galleryBlock = getGalleryBlock(it)
-                        val thumbnail: Bitmap
 
-                        with(galleryBlock.thumbnails[0].openConnection() as HttpsURLConnection) {
-                            thumbnail = BitmapFactory.decodeStream(inputStream)
+                        val thumbnail = async {
+                            val cache = File(cacheDir, "imageCache/$it/thumbnail.${galleryBlock.thumbnails[0].path.split('.').last()}")
+
+                            if (!cache.exists())
+                                with(galleryBlock.thumbnails[0].openConnection() as HttpsURLConnection) {
+                                    if (!cache.parentFile.exists())
+                                        cache.parentFile.mkdirs()
+
+                                    inputStream.copyTo(FileOutputStream(cache))
+                                }
+
+                            cache.absolutePath
                         }
 
                         Pair(galleryBlock, thumbnail)

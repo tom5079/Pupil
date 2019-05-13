@@ -2,6 +2,7 @@ package xyz.quaver.pupil
 
 import android.os.Bundle
 import android.util.Log
+import android.view.ContextMenu
 import android.view.View
 import android.view.WindowManager
 import androidx.appcompat.app.AppCompatActivity
@@ -26,6 +27,7 @@ class GalleryActivity : AppCompatActivity() {
     private var screenMode = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        Log.d("Pupil", "Reader Opened")
         super.onCreate(savedInstanceState)
 
         window.setFlags(
@@ -39,6 +41,7 @@ class GalleryActivity : AppCompatActivity() {
         galleryID = intent.getIntExtra("GALLERY_ID", 0)
         CoroutineScope(Dispatchers.Unconfined).launch {
             reader = async(Dispatchers.IO) {
+                Log.d("Pupil", "Loading reader")
                 val preference = PreferenceManager.getDefaultSharedPreferences(this@GalleryActivity)
                 if (preference.getBoolean("use_hiyobi", false)) {
                     try {
@@ -53,6 +56,7 @@ class GalleryActivity : AppCompatActivity() {
         }
 
         initView()
+        Log.d("Pupil", "Reader view init complete")
         loadImages()
     }
 
@@ -71,6 +75,10 @@ class GalleryActivity : AppCompatActivity() {
     override fun onDestroy() {
         super.onDestroy()
         loadJob?.cancel()
+    }
+
+    override fun onCreateContextMenu(menu: ContextMenu?, v: View?, menuInfo: ContextMenu.ContextMenuInfo?) {
+        super.onCreateContextMenu(menu, v, menuInfo)
     }
 
     private fun initView() {
@@ -96,11 +104,13 @@ class GalleryActivity : AppCompatActivity() {
     }
 
     private fun loadImages() {
-
         fun webpUrlFromUrl(url: URL) = URL(url.toString().replace("/galleries/", "/webp/") + ".webp")
 
         loadJob = CoroutineScope(Dispatchers.Default).launch {
+            Log.d("Pupil", "Reader Waiting for the data")
             val reader = reader.await()
+
+            Log.d("Pupil", "Reader Data recieved")
 
             launch(Dispatchers.Main) {
                 with(gallery_progressbar) {
