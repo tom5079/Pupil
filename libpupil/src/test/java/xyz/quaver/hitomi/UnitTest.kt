@@ -61,4 +61,9 @@ class UnitTest {
 
         print(reader)
     }
+
+    @Test
+    fun test_hiyobi() {
+        xyz.quaver.hiyobi.getReader(1414061)
+    }
 }

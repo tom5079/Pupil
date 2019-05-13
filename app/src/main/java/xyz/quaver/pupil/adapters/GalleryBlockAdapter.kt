@@ -33,8 +33,8 @@ class GalleryBlockAdapter(private val galleries: List<Pair<GalleryBlock, Bitmap?
     class ViewHolder(val view: CardView) : RecyclerView.ViewHolder(view)
     class ProgressViewHolder(view: LinearLayout) : RecyclerView.ViewHolder(view)
 
-    private var callback: ((Int) -> Unit)? = null
-    fun setClickListener(callback: ((Int) -> Unit)?) {
+    private var callback: ((Int, String) -> Unit)? = null
+    fun setClickListener(callback: ((Int, String) -> Unit)?) {
         this.callback = callback
     }
 
@@ -74,7 +74,7 @@ class GalleryBlockAdapter(private val galleries: List<Pair<GalleryBlock, Bitmap?
                 val series = gallery.series.ifEmpty { listOf("N/A") }
 
                 setOnClickListener {
-                    callback?.invoke(gallery.id)
+                    callback?.invoke(gallery.id, gallery.title)
                 }
 
                 galleryblock_thumbnail.setImageBitmap(thumbnail)

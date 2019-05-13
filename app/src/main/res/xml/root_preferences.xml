@@ -30,4 +30,14 @@
 
     </PreferenceCategory>
 
+    <PreferenceCategory
+        app:title="Image loading">
+
+        <SwitchPreference
+            app:key="use_hiyobi"
+            app:title="Use hiyobi.me"
+            app:summary="Use hiyobi.me to improve image loading speed if available"/>
+
+    </PreferenceCategory>
+
 </androidx.preference.PreferenceScreen>

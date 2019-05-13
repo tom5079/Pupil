@@ -11,6 +11,7 @@ import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.junit.runner.RunWith
+import xyz.quaver.hiyobi.getReader
 import java.io.File
 
 /**
@@ -38,16 +39,7 @@ class ExampleInstrumentedTest {
     }
 
     @Test
-    @ExperimentalUnsignedTypes
     fun test_doSearch() {
-        Log.d("TEST", "Starting...")
-
-        runBlocking {
-            CoroutineScope(Dispatchers.Main).launch {
-                Log.d("TEST", "This is started! wow")
-            }.join()
-        }
-
-        Log.d("TEST", "Finished! ...Really?")
+        getReader(1414061)
     }
 }

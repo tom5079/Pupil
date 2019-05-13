@@ -176,9 +176,10 @@ class MainActivity : AppCompatActivity() {
     private fun setupRecyclerView() {
         with(main_recyclerview) {
             adapter = GalleryBlockAdapter(galleries).apply {
-                setClickListener {
+                setClickListener { galleryID, title ->
                     val intent = Intent(this@MainActivity, GalleryActivity::class.java)
-                    intent.putExtra("GALLERY_ID", it)
+                    intent.putExtra("GALLERY_ID", galleryID)
+                    intent.putExtra("GALLERY_TITLE", title)
 
                     //TODO: Maybe sprinke some transitions will be nice :D
                     startActivity(intent)
