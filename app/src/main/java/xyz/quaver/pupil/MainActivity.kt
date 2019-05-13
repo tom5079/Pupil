@@ -10,6 +10,7 @@ import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.os.Environment
 import android.preference.PreferenceManager
@@ -18,12 +19,15 @@ import android.text.style.AlignmentSpan
 import android.util.Log
 import android.view.View
 import android.view.WindowManager
+import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
+import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.core.content.res.ResourcesCompat
+import androidx.core.view.GravityCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.arlib.floatingsearchview.FloatingSearchView
@@ -31,36 +35,43 @@ import com.arlib.floatingsearchview.suggestions.model.SearchSuggestion
 import com.arlib.floatingsearchview.util.view.SearchInputView
 import com.google.android.material.appbar.AppBarLayout
 import kotlinx.android.synthetic.main.activity_main.*
+import kotlinx.android.synthetic.main.activity_main_content.*
 import kotlinx.coroutines.*
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.content
+import ru.noties.markwon.Markwon
 import xyz.quaver.hitomi.*
 import xyz.quaver.pupil.adapters.GalleryBlockAdapter
 import xyz.quaver.pupil.types.TagSuggestion
+import xyz.quaver.pupil.util.Histories
 import xyz.quaver.pupil.util.SetLineOverlap
 import xyz.quaver.pupil.util.checkUpdate
 import xyz.quaver.pupil.util.getApkUrl
 import java.io.File
+import java.lang.StringBuilder
+import java.util.*
 import javax.net.ssl.HttpsURLConnection
+import kotlin.collections.ArrayList
 
 class MainActivity : AppCompatActivity() {
 
-    private val PERMISSION_REQUEST_CODE = 4585
+    private val permissionRequestCode = 4585
     private val galleries = ArrayList<Pair<GalleryBlock, Bitmap?>>()
 
-    private var isLoading = false
     private var query = ""
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
+    private var galleryIDs: Deferred<List<Int>>? = null
+    private var loadingJob: Job? = null
 
-        window.setFlags(
-            WindowManager.LayoutParams.FLAG_SECURE,
-            WindowManager.LayoutParams.FLAG_SECURE)
+    override fun onCreate(savedInstanceState: Bundle?) {
+        Histories.default = Histories(File(cacheDir, "histories.json"))
+        super.onCreate(savedInstanceState)
 
         setContentView(R.layout.activity_main)
 
         checkPermission()
 
-        update()
+        checkUpdate()
 
         main_appbar_layout.addOnOffsetChangedListener(
             AppBarLayout.OnOffsetChangedListener { _, p1 ->
@@ -73,16 +84,60 @@ class MainActivity : AppCompatActivity() {
             setProgressViewOffset(false, 0, resources.getDimensionPixelSize(R.dimen.progress_view_offset))
 
             setOnRefreshListener {
-                runBlocking {
-                    cleanJob?.join()
+                CoroutineScope(Dispatchers.Main).launch {
+                    cancelFetch()
+                    clearGalleries()
+                    fetchGalleries(query)
+                    loadBlocks()
                 }
-                fetchGalleries(query, true)
             }
+        }
+
+        main_nav_view.setNavigationItemSelectedListener {
+            CoroutineScope(Dispatchers.Main).launch {
+                main_drawer_layout.closeDrawers()
+
+                cancelFetch()
+                clearGalleries()
+                when(it.itemId) {
+                    R.id.main_drawer_home -> {
+                        query = query.replace("HISTORY", "")
+                        fetchGalleries(query)
+                    }
+                    R.id.main_drawer_history -> {
+                        query += "HISTORY"
+                        fetchGalleries(query)
+                    }
+                }
+                loadBlocks()
+            }
+
+            true
         }
 
         setupRecyclerView()
         setupSearchBar()
         fetchGalleries(query)
+        loadBlocks()
+    }
+
+    override fun onBackPressed() {
+        if (main_drawer_layout.isDrawerOpen(GravityCompat.START))
+            main_drawer_layout.closeDrawer(GravityCompat.START)
+        else
+            super.onBackPressed()
+    }
+
+    override fun onResume() {
+        val preferences = PreferenceManager.getDefaultSharedPreferences(this)
+
+        if (preferences.getBoolean("security_mode", false))
+            window.setFlags(
+                WindowManager.LayoutParams.FLAG_SECURE,
+                WindowManager.LayoutParams.FLAG_SECURE)
+        else
+            window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
+        super.onResume()
     }
 
     private fun checkPermission() {
@@ -98,11 +153,54 @@ class MainActivity : AppCompatActivity() {
                     setPositiveButton(android.R.string.ok) { _, _ -> }
                 }.show()
             else
-                ActivityCompat.requestPermissions(this, permissions, PERMISSION_REQUEST_CODE)
+                ActivityCompat.requestPermissions(this, permissions, permissionRequestCode)
         }
     }
 
-    private fun update() {
+    private fun checkUpdate() {
+
+        fun extractReleaseNote(update: JsonObject, locale: String) : String {
+            val markdown = update["body"]!!.content
+
+            val target = when(locale) {
+                "ko" -> "한국어"
+                "ja" -> "日本語"
+                else -> "English"
+            }
+
+            val releaseNote = Regex("^# Release Note.+$")
+            val language = Regex("^## $target$")
+            val end = Regex("^#.+$")
+
+            var releaseNoteFlag = false
+            var languageFlag = false
+
+            val result = StringBuilder()
+
+            for(line in markdown.split('\n')) {
+                if (releaseNote.matches(line)) {
+                    releaseNoteFlag = true
+                    continue
+                }
+
+                if (releaseNoteFlag) {
+                    if (language.matches(line)) {
+                        languageFlag = true
+                        continue
+                    }
+                }
+
+                if (languageFlag) {
+                    if (end.matches(line))
+                        break
+
+                    result.append(line+"\n")
+                }
+            }
+
+            return getString(R.string.update_release_note, update["tag_name"]?.content, result.toString())
+        }
+
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED)
             return
 
@@ -114,8 +212,13 @@ class MainActivity : AppCompatActivity() {
 
             val dialog = AlertDialog.Builder(this@MainActivity).apply {
                 setTitle(R.string.update_title)
-                setMessage(getString(R.string.update_message, update["tag_name"], BuildConfig.VERSION_NAME))
+                val msg = extractReleaseNote(update, Locale.getDefault().language)
+                setMessage(Markwon.create(context).toMarkdown(msg))
                 setPositiveButton(android.R.string.yes) { _, _ ->
+                    Toast.makeText(
+                        context, getString(R.string.update_download_started), Toast.LENGTH_SHORT
+                    ).show()
+
                     val dest = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), fileName)
                     val desturi =
                         FileProvider.getUriForFile(
@@ -131,6 +234,7 @@ class MainActivity : AppCompatActivity() {
                         setDescription(getString(R.string.update_notification_description))
                         setTitle(getString(R.string.app_name))
                         setDestinationUri(Uri.fromFile(dest))
+                        setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE)
                     }
 
                     val manager = getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
@@ -161,12 +265,15 @@ class MainActivity : AppCompatActivity() {
     private fun setupRecyclerView() {
         with(main_recyclerview) {
             adapter = GalleryBlockAdapter(galleries).apply {
-                setClickListener {
+                setClickListener { galleryID, title ->
                     val intent = Intent(this@MainActivity, GalleryActivity::class.java)
-                    intent.putExtra("GALLERY_ID", it)
+                    intent.putExtra("GALLERY_ID", galleryID)
+                    intent.putExtra("GALLERY_TITLE", title)
 
                     //TODO: Maybe sprinke some transitions will be nice :D
                     startActivity(intent)
+
+                    Histories.default.add(galleryID)
                 }
             }
             addOnScrollListener(
@@ -176,9 +283,9 @@ class MainActivity : AppCompatActivity() {
 
                         val layoutManager = recyclerView.layoutManager as LinearLayoutManager
 
-                        if (!isLoading)
+                        if (loadingJob?.isActive != true)
                             if (layoutManager.findLastCompletelyVisibleItemPosition() == galleries.size)
-                                fetchGalleries(query)
+                                loadBlocks()
                     }
                 }
             )
@@ -295,101 +402,107 @@ class MainActivity : AppCompatActivity() {
                     if (query != this@MainActivity.query) {
                         this@MainActivity.query = query
 
-                        fetchGalleries(query, true)
+                        cancelFetch()
+                        clearGalleries()
+                        fetchGalleries(query)
                     }
                 }
             })
+
+            attachNavigationDrawerToMenuButton(main_drawer_layout)
         }
     }
-
-    private val cache = ArrayList<Int>()
-    private var currentFetchingJob: Job? = null
-    private var cleanJob: Job? = null
 
     private fun cancelFetch() {
-        isLoading = false
-
         runBlocking {
-            cleanJob?.join()
-            currentFetchingJob?.cancelAndJoin()
+            galleryIDs?.cancelAndJoin()
+            loadingJob?.cancelAndJoin()
         }
     }
 
-    private fun fetchGalleries(query: String, clear: Boolean = false) {
+    private fun clearGalleries() {
+        galleries.clear()
+
+        main_recyclerview.adapter?.notifyDataSetChanged()
+
+        main_noresult.visibility = View.INVISIBLE
+        main_progressbar.show()
+        main_swipe_layout.isRefreshing = false
+    }
+
+    private fun fetchGalleries(query: String, from: Int = 0) {
         val preference = PreferenceManager.getDefaultSharedPreferences(this)
         val perPage = preference.getString("per_page", "25")?.toInt() ?: 25
         val defaultQuery = preference.getString("default_query", "")!!
 
-        if (clear) {
-            cancelFetch()
-            cleanJob = CoroutineScope(Dispatchers.Main).launch {
-                cache.clear()
-                galleries.clear()
+        galleryIDs = null
 
-                main_recyclerview.adapter?.notifyDataSetChanged()
-
-                main_noresult.visibility = View.INVISIBLE
-                main_progressbar.show()
-                main_swipe_layout.isRefreshing = false
-            }
-        }
-
-        if (isLoading)
+        if (galleryIDs?.isActive == true)
             return
 
-        isLoading = true
+        galleryIDs = CoroutineScope(Dispatchers.IO).async {
+            when {
+                query.contains("HISTORY") ->
+                    Histories.default.toList()
+                query.isEmpty() and defaultQuery.isEmpty() ->
+                    fetchNozomi(start = from, count = perPage)
+                else ->
+                    doSearch("$defaultQuery $query")
+            }
+        }
+    }
 
-        currentFetchingJob = CoroutineScope(Dispatchers.IO).launch {
-            try {
-                val galleryIDs: List<Int>
+    private fun loadBlocks() {
+        val preference = PreferenceManager.getDefaultSharedPreferences(this)
+        val perPage = preference.getString("per_page", "25")?.toInt() ?: 25
+        val defaultQuery = preference.getString("default_query", "")!!
 
-                cleanJob?.join()
+        loadingJob = CoroutineScope(Dispatchers.IO).launch {
+            val galleryIDs = galleryIDs?.await()
 
-                if (query.isEmpty() && defaultQuery.isEmpty())
-                    galleryIDs = fetchNozomi(start = galleries.size, count = perPage)
-                else {
-                    if (cache.isEmpty())
-                        cache.addAll(doSearch("$defaultQuery $query"))
-
-                    galleryIDs = cache.slice(galleries.size until Math.min(galleries.size + perPage, cache.size))
-
-                    with(main_recyclerview.adapter as GalleryBlockAdapter) {
-                        noMore = galleries.size + perPage >= cache.size
-                    }
+            if (galleryIDs.isNullOrEmpty()) { //No result
+                withContext(Dispatchers.Main) {
+                    main_noresult.visibility = View.VISIBLE
+                    main_progressbar.hide()
                 }
 
-                if (query.isNotEmpty() and defaultQuery.isNotEmpty() and cache.isNullOrEmpty()) {
+                return@launch
+            }
+
+            if (query.isEmpty() and defaultQuery.isEmpty())
+                fetchGalleries("", galleries.size+perPage)
+            else
+                with(main_recyclerview.adapter as GalleryBlockAdapter) {
+                    noMore = galleries.size + perPage >= galleryIDs.size
+                }
+
+            when {
+                query.isEmpty() and defaultQuery.isEmpty() ->
+                    galleryIDs
+                else ->
+                    galleryIDs.slice(galleries.size until Math.min(galleries.size+perPage, galleryIDs.size))
+            }.chunked(4).forEach { chunked ->
+                chunked.map {
+                    async {
+                        val galleryBlock = getGalleryBlock(it)
+                        val thumbnail: Bitmap
+
+                        with(galleryBlock.thumbnails[0].openConnection() as HttpsURLConnection) {
+                            thumbnail = BitmapFactory.decodeStream(inputStream)
+                        }
+
+                        Pair(galleryBlock, thumbnail)
+                    }
+                }.forEach {
+                    val galleryBlock = it.await()
+
                     withContext(Dispatchers.Main) {
-                        main_noresult.visibility = View.VISIBLE
                         main_progressbar.hide()
+
+                        galleries.add(galleryBlock)
+                        main_recyclerview.adapter?.notifyItemInserted(galleries.size - 1)
                     }
                 }
-
-                galleryIDs.chunked(4).forEach { chunked ->
-                    chunked.map {
-                        async {
-                            val galleryBlock = getGalleryBlock(it)
-                            val thumbnail: Bitmap
-
-                            with(galleryBlock.thumbnails[0].openConnection() as HttpsURLConnection) {
-                                thumbnail = BitmapFactory.decodeStream(inputStream)
-                            }
-
-                            Pair(galleryBlock, thumbnail)
-                        }
-                    }.forEach {
-                        val galleryBlock = it.await()
-
-                        withContext(Dispatchers.Main) {
-                            main_progressbar.hide()
-
-                            galleries.add(galleryBlock)
-                            main_recyclerview.adapter?.notifyItemInserted(galleries.size - 1)
-                        }
-                    }
-                }
-            } finally {
-                isLoading = false
             }
         }
     }

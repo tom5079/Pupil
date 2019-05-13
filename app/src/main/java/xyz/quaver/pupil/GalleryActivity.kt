@@ -1,9 +1,11 @@
 package xyz.quaver.pupil
 
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import android.view.WindowManager
 import androidx.appcompat.app.AppCompatActivity
+import androidx.preference.PreferenceManager
 import kotlinx.android.synthetic.main.activity_gallery.*
 import kotlinx.coroutines.*
 import xyz.quaver.hitomi.Reader
@@ -32,15 +34,38 @@ class GalleryActivity : AppCompatActivity() {
 
         setContentView(R.layout.activity_gallery)
 
+        supportActionBar?.title = intent.getStringExtra("GALLERY_TITLE")
+
         galleryID = intent.getIntExtra("GALLERY_ID", 0)
         CoroutineScope(Dispatchers.Unconfined).launch {
             reader = async(Dispatchers.IO) {
+                val preference = PreferenceManager.getDefaultSharedPreferences(this@GalleryActivity)
+                if (preference.getBoolean("use_hiyobi", false)) {
+                    try {
+                        xyz.quaver.hiyobi.getReader(galleryID)
+                        Log.d("Pupil", "Using Hiyobi.me")
+                    } catch (e: Exception) {
+                        getReader(galleryID)
+                    }
+                }
                 getReader(galleryID)
             }
         }
 
         initView()
         loadImages()
+    }
+
+    override fun onResume() {
+        val preferences = android.preference.PreferenceManager.getDefaultSharedPreferences(this)
+
+        if (preferences.getBoolean("security_mode", false))
+            window.setFlags(
+                WindowManager.LayoutParams.FLAG_SECURE,
+                WindowManager.LayoutParams.FLAG_SECURE)
+        else
+            window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
+        super.onResume()
     }
 
     override fun onDestroy() {
@@ -78,17 +103,15 @@ class GalleryActivity : AppCompatActivity() {
             val reader = reader.await()
 
             launch(Dispatchers.Main) {
-                supportActionBar?.title = reader.title
-
                 with(gallery_progressbar) {
-                    max = reader.images.size
+                    max = reader.size
                     progress = 0
 
                     visibility = View.VISIBLE
                 }
             }
 
-            reader.images.chunked(8).forEach { chunked ->
+            reader.chunked(8).forEach { chunked ->
                 chunked.map {
                     async(Dispatchers.IO) {
                         val url = if (it.second?.haswebp == 1) webpUrlFromUrl(it.first) else it.first

@@ -25,8 +25,28 @@
         app:title="@string/settings_cache_title">
 
         <Preference
-            app:title="@string/settings_clear_cache"
-            app:key="delete_cache"/>
+            app:title="@string/settings_clear_image_cache"
+            app:key="delete_image_cache"/>
+
+        <Preference
+            app:title="@string/settings_clear_history"
+            app:key="clear_history"/>
+
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        app:title="@string/settings_miscellaneous_title">
+
+        <SwitchPreference
+            app:key="use_hiyobi"
+            app:title="@string/settings_use_hiyobi_title"
+            app:summary="@string/settings_use_hiyobi_summary"/>
+
+        <SwitchPreference
+            app:key="security_mode"
+            app:title="@string/settings_security_mode_title"
+            app:summary="@string/settings_security_mode_summary"
+            app:defaultValue="true"/>
 
     </PreferenceCategory>
 
