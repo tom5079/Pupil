@@ -270,7 +270,7 @@ class MainActivity : AppCompatActivity() {
         with(main_recyclerview) {
             adapter = GalleryBlockAdapter(galleries).apply {
                 setClickListener { galleryID, title ->
-                    val intent = Intent(this@MainActivity, GalleryActivity::class.java)
+                    val intent = Intent(this@MainActivity, ReaderActivity::class.java)
                     intent.putExtra("GALLERY_ID", galleryID)
                     intent.putExtra("GALLERY_TITLE", title)
 

@@ -25,7 +25,7 @@
                 android:resource="@xml/filepaths"/>
         </provider>
 
-        <activity android:name=".GalleryActivity"
+        <activity android:name=".ReaderActivity"
                   android:configChanges="keyboardHidden|orientation|screenSize"/>
         <activity
             android:name=".SettingsActivity"

@@ -4,15 +4,15 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".GalleryActivity">
+    tools:context=".ReaderActivity">
 
     <FrameLayout
-        android:id="@+id/gallery_framelayout"
+        android:id="@+id/reader_framelayout"
         android:layout_width="match_parent"
         android:layout_height="4dp">
 
         <ProgressBar
-            android:id="@+id/gallery_progressbar"
+            android:id="@+id/reader_progressbar"
             style="@style/Widget.AppCompat.ProgressBar.Horizontal"
             android:layout_width="match_parent"
             android:layout_height="4dp"
@@ -21,10 +21,10 @@
     </FrameLayout>
 
     <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/gallery_recyclerview"
+        android:id="@+id/reader_recyclerview"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_below="@id/gallery_framelayout"
+        android:layout_below="@id/reader_framelayout"
         app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"/>
 
 </RelativeLayout>

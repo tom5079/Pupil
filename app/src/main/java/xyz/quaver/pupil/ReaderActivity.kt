@@ -7,7 +7,7 @@ import android.view.View
 import android.view.WindowManager
 import androidx.appcompat.app.AppCompatActivity
 import androidx.preference.PreferenceManager
-import kotlinx.android.synthetic.main.activity_gallery.*
+import kotlinx.android.synthetic.main.activity_reader.*
 import kotlinx.coroutines.*
 import xyz.quaver.hitomi.Reader
 import xyz.quaver.hitomi.getReader
@@ -18,7 +18,7 @@ import java.io.FileOutputStream
 import java.net.URL
 import javax.net.ssl.HttpsURLConnection
 
-class GalleryActivity : AppCompatActivity() {
+class ReaderActivity : AppCompatActivity() {
 
     private val images = ArrayList<String>()
     private var galleryID = 0
@@ -34,7 +34,7 @@ class GalleryActivity : AppCompatActivity() {
             WindowManager.LayoutParams.FLAG_SECURE,
             WindowManager.LayoutParams.FLAG_SECURE)
 
-        setContentView(R.layout.activity_gallery)
+        setContentView(R.layout.activity_reader)
 
         supportActionBar?.title = intent.getStringExtra("GALLERY_TITLE")
 
@@ -42,7 +42,7 @@ class GalleryActivity : AppCompatActivity() {
         CoroutineScope(Dispatchers.Unconfined).launch {
             reader = async(Dispatchers.IO) {
                 Log.d("Pupil", "Loading reader")
-                val preference = PreferenceManager.getDefaultSharedPreferences(this@GalleryActivity)
+                val preference = PreferenceManager.getDefaultSharedPreferences(this@ReaderActivity)
                 if (preference.getBoolean("use_hiyobi", false)) {
                     try {
                         xyz.quaver.hiyobi.getReader(galleryID)
@@ -82,7 +82,7 @@ class GalleryActivity : AppCompatActivity() {
     }
 
     private fun initView() {
-        gallery_recyclerview.adapter = GalleryAdapter(images).apply {
+        reader_recyclerview.adapter = GalleryAdapter(images).apply {
             setOnClick {
                 val attrs = window.attributes
 
@@ -113,7 +113,7 @@ class GalleryActivity : AppCompatActivity() {
             Log.d("Pupil", "Reader Data recieved")
 
             launch(Dispatchers.Main) {
-                with(gallery_progressbar) {
+                with(reader_progressbar) {
                     max = reader.size
                     progress = 0
 
@@ -151,14 +151,14 @@ class GalleryActivity : AppCompatActivity() {
 
                     launch(Dispatchers.Main) {
                         images.add(cache)
-                        gallery_recyclerview.adapter?.notifyItemInserted(images.size - 1)
-                        gallery_progressbar.progress++
+                        reader_recyclerview.adapter?.notifyItemInserted(images.size - 1)
+                        reader_progressbar.progress++
                     }
                 }
             }
 
             launch(Dispatchers.Main) {
-                gallery_progressbar.visibility = View.GONE
+                reader_progressbar.visibility = View.GONE
             }
         }
     }
