@@ -31,12 +31,12 @@
     </PreferenceCategory>
 
     <PreferenceCategory
-        app:title="Image loading">
+        app:title="@string/settings_image_loading_title">
 
         <SwitchPreference
             app:key="use_hiyobi"
-            app:title="Use hiyobi.me"
-            app:summary="Use hiyobi.me to improve image loading speed if available"/>
+            app:title="@string/settings_use_hiyobi_title"
+            app:summary="@string/settings_use_hiyobi_summary"/>
 
     </PreferenceCategory>
 

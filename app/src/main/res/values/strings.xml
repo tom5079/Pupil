@@ -36,5 +36,8 @@
     <string name="settings_clear_cache">Clear cache</string>
     <string name="settings_clear_cache_summary">Currently using %1$d%2$s of cache</string>
     <string name="settings_clear_cache_alert_message">Deleting cache can affect image loading speed. Do you want to continue?</string>
+    <string name="settings_image_loading_title">Image Loading</string>
+    <string name="settings_use_hiyobi_title">Use hiyobi.me</string>
+    <string name="settings_use_hiyobi_summary">Load images from hiyobi.me to improve loading speed (if available)</string>
 
 </resources>

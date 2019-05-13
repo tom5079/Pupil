@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Pupil</string>
     <string name="galleryblock_language">언어: %1$s</string>
     <string name="galleryblock_series">시리즈: %1$s</string>
     <string name="galleryblock_type">종류: %1$s</string>
@@ -20,4 +19,7 @@
     <string name="main_no_result">결과 없음</string>
     <string name="main_search">검색</string>
     <string name="settings_cache_title">캐시</string>
+    <string name="settings_image_loading_title">이미지 로딩</string>
+    <string name="settings_use_hiyobi_summary">속도 향상을 위해 가능하면 hiyobi.me에서 이미지 로드</string>
+    <string name="settings_use_hiyobi_title">hiyobi.me 사용</string>
 </resources>
