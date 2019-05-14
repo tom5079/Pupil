@@ -101,7 +101,12 @@ class MainActivity : AppCompatActivity() {
                         fetchGalleries(query)
                     }
                     R.id.main_drawer_help -> {
+                        AlertDialog.Builder(this@MainActivity).apply {
+                            title = getString(R.string.help_dialog_title)
+                            setMessage(R.string.help_dialog_message)
 
+                            setPositiveButton(android.R.string.ok) { _, _ -> }
+                        }.show()
                     }
                     R.id.main_drawer_github -> {
                         startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(getString(R.string.github))))
@@ -110,9 +115,7 @@ class MainActivity : AppCompatActivity() {
                         startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(getString(R.string.home_page))))
                     }
                     R.id.main_drawer_email -> {
-                        AlertDialog.Builder(this@MainActivity).apply {
-
-                        }.show()
+                        startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(getString(R.string.email))))
                     }
                 }
                 loadBlocks()

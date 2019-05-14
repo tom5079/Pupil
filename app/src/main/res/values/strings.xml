@@ -5,8 +5,8 @@
     <string name="release_name" translatable="false">Pupil-v(\\d+\\.)+\\d+\\.apk</string>
 
     <string name="home_page" translatable="false">https://tom5079.github.io/Pupil</string>
-    <string name="github" translatable="false">https://github.com/tom5079/Pupil-issue</string>
-    <string name="email" translatable="false">pupil.hentai@gmail.com</string>
+    <string name="github" translatable="false">https://github.com/tom5079/Pupil-issue/issues/new/choose</string>
+    <string name="email" translatable="false">mailto:pupil.hentai@gmail.com</string>
 
     <string name="main_settings" translatable="false">Settings</string>
     <string name="galleryblock_thumbnail_description" translatable="false">Thumbnail</string>
@@ -32,6 +32,9 @@
     <string name="main_drawer_group_contact_homepage">Visit homepage</string>
     <string name="main_drawer_group_contact_github">Visit github</string>
     <string name="main_drawer_group_contact_email">Email me!</string>
+
+    <string name="help_dialog_title">WIP</string>
+    <string name="help_dialog_message">While in progress!\nOne thing might you don\'t know:\nLong tap an image in reader will change scrolling mode! Go try it :)</string>
 
     <string name="update_title">Update available</string>
     <string name="update_download_started">Download started</string>
