@@ -10,9 +10,3 @@ google_analytics: UA-119938781-2
 github:
   app_url: https://github.com/tom5079/Pupil-issue/releases/download/1.2/Pupil-v1.2.apk
   issue_url: https://github.com/tom5079/Pupil-issue/issues/new/choose
-
-gems:
-  - jekyll-multiple-languages-plugin
-
-languages: ["en", "ko", "ja"]
-exclude_from_localizations: []
