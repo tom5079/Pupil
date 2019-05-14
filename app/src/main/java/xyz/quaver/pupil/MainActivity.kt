@@ -1,31 +1,15 @@
 package xyz.quaver.pupil
 
-import android.Manifest
-import android.app.DownloadManager
-import android.content.BroadcastReceiver
-import android.content.Context
 import android.content.Intent
-import android.content.IntentFilter
-import android.content.pm.PackageManager
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.net.Uri
-import android.os.Build
 import android.os.Bundle
-import android.os.Environment
 import android.preference.PreferenceManager
 import android.text.*
 import android.text.style.AlignmentSpan
-import android.util.Log
 import android.view.View
 import android.view.WindowManager
-import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.app.ActivityCompat
-import androidx.core.app.NotificationCompat
-import androidx.core.content.ContextCompat
-import androidx.core.content.FileProvider
 import androidx.core.content.res.ResourcesCompat
 import androidx.core.view.GravityCompat
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -44,19 +28,18 @@ import xyz.quaver.hitomi.*
 import xyz.quaver.pupil.adapters.GalleryBlockAdapter
 import xyz.quaver.pupil.types.TagSuggestion
 import xyz.quaver.pupil.util.Histories
+import xyz.quaver.pupil.util.ItemClickSupport
 import xyz.quaver.pupil.util.SetLineOverlap
 import xyz.quaver.pupil.util.checkUpdate
-import xyz.quaver.pupil.util.getApkUrl
 import java.io.File
-import java.lang.StringBuilder
+import java.io.FileOutputStream
 import java.util.*
 import javax.net.ssl.HttpsURLConnection
 import kotlin.collections.ArrayList
 
 class MainActivity : AppCompatActivity() {
 
-    private val permissionRequestCode = 4585
-    private val galleries = ArrayList<Pair<GalleryBlock, Bitmap?>>()
+    private val galleries = ArrayList<Pair<GalleryBlock, Deferred<String>>>()
 
     private var query = ""
 
@@ -67,9 +50,12 @@ class MainActivity : AppCompatActivity() {
         Histories.default = Histories(File(cacheDir, "histories.json"))
         super.onCreate(savedInstanceState)
 
-        setContentView(R.layout.activity_main)
+        window.setFlags(
+            WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
+            WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS
+        )
 
-        checkPermission()
+        setContentView(R.layout.activity_main)
 
         checkUpdate()
 
@@ -81,7 +67,11 @@ class MainActivity : AppCompatActivity() {
         )
 
         with(main_swipe_layout) {
-            setProgressViewOffset(false, 0, resources.getDimensionPixelSize(R.dimen.progress_view_offset))
+            setProgressViewOffset(
+                false,
+                resources.getDimensionPixelSize(R.dimen.progress_view_start),
+                resources.getDimensionPixelSize(R.dimen.progress_view_offset)
+            )
 
             setOnRefreshListener {
                 CoroutineScope(Dispatchers.Main).launch {
@@ -97,16 +87,35 @@ class MainActivity : AppCompatActivity() {
             CoroutineScope(Dispatchers.Main).launch {
                 main_drawer_layout.closeDrawers()
 
-                cancelFetch()
-                clearGalleries()
                 when(it.itemId) {
                     R.id.main_drawer_home -> {
+                        cancelFetch()
+                        clearGalleries()
                         query = query.replace("HISTORY", "")
                         fetchGalleries(query)
                     }
                     R.id.main_drawer_history -> {
+                        cancelFetch()
+                        clearGalleries()
                         query += "HISTORY"
                         fetchGalleries(query)
+                    }
+                    R.id.main_drawer_help -> {
+                        AlertDialog.Builder(this@MainActivity).apply {
+                            title = getString(R.string.help_dialog_title)
+                            setMessage(R.string.help_dialog_message)
+
+                            setPositiveButton(android.R.string.ok) { _, _ -> }
+                        }.show()
+                    }
+                    R.id.main_drawer_github -> {
+                        startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(getString(R.string.github))))
+                    }
+                    R.id.main_drawer_homepage -> {
+                        startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(getString(R.string.home_page))))
+                    }
+                    R.id.main_drawer_email -> {
+                        startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(getString(R.string.email))))
                     }
                 }
                 loadBlocks()
@@ -140,23 +149,6 @@ class MainActivity : AppCompatActivity() {
         super.onResume()
     }
 
-    private fun checkPermission() {
-        val permissions = arrayOf(
-            Manifest.permission.WRITE_EXTERNAL_STORAGE
-        )
-
-        if (permissions.any { ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED }) {
-            if (permissions.any { ActivityCompat.shouldShowRequestPermissionRationale(this, it) })
-                AlertDialog.Builder(this).apply {
-                    setTitle(R.string.warning)
-                    setMessage(R.string.permission_explain)
-                    setPositiveButton(android.R.string.ok) { _, _ -> }
-                }.show()
-            else
-                ActivityCompat.requestPermissions(this, permissions, permissionRequestCode)
-        }
-    }
-
     private fun checkUpdate() {
 
         fun extractReleaseNote(update: JsonObject, locale: String) : String {
@@ -177,7 +169,7 @@ class MainActivity : AppCompatActivity() {
 
             val result = StringBuilder()
 
-            for(line in markdown.split('\n')) {
+            for(line in markdown.lines()) {
                 if (releaseNote.matches(line)) {
                     releaseNoteFlag = true
                     continue
@@ -201,57 +193,16 @@ class MainActivity : AppCompatActivity() {
             return getString(R.string.update_release_note, update["tag_name"]?.content, result.toString())
         }
 
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED)
-            return
-
         CoroutineScope(Dispatchers.Default).launch {
             val update =
                 checkUpdate(getString(R.string.release_url), BuildConfig.VERSION_NAME) ?: return@launch
-
-            val (url, fileName) = getApkUrl(update, getString(R.string.release_name)) ?: return@launch
 
             val dialog = AlertDialog.Builder(this@MainActivity).apply {
                 setTitle(R.string.update_title)
                 val msg = extractReleaseNote(update, Locale.getDefault().language)
                 setMessage(Markwon.create(context).toMarkdown(msg))
                 setPositiveButton(android.R.string.yes) { _, _ ->
-                    Toast.makeText(
-                        context, getString(R.string.update_download_started), Toast.LENGTH_SHORT
-                    ).show()
-
-                    val dest = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), fileName)
-                    val desturi =
-                        FileProvider.getUriForFile(
-                            applicationContext,
-                            "xyz.quaver.pupil.provider",
-                            dest
-                        )
-
-                    if (dest.exists())
-                        dest.delete()
-
-                    val request = DownloadManager.Request(Uri.parse(url)).apply {
-                        setDescription(getString(R.string.update_notification_description))
-                        setTitle(getString(R.string.app_name))
-                        setDestinationUri(Uri.fromFile(dest))
-                        setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE)
-                    }
-
-                    val manager = getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
-                    val id = manager.enqueue(request)
-
-                    registerReceiver(object: BroadcastReceiver() {
-                        override fun onReceive(context: Context?, intent: Intent?) {
-                            val install = Intent(Intent.ACTION_VIEW).apply {
-                                flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_GRANT_READ_URI_PERMISSION
-                                setDataAndType(desturi, manager.getMimeTypeForDownloadedFile(id))
-                            }
-
-                            startActivity(install)
-                            unregisterReceiver(this)
-                            finish()
-                        }
-                    }, IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE))
+                    startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(getString(R.string.home_page))))
                 }
                 setNegativeButton(android.R.string.no) { _, _ ->}
             }
@@ -264,18 +215,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun setupRecyclerView() {
         with(main_recyclerview) {
-            adapter = GalleryBlockAdapter(galleries).apply {
-                setClickListener { galleryID, title ->
-                    val intent = Intent(this@MainActivity, GalleryActivity::class.java)
-                    intent.putExtra("GALLERY_ID", galleryID)
-                    intent.putExtra("GALLERY_TITLE", title)
-
-                    //TODO: Maybe sprinke some transitions will be nice :D
-                    startActivity(intent)
-
-                    Histories.default.add(galleryID)
-                }
-            }
+            adapter = GalleryBlockAdapter(galleries)
             addOnScrollListener(
                 object: RecyclerView.OnScrollListener() {
                     override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
@@ -289,6 +229,17 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
             )
+            ItemClickSupport.addTo(this).setOnItemClickListener { _, position, _ ->
+                val intent = Intent(this@MainActivity, ReaderActivity::class.java)
+                val gallery = galleries[position].first
+                intent.putExtra("GALLERY_ID", gallery.id)
+                intent.putExtra("GALLERY_TITLE", gallery.title)
+
+                //TODO: Maybe sprinke some transitions will be nice :D
+                startActivity(intent)
+
+                Histories.default.add(gallery.id)
+            }
         }
     }
 
@@ -402,9 +353,11 @@ class MainActivity : AppCompatActivity() {
                     if (query != this@MainActivity.query) {
                         this@MainActivity.query = query
 
-                        cancelFetch()
-                        clearGalleries()
-                        fetchGalleries(query)
+                        CoroutineScope(Dispatchers.Main).launch {
+                            cancelFetch()
+                            clearGalleries()
+                            fetchGalleries(query)
+                        }
                     }
                 }
             })
@@ -481,29 +434,43 @@ class MainActivity : AppCompatActivity() {
                     galleryIDs
                 else ->
                     galleryIDs.slice(galleries.size until Math.min(galleries.size+perPage, galleryIDs.size))
-            }.chunked(4).forEach { chunked ->
-                chunked.map {
-                    async {
-                        val galleryBlock = getGalleryBlock(it)
-                        val thumbnail: Bitmap
+            }.chunked(4).let { chunks ->
+                for (chunk in chunks)
+                    chunk.map {
+                        async {
+                            try {
+                                val galleryBlock = getGalleryBlock(it)
 
-                        with(galleryBlock.thumbnails[0].openConnection() as HttpsURLConnection) {
-                            thumbnail = BitmapFactory.decodeStream(inputStream)
+                                val thumbnail = async {
+                                    val cache = File(cacheDir, "imageCache/$it/thumbnail.${galleryBlock.thumbnails[0].path.split('.').last()}")
+
+                                    if (!cache.exists())
+                                        with(galleryBlock.thumbnails[0].openConnection() as HttpsURLConnection) {
+                                            if (!cache.parentFile.exists())
+                                                cache.parentFile.mkdirs()
+
+                                            inputStream.copyTo(FileOutputStream(cache))
+                                        }
+
+                                    cache.absolutePath
+                                }
+
+                                Pair(galleryBlock, thumbnail)
+                            } catch (e: Exception) {
+                                null
+                            }
                         }
+                    }.forEach {
+                        val galleryBlock = it.await() ?: return@forEach
 
-                        Pair(galleryBlock, thumbnail)
-                    }
-                }.forEach {
-                    val galleryBlock = it.await()
+                        withContext(Dispatchers.Main) {
+                            main_progressbar.hide()
 
-                    withContext(Dispatchers.Main) {
-                        main_progressbar.hide()
-
-                        galleries.add(galleryBlock)
-                        main_recyclerview.adapter?.notifyItemInserted(galleries.size - 1)
+                            galleries.add(galleryBlock)
+                            main_recyclerview.adapter?.notifyItemInserted(galleries.size - 1)
+                        }
                     }
                 }
-            }
         }
     }
 }

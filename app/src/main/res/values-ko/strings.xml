@@ -30,4 +30,17 @@
     <string name="update_release_note"># 릴리즈 노트(v%1$s)\n%2$s</string>
     <string name="settings_security_mode_summary">최근 앱 목록 창에서 앱 화면을 보이지 않게 합니다</string>
     <string name="settings_security_mode_title">보안 모드 활성화</string>
+    <string name="reader_go_to_page">이동</string>
+    <string name="default_query_dialog_language_selector_none">미선택</string>
+    <string name="default_query_dialog_filter_BL">BL물 필터</string>
+    <string name="default_query_dialog_filter_guro">고어물 필터</string>
+    <string name="default_query_dialog_language">"언어: "</string>
+    <string name="default_query_dialog_title">기본 검색어 설정</string>
+    <string name="main_drawer_group_contact_email">메일 보내기!</string>
+    <string name="main_drawer_group_contact_github">Github</string>
+    <string name="main_drawer_group_contact_help">도움말</string>
+    <string name="main_drawer_group_contact_homepage">홈페이지</string>
+    <string name="main_drawer_group_contact_title">문의</string>
+    <string name="help_dialog_title">준비 중</string>
+    <string name="help_dialog_message">준비중입니다.\n만화 화면에서 사진을 길게 누르면 스크롤 방식이 바뀝니다. 알고 계셨나요? :)</string>
 </resources>

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <item android:id="@+id/reader_menu_page_indicator"
+        android:title="@string/reader_page_indicator_placeholder"
+        app:showAsAction="always|withText"/>
+
+</menu>

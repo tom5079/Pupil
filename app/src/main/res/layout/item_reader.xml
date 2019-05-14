@@ -4,6 +4,5 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:paddingBottom="8dp"
-    android:adjustViewBounds="true"
-    android:clickable="true"
-    android:focusable="true"/>
+    android:scaleType="fitCenter"
+    android:adjustViewBounds="true"/>

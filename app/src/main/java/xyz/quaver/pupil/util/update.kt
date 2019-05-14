@@ -20,12 +20,3 @@ fun checkUpdate(url: String, currentVersion: String) : JsonObject? {
 
     return null
 }
-
-fun getApkUrl(releases: JsonObject, releaseName: String) : Pair<String?, String?>? {
-    releases["assets"]?.jsonArray?.forEach {
-        if (Regex(releaseName).matches(it.jsonObject["name"]?.content ?: ""))
-            return Pair(it.jsonObject["browser_download_url"]?.content, it.jsonObject["name"]?.content)
-    }
-
-    return null
-}

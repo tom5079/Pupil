@@ -22,7 +22,7 @@
 
             <View
                 android:layout_width="match_parent"
-                android:layout_height="64dp"
+                android:layout_height="80dp"
                 android:visibility="invisible"
                 android:background="@color/transparent"
                 app:layout_scrollFlags="scroll|enterAlways"
@@ -50,13 +50,13 @@
             android:id="@+id/main_swipe_layout"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:layout_marginBottom="-64dp">
+            android:layout_marginBottom="-80dp">
 
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/main_recyclerview"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:paddingTop="64dp"
+                android:paddingTop="80dp"
                 android:clipToPadding="false"
                 android:scrollbars="vertical"
                 app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"/>
@@ -71,7 +71,7 @@
         android:layout_height="match_parent"
         app:floatingSearch_searchBarMarginLeft="8dp"
         app:floatingSearch_searchBarMarginRight="8dp"
-        app:floatingSearch_searchBarMarginTop="8dp"
+        app:floatingSearch_searchBarMarginTop="24dp"
         app:floatingSearch_searchHint="@string/search_hint"
         app:floatingSearch_suggestionsListAnimDuration="250"
         app:floatingSearch_showSearchKey="true"

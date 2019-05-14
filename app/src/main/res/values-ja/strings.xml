@@ -10,7 +10,7 @@
     <string name="settings_clear_image_cache">イメージキャッシュクリア</string>
     <string name="settings_clear_cache_alert_message">キャッシュをクリアするとイメージのロード速度に影響を与えます。実行しますか？</string>
     <string name="settings_clear_cache_summary">キャッシュサイズ: %1$d%2$s</string>
-    <string name="settings_default_query">デフォルト検索キーワード</string>
+    <string name="settings_default_query">デフォルトキーワード</string>
     <string name="permission_explain">権限を拒否すると一部の機能が利用できません</string>
     <string name="settings_galleries_per_page">一回にロードするギャラリー数</string>
     <string name="settings_search_title">検索設定</string>
@@ -30,4 +30,17 @@
     <string name="update_release_note"># リリースノート(v%1$s)\n%2$s</string>
     <string name="settings_security_mode_title">セキュリティーモード</string>
     <string name="settings_security_mode_summary">アプリ履歴でアプリの画面を表示しない</string>
+    <string name="reader_go_to_page">移動</string>
+    <string name="default_query_dialog_language_selector_none">非選択</string>
+    <string name="default_query_dialog_filter_BL">BLフィルター</string>
+    <string name="default_query_dialog_filter_guro">グロフィルター</string>
+    <string name="default_query_dialog_language">"言語: "</string>
+    <string name="default_query_dialog_title">デフォルトキーワード設定</string>
+    <string name="main_drawer_group_contact_title">お問い合わせ先</string>
+    <string name="main_drawer_group_contact_homepage">ホームページ</string>
+    <string name="main_drawer_group_contact_help">ヘルプ</string>
+    <string name="main_drawer_group_contact_github">Github</string>
+    <string name="main_drawer_group_contact_email">メールを送る</string>
+    <string name="help_dialog_title">準備中</string>
+    <string name="help_dialog_message">準備中です。</string>
 </resources>

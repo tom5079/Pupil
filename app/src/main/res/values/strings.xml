@@ -4,10 +4,17 @@
     <string name="release_url" translatable="false">https://api.github.com/repos/tom5079/Pupil-issue/releases</string>
     <string name="release_name" translatable="false">Pupil-v(\\d+\\.)+\\d+\\.apk</string>
 
+    <string name="home_page" translatable="false">https://tom5079.github.io/Pupil</string>
+    <string name="github" translatable="false">https://github.com/tom5079/Pupil-issue/issues/new/choose</string>
+    <string name="email" translatable="false">mailto:pupil.hentai@gmail.com</string>
+
     <string name="main_settings" translatable="false">Settings</string>
     <string name="galleryblock_thumbnail_description" translatable="false">Thumbnail</string>
 
     <string name="reader_imageview_description" translatable="false">Content ImageView</string>
+    <string name="reader_page_indicator_placeholder" translatable="false">-/-</string>
+
+    <string name="plus_to_close" translatable="false">Fab</string>
 
     <!-- Translate needed down here -->
 
@@ -20,6 +27,14 @@
 
     <string name="main_drawer_home">Home</string>
     <string name="main_drawer_history">History</string>
+    <string name="main_drawer_group_contact_title">Contact</string>
+    <string name="main_drawer_group_contact_help">Help</string>
+    <string name="main_drawer_group_contact_homepage">Visit homepage</string>
+    <string name="main_drawer_group_contact_github">Visit github</string>
+    <string name="main_drawer_group_contact_email">Email me!</string>
+
+    <string name="help_dialog_title">WIP</string>
+    <string name="help_dialog_message">While in progress!\nOne thing might you don\'t know:\nLong tap an image in reader will change scrolling mode! Go try it :)</string>
 
     <string name="update_title">Update available</string>
     <string name="update_download_started">Download started</string>
@@ -31,6 +46,8 @@
     <string name="galleryblock_series">Series: %1$s</string>
     <string name="galleryblock_type">Type: %1$s</string>
     <string name="galleryblock_language">Language: %1$s</string>
+
+    <string name="reader_go_to_page">Go to page</string>
 
     <string name="settings_title">Settings</string>
     <string name="settings_search_title">Search Settings</string>
@@ -48,5 +65,11 @@
     <string name="settings_use_hiyobi_summary">Load images from hiyobi.me to improve loading speed (if available)</string>
     <string name="settings_security_mode_title">Enable security mode</string>
     <string name="settings_security_mode_summary">Enable security mode to make the screen invisible on recent app window</string>
+
+    <string name="default_query_dialog_title">Set default query</string>
+    <string name="default_query_dialog_language">Language: </string>
+    <string name="default_query_dialog_filter_BL">Filter BL</string>
+    <string name="default_query_dialog_filter_guro">Filter Guro</string>
+    <string name="default_query_dialog_language_selector_none">Any</string>
 
 </resources>
