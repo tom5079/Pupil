@@ -50,13 +50,13 @@
             android:id="@+id/main_swipe_layout"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:layout_marginBottom="-64dp">
+            android:layout_marginBottom="-80dp">
 
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/main_recyclerview"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:paddingTop="64dp"
+                android:paddingTop="80dp"
                 android:clipToPadding="false"
                 android:scrollbars="vertical"
                 app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"/>

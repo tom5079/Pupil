@@ -8,6 +8,9 @@
     <string name="galleryblock_thumbnail_description" translatable="false">Thumbnail</string>
 
     <string name="reader_imageview_description" translatable="false">Content ImageView</string>
+    <string name="reader_page_indicator_placeholder" translatable="false">-/-</string>
+
+    <string name="plus_to_close" translatable="false">Fab</string>
 
     <!-- Translate needed down here -->
 
@@ -31,6 +34,8 @@
     <string name="galleryblock_series">Series: %1$s</string>
     <string name="galleryblock_type">Type: %1$s</string>
     <string name="galleryblock_language">Language: %1$s</string>
+
+    <string name="reader_go_to_page">Go to page</string>
 
     <string name="settings_title">Settings</string>
     <string name="settings_search_title">Search Settings</string>

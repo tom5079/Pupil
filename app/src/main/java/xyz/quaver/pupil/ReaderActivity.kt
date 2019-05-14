@@ -1,18 +1,22 @@
 package xyz.quaver.pupil
 
 import android.os.Bundle
-import android.util.Log
-import android.view.ContextMenu
-import android.view.View
-import android.view.WindowManager
+import android.view.*
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.preference.PreferenceManager
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.PagerSnapHelper
+import androidx.recyclerview.widget.RecyclerView
 import kotlinx.android.synthetic.main.activity_reader.*
+import kotlinx.android.synthetic.main.activity_reader.view.*
+import kotlinx.android.synthetic.main.dialog_numberpicker.view.*
 import kotlinx.coroutines.*
 import xyz.quaver.hitomi.Reader
 import xyz.quaver.hitomi.getReader
 import xyz.quaver.hitomi.getReferer
-import xyz.quaver.pupil.adapters.GalleryAdapter
+import xyz.quaver.pupil.adapters.ReaderAdapter
+import xyz.quaver.pupil.util.ItemClickSupport
 import java.io.File
 import java.io.FileOutputStream
 import java.net.URL
@@ -22,12 +26,16 @@ class ReaderActivity : AppCompatActivity() {
 
     private val images = ArrayList<String>()
     private var galleryID = 0
+    private var gallerySize: Int = 0
+    private var currentPage: Int = 0
     private lateinit var reader: Deferred<Reader>
     private var loadJob: Job? = null
-    private var screenMode = 0
+
+    private lateinit var snapHelper: PagerSnapHelper
+
+    private var menu: Menu? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        Log.d("Pupil", "Reader Opened")
         super.onCreate(savedInstanceState)
 
         window.setFlags(
@@ -41,12 +49,10 @@ class ReaderActivity : AppCompatActivity() {
         galleryID = intent.getIntExtra("GALLERY_ID", 0)
         CoroutineScope(Dispatchers.Unconfined).launch {
             reader = async(Dispatchers.IO) {
-                Log.d("Pupil", "Loading reader")
                 val preference = PreferenceManager.getDefaultSharedPreferences(this@ReaderActivity)
                 if (preference.getBoolean("use_hiyobi", false)) {
                     try {
                         xyz.quaver.hiyobi.getReader(galleryID)
-                        Log.d("Pupil", "Using Hiyobi.me")
                     } catch (e: Exception) {
                         getReader(galleryID)
                     }
@@ -55,13 +61,36 @@ class ReaderActivity : AppCompatActivity() {
             }
         }
 
+        snapHelper = PagerSnapHelper()
+
+        val preferences = PreferenceManager.getDefaultSharedPreferences(this)
+
+        val attrs = window.attributes
+
+        if (preferences.getBoolean("reader_fullscreen", false)) {
+            attrs.flags = attrs.flags or WindowManager.LayoutParams.FLAG_FULLSCREEN
+            supportActionBar?.hide()
+        } else {
+            attrs.flags = attrs.flags and WindowManager.LayoutParams.FLAG_FULLSCREEN.inv()
+            supportActionBar?.show()
+        }
+
+        window.attributes = attrs
+
+        if (preferences.getBoolean("reader_one_by_one", false)) {
+            snapHelper.attachToRecyclerView(reader_recyclerview)
+            reader_recyclerview.layoutManager = LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
+        } else {
+            snapHelper.attachToRecyclerView(null)
+            reader_recyclerview.layoutManager = LinearLayoutManager(this)
+        }
+
         initView()
-        Log.d("Pupil", "Reader view init complete")
         loadImages()
     }
 
     override fun onResume() {
-        val preferences = android.preference.PreferenceManager.getDefaultSharedPreferences(this)
+        val preferences = PreferenceManager.getDefaultSharedPreferences(this)
 
         if (preferences.getBoolean("security_mode", false))
             window.setFlags(
@@ -69,7 +98,38 @@ class ReaderActivity : AppCompatActivity() {
                 WindowManager.LayoutParams.FLAG_SECURE)
         else
             window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
+
         super.onResume()
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        menuInflater.inflate(R.menu.reader, menu)
+        this.menu = menu
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem?): Boolean {
+        when(item?.itemId) {
+            R.id.reader_menu_page_indicator -> {
+                val view = LayoutInflater.from(this).inflate(R.layout.dialog_numberpicker, findViewById(android.R.id.content), false)
+                val dialog = AlertDialog.Builder(this).apply {
+                    setView(view)
+                    with(view.reader_dialog_number_picker) {
+                        minValue=1
+                        maxValue=gallerySize
+                        value=currentPage
+                    }
+                }.create()
+                view.reader_dialog_ok.setOnClickListener {
+                    (reader_recyclerview.layoutManager as LinearLayoutManager?)?.scrollToPositionWithOffset(view.reader_dialog_number_picker.value-1, 0)
+                    dialog.dismiss()
+                }
+
+                dialog.show()
+            }
+        }
+
+        return true
     }
 
     override fun onDestroy() {
@@ -77,29 +137,57 @@ class ReaderActivity : AppCompatActivity() {
         loadJob?.cancel()
     }
 
-    override fun onCreateContextMenu(menu: ContextMenu?, v: View?, menuInfo: ContextMenu.ContextMenuInfo?) {
-        super.onCreateContextMenu(menu, v, menuInfo)
-    }
-
     private fun initView() {
-        reader_recyclerview.adapter = GalleryAdapter(images).apply {
-            setOnClick {
-                val attrs = window.attributes
+        with(reader_recyclerview) {
+            adapter = ReaderAdapter(images)
 
-                screenMode = (screenMode+1)%2
+            addOnScrollListener(object: RecyclerView.OnScrollListener() {
+                override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                    super.onScrolled(recyclerView, dx, dy)
 
-                when(screenMode) {
-                    0 -> {
+                    val layoutManager = recyclerView.layoutManager as LinearLayoutManager
+
+                    if (layoutManager.findFirstVisibleItemPosition() == -1)
+                        return
+                    currentPage = layoutManager.findFirstVisibleItemPosition()+1
+                    menu?.findItem(R.id.reader_menu_page_indicator)?.title = "$currentPage/$gallerySize"
+                }
+            })
+
+            val preferences = PreferenceManager.getDefaultSharedPreferences(context)
+            ItemClickSupport.addTo(this)
+                .setOnItemClickListener { _, _, _ ->
+                    val attrs = window.attributes
+                    val fullscreen = preferences.getBoolean("reader_fullscreen", false)
+
+                    if (fullscreen) {
                         attrs.flags = attrs.flags and WindowManager.LayoutParams.FLAG_FULLSCREEN.inv()
                         supportActionBar?.show()
-                    }
-                    1 -> {
+                    } else {
                         attrs.flags = attrs.flags or WindowManager.LayoutParams.FLAG_FULLSCREEN
                         supportActionBar?.hide()
                     }
+
+                    window.attributes = attrs
+
+                    preferences.edit().putBoolean("reader_fullscreen", !fullscreen).apply()
+                }.setOnItemLongClickListener { _, _, _ ->
+                    val oneByOne = preferences.getBoolean("reader_one_by_one", false)
+                    if (oneByOne) {
+                        snapHelper.attachToRecyclerView(null)
+                        reader_recyclerview.layoutManager = LinearLayoutManager(context)
+                    }
+                    else {
+                        snapHelper.attachToRecyclerView(reader_recyclerview)
+                        reader_recyclerview.layoutManager = LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
+                    }
+
+                    (reader_recyclerview.layoutManager as LinearLayoutManager).scrollToPositionWithOffset(currentPage, 0)
+
+                    preferences.edit().putBoolean("reader_one_by_one", !oneByOne).apply()
+
+                    true
                 }
-                window.attributes = attrs
-            }
         }
     }
 
@@ -107,10 +195,7 @@ class ReaderActivity : AppCompatActivity() {
         fun webpUrlFromUrl(url: URL) = URL(url.toString().replace("/galleries/", "/webp/") + ".webp")
 
         loadJob = CoroutineScope(Dispatchers.Default).launch {
-            Log.d("Pupil", "Reader Waiting for the data")
             val reader = reader.await()
-
-            Log.d("Pupil", "Reader Data recieved")
 
             launch(Dispatchers.Main) {
                 with(reader_progressbar) {
@@ -119,6 +204,9 @@ class ReaderActivity : AppCompatActivity() {
 
                     visibility = View.VISIBLE
                 }
+
+                gallerySize = reader.size
+                menu?.findItem(R.id.reader_menu_page_indicator)?.title = "$currentPage/$gallerySize"
             }
 
             reader.chunked(8).forEach { chunked ->

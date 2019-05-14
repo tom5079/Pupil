@@ -36,11 +36,6 @@ class GalleryBlockAdapter(private val galleries: List<Pair<GalleryBlock, Deferre
     class ViewHolder(val view: CardView) : RecyclerView.ViewHolder(view)
     class ProgressViewHolder(view: LinearLayout) : RecyclerView.ViewHolder(view)
 
-    private var callback: ((Int, String) -> Unit)? = null
-    fun setClickListener(callback: ((Int, String) -> Unit)?) {
-        this.callback = callback
-    }
-
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
         when(viewType) {
             ViewType.VIEW_ITEM.ordinal -> {
@@ -75,10 +70,6 @@ class GalleryBlockAdapter(private val galleries: List<Pair<GalleryBlock, Deferre
 
                 val artists = gallery.artists
                 val series = gallery.series
-
-                setOnClickListener {
-                    callback?.invoke(gallery.id, gallery.title)
-                }
 
                 CoroutineScope(Dispatchers.Default).launch {
                     val bitmap = BitmapFactory.decodeFile(thumbnail.await())

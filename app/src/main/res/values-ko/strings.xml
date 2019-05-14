@@ -30,4 +30,5 @@
     <string name="update_release_note"># 릴리즈 노트(v%1$s)\n%2$s</string>
     <string name="settings_security_mode_summary">최근 앱 목록 창에서 앱 화면을 보이지 않게 합니다</string>
     <string name="settings_security_mode_title">보안 모드 활성화</string>
+    <string name="reader_go_to_page">이동</string>
 </resources>

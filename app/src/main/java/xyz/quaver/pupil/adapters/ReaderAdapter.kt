@@ -1,39 +1,31 @@
 package xyz.quaver.pupil.adapters
 
 import android.graphics.BitmapFactory
-import android.util.Log
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import androidx.recyclerview.widget.RecyclerView
+import kotlinx.android.synthetic.main.item_reader.view.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import xyz.quaver.pupil.R
 
-class GalleryAdapter(private val images: List<String>) : RecyclerView.Adapter<GalleryAdapter.ViewHolder>() {
+class ReaderAdapter(private val images: List<String>) : RecyclerView.Adapter<ReaderAdapter.ViewHolder>() {
 
-    class ViewHolder(val view: ImageView) : RecyclerView.ViewHolder(view)
-
-    private var onClick: (() -> Unit)? = null
-    fun setOnClick(callback: (() -> Unit)?) {
-        this.onClick = callback
-    }
+    class ViewHolder(val view: View) : RecyclerView.ViewHolder(view)
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         LayoutInflater.from(parent.context).inflate(
-            R.layout.item_gallery, parent, false
+            R.layout.item_reader, parent, false
         ).let {
-            return ViewHolder(it as ImageView)
+            return ViewHolder(it)
         }
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        with(holder.view) {
-            setOnClickListener {
-                onClick?.invoke()
-            }
-
+        with(holder.view as ImageView) {
             CoroutineScope(Dispatchers.Default).launch {
                 val options = BitmapFactory.Options()
 

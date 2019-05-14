@@ -38,12 +38,10 @@ import ru.noties.markwon.Markwon
 import xyz.quaver.hitomi.*
 import xyz.quaver.pupil.adapters.GalleryBlockAdapter
 import xyz.quaver.pupil.types.TagSuggestion
-import xyz.quaver.pupil.util.Histories
-import xyz.quaver.pupil.util.SetLineOverlap
-import xyz.quaver.pupil.util.checkUpdate
-import xyz.quaver.pupil.util.getApkUrl
+import xyz.quaver.pupil.util.*
 import java.io.File
 import java.io.FileOutputStream
+import java.lang.Exception
 import java.util.*
 import javax.net.ssl.HttpsURLConnection
 import kotlin.collections.ArrayList
@@ -268,18 +266,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun setupRecyclerView() {
         with(main_recyclerview) {
-            adapter = GalleryBlockAdapter(galleries).apply {
-                setClickListener { galleryID, title ->
-                    val intent = Intent(this@MainActivity, ReaderActivity::class.java)
-                    intent.putExtra("GALLERY_ID", galleryID)
-                    intent.putExtra("GALLERY_TITLE", title)
-
-                    //TODO: Maybe sprinke some transitions will be nice :D
-                    startActivity(intent)
-
-                    Histories.default.add(galleryID)
-                }
-            }
+            adapter = GalleryBlockAdapter(galleries)
             addOnScrollListener(
                 object: RecyclerView.OnScrollListener() {
                     override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
@@ -293,6 +280,17 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
             )
+            ItemClickSupport.addTo(this).setOnItemClickListener { _, position, _ ->
+                val intent = Intent(this@MainActivity, ReaderActivity::class.java)
+                val gallery = galleries[position].first
+                intent.putExtra("GALLERY_ID", gallery.id)
+                intent.putExtra("GALLERY_TITLE", gallery.title)
+
+                //TODO: Maybe sprinke some transitions will be nice :D
+                startActivity(intent)
+
+                Histories.default.add(gallery.id)
+            }
         }
     }
 
@@ -485,38 +483,43 @@ class MainActivity : AppCompatActivity() {
                     galleryIDs
                 else ->
                     galleryIDs.slice(galleries.size until Math.min(galleries.size+perPage, galleryIDs.size))
-            }.chunked(4).forEach { chunked ->
-                chunked.map {
-                    async {
-                        val galleryBlock = getGalleryBlock(it)
+            }.chunked(4).let { chunks ->
+                for (chunk in chunks)
+                    chunk.map {
+                        async {
+                            try {
+                                val galleryBlock = getGalleryBlock(it)
 
-                        val thumbnail = async {
-                            val cache = File(cacheDir, "imageCache/$it/thumbnail.${galleryBlock.thumbnails[0].path.split('.').last()}")
+                                val thumbnail = async {
+                                    val cache = File(cacheDir, "imageCache/$it/thumbnail.${galleryBlock.thumbnails[0].path.split('.').last()}")
 
-                            if (!cache.exists())
-                                with(galleryBlock.thumbnails[0].openConnection() as HttpsURLConnection) {
-                                    if (!cache.parentFile.exists())
-                                        cache.parentFile.mkdirs()
+                                    if (!cache.exists())
+                                        with(galleryBlock.thumbnails[0].openConnection() as HttpsURLConnection) {
+                                            if (!cache.parentFile.exists())
+                                                cache.parentFile.mkdirs()
 
-                                    inputStream.copyTo(FileOutputStream(cache))
+                                            inputStream.copyTo(FileOutputStream(cache))
+                                        }
+
+                                    cache.absolutePath
                                 }
 
-                            cache.absolutePath
+                                Pair(galleryBlock, thumbnail)
+                            } catch (e: Exception) {
+                                null
+                            }
                         }
+                    }.forEach {
+                        val galleryBlock = it.await() ?: return@forEach
 
-                        Pair(galleryBlock, thumbnail)
-                    }
-                }.forEach {
-                    val galleryBlock = it.await()
+                        withContext(Dispatchers.Main) {
+                            main_progressbar.hide()
 
-                    withContext(Dispatchers.Main) {
-                        main_progressbar.hide()
-
-                        galleries.add(galleryBlock)
-                        main_recyclerview.adapter?.notifyItemInserted(galleries.size - 1)
+                            galleries.add(galleryBlock)
+                            main_recyclerview.adapter?.notifyItemInserted(galleries.size - 1)
+                        }
                     }
                 }
-            }
         }
     }
 }

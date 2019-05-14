@@ -30,4 +30,5 @@
     <string name="update_release_note"># リリースノート(v%1$s)\n%2$s</string>
     <string name="settings_security_mode_title">セキュリティーモード</string>
     <string name="settings_security_mode_summary">アプリ履歴でアプリの画面を表示しない</string>
+    <string name="reader_go_to_page">移動</string>
 </resources>
