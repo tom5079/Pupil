@@ -1,6 +1,7 @@
 package xyz.quaver.pupil
 
 import android.os.Bundle
+import android.util.Log
 import android.view.*
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -112,13 +113,13 @@ class ReaderActivity : AppCompatActivity() {
         when(item?.itemId) {
             R.id.reader_menu_page_indicator -> {
                 val view = LayoutInflater.from(this).inflate(R.layout.dialog_numberpicker, findViewById(android.R.id.content), false)
+                with(view.reader_dialog_number_picker) {
+                    minValue=1
+                    maxValue=gallerySize
+                    value=currentPage
+                }
                 val dialog = AlertDialog.Builder(this).apply {
                     setView(view)
-                    with(view.reader_dialog_number_picker) {
-                        minValue=1
-                        maxValue=gallerySize
-                        value=currentPage
-                    }
                 }.create()
                 view.reader_dialog_ok.setOnClickListener {
                     (reader_recyclerview.layoutManager as LinearLayoutManager?)?.scrollToPositionWithOffset(view.reader_dialog_number_picker.value-1, 0)
@@ -182,7 +183,7 @@ class ReaderActivity : AppCompatActivity() {
                         reader_recyclerview.layoutManager = LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
                     }
 
-                    (reader_recyclerview.layoutManager as LinearLayoutManager).scrollToPositionWithOffset(currentPage, 0)
+                    (reader_recyclerview.layoutManager as LinearLayoutManager).scrollToPositionWithOffset(currentPage-1, 0)
 
                     preferences.edit().putBoolean("reader_one_by_one", !oneByOne).apply()
 

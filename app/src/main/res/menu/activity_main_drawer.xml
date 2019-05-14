@@ -12,4 +12,21 @@
             android:icon="@drawable/ic_history"/>
     </group>
 
+    <item android:title="@string/main_drawer_group_contact_title">
+        <menu>
+            <item android:id="@+id/main_drawer_help"
+                android:title="@string/main_drawer_group_contact_help"
+                android:icon="@drawable/ic_help"/>
+            <item android:id="@+id/main_drawer_github"
+                android:title="@string/main_drawer_group_contact_github"
+                android:icon="@drawable/github_circle"/>
+            <item android:id="@+id/main_drawer_homepage"
+                android:title="@string/main_drawer_group_contact_homepage"
+                android:icon="@drawable/ic_home"/>
+            <item android:id="@+id/main_drawer_email"
+                android:title="@string/main_drawer_group_contact_email"
+                android:icon="@drawable/ic_email"/>
+        </menu>
+    </item>
+
 </menu>

@@ -13,7 +13,7 @@
             app:defaultValue="25"
             app:useSimpleSummaryProvider="true"/>
 
-        <EditTextPreference
+        <Preference
             app:key="default_query"
             app:title="@string/settings_default_query"
             app:defaultValue=""

@@ -2,12 +2,22 @@ package xyz.quaver.pupil
 
 import android.os.Bundle
 import android.preference.PreferenceManager
+import android.text.Editable
+import android.text.TextWatcher
+import android.view.LayoutInflater
 import android.view.MenuItem
+import android.view.View
 import android.view.WindowManager
+import android.widget.AdapterView
+import android.widget.ArrayAdapter
+import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
+import kotlinx.android.synthetic.main.dialog_default_query.*
+import kotlinx.android.synthetic.main.dialog_default_query.view.*
+import xyz.quaver.pupil.types.Tags
 import xyz.quaver.pupil.util.Histories
 import java.io.File
 
@@ -105,6 +115,120 @@ class SettingsActivity : AppCompatActivity() {
                         }
                         setNegativeButton(android.R.string.no) { _, _ -> }
                     }.show()
+
+                    true
+                }
+            }
+
+            with(findPreference<Preference>("default_query")) {
+                this ?: return@with
+
+                val preferences = PreferenceManager.getDefaultSharedPreferences(context)
+
+                summary = preferences.getString("default_query", "") ?: ""
+
+                val languages = resources.getStringArray(R.array.languages).map {
+                    it.split("|").let { split ->
+                        Pair(split[0], split[1])
+                    }
+                }.toMap()
+                val reverseLanguages = languages.entries.associate { (k, v) -> v to k }
+
+                val excludeBL = "-male:yaoi"
+                val excludeGuro = listOf("-female:guro", "-male:guro")
+
+                setOnPreferenceClickListener {
+                    val dialogView = LayoutInflater.from(context).inflate(
+                        R.layout.dialog_default_query,
+                        null
+                    )
+
+                    val tags = Tags.parse(
+                        preferences.getString("default_query", "") ?: ""
+                    )
+
+                    summary = tags.toString()
+
+                    with(dialogView.default_query_dialog_language_selector) {
+                        adapter =
+                            ArrayAdapter<String>(
+                                context,
+                                android.R.layout.simple_spinner_dropdown_item,
+                                arrayListOf(
+                                    getString(R.string.default_query_dialog_language_selector_none)
+                                ).apply {
+                                    addAll(languages.values)
+                                }
+                            )
+                        if (tags.any { it.area == "language" }) {
+                            val tag = languages[tags.first { it.area == "language" }.tag]
+                            if (tag != null) {
+                                setSelection(
+                                    (adapter as ArrayAdapter<String>).getPosition(tag)
+                                )
+                                tags.removeByArea("language")
+                            }
+                        }
+                    }
+
+                    with(dialogView.default_query_dialog_BL_checkbox) {
+                        isChecked = tags.contains(excludeBL)
+                        if (tags.contains(excludeBL))
+                            tags.remove(excludeBL)
+                    }
+
+                    with(dialogView.default_query_dialog_guro_checkbox) {
+                        isChecked = excludeGuro.all { tags.contains(it) }
+                        if (excludeGuro.all { tags.contains(it) })
+                            excludeGuro.forEach {
+                                tags.remove(it)
+                            }
+                    }
+
+                    with(dialogView.default_query_dialog_edittext) {
+                        setText(tags.toString(), TextView.BufferType.EDITABLE)
+                        addTextChangedListener(object : TextWatcher {
+                            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+
+                            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+
+                            override fun afterTextChanged(s: Editable?) {
+                                s ?: return
+
+                                if (s.any { it.isUpperCase() })
+                                    s.replace(0, s.length, s.toString().toLowerCase())
+                            }
+                        })
+                    }
+
+                    val dialog = AlertDialog.Builder(context!!).apply {
+                        setView(dialogView)
+                    }.create()
+
+                    dialogView.default_query_dialog_ok.setOnClickListener {
+                        val newTags = Tags.parse(dialogView.default_query_dialog_edittext.text.toString())
+
+                        with(dialogView.default_query_dialog_language_selector) {
+                            if (selectedItemPosition != 0)
+                                newTags.add("language:${reverseLanguages[selectedItem]}")
+                        }
+
+                        if (dialogView.default_query_dialog_BL_checkbox.isChecked)
+                            newTags.add(excludeBL)
+
+                        if (dialogView.default_query_dialog_guro_checkbox.isChecked)
+                            excludeGuro.forEach { tag ->
+                                newTags.add(tag)
+                            }
+
+                        preferenceManager.sharedPreferences.edit().putString("default_query", newTags.toString()).apply()
+                        summary = preferences.getString("default_query", "") ?: ""
+                        tags.clear()
+                        tags.addAll(newTags)
+                        dialog.dismiss()
+                    }
+
+                    dialog.show()
 
                     true
                 }
