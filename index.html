@@ -1,7 +1,12 @@
----
-layout: default
----
-
-<div id="home">
-	<h1>Blog Posts</h1>
-</div>
+<script>
+    var lang = navigator.language || navigator.userLanguage;
+    
+    switch (lang) {
+        case "ko-KR":
+            window.location.href = "ko/";
+            break;
+        default:
+            window.location.href = "en/";
+            break;
+    }
+</script>

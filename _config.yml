@@ -10,3 +10,19 @@ google_analytics: UA-119938781-2
 github:
   app_url: https://github.com/tom5079/Pupil-issue/releases/download/1.4/Pupil-v1.4.apk
   issue_url: https://github.com/tom5079/Pupil-issue/issues/new/choose
+
+t:
+  en:
+    header: 
+      description: "Hitomi.la viewer for Android"
+      download: "Download app"
+      issue: "Having a problem?"
+      or: "or…"
+      email: "Send an E-mail"
+  ko:
+    header:
+      description: "안드로이드 Hitomi.la 뷰어"
+      download: "앱 다운로드"
+      issue: "문제가 있으세요?"
+      or: "또는…"
+      email: "이메일 보내기"
