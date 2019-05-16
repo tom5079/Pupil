@@ -27,27 +27,32 @@ fun getReader(galleryID: Int) : Reader {
     val readerUrl = "https://hitomi.la/reader/$galleryID.html"
     val galleryInfoUrl = "https://ltn.hitomi.la/galleries/$galleryID.js"
 
-    val doc = Jsoup.connect(readerUrl).get()
+    try {
 
-    val images = doc.select(".img-url").map {
-        protocol + urlFromURL(it.text())
-    }
+        val doc = Jsoup.connect(readerUrl).get()
 
-    val galleryInfo = ArrayList<GalleryInfo?>()
+        val images = doc.select(".img-url").map {
+            protocol + urlFromURL(it.text())
+        }
 
-    galleryInfo.addAll(
-        Json(JsonConfiguration.Stable).parse(
-            GalleryInfo.serializer().list,
-            Regex("""\[.+]""").find(
-                URL(galleryInfoUrl).readText()
-            )?.value ?: "[]"
+        val galleryInfo = ArrayList<GalleryInfo?>()
+
+        galleryInfo.addAll(
+            Json(JsonConfiguration.Stable).parse(
+                GalleryInfo.serializer().list,
+                Regex("""\[.+]""").find(
+                    URL(galleryInfoUrl).readText()
+                )?.value ?: "[]"
+            )
         )
-    )
 
-    if (images.size > galleryInfo.size)
-        galleryInfo.addAll(arrayOfNulls(images.size - galleryInfo.size))
+        if (images.size > galleryInfo.size)
+            galleryInfo.addAll(arrayOfNulls(images.size - galleryInfo.size))
 
-    return (images zip galleryInfo).map {
-        ReaderItem(it.first, it.second)
+        return (images zip galleryInfo).map {
+            ReaderItem(it.first, it.second)
+        }
+    } catch (e: Exception) {
+        return emptyList()
     }
 }

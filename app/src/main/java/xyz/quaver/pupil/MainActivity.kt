@@ -6,7 +6,6 @@ import android.os.Bundle
 import android.preference.PreferenceManager
 import android.text.*
 import android.text.style.AlignmentSpan
-import android.util.Log
 import android.view.View
 import android.view.WindowManager
 import androidx.appcompat.app.AlertDialog
@@ -22,6 +21,8 @@ import com.google.android.material.appbar.AppBarLayout
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.activity_main_content.*
 import kotlinx.coroutines.*
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonConfiguration
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.content
 import ru.noties.markwon.Markwon
@@ -34,6 +35,7 @@ import xyz.quaver.pupil.util.SetLineOverlap
 import xyz.quaver.pupil.util.checkUpdate
 import java.io.File
 import java.io.FileOutputStream
+import java.net.URL
 import java.util.*
 import javax.net.ssl.HttpsURLConnection
 import kotlin.collections.ArrayList
@@ -436,25 +438,48 @@ class MainActivity : AppCompatActivity() {
                     galleryIDs
                 else ->
                     galleryIDs.slice(galleries.size until Math.min(galleries.size+perPage, galleryIDs.size))
-            }.chunked(4).let { chunks ->
+            }.chunked(5).let { chunks ->
                 for (chunk in chunks)
                     chunk.map {
                         async {
                             try {
-                                val galleryBlock = getGalleryBlock(it)
+                                val json = Json(JsonConfiguration.Stable)
+                                val serializer = GalleryBlock.serializer()
+
+                                val galleryBlock =
+                                    File(cacheDir, "imageCache/$it/galleryBlock.json").let { cache ->
+                                        when {
+                                            cache.exists() -> json.parse(serializer, cache.readText())
+                                            else -> {
+                                                getGalleryBlock(it).apply {
+                                                    this ?: return@apply
+
+                                                    if (!cache.parentFile.exists())
+                                                        cache.parentFile.mkdirs()
+
+                                                    cache.writeText(json.stringify(serializer, this))
+                                                }
+                                            }
+                                        }
+                                    } ?: return@async null
 
                                 val thumbnail = async {
-                                    val cache = File(cacheDir, "imageCache/$it/thumbnail.${galleryBlock.thumbnails[0].path.split('.').last()}")
+                                    val ext = galleryBlock.thumbnails[0].split('.').last()
+                                    File(cacheDir, "imageCache/$it/thumbnail.$ext").apply {
+                                        val cache = this
 
-                                    if (!cache.exists())
-                                        with(galleryBlock.thumbnails[0].openConnection() as HttpsURLConnection) {
-                                            if (!cache.parentFile.exists())
-                                                cache.parentFile.mkdirs()
+                                        if (!cache.exists())
+                                            try {
+                                                with(URL(galleryBlock.thumbnails[0]).openConnection() as HttpsURLConnection) {
+                                                    if (!cache.parentFile.exists())
+                                                        cache.parentFile.mkdirs()
 
-                                            inputStream.copyTo(FileOutputStream(cache))
-                                        }
-
-                                    cache.absolutePath
+                                                    inputStream.copyTo(FileOutputStream(cache))
+                                                }
+                                            } catch (e: Exception) {
+                                                cache.delete()
+                                            }
+                                    }.absolutePath
                                 }
 
                                 Pair(galleryBlock, thumbnail)
@@ -463,16 +488,19 @@ class MainActivity : AppCompatActivity() {
                             }
                         }
                     }.forEach {
-                        val galleryBlock = it.await() ?: return@forEach
+                        val galleryBlock = it.await()
 
                         withContext(Dispatchers.Main) {
                             main_progressbar.hide()
 
-                            galleries.add(galleryBlock)
-                            main_recyclerview.adapter?.notifyItemInserted(galleries.size - 1)
+                            if (galleryBlock != null) {
+                                galleries.add(galleryBlock)
+
+                                main_recyclerview.adapter?.notifyItemInserted(galleries.size - 1)
+                            }
                         }
                     }
-                }
+            }
         }
     }
 }

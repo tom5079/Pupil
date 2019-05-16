@@ -4,8 +4,12 @@ import kotlinx.serialization.json.*
 import java.net.URL
 
 fun getReleases(url: String) : JsonArray {
-    return URL(url).readText().let {
-        Json(JsonConfiguration.Stable).parse(JsonArray.serializer(), it)
+    return try {
+        URL(url).readText().let {
+            Json(JsonConfiguration.Stable).parse(JsonArray.serializer(), it)
+        }
+    } catch (e: Exception) {
+        JsonArray(emptyList())
     }
 }
 

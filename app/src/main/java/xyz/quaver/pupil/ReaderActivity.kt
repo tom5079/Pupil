@@ -66,26 +66,36 @@ class ReaderActivity : AppCompatActivity() {
                 else -> File(cacheDir, "imageCache/$galleryID/reader.json")
             }
 
-            if (cache.exists())
-                json.parse(serializer, cache.readText())
-            else {
-                val reader = when {
-                    isHiyobi -> {
-                        try {
-                            xyz.quaver.hiyobi.getReader(galleryID)
-                        } catch (e: Exception) {
-                            getReader(galleryID)
-                        }
-                    }
-                    else -> {
-                        getReader(galleryID)
-                    }
-                }
+            if (cache.exists()) {
+                val cached = json.parse(serializer, cache.readText())
 
-                cache.writeText(json.stringify(serializer, reader))
-
-                reader
+                if (cached.isNotEmpty())
+                    return@async cached
             }
+
+            val reader = when {
+                isHiyobi -> {
+                        xyz.quaver.hiyobi.getReader(galleryID).let {
+                            when {
+                                it.isEmpty() -> getReader(galleryID)
+                                else -> it
+                            }
+                        }
+                }
+                else -> {
+                    getReader(galleryID)
+                }
+            }
+
+            if (reader.isEmpty())
+                finish()
+
+            if (!cache.parentFile.exists())
+                cache.parentFile.mkdirs()
+
+            cache.writeText(json.stringify(serializer, reader))
+
+            reader
         }
 
         initView()
@@ -257,13 +267,17 @@ class ReaderActivity : AppCompatActivity() {
                         val cache = File(cacheDir, "/imageCache/$galleryID/$fileName")
 
                         if (!cache.exists())
-                            with(URL(url).openConnection() as HttpsURLConnection) {
-                                setRequestProperty("Referer", getReferer(galleryID))
+                            try {
+                                with(URL(url).openConnection() as HttpsURLConnection) {
+                                    setRequestProperty("Referer", getReferer(galleryID))
 
-                                if (!cache.parentFile.exists())
-                                    cache.parentFile.mkdirs()
+                                    if (!cache.parentFile.exists())
+                                        cache.parentFile.mkdirs()
 
-                                inputStream.copyTo(FileOutputStream(cache))
+                                    inputStream.copyTo(FileOutputStream(cache))
+                                }
+                            } catch (e: Exception) {
+                                cache.delete()
                             }
 
                         cache.absolutePath

@@ -1,14 +1,15 @@
 package xyz.quaver.hitomi
 
 import org.junit.Test
+import java.io.File
 import java.net.URL
 
 class UnitTest {
     @Test
     fun test() {
-        val url = URL("https://ltn.hitomi.la/galleries/1411672.js")
+        val f = File("C:/Users/tom50/Workspace/Pupil/nodir/nodir/asdf.txt")
 
-        print(url.path.substring(url.path.lastIndexOf('/')+1))
+        f.delete()
     }
 
     @Test
@@ -63,6 +64,6 @@ class UnitTest {
 
     @Test
     fun test_hiyobi() {
-        xyz.quaver.hiyobi.getReader(1414061)
+        print(xyz.quaver.hiyobi.getReader(1415416).size)
     }
 }
