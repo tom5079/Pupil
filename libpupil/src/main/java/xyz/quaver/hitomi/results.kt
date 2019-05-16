@@ -15,7 +15,6 @@ fun doSearch(query: String) : List<Int> {
         .toLowerCase()
         .split(Regex("\\s+"))
 
-    val results = ArrayList<Int>()
     val positiveTerms = LinkedList<String>()
     val negativeTerms = LinkedList<String>()
 
@@ -26,33 +25,24 @@ fun doSearch(query: String) : List<Int> {
             positiveTerms.push(term)
     }
 
-    //first results
-    results.addAll(
-        if (positiveTerms.isEmpty())
-            getGalleryIDsFromNozomi(null, "index", "all")
-        else
-            getGalleryIDsForQuery(positiveTerms.poll())
-    )
+    var results = when {
+        positiveTerms.isEmpty() -> getGalleryIDsFromNozomi(null, "index", "all")
+        else -> getGalleryIDsForQuery(positiveTerms.poll())
+    }
 
     runBlocking {
         @Synchronized fun filterPositive(newResults: List<Int>) {
-            results.filter { newResults.binarySearch(it) >= 0 }.let {
-                results.clear()
-                results.addAll(it)
-            }
+            results = results.filter { newResults.binarySearch(it) >= 0 }
         }
 
         @Synchronized fun filterNegative(newResults: List<Int>) {
-            results.filterNot { newResults.binarySearch(it) >= 0 }.let {
-                results.clear()
-                results.addAll(it)
-            }
+            results = results.filter { newResults.binarySearch(it) < 0 }
         }
 
         //positive results
         positiveTerms.map {
             launch(searchDispatcher) {
-                filterPositive(getGalleryIDsForQuery(it).reversed())
+                filterPositive(getGalleryIDsForQuery(it).sorted())
             }
         }.forEach {
             it.join()
@@ -61,7 +51,7 @@ fun doSearch(query: String) : List<Int> {
         //negative results
         negativeTerms.map {
             launch(searchDispatcher) {
-                filterNegative(getGalleryIDsForQuery(it).reversed())
+                filterNegative(getGalleryIDsForQuery(it).sorted())
             }
         }.forEach {
             it.join()

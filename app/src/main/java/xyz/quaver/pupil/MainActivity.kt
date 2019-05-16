@@ -6,6 +6,7 @@ import android.os.Bundle
 import android.preference.PreferenceManager
 import android.text.*
 import android.text.style.AlignmentSpan
+import android.util.Log
 import android.view.View
 import android.view.WindowManager
 import androidx.appcompat.app.AlertDialog
@@ -357,6 +358,7 @@ class MainActivity : AppCompatActivity() {
                             cancelFetch()
                             clearGalleries()
                             fetchGalleries(query)
+                            loadBlocks()
                         }
                     }
                 }

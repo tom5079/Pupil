@@ -21,10 +21,9 @@ class UnitTest {
 
     @Test
     fun test_search() {
-        val ids = getGalleryIDsForQuery("female:loli").reversed()
+        val ids = getGalleryIDsForQuery("language:korean").reversed()
 
-        for (i in 0..100)
-            println(ids[i])
+        print(ids.size)
     }
 
     @Test
@@ -36,7 +35,7 @@ class UnitTest {
 
     @Test
     fun test_doSearch() {
-        val r = doSearch("type:artistcg language:korean female:loli female:mind_break -female:anal")
+        val r = doSearch("female:loli female:bondage language:korean -male:yaoi -male:guro -female:guro")
 
         print(r.size)
     }
