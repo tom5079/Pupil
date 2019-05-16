@@ -23,10 +23,6 @@ class Histories(private val file: File) : ArrayList<Int>() {
 
     companion object {
         lateinit var default: Histories
-
-        fun load(file: File) : Histories {
-            return Histories(file).load()
-        }
     }
 
     @UseExperimental(ImplicitReflectionSerializer::class)

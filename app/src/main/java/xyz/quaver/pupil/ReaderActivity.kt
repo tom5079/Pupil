@@ -204,6 +204,8 @@ class ReaderActivity : AppCompatActivity() {
         reader_fab_fullscreen.setOnClickListener {
             isFullscreen = true
             fullscreen(isFullscreen)
+
+            reader_fab.close(true)
         }
     }
 

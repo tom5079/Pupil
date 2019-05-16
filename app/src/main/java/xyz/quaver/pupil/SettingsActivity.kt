@@ -6,16 +6,14 @@ import android.text.Editable
 import android.text.TextWatcher
 import android.view.LayoutInflater
 import android.view.MenuItem
-import android.view.View
 import android.view.WindowManager
-import android.widget.AdapterView
 import android.widget.ArrayAdapter
+import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
-import kotlinx.android.synthetic.main.dialog_default_query.*
 import kotlinx.android.synthetic.main.dialog_default_query.view.*
 import xyz.quaver.pupil.types.Tags
 import xyz.quaver.pupil.util.Histories
@@ -140,7 +138,8 @@ class SettingsActivity : AppCompatActivity() {
                 setOnPreferenceClickListener {
                     val dialogView = LayoutInflater.from(context).inflate(
                         R.layout.dialog_default_query,
-                        null
+                        LinearLayout(context),
+                        false
                     )
 
                     val tags = Tags.parse(
@@ -164,6 +163,7 @@ class SettingsActivity : AppCompatActivity() {
                             val tag = languages[tags.first { it.area == "language" }.tag]
                             if (tag != null) {
                                 setSelection(
+                                    @Suppress("UNCHECKED_CAST")
                                     (adapter as ArrayAdapter<String>).getPosition(tag)
                                 )
                                 tags.removeByArea("language")
