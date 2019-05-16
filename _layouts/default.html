@@ -23,7 +23,7 @@
   <body>
     <header class="page-header" role="banner">
       <h1 class="project-name">{{ page.title | default: site.title | default: site.github.repository_name }}</h1>
-      <h2 class="project-tagline">{{ page.description | default: site.description | default: site.github.project_tagline }}</h2>
+      <h2 class="project-tagline">{{ page.description | default: site.t[page.lang].header.description }}</h2>
       {% if site.show_downloads %}
         <a href="{{ site.github.app_url }}" class="btn">{{ site.t[page.lang].header.download }}</a>
         <a href="{{ site.github.issue_url }}" target="_blank" class="btn">{{ site.t[page.lang].header.issue }}</a>
