@@ -1,19 +1,23 @@
 package xyz.quaver.pupil
 
 import android.os.Bundle
-import android.util.Log
 import android.view.*
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.LinearSmoothScroller
 import androidx.recyclerview.widget.PagerSnapHelper
 import androidx.recyclerview.widget.RecyclerView
 import kotlinx.android.synthetic.main.activity_reader.*
 import kotlinx.android.synthetic.main.activity_reader.view.*
 import kotlinx.android.synthetic.main.dialog_numberpicker.view.*
 import kotlinx.coroutines.*
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonConfiguration
+import kotlinx.serialization.list
 import xyz.quaver.hitomi.Reader
+import xyz.quaver.hitomi.ReaderItem
 import xyz.quaver.hitomi.getReader
 import xyz.quaver.hitomi.getReferer
 import xyz.quaver.pupil.adapters.ReaderAdapter
@@ -32,7 +36,10 @@ class ReaderActivity : AppCompatActivity() {
     private lateinit var reader: Deferred<Reader>
     private var loadJob: Job? = null
 
-    private lateinit var snapHelper: PagerSnapHelper
+    private var isScroll = true
+    private var isFullscreen = false
+
+    private val snapHelper = PagerSnapHelper()
 
     private var menu: Menu? = null
 
@@ -48,42 +55,37 @@ class ReaderActivity : AppCompatActivity() {
         supportActionBar?.title = intent.getStringExtra("GALLERY_TITLE")
 
         galleryID = intent.getIntExtra("GALLERY_ID", 0)
-        CoroutineScope(Dispatchers.Unconfined).launch {
-            reader = async(Dispatchers.IO) {
-                val preference = PreferenceManager.getDefaultSharedPreferences(this@ReaderActivity)
-                if (preference.getBoolean("use_hiyobi", false)) {
-                    try {
-                        xyz.quaver.hiyobi.getReader(galleryID)
-                    } catch (e: Exception) {
+        reader = CoroutineScope(Dispatchers.IO).async {
+            val json = Json(JsonConfiguration.Stable)
+            val serializer = ReaderItem.serializer().list
+            val preference = PreferenceManager.getDefaultSharedPreferences(this@ReaderActivity)
+            val isHiyobi = preference.getBoolean("use_hiyobi", false)
+
+            val cache = when {
+                isHiyobi -> File(cacheDir, "imageCache/$galleryID/reader-hiyobi.json")
+                else -> File(cacheDir, "imageCache/$galleryID/reader.json")
+            }
+
+            if (cache.exists())
+                json.parse(serializer, cache.readText())
+            else {
+                val reader = when {
+                    isHiyobi -> {
+                        try {
+                            xyz.quaver.hiyobi.getReader(galleryID)
+                        } catch (e: Exception) {
+                            getReader(galleryID)
+                        }
+                    }
+                    else -> {
                         getReader(galleryID)
                     }
                 }
-                getReader(galleryID)
+
+                cache.writeText(json.stringify(serializer, reader))
+
+                reader
             }
-        }
-
-        snapHelper = PagerSnapHelper()
-
-        val preferences = PreferenceManager.getDefaultSharedPreferences(this)
-
-        val attrs = window.attributes
-
-        if (preferences.getBoolean("reader_fullscreen", false)) {
-            attrs.flags = attrs.flags or WindowManager.LayoutParams.FLAG_FULLSCREEN
-            supportActionBar?.hide()
-        } else {
-            attrs.flags = attrs.flags and WindowManager.LayoutParams.FLAG_FULLSCREEN.inv()
-            supportActionBar?.show()
-        }
-
-        window.attributes = attrs
-
-        if (preferences.getBoolean("reader_one_by_one", false)) {
-            snapHelper.attachToRecyclerView(reader_recyclerview)
-            reader_recyclerview.layoutManager = LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
-        } else {
-            snapHelper.attachToRecyclerView(null)
-            reader_recyclerview.layoutManager = LinearLayoutManager(this)
         }
 
         initView()
@@ -138,6 +140,21 @@ class ReaderActivity : AppCompatActivity() {
         loadJob?.cancel()
     }
 
+    override fun onBackPressed() {
+        if (isScroll and !isFullscreen)
+            super.onBackPressed()
+
+        if (isFullscreen) {
+            isFullscreen = false
+            fullscreen(false)
+        }
+
+        if (!isScroll) {
+            isScroll = true
+            scrollMode(true)
+        }
+    }
+
     private fun initView() {
         with(reader_recyclerview) {
             adapter = ReaderAdapter(images)
@@ -155,45 +172,61 @@ class ReaderActivity : AppCompatActivity() {
                 }
             })
 
-            val preferences = PreferenceManager.getDefaultSharedPreferences(context)
             ItemClickSupport.addTo(this)
                 .setOnItemClickListener { _, _, _ ->
-                    val attrs = window.attributes
-                    val fullscreen = preferences.getBoolean("reader_fullscreen", false)
+                    if (isScroll) {
+                        isScroll = false
+                        isFullscreen = true
 
-                    if (fullscreen) {
-                        attrs.flags = attrs.flags and WindowManager.LayoutParams.FLAG_FULLSCREEN.inv()
-                        supportActionBar?.show()
+                        scrollMode(false)
+                        fullscreen(true)
                     } else {
-                        attrs.flags = attrs.flags or WindowManager.LayoutParams.FLAG_FULLSCREEN
-                        supportActionBar?.hide()
+                        val smoothScroller = object : LinearSmoothScroller(context) {
+                            override fun getVerticalSnapPreference() = SNAP_TO_START
+                        }.apply {
+                            targetPosition = currentPage
+                        }
+                        (reader_recyclerview.layoutManager as LinearLayoutManager?)?.startSmoothScroll(smoothScroller)
                     }
-
-                    window.attributes = attrs
-
-                    preferences.edit().putBoolean("reader_fullscreen", !fullscreen).apply()
-                }.setOnItemLongClickListener { _, _, _ ->
-                    val oneByOne = preferences.getBoolean("reader_one_by_one", false)
-                    if (oneByOne) {
-                        snapHelper.attachToRecyclerView(null)
-                        reader_recyclerview.layoutManager = LinearLayoutManager(context)
-                    }
-                    else {
-                        snapHelper.attachToRecyclerView(reader_recyclerview)
-                        reader_recyclerview.layoutManager = LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
-                    }
-
-                    (reader_recyclerview.layoutManager as LinearLayoutManager).scrollToPositionWithOffset(currentPage-1, 0)
-
-                    preferences.edit().putBoolean("reader_one_by_one", !oneByOne).apply()
-
-                    true
                 }
+        }
+
+        reader_fab_fullscreen.setOnClickListener {
+            isFullscreen = true
+            fullscreen(isFullscreen)
         }
     }
 
+    private fun fullscreen(isFullscreen: Boolean) {
+        with(window.attributes) {
+            if (isFullscreen) {
+                flags = flags or WindowManager.LayoutParams.FLAG_FULLSCREEN
+                supportActionBar?.hide()
+                this@ReaderActivity.reader_fab.visibility = View.INVISIBLE
+            } else {
+                flags = flags and WindowManager.LayoutParams.FLAG_FULLSCREEN.inv()
+                supportActionBar?.show()
+                this@ReaderActivity.reader_fab.visibility = View.VISIBLE
+            }
+
+            window.attributes = this
+        }
+    }
+
+    private fun scrollMode(isScroll: Boolean) {
+        if (isScroll) {
+            snapHelper.attachToRecyclerView(null)
+            reader_recyclerview.layoutManager = LinearLayoutManager(this)
+        } else {
+            snapHelper.attachToRecyclerView(reader_recyclerview)
+            reader_recyclerview.layoutManager = LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
+        }
+
+        (reader_recyclerview.layoutManager as LinearLayoutManager).scrollToPositionWithOffset(currentPage-1, 0)
+    }
+
     private fun loadImages() {
-        fun webpUrlFromUrl(url: URL) = URL(url.toString().replace("/galleries/", "/webp/") + ".webp")
+        fun webpUrlFromUrl(url: String) = url.replace("/galleries/", "/webp/") + ".webp"
 
         loadJob = CoroutineScope(Dispatchers.Default).launch {
             val reader = reader.await()
@@ -213,18 +246,18 @@ class ReaderActivity : AppCompatActivity() {
             reader.chunked(8).forEach { chunked ->
                 chunked.map {
                     async(Dispatchers.IO) {
-                        val url = if (it.second?.haswebp == 1) webpUrlFromUrl(it.first) else it.first
+                        val url = if (it.galleryInfo?.haswebp == 1) webpUrlFromUrl(it.url) else it.url
 
                         val fileName: String
 
-                        with(url.path) {
+                        with(url) {
                             fileName = substring(lastIndexOf('/')+1)
                         }
 
                         val cache = File(cacheDir, "/imageCache/$galleryID/$fileName")
 
                         if (!cache.exists())
-                            with(url.openConnection() as HttpsURLConnection) {
+                            with(URL(url).openConnection() as HttpsURLConnection) {
                                 setRequestProperty("Referer", getReferer(galleryID))
 
                                 if (!cache.parentFile.exists())

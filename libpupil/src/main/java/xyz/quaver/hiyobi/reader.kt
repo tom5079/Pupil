@@ -4,6 +4,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonConfiguration
 import kotlinx.serialization.json.content
 import xyz.quaver.hitomi.Reader
+import xyz.quaver.hitomi.ReaderItem
 import java.net.URL
 import javax.net.ssl.HttpsURLConnection
 
@@ -42,6 +43,6 @@ fun getReader(galleryId: Int) : Reader {
 
     return json.jsonArray.map {
         val name = it.jsonObject["name"]!!.content
-        Pair(URL("https://$hiyobi/data/$galleryId/$name"), null)
+        ReaderItem("https://$hiyobi/data/$galleryId/$name", null)
     }
 }

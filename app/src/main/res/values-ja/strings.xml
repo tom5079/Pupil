@@ -43,4 +43,5 @@
     <string name="main_drawer_group_contact_email">メールを送る</string>
     <string name="help_dialog_title">準備中</string>
     <string name="help_dialog_message">準備中です。</string>
+    <string name="reader_fab_fullscreen">フルスクリーン</string>
 </resources>

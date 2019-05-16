@@ -48,6 +48,7 @@
     <string name="galleryblock_language">Language: %1$s</string>
 
     <string name="reader_go_to_page">Go to page</string>
+    <string name="reader_fab_fullscreen">Fullscreen</string>
 
     <string name="settings_title">Settings</string>
     <string name="settings_search_title">Search Settings</string>

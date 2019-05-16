@@ -6,12 +6,18 @@
     android:layout_height="match_parent"
     tools:context=".ReaderActivity">
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/reader_recyclerview"
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_gravity="center"
-        app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"/>
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_vertical">
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/reader_recyclerview"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"/>
+
+    </LinearLayout>
 
     <FrameLayout
         android:id="@+id/reader_framelayout"
@@ -26,5 +32,22 @@
             android:layout_gravity="center"/>
 
     </FrameLayout>
+    
+    <com.github.clans.fab.FloatingActionMenu
+        android:id="@+id/reader_fab"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        app:menu_colorNormal="@color/colorAccent">
+
+        <com.github.clans.fab.FloatingActionButton
+            android:id="@+id/reader_fab_fullscreen"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/ic_fullscreen"
+            app:fab_label="@string/reader_fab_fullscreen"
+            app:fab_size="mini"/>
+
+    </com.github.clans.fab.FloatingActionMenu>
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
