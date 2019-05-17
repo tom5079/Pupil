@@ -1,16 +1,13 @@
 ---
 layout: default
+lang: en
 ---
 
 <script>
-    var lang = navigator.language || navigator.userLanguage;
+    var userLang = navigator.language || navigator.userLanguage;
     
-    switch (lang) {
-        case "ko-KR":
-            window.location.href = "ko/";
-            break;
-        default:
-            window.location.href = "en/";
-            break;
-    }
+    if (userLang.search("ko") != -1)
+        window.location.href = "ko/";
+    else
+        window.location.href = "en/";
 </script>
