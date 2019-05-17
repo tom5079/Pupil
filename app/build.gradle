@@ -41,6 +41,9 @@ dependencies {
     implementation 'androidx.constraintlayout:constraintlayout:1.1.3'
     implementation "ru.noties.markwon:core:${markwonVersion}"
     implementation 'com.github.clans:fab:1.6.4'
+    implementation('com.finotes:finotescore:2.5.7@aar') {
+        transitive = true
+    }
     testImplementation 'junit:junit:4.12'
     androidTestImplementation 'androidx.test.ext:junit:1.1.0'
     androidTestImplementation 'androidx.test:runner:1.1.1'

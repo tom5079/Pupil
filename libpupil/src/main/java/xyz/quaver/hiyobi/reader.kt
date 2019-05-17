@@ -1,5 +1,6 @@
 package xyz.quaver.hiyobi
 
+import kotlinx.io.IOException
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonConfiguration
 import kotlinx.serialization.json.content

@@ -49,6 +49,11 @@
             app:fab_label="@string/reader_fab_fullscreen"
             app:fab_size="mini"/>
 
+        <com.github.clans.fab.FloatingActionButton
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:fab_size="mini"/>
+
     </com.github.clans.fab.FloatingActionMenu>
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

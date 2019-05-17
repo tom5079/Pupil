@@ -28,7 +28,6 @@ fun getReader(galleryID: Int) : Reader {
     val galleryInfoUrl = "https://ltn.hitomi.la/galleries/$galleryID.js"
 
     try {
-
         val doc = Jsoup.connect(readerUrl).get()
 
         val images = doc.select(".img-url").map {

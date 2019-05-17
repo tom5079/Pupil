@@ -1,5 +1,6 @@
 package xyz.quaver.pupil.util
 
+import kotlinx.io.IOException
 import kotlinx.serialization.json.*
 import java.net.URL
 

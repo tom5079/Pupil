@@ -1,5 +1,6 @@
 package xyz.quaver.pupil.util
 
+import kotlinx.io.IOException
 import kotlinx.serialization.ImplicitReflectionSerializer
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonConfiguration
