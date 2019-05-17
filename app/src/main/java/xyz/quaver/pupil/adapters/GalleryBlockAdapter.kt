@@ -6,6 +6,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.LinearLayout
 import androidx.cardview.widget.CardView
+import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.chip.Chip
 import kotlinx.android.synthetic.main.item_galleryblock.view.*
@@ -14,8 +15,8 @@ import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import xyz.quaver.hitomi.GalleryBlock
-import xyz.quaver.hitomi.toTag
 import xyz.quaver.pupil.R
+import xyz.quaver.pupil.types.Tag
 
 class GalleryBlockAdapter(private val galleries: List<Pair<GalleryBlock, Deferred<String>>>) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
@@ -110,11 +111,29 @@ class GalleryBlockAdapter(private val galleries: List<Pair<GalleryBlock, Deferre
 
                 galleryblock_tag_group.removeAllViews()
                 gallery.relatedTags.forEach {
-                    galleryblock_tag_group.addView(
-                        Chip(context).apply {
-                            text = it.toTag().wordCapitalize()
+                    val tag = Tag.parse(it)
+                    val chip = LayoutInflater
+                            .from(context)
+                            .inflate(R.layout.tag_chip, holder.view, false) as Chip
+
+                    val icon = when(tag.area) {
+                        "male" -> {
+                            chip.setChipBackgroundColorResource(R.color.material_blue_100)
+                            chip.setTextColor(ContextCompat.getColor(context, android.R.color.white))
+                            ContextCompat.getDrawable(context, R.drawable.ic_gender_male_white)
                         }
-                    )
+                        "female" -> {
+                            chip.setChipBackgroundColorResource(R.color.material_pink_100)
+                            chip.setTextColor(ContextCompat.getColor(context, android.R.color.white))
+                            ContextCompat.getDrawable(context, R.drawable.ic_gender_female_white)
+                        }
+                        else -> null
+                    }
+
+                    chip.chipIcon = icon
+                    chip.text = Tag.parse(it).tag.wordCapitalize()
+
+                    galleryblock_tag_group.addView(chip)
                 }
             }
         }

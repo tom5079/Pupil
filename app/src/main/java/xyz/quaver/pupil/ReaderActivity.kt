@@ -1,6 +1,7 @@
 package xyz.quaver.pupil
 
 import android.os.Bundle
+import android.util.Log
 import android.view.*
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -255,7 +256,7 @@ class ReaderActivity : AppCompatActivity() {
                 menu?.findItem(R.id.reader_menu_page_indicator)?.title = "$currentPage/$gallerySize"
             }
 
-            reader.chunked(8).forEach { chunked ->
+            reader.chunked(4).forEach { chunked ->
                 chunked.map {
                     async(Dispatchers.IO) {
                         val url = if (it.galleryInfo?.haswebp == 1) webpUrlFromUrl(it.url) else it.url

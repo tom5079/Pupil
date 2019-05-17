@@ -2,7 +2,7 @@ package xyz.quaver.pupil.types
 
 data class Tag(val area: String?, val tag: String, val isNegative: Boolean = false) {
     companion object {
-        fun parseTag(tag: String) : Tag {
+        fun parse(tag: String) : Tag {
             if (tag.first() == '-') {
                 tag.substring(1).split(Regex(":"), 2).let {
                     return when(it.size) {
@@ -49,7 +49,7 @@ class Tags(tag: List<Tag?>?) : ArrayList<Tag>() {
             return Tags(
                 tags.split(' ').map {
                     if (it.isNotEmpty())
-                        Tag.parseTag(it)
+                        Tag.parse(it)
                     else
                         null
                 }
@@ -74,7 +74,7 @@ class Tags(tag: List<Tag?>?) : ArrayList<Tag>() {
     }
 
     fun add(element: String): Boolean {
-        return super.add(Tag.parseTag(element))
+        return super.add(Tag.parse(element))
     }
 
     fun remove(element: String) {
