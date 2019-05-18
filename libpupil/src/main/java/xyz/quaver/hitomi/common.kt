@@ -2,22 +2,6 @@ package xyz.quaver.hitomi
 
 const val protocol = "https:"
 
-fun String.toTag() : String {
-    if (this.indexOf(':') > -1) {
-        val split = this.split(':')
-
-        val field = split[0]
-        val term = split[1]
-
-        when(field) {
-            "male" -> return "$term ♂"
-            "female" -> return "$term ♀"
-        }
-    }
-
-    return this
-}
-
 //common.js
 var adapose = false
 const val numberOfFrontends = 2

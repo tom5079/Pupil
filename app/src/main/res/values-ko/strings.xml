@@ -21,10 +21,10 @@
     <string name="settings_miscellaneous_title">기타</string>
     <string name="settings_use_hiyobi_summary">속도 향상을 위해 가능하면 hiyobi.me에서 이미지 로드</string>
     <string name="settings_use_hiyobi_title">hiyobi.me 사용</string>
-    <string name="settings_clear_history">히스토리 삭제</string>
-    <string name="settings_clear_history_alert_message">히스토리를 삭제하시겠습니까?</string>
-    <string name="settings_clear_history_summary">히스토리 %1$d개 저장됨</string>
-    <string name="main_drawer_history">히스토리</string>
+    <string name="settings_clear_history">기록 삭제</string>
+    <string name="settings_clear_history_alert_message">기록을 삭제하시겠습니까?</string>
+    <string name="settings_clear_history_summary">기록 %1$d개 저장됨</string>
+    <string name="main_drawer_history">기록</string>
     <string name="main_drawer_home">홈</string>
     <string name="update_download_started">다운로드 중</string>
     <string name="update_release_note"># 릴리즈 노트(v%1$s)\n%2$s</string>
@@ -42,5 +42,14 @@
     <string name="main_drawer_group_contact_homepage">홈페이지</string>
     <string name="main_drawer_group_contact_title">문의</string>
     <string name="help_dialog_title">준비 중</string>
-    <string name="help_dialog_message">준비중입니다.\n만화 화면에서 사진을 길게 누르면 스크롤 방식이 바뀝니다. 알고 계셨나요? :)</string>
+    <string name="help_dialog_message">준비중입니다.</string>
+    <string name="reader_fab_fullscreen">전체 화면</string>
+    <string name="channel_download">다운로드</string>
+    <string name="channel_download_description">다운로드 상태 알림</string>
+    <string name="reader_fab_download">백그라운드 다운로드</string>
+    <string name="reader_notification_text">다운로드 중…</string>
+    <string name="reader_notification_complete">다운로드 완료</string>
+    <string name="reader_notification_error">다운로드 오류</string>
+    <string name="reader_fab_download_cancel">백그라운드 다운로드 취소</string>
+    <string name="main_dialog_delete">갤러리 삭제</string>
 </resources>

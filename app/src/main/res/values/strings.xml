@@ -1,5 +1,5 @@
-<resources>
-    <string name="app_name" translatable="false">Pupil</string>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <string name="app_name" translatable="false" tools:override="true">Pupil</string>
 
     <string name="release_url" translatable="false">https://api.github.com/repos/tom5079/Pupil-issue/releases</string>
     <string name="release_name" translatable="false">Pupil-v(\\d+\\.)+\\d+\\.apk</string>
@@ -22,6 +22,9 @@
 
     <string name="permission_explain">Denying any permission can deactivate some functions</string>
 
+    <string name="channel_download">Download</string>
+    <string name="channel_download_description">Shows download status</string>
+
     <string name="main_search">Search</string>
     <string name="main_no_result">No result</string>
 
@@ -33,8 +36,10 @@
     <string name="main_drawer_group_contact_github">Visit github</string>
     <string name="main_drawer_group_contact_email">Email me!</string>
 
+    <string name="main_dialog_delete">Delete this gallery</string>
+
     <string name="help_dialog_title">WIP</string>
-    <string name="help_dialog_message">While in progress!\nOne thing might you don\'t know:\nLong tap an image in reader will change scrolling mode! Go try it :)</string>
+    <string name="help_dialog_message">While in progress!</string>
 
     <string name="update_title">Update available</string>
     <string name="update_download_started">Download started</string>
@@ -48,6 +53,12 @@
     <string name="galleryblock_language">Language: %1$s</string>
 
     <string name="reader_go_to_page">Go to page</string>
+    <string name="reader_fab_fullscreen">Fullscreen</string>
+    <string name="reader_fab_download">Background download</string>
+    <string name="reader_fab_download_cancel">Cancel background download</string>
+    <string name="reader_notification_text">Downloading&#8230;</string>
+    <string name="reader_notification_complete">Download complete</string>
+    <string name="reader_notification_error">Download error</string>
 
     <string name="settings_title">Settings</string>
     <string name="settings_search_title">Search Settings</string>

@@ -19,3 +19,10 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+-keep class com.finotes.android.finotescore.* { *; }
+
+-keepclassmembers class * {
+    @com.finotes.android.finotescore.annotation.Observe *;
+}
+
+-keepattributes SourceFile,LineNumberTable

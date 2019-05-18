@@ -7,7 +7,6 @@ import kotlinx.serialization.parseList
 import kotlinx.serialization.stringify
 import java.io.File
 
-
 class Histories(private val file: File) : ArrayList<Int>() {
 
     init {
@@ -23,10 +22,6 @@ class Histories(private val file: File) : ArrayList<Int>() {
 
     companion object {
         lateinit var default: Histories
-
-        fun load(file: File) : Histories {
-            return Histories(file).load()
-        }
     }
 
     @UseExperimental(ImplicitReflectionSerializer::class)

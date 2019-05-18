@@ -20,6 +20,13 @@ allprojects {
     repositories {
         google()
         jcenter()
+        maven {
+            url "s3://finotescore-android/release"
+            credentials(AwsCredentials) {
+                accessKey = "AKIAJ7TPIN63PV5SWK3A"
+                secretKey = "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"
+            }
+        }
     }
 }
 

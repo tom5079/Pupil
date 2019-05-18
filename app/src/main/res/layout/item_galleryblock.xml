@@ -18,6 +18,23 @@
 		android:layout_width="match_parent"
 		android:layout_height="match_parent">
 
+		<ProgressBar
+			style="@style/Widget.AppCompat.ProgressBar.Horizontal"
+			android:id="@+id/galleryblock_progressbar"
+			android:layout_width="match_parent"
+			android:layout_height="4dp"
+			android:visibility="gone"
+			app:layout_constraintTop_toTopOf="parent"/>
+
+		<ImageView
+			android:id="@+id/galleryblock_progress_complete"
+			android:layout_width="match_parent"
+			android:layout_height="4dp"
+			android:visibility="invisible"
+			android:scaleType="fitXY"
+			android:contentDescription="@string/reader_imageview_description"
+			app:layout_constraintTop_toTopOf="parent"/>
+
 		<ImageView
 			android:id="@+id/galleryblock_thumbnail"
 			android:layout_width="150dp"
@@ -25,7 +42,7 @@
 			android:contentDescription="@string/galleryblock_thumbnail_description"
 			android:adjustViewBounds="true"
 			app:layout_constraintLeft_toLeftOf="parent"
-			app:layout_constraintTop_toTopOf="parent"
+			app:layout_constraintTop_toBottomOf="@id/galleryblock_progressbar"
 			app:layout_constraintBottom_toBottomOf="parent"/>
 
 		<TextView

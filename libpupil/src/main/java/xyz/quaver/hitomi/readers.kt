@@ -16,31 +16,42 @@ data class GalleryInfo(
     val name: String,
     val height: Int
 )
-typealias Reader = List<Pair<URL, GalleryInfo?>>
+@Serializable
+data class ReaderItem(
+    val url: String,
+    val galleryInfo: GalleryInfo?
+)
+typealias Reader = List<ReaderItem>
 //Set header `Referer` to reader url to avoid 403 error
 fun getReader(galleryID: Int) : Reader {
     val readerUrl = "https://hitomi.la/reader/$galleryID.html"
     val galleryInfoUrl = "https://ltn.hitomi.la/galleries/$galleryID.js"
 
-    val doc = Jsoup.connect(readerUrl).get()
+    try {
+        val doc = Jsoup.connect(readerUrl).get()
 
-    val images = doc.select(".img-url").map {
-        URL(protocol + urlFromURL(it.text()))
-    }
+        val images = doc.select(".img-url").map {
+            protocol + urlFromURL(it.text())
+        }
 
-    val galleryInfo = ArrayList<GalleryInfo?>()
+        val galleryInfo = ArrayList<GalleryInfo?>()
 
-    galleryInfo.addAll(
-        Json(JsonConfiguration.Stable).parse(
-            GalleryInfo.serializer().list,
-            Regex("""\[.+]""").find(
-                URL(galleryInfoUrl).readText()
-            )?.value ?: "[]"
+        galleryInfo.addAll(
+            Json(JsonConfiguration.Stable).parse(
+                GalleryInfo.serializer().list,
+                Regex("""\[.+]""").find(
+                    URL(galleryInfoUrl).readText()
+                )?.value ?: "[]"
+            )
         )
-    )
 
-    if (images.size > galleryInfo.size)
-        galleryInfo.addAll(arrayOfNulls(images.size - galleryInfo.size))
+        if (images.size > galleryInfo.size)
+            galleryInfo.addAll(arrayOfNulls(images.size - galleryInfo.size))
 
-    return images zip galleryInfo
+        return (images zip galleryInfo).map {
+            ReaderItem(it.first, it.second)
+        }
+    } catch (e: Exception) {
+        return emptyList()
+    }
 }

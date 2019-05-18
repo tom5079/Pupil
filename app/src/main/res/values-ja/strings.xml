@@ -21,7 +21,7 @@
     <string name="settings_miscellaneous_title">その他</string>
     <string name="settings_use_hiyobi_summary">ロード速度を向上させるためhiyobi.meからイメージロード</string>
     <string name="settings_use_hiyobi_title">hiyobi.meからロード</string>
-    <string name="settings_clear_history">履歴の削除</string>
+    <string name="settings_clear_history">履歴を削除</string>
     <string name="settings_clear_history_alert_message">履歴を削除しますか？</string>
     <string name="settings_clear_history_summary">履歴数: %1$d</string>
     <string name="main_drawer_history">履歴</string>
@@ -43,4 +43,13 @@
     <string name="main_drawer_group_contact_email">メールを送る</string>
     <string name="help_dialog_title">準備中</string>
     <string name="help_dialog_message">準備中です。</string>
+    <string name="reader_fab_fullscreen">フルスクリーン</string>
+    <string name="channel_download">ダウンロード</string>
+    <string name="channel_download_description">ダウンロードの進行を通知</string>
+    <string name="reader_fab_download">バックグラウンドダウンロード</string>
+    <string name="reader_notification_text">ダウンロード中…</string>
+    <string name="reader_notification_complete">ダウンロード完了</string>
+    <string name="reader_notification_error">ダウンロードエラー</string>
+    <string name="reader_fab_download_cancel">バックグラウンドダウンロード中止</string>
+    <string name="main_dialog_delete">このギャラリーを削除</string>
 </resources>

@@ -15,8 +15,8 @@ const val max_node_size = 464
 const val B = 16
 const val compressed_nozomi_prefix = "n"
 
-val tag_index_version = getIndexVersion("tagindex")
-val galleries_index_version = getIndexVersion("galleriesindex")
+var tag_index_version = getIndexVersion("tagindex")
+var galleries_index_version = getIndexVersion("galleriesindex")
 
 fun sha256(data: ByteArray) : ByteArray {
     return MessageDigest.getInstance("SHA-256").digest(data)
@@ -32,8 +32,12 @@ fun sanitize(input: String) : String {
 }
 
 fun getIndexVersion(name: String) : String {
-    return URL("$protocol//$domain/$name/version?_=${System.currentTimeMillis()}")
-        .readText()
+    return try {
+        URL("$protocol//$domain/$name/version?_=${System.currentTimeMillis()}")
+            .readText()
+    } catch (e: Exception) {
+        ""
+    }
 }
 
 //search.js
@@ -64,14 +68,14 @@ fun getGalleryIDsForQuery(query: String) : List<Int> {
         val key = hashTerm(it)
         val field = "galleries"
 
-        val node = getNodeAtAddress(field, 0) ?: return listOf()
+        val node = getNodeAtAddress(field, 0) ?: return emptyList()
 
         val data = bSearch(field, key, node)
 
         if (data != null)
             return getGalleryIDsFromData(data)
 
-        return arrayListOf()
+        return emptyList()
     }
 }
 
@@ -87,24 +91,27 @@ fun getSuggestionsForQuery(query: String) : List<Suggestion> {
         }
 
         val key = hashTerm(term)
-        val node = getNodeAtAddress(field, 0) ?: return listOf()
+        val node = getNodeAtAddress(field, 0) ?: return emptyList()
         val data = bSearch(field, key, node)
 
         if (data != null)
             return getSuggestionsFromData(field, data)
 
-        return listOf()
+        return emptyList()
     }
 }
 
 data class Suggestion(val s: String, val t: Int, val u: String, val n: String)
 fun getSuggestionsFromData(field: String, data: Pair<Long, Int>) : List<Suggestion> {
+    if (tag_index_version.isEmpty())
+        tag_index_version = getIndexVersion("tagindex")
+
     val url = "$protocol//$domain/$index_dir/$field.$tag_index_version.data"
     val (offset, length) = data
     if (length > 10000 || length <= 0)
         throw Exception("length $length is too long")
 
-    val inbuf = getURLAtRange(url, offset.until(offset+length)) ?: return listOf()
+    val inbuf = getURLAtRange(url, offset.until(offset+length)) ?: return emptyList()
 
     val suggestions = ArrayList<Suggestion>()
 
@@ -166,17 +173,20 @@ fun getGalleryIDsFromNozomi(area: String?, tag: String, language: String) : List
             return nozomi
         }
     } catch (e: Exception) {
-        return listOf()
+        return emptyList()
     }
 }
 
 fun getGalleryIDsFromData(data: Pair<Long, Int>) : List<Int> {
+    if (galleries_index_version.isEmpty())
+        galleries_index_version = getIndexVersion("galleriesindex")
+
     val url = "$protocol//$domain/$galleries_index_dir/galleries.$galleries_index_version.data"
     val (offset, length) = data
     if (length > 100000000 || length <= 0)
         throw Exception("length $length is too long")
 
-    val inbuf = getURLAtRange(url, offset.until(offset+length)) ?: return listOf()
+    val inbuf = getURLAtRange(url, offset.until(offset+length)) ?: return emptyList()
 
     val galleryIDs = ArrayList<Int>()
 
@@ -200,6 +210,11 @@ fun getGalleryIDsFromData(data: Pair<Long, Int>) : List<Int> {
 }
 
 fun getNodeAtAddress(field: String, address: Long) : Node? {
+    if (tag_index_version.isEmpty())
+        tag_index_version = getIndexVersion("tagindex")
+    if (galleries_index_version.isEmpty())
+        galleries_index_version = getIndexVersion("galleriesindex")
+
     val url =
             when(field) {
                 "galleries" -> "$protocol//$domain/$galleries_index_dir/galleries.$galleries_index_version.index"
