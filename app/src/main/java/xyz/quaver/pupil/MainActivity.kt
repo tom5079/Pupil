@@ -218,7 +218,9 @@ class MainActivity : AppCompatActivity() {
 
     private fun setupRecyclerView() {
         with(main_recyclerview) {
-            adapter = GalleryBlockAdapter(galleries)
+            adapter = GalleryBlockAdapter(galleries).apply {
+
+            }
             addOnScrollListener(
                 object: RecyclerView.OnScrollListener() {
                     override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
@@ -235,8 +237,7 @@ class MainActivity : AppCompatActivity() {
             ItemClickSupport.addTo(this).setOnItemClickListener { _, position, _ ->
                 val intent = Intent(this@MainActivity, ReaderActivity::class.java)
                 val gallery = galleries[position].first
-                intent.putExtra("GALLERY_ID", gallery.id)
-                intent.putExtra("GALLERY_TITLE", gallery.title)
+                intent.putExtra("galleryblock", Json(JsonConfiguration.Stable).stringify(GalleryBlock.serializer(), gallery))
 
                 //TODO: Maybe sprinke some transitions will be nice :D
                 startActivity(intent)

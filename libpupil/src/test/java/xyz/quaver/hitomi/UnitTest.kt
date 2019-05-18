@@ -7,9 +7,7 @@ import java.net.URL
 class UnitTest {
     @Test
     fun test() {
-        val f = File("C:/Users/tom50/Workspace/Pupil/nodir/nodir/asdf.txt")
-
-        f.delete()
+        print(File("C:\\asdf").list()?.size ?: 0)
     }
 
     @Test

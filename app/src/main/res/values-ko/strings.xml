@@ -44,4 +44,11 @@
     <string name="help_dialog_title">준비 중</string>
     <string name="help_dialog_message">준비중입니다.</string>
     <string name="reader_fab_fullscreen">전체 화면</string>
+    <string name="channel_download">다운로드</string>
+    <string name="channel_download_description">다운로드 상태 알림</string>
+    <string name="reader_fab_download">백그라운드 다운로드</string>
+    <string name="reader_notification_text">다운로드 중…</string>
+    <string name="reader_notification_complete">다운로드 완료</string>
+    <string name="reader_notification_error">다운로드 오류</string>
+    <string name="reader_fab_download_cancel">백그라운드 다운로드 취소</string>
 </resources>

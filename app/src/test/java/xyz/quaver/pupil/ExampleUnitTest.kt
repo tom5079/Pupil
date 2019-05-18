@@ -12,7 +12,6 @@ import org.junit.Test
 class ExampleUnitTest {
 
     @Test
-    @ImplicitReflectionSerializer
     fun test() {
 
     }

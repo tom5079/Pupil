@@ -1,6 +1,7 @@
 package xyz.quaver.pupil.adapters
 
 import android.graphics.BitmapFactory
+import android.util.SparseArray
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -14,9 +15,17 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonConfiguration
+import kotlinx.serialization.list
 import xyz.quaver.hitomi.GalleryBlock
+import xyz.quaver.hitomi.ReaderItem
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.types.Tag
+import java.io.File
+import java.util.*
+import kotlin.collections.ArrayList
+import kotlin.concurrent.schedule
 
 class GalleryBlockAdapter(private val galleries: List<Pair<GalleryBlock, Deferred<String>>>) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
@@ -35,9 +44,12 @@ class GalleryBlockAdapter(private val galleries: List<Pair<GalleryBlock, Deferre
     }
 
     var noMore = false
+    private val refreshTasks = SparseArray<TimerTask>()
 
-    class ViewHolder(val view: CardView) : RecyclerView.ViewHolder(view)
-    class ProgressViewHolder(view: LinearLayout) : RecyclerView.ViewHolder(view)
+    private var onChipClickedHandler = ArrayList<((Tag) -> Unit)>()
+
+    class ViewHolder(val view: CardView, var galleryID: Int? = null) : RecyclerView.ViewHolder(view)
+    class ProgressViewHolder(val view: LinearLayout) : RecyclerView.ViewHolder(view)
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
         when(viewType) {
@@ -71,16 +83,62 @@ class GalleryBlockAdapter(private val galleries: List<Pair<GalleryBlock, Deferre
                 }.toMap()
                 val (gallery, thumbnail) = galleries[position]
 
+                holder.galleryID = gallery.id
+
                 val artists = gallery.artists
                 val series = gallery.series
 
                 CoroutineScope(Dispatchers.Default).launch {
+                    val cache = thumbnail.await()
+
+                    if (!File(cache).exists())
+                        return@launch
+
                     val bitmap = BitmapFactory.decodeFile(thumbnail.await())
 
                     CoroutineScope(Dispatchers.Main).launch {
                         galleryblock_thumbnail.setImageBitmap(bitmap)
                     }
                 }
+
+                //Check cache
+                val readerCache = File(context.cacheDir, "imageCache/${gallery.id}/reader.json")
+                val imageCache = File(context.cacheDir, "imageCache/${gallery.id}/images")
+
+                if (readerCache.exists()) {
+                    val reader = Json(JsonConfiguration.Stable)
+                        .parse(ReaderItem.serializer().list, readerCache.readText())
+
+                    with(galleryblock_progressbar) {
+                        max = reader.size
+                        progress = imageCache.list()?.size ?: 0
+
+                        visibility = View.VISIBLE
+                    }
+                } else {
+                    galleryblock_progressbar.visibility = View.GONE
+                }
+
+                if (refreshTasks.get(gallery.id) == null) {
+                    val refresh = Timer(false).schedule(0, 1000) {
+                        this@with.post {
+                            val size = imageCache.list()?.size ?: return@post
+
+                            with(galleryblock_progressbar) {
+                                progress = size
+                                if (visibility == View.GONE) {
+                                    val reader = Json(JsonConfiguration.Stable)
+                                        .parse(ReaderItem.serializer().list, readerCache.readText())
+                                    max = reader.size
+                                    visibility = View.VISIBLE
+                                }
+                            }
+                        }
+                    }
+
+                    refreshTasks.put(gallery.id, refresh)
+                }
+
                 galleryblock_title.text = gallery.title
                 with(galleryblock_artist) {
                     text = artists.joinToString(", ") { it.wordCapitalize() }
@@ -112,8 +170,8 @@ class GalleryBlockAdapter(private val galleries: List<Pair<GalleryBlock, Deferre
                 galleryblock_tag_group.removeAllViews()
                 gallery.relatedTags.forEach {
                     val tag = Tag.parse(it)
-                    val chip = LayoutInflater
-                            .from(context)
+
+                    val chip = LayoutInflater.from(context)
                             .inflate(R.layout.tag_chip, holder.view, false) as Chip
 
                     val icon = when(tag.area) {
@@ -131,15 +189,37 @@ class GalleryBlockAdapter(private val galleries: List<Pair<GalleryBlock, Deferre
                     }
 
                     chip.chipIcon = icon
-                    chip.text = Tag.parse(it).tag.wordCapitalize()
+                    chip.text = tag.tag.wordCapitalize()
+                    chip.setOnClickListener {
+                        for (callback in onChipClickedHandler)
+                            callback.invoke(tag)
+                    }
 
                     galleryblock_tag_group.addView(chip)
                 }
             }
         }
+        if (holder is ProgressViewHolder) {
+            holder.view.visibility = when(noMore) {
+                true -> View.GONE
+                false -> View.VISIBLE
+            }
+        }
     }
 
-    override fun getItemCount() = if (galleries.isEmpty()) 0 else galleries.size+(if (noMore) 0 else 1)
+    override fun onViewDetachedFromWindow(holder: RecyclerView.ViewHolder) {
+        super.onViewDetachedFromWindow(holder)
+
+        if (holder is ViewHolder) {
+            val galleryID = holder.galleryID ?: return
+            val task = refreshTasks.get(galleryID) ?: return
+
+            refreshTasks.remove(galleryID)
+            task.cancel()
+        }
+    }
+
+    override fun getItemCount() = if (galleries.isEmpty()) 0 else galleries.size+1
 
     override fun getItemViewType(position: Int): Int {
         return when {

@@ -42,16 +42,20 @@
         app:menu_colorNormal="@color/colorAccent">
 
         <com.github.clans.fab.FloatingActionButton
+            android:id="@+id/reader_fab_download"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/ic_downloading"
+            android:tint="@android:color/white"
+            app:fab_label="@string/reader_fab_download"
+            app:fab_size="mini"/>
+
+        <com.github.clans.fab.FloatingActionButton
             android:id="@+id/reader_fab_fullscreen"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:src="@drawable/ic_fullscreen"
             app:fab_label="@string/reader_fab_fullscreen"
-            app:fab_size="mini"/>
-
-        <com.github.clans.fab.FloatingActionButton
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
             app:fab_size="mini"/>
 
     </com.github.clans.fab.FloatingActionMenu>

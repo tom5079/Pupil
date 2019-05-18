@@ -1,13 +1,11 @@
 package xyz.quaver.pupil.util
 
-import kotlinx.io.IOException
 import kotlinx.serialization.ImplicitReflectionSerializer
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonConfiguration
 import kotlinx.serialization.parseList
 import kotlinx.serialization.stringify
 import java.io.File
-
 
 class Histories(private val file: File) : ArrayList<Int>() {
 
