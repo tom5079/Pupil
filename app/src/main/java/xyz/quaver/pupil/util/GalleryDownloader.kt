@@ -20,11 +20,15 @@ import xyz.quaver.pupil.ReaderActivity
 import java.io.File
 import java.io.FileOutputStream
 import java.net.URL
+import java.util.*
 import javax.net.ssl.HttpsURLConnection
+import kotlin.collections.ArrayList
+import kotlin.concurrent.schedule
 
 class GalleryDownloader(
     base: Context,
-    private val galleryBlock: GalleryBlock
+    private val galleryBlock: GalleryBlock,
+    _notify: Boolean = false
 ) : ContextWrapper(base) {
 
     var notify: Boolean = false
@@ -33,7 +37,7 @@ class GalleryDownloader(
                 field = true
                 notificationManager.notify(galleryBlock.id, notificationBuilder.build())
 
-                if (downloadJob?.isActive != true)
+                if (!reader.isActive && downloadJob?.isActive != true)
                     field = false
             } else {
                 field = false
@@ -63,6 +67,7 @@ class GalleryDownloader(
         initNotification()
 
         reader = CoroutineScope(Dispatchers.IO).async {
+            notify = _notify
             val json = Json(JsonConfiguration.Stable)
             val serializer = ReaderItem.serializer().list
             val preference = PreferenceManager.getDefaultSharedPreferences(this@GalleryDownloader)
@@ -74,8 +79,10 @@ class GalleryDownloader(
             if (cache.exists()) {
                 val cached = json.parse(serializer, cache.readText())
 
-                if (cached.isNotEmpty())
+                if (cached.isNotEmpty()) {
+                    onReaderLoadedHandler?.invoke(cached)
                     return@async cached
+                }
             }
 
             //Cache doesn't exist. Load from internet
@@ -175,15 +182,17 @@ class GalleryDownloader(
 
             onCompleteHandler?.invoke()
 
-            notificationBuilder
-                .setContentTitle(galleryBlock.title)
-                .setContentText(getString(R.string.reader_notification_complete))
-                .setProgress(0, 0, false)
+            Timer(false).schedule(1000) {
+                notificationBuilder
+                    .setContentTitle(galleryBlock.title)
+                    .setContentText(getString(R.string.reader_notification_complete))
+                    .setProgress(0, 0, false)
 
-            if (notify)
-                notificationManager.notify(galleryBlock.id, notificationBuilder.build())
+                if (notify)
+                    notificationManager.notify(galleryBlock.id, notificationBuilder.build())
 
-            notify = false
+                notify = false
+            }
 
             remove(galleryBlock.id)
         }
@@ -193,6 +202,10 @@ class GalleryDownloader(
         downloadJob?.cancel()
 
         remove(galleryBlock.id)
+    }
+
+    suspend fun cancelAndJoin() {
+        downloadJob?.cancelAndJoin()
     }
 
     fun invokeOnReaderLoaded() {

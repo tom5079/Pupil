@@ -36,6 +36,8 @@
     <string name="main_drawer_group_contact_github">Visit github</string>
     <string name="main_drawer_group_contact_email">Email me!</string>
 
+    <string name="main_dialog_delete">Delete this gallery</string>
+
     <string name="help_dialog_title">WIP</string>
     <string name="help_dialog_message">While in progress!</string>
 

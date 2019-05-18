@@ -1,7 +1,10 @@
 package xyz.quaver.pupil.adapters
 
 import android.graphics.BitmapFactory
+import android.graphics.PorterDuff
+import android.util.Log
 import android.util.SparseArray
+import android.util.SparseBooleanArray
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -9,6 +12,7 @@ import android.widget.LinearLayout
 import androidx.cardview.widget.CardView
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
+import androidx.vectordrawable.graphics.drawable.AnimatedVectorDrawableCompat
 import com.google.android.material.chip.Chip
 import kotlinx.android.synthetic.main.item_galleryblock.view.*
 import kotlinx.coroutines.CoroutineScope
@@ -45,6 +49,7 @@ class GalleryBlockAdapter(private val galleries: List<Pair<GalleryBlock, Deferre
 
     var noMore = false
     private val refreshTasks = SparseArray<TimerTask>()
+    val completeFlag = SparseBooleanArray()
 
     val onChipClickedHandler = ArrayList<((Tag) -> Unit)>()
 
@@ -121,16 +126,46 @@ class GalleryBlockAdapter(private val galleries: List<Pair<GalleryBlock, Deferre
 
                 if (refreshTasks.get(gallery.id) == null) {
                     val refresh = Timer(false).schedule(0, 1000) {
-                        this@with.post {
-                            val size = imageCache.list()?.size ?: return@post
-
+                        post {
                             with(galleryblock_progressbar) {
-                                progress = size
-                                if (visibility == View.GONE) {
-                                    val reader = Json(JsonConfiguration.Stable)
-                                        .parse(ReaderItem.serializer().list, readerCache.readText())
-                                    max = reader.size
-                                    visibility = View.VISIBLE
+                                progress = imageCache.list()?.size ?: 0
+
+                                if (!readerCache.exists()) {
+                                    visibility = View.GONE
+                                    max = 0
+                                    progress = 0
+
+                                    holder.view.galleryblock_progress_complete.visibility = View.INVISIBLE
+                                } else {
+                                    if (visibility == View.GONE) {
+                                        val reader = Json(JsonConfiguration.Stable)
+                                            .parse(ReaderItem.serializer().list, readerCache.readText())
+                                        max = reader.size
+                                        visibility = View.VISIBLE
+                                    }
+
+                                    if (progress == max) {
+                                        if (completeFlag.get(gallery.id, false)) {
+                                            with(holder.view.galleryblock_progress_complete) {
+                                                setImageResource(R.drawable.ic_progressbar)
+                                                visibility = View.VISIBLE
+                                            }
+                                        } else {
+                                            val drawable = AnimatedVectorDrawableCompat.create(context, R.drawable.ic_progressbar_complete)
+                                            with(holder.view.galleryblock_progress_complete) {
+                                                setImageDrawable(drawable)
+                                                visibility = View.VISIBLE
+                                            }
+                                            drawable?.start()
+                                            completeFlag.put(gallery.id, true)
+                                        }
+                                    } else {
+                                        with(holder.view.galleryblock_progress_complete) {
+                                            visibility = View.INVISIBLE
+                                        }
+                                    }
+
+                                    null
                                 }
                             }
                         }
@@ -176,12 +211,12 @@ class GalleryBlockAdapter(private val galleries: List<Pair<GalleryBlock, Deferre
 
                     val icon = when(tag.area) {
                         "male" -> {
-                            chip.setChipBackgroundColorResource(R.color.material_blue_100)
+                            chip.setChipBackgroundColorResource(R.color.material_blue_700)
                             chip.setTextColor(ContextCompat.getColor(context, android.R.color.white))
                             ContextCompat.getDrawable(context, R.drawable.ic_gender_male_white)
                         }
                         "female" -> {
-                            chip.setChipBackgroundColorResource(R.color.material_pink_100)
+                            chip.setChipBackgroundColorResource(R.color.material_pink_600)
                             chip.setTextColor(ContextCompat.getColor(context, android.R.color.white))
                             ContextCompat.getDrawable(context, R.drawable.ic_gender_female_white)
                         }

@@ -6,6 +6,7 @@ import android.os.Bundle
 import android.preference.PreferenceManager
 import android.text.*
 import android.text.style.AlignmentSpan
+import android.view.LayoutInflater
 import android.view.View
 import android.view.WindowManager
 import android.widget.TextView
@@ -21,6 +22,7 @@ import com.arlib.floatingsearchview.util.view.SearchInputView
 import com.google.android.material.appbar.AppBarLayout
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.activity_main_content.*
+import kotlinx.android.synthetic.main.dialog_galleryblock.view.*
 import kotlinx.coroutines.*
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonConfiguration
@@ -30,10 +32,7 @@ import ru.noties.markwon.Markwon
 import xyz.quaver.hitomi.*
 import xyz.quaver.pupil.adapters.GalleryBlockAdapter
 import xyz.quaver.pupil.types.TagSuggestion
-import xyz.quaver.pupil.util.Histories
-import xyz.quaver.pupil.util.ItemClickSupport
-import xyz.quaver.pupil.util.SetLineOverlap
-import xyz.quaver.pupil.util.checkUpdate
+import xyz.quaver.pupil.util.*
 import java.io.File
 import java.io.FileOutputStream
 import java.net.URL
@@ -46,6 +45,8 @@ class MainActivity : AppCompatActivity() {
     private val galleries = ArrayList<Pair<GalleryBlock, Deferred<String>>>()
 
     private var query = ""
+
+    private val SETTINGS = 45162
 
     private var galleryIDs: Deferred<List<Int>>? = null
     private var loadingJob: Job? = null
@@ -164,6 +165,20 @@ class MainActivity : AppCompatActivity() {
         super.onResume()
     }
 
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        when(requestCode) {
+            SETTINGS -> {
+                runOnUiThread {
+                    cancelFetch()
+                    clearGalleries()
+                    fetchGalleries(query)
+                    loadBlocks()
+                }
+            }
+        }
+    }
+
     private fun checkUpdate() {
 
         fun extractReleaseNote(update: JsonObject, locale: String) : String {
@@ -257,16 +272,63 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
             )
-            ItemClickSupport.addTo(this).setOnItemClickListener { _, position, _ ->
-                val intent = Intent(this@MainActivity, ReaderActivity::class.java)
-                val gallery = galleries[position].first
-                intent.putExtra("galleryblock", Json(JsonConfiguration.Stable).stringify(GalleryBlock.serializer(), gallery))
+            ItemClickSupport.addTo(this)
+                .setOnItemClickListener { _, position, _ ->
+                    val intent = Intent(this@MainActivity, ReaderActivity::class.java)
+                    val gallery = galleries[position].first
+                    intent.putExtra("galleryblock", Json(JsonConfiguration.Stable).stringify(GalleryBlock.serializer(), gallery))
 
-                //TODO: Maybe sprinke some transitions will be nice :D
-                startActivity(intent)
+                    //TODO: Maybe sprinke some transitions will be nice :D
+                    startActivity(intent)
 
-                Histories.default.add(gallery.id)
-            }
+                    Histories.default.add(gallery.id)
+                }.setOnItemLongClickListener { recyclerView, position, v ->
+                    val galleryBlock = galleries[position].first
+                    val view = LayoutInflater.from(this@MainActivity)
+                        .inflate(R.layout.dialog_galleryblock, recyclerView, false)
+
+                    val dialog = AlertDialog.Builder(this@MainActivity).apply {
+                        setView(view)
+                    }.create()
+
+                    with(view.main_dialog_download) {
+                        text = when(GalleryDownloader.get(galleryBlock.id)) {
+                            null -> getString(R.string.reader_fab_download)
+                            else -> getString(R.string.reader_fab_download_cancel)
+                        }
+                        isEnabled = !(adapter as GalleryBlockAdapter).completeFlag.get(galleryBlock.id, false)
+                        setOnClickListener {
+                            val downloader = GalleryDownloader.get(galleryBlock.id)
+                            if (downloader == null) {
+                                GalleryDownloader(context, galleryBlock, true).start()
+                                Histories.default.add(galleryBlock.id)
+                            } else {
+                                downloader.cancel()
+                                downloader.clearNotification()
+                            }
+
+                            dialog.dismiss()
+                        }
+                    }
+
+                    view.main_dialog_delete.setOnClickListener {
+                        CoroutineScope(Dispatchers.Default).launch {
+                            with(GalleryDownloader[galleryBlock.id]) {
+                                this?.cancelAndJoin()
+                                this?.clearNotification()
+                            }
+                            val cache = File(cacheDir, "imageCache/${galleryBlock.id}/images/")
+                            cache.deleteRecursively()
+
+                            dialog.dismiss()
+                            (adapter as GalleryBlockAdapter).completeFlag.put(galleryBlock.id, false)
+                        }
+                    }
+
+                    dialog.show()
+
+                    true
+                }
         }
     }
 
@@ -294,7 +356,7 @@ class MainActivity : AppCompatActivity() {
         with(main_searchview as FloatingSearchView) {
             setOnMenuItemClickListener {
                 when(it.itemId) {
-                    R.id.main_menu_settings -> startActivity(Intent(this@MainActivity, SettingsActivity::class.java))
+                    R.id.main_menu_settings -> startActivityForResult(Intent(this@MainActivity, SettingsActivity::class.java), SETTINGS)
                     R.id.main_menu_search -> setSearchFocused(true)
                 }
             }
@@ -404,7 +466,12 @@ class MainActivity : AppCompatActivity() {
     private fun clearGalleries() {
         galleries.clear()
 
-        main_recyclerview.adapter?.notifyDataSetChanged()
+        with(main_recyclerview.adapter as GalleryBlockAdapter?) {
+            this ?: return@with
+
+            this.completeFlag.clear()
+            this.notifyDataSetChanged()
+        }
 
         main_noresult.visibility = View.INVISIBLE
         main_progressbar.show()

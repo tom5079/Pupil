@@ -33,7 +33,7 @@
                     android:valueFrom="0"
                     android:valueTo="0.8"
                     android:valueType="floatType"
-                    android:interpolator="@android:anim/accelerate_decelerate_interpolator"/>
+                    android:interpolator="@android:interpolator/fast_out_slow_in"/>
                 <objectAnimator
                     android:propertyName="trimPathStart"
                     android:startOffset="500"
@@ -41,14 +41,14 @@
                     android:valueFrom="0"
                     android:valueTo="0.8"
                     android:valueType="floatType"
-                    android:interpolator="@android:anim/accelerate_decelerate_interpolator"/>
+                    android:interpolator="@android:interpolator/fast_out_slow_in"/>
                 <objectAnimator
                     android:propertyName="trimPathOffset"
                     android:duration="1000"
                     android:valueFrom="0"
                     android:valueTo="0.2"
                     android:valueType="floatType"
-                    android:interpolator="@android:anim/linear_interpolator"/>
+                    android:interpolator="@android:interpolator/fast_out_slow_in"/>
             </set>
         </aapt:attr>
     </target>
