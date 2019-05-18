@@ -27,6 +27,10 @@ data class Tag(val area: String?, val tag: String, val isNegative: Boolean = fal
         }
     }
 
+    fun toQuery(): String {
+        return toString().replace(' ', '_')
+    }
+
     override fun equals(other: Any?): Boolean {
         if (other !is Tag)
             return false

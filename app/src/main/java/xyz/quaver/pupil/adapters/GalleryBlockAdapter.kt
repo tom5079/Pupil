@@ -46,7 +46,7 @@ class GalleryBlockAdapter(private val galleries: List<Pair<GalleryBlock, Deferre
     var noMore = false
     private val refreshTasks = SparseArray<TimerTask>()
 
-    private var onChipClickedHandler = ArrayList<((Tag) -> Unit)>()
+    val onChipClickedHandler = ArrayList<((Tag) -> Unit)>()
 
     class ViewHolder(val view: CardView, var galleryID: Int? = null) : RecyclerView.ViewHolder(view)
     class ProgressViewHolder(val view: LinearLayout) : RecyclerView.ViewHolder(view)

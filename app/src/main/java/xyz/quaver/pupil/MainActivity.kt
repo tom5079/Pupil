@@ -8,6 +8,7 @@ import android.text.*
 import android.text.style.AlignmentSpan
 import android.view.View
 import android.view.WindowManager
+import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.res.ResourcesCompat
@@ -127,8 +128,8 @@ class MainActivity : AppCompatActivity() {
             true
         }
 
-        setupRecyclerView()
         setupSearchBar()
+        setupRecyclerView()
         fetchGalleries(query)
         loadBlocks()
     }
@@ -136,6 +137,17 @@ class MainActivity : AppCompatActivity() {
     override fun onBackPressed() {
         if (main_drawer_layout.isDrawerOpen(GravityCompat.START))
             main_drawer_layout.closeDrawer(GravityCompat.START)
+        else if (query.isNotEmpty()) {
+            runOnUiThread {
+                query = ""
+                findViewById<SearchInputView>(R.id.search_bar_text).setText(query, TextView.BufferType.EDITABLE)
+
+                cancelFetch()
+                clearGalleries()
+                fetchGalleries(query)
+                loadBlocks()
+            }
+        }
         else
             super.onBackPressed()
     }
@@ -219,7 +231,18 @@ class MainActivity : AppCompatActivity() {
     private fun setupRecyclerView() {
         with(main_recyclerview) {
             adapter = GalleryBlockAdapter(galleries).apply {
+                onChipClickedHandler.add {
+                    post {
+                        query = it.toQuery()
+                        this@MainActivity.findViewById<SearchInputView>(R.id.search_bar_text)
+                            .setText(query, TextView.BufferType.EDITABLE)
 
+                        cancelFetch()
+                        clearGalleries()
+                        fetchGalleries(query)
+                        loadBlocks()
+                    }
+                }
             }
             addOnScrollListener(
                 object: RecyclerView.OnScrollListener() {
