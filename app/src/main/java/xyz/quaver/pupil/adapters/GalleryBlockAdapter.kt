@@ -1,8 +1,6 @@
 package xyz.quaver.pupil.adapters
 
 import android.graphics.BitmapFactory
-import android.graphics.PorterDuff
-import android.util.Log
 import android.util.SparseArray
 import android.util.SparseBooleanArray
 import android.view.LayoutInflater

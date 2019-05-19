@@ -38,9 +38,7 @@ class ReaderAdapter(private val images: List<String>) : RecyclerView.Adapter<Rea
 
                 val image = BitmapFactory.decodeFile(images[position], options)
 
-                launch(Dispatchers.Main) {
-                    setImageBitmap(image)
-                }
+                post { setImageBitmap(image) }
             }
         }
     }

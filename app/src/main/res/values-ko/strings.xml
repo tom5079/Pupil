@@ -52,4 +52,5 @@
     <string name="reader_notification_error">다운로드 오류</string>
     <string name="reader_fab_download_cancel">백그라운드 다운로드 취소</string>
     <string name="main_dialog_delete">갤러리 삭제</string>
+    <string name="main_drawer_downloads">다운로드</string>
 </resources>

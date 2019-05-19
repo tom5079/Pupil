@@ -52,4 +52,5 @@
     <string name="reader_notification_error">ダウンロードエラー</string>
     <string name="reader_fab_download_cancel">バックグラウンドダウンロード中止</string>
     <string name="main_dialog_delete">このギャラリーを削除</string>
+    <string name="main_drawer_downloads">ダウンロード</string>
 </resources>

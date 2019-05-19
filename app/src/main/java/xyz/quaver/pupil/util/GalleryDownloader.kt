@@ -31,7 +31,7 @@ class GalleryDownloader(
     _notify: Boolean = false
 ) : ContextWrapper(base) {
 
-    var notify: Boolean = false
+    var download: Boolean = false
         set(value) {
             if (value) {
                 field = true
@@ -67,7 +67,7 @@ class GalleryDownloader(
         initNotification()
 
         reader = CoroutineScope(Dispatchers.IO).async {
-            notify = _notify
+            download = _notify
             val json = Json(JsonConfiguration.Stable)
             val serializer = ReaderItem.serializer().list
             val preference = PreferenceManager.getDefaultSharedPreferences(this@GalleryDownloader)
@@ -138,7 +138,7 @@ class GalleryDownloader(
                         .setProgress(reader.size, index, false)
                         .setContentText("$index/${reader.size}")
 
-                    if (notify)
+                    if (download)
                         notificationManager.notify(galleryBlock.id, notificationBuilder.build())
 
                     async(Dispatchers.IO) {
@@ -188,10 +188,10 @@ class GalleryDownloader(
                     .setContentText(getString(R.string.reader_notification_complete))
                     .setProgress(0, 0, false)
 
-                if (notify)
+                if (download)
                     notificationManager.notify(galleryBlock.id, notificationBuilder.build())
 
-                notify = false
+                download = false
             }
 
             remove(galleryBlock.id)
@@ -219,7 +219,7 @@ class GalleryDownloader(
     }
 
     fun invokeOnNotifyChanged() {
-        onNotifyChangedHandler?.invoke(notify)
+        onNotifyChangedHandler?.invoke(download)
     }
 
     private fun initNotification() {

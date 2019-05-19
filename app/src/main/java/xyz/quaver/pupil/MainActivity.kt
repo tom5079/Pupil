@@ -42,18 +42,32 @@ import kotlin.collections.ArrayList
 
 class MainActivity : AppCompatActivity() {
 
+    enum class Mode {
+        SEARCH,
+        HISTORY,
+        DOWNLOAD
+    }
+
     private val galleries = ArrayList<Pair<GalleryBlock, Deferred<String>>>()
 
     private var query = ""
+    private var mode = Mode.SEARCH
 
     private val SETTINGS = 45162
 
     private var galleryIDs: Deferred<List<Int>>? = null
     private var loadingJob: Job? = null
 
+    private lateinit var histories: Histories
+    private lateinit var downloads: Histories
+
     override fun onCreate(savedInstanceState: Bundle?) {
-        Histories.default = Histories(File(cacheDir, "histories.json"))
         super.onCreate(savedInstanceState)
+
+        with(application as Pupil) {
+            this@MainActivity.histories = histories
+            this@MainActivity.downloads = downloads
+        }
 
         window.setFlags(
             WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
@@ -64,82 +78,13 @@ class MainActivity : AppCompatActivity() {
 
         checkUpdate()
 
-        main_appbar_layout.addOnOffsetChangedListener(
-            AppBarLayout.OnOffsetChangedListener { _, p1 ->
-                main_searchview.translationY = p1.toFloat()
-                main_recyclerview.translationY = p1.toFloat()
-            }
-        )
-
-        with(main_swipe_layout) {
-            setProgressViewOffset(
-                false,
-                resources.getDimensionPixelSize(R.dimen.progress_view_start),
-                resources.getDimensionPixelSize(R.dimen.progress_view_offset)
-            )
-
-            setOnRefreshListener {
-                CoroutineScope(Dispatchers.Main).launch {
-                    cancelFetch()
-                    clearGalleries()
-                    fetchGalleries(query)
-                    loadBlocks()
-                }
-            }
-        }
-
-        main_nav_view.setNavigationItemSelectedListener {
-            CoroutineScope(Dispatchers.Main).launch {
-                main_drawer_layout.closeDrawers()
-
-                when(it.itemId) {
-                    R.id.main_drawer_home -> {
-                        cancelFetch()
-                        clearGalleries()
-                        query = query.replace("HISTORY", "")
-                        fetchGalleries(query)
-                    }
-                    R.id.main_drawer_history -> {
-                        cancelFetch()
-                        clearGalleries()
-                        query += "HISTORY"
-                        fetchGalleries(query)
-                    }
-                    R.id.main_drawer_help -> {
-                        AlertDialog.Builder(this@MainActivity).apply {
-                            title = getString(R.string.help_dialog_title)
-                            setMessage(R.string.help_dialog_message)
-
-                            setPositiveButton(android.R.string.ok) { _, _ -> }
-                        }.show()
-                    }
-                    R.id.main_drawer_github -> {
-                        startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(getString(R.string.github))))
-                    }
-                    R.id.main_drawer_homepage -> {
-                        startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(getString(R.string.home_page))))
-                    }
-                    R.id.main_drawer_email -> {
-                        startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(getString(R.string.email))))
-                    }
-                }
-                loadBlocks()
-            }
-
-            true
-        }
-
-        setupSearchBar()
-        setupRecyclerView()
-        fetchGalleries(query)
-        loadBlocks()
+        initView()
     }
 
     override fun onBackPressed() {
-        if (main_drawer_layout.isDrawerOpen(GravityCompat.START))
-            main_drawer_layout.closeDrawer(GravityCompat.START)
-        else if (query.isNotEmpty()) {
-            runOnUiThread {
+        when {
+            main_drawer_layout.isDrawerOpen(GravityCompat.START) -> main_drawer_layout.closeDrawer(GravityCompat.START)
+            query.isNotEmpty() -> runOnUiThread {
                 query = ""
                 findViewById<SearchInputView>(R.id.search_bar_text).setText(query, TextView.BufferType.EDITABLE)
 
@@ -148,9 +93,8 @@ class MainActivity : AppCompatActivity() {
                 fetchGalleries(query)
                 loadBlocks()
             }
+            else -> super.onBackPressed()
         }
-        else
-            super.onBackPressed()
     }
 
     override fun onResume() {
@@ -243,6 +187,91 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun initView() {
+        main_appbar_layout.addOnOffsetChangedListener(
+            AppBarLayout.OnOffsetChangedListener { _, p1 ->
+                main_searchview.translationY = p1.toFloat()
+                main_recyclerview.translationY = p1.toFloat()
+            }
+        )
+
+        //SwipeRefreshLayout
+        with(main_swipe_layout) {
+            setProgressViewOffset(
+                false,
+                resources.getDimensionPixelSize(R.dimen.progress_view_start),
+                resources.getDimensionPixelSize(R.dimen.progress_view_offset)
+            )
+
+            setOnRefreshListener {
+                post {
+                    cancelFetch()
+                    clearGalleries()
+                    fetchGalleries(query)
+                    loadBlocks()
+                }
+            }
+        }
+
+        //NavigationView
+        main_nav_view.setNavigationItemSelectedListener {
+            runOnUiThread {
+                main_drawer_layout.closeDrawers()
+
+                when(it.itemId) {
+                    R.id.main_drawer_home -> {
+                        cancelFetch()
+                        clearGalleries()
+                        query = ""
+                        mode = Mode.SEARCH
+                        fetchGalleries(query)
+                        loadBlocks()
+                    }
+                    R.id.main_drawer_history -> {
+                        cancelFetch()
+                        clearGalleries()
+                        query = ""
+                        mode = Mode.HISTORY
+                        fetchGalleries(query)
+                        loadBlocks()
+                    }
+                    R.id.main_drawer_downloads -> {
+                        cancelFetch()
+                        clearGalleries()
+                        query = ""
+                        mode = Mode.DOWNLOAD
+                        fetchGalleries(query)
+                        loadBlocks()
+                    }
+                    R.id.main_drawer_help -> {
+                        AlertDialog.Builder(this@MainActivity).apply {
+                            title = getString(R.string.help_dialog_title)
+                            setMessage(R.string.help_dialog_message)
+
+                            setPositiveButton(android.R.string.ok) { _, _ -> }
+                        }.show()
+                    }
+                    R.id.main_drawer_github -> {
+                        startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(getString(R.string.github))))
+                    }
+                    R.id.main_drawer_homepage -> {
+                        startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(getString(R.string.home_page))))
+                    }
+                    R.id.main_drawer_email -> {
+                        startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(getString(R.string.email))))
+                    }
+                }
+            }
+
+            true
+        }
+
+        setupSearchBar()
+        setupRecyclerView()
+        fetchGalleries(query)
+        loadBlocks()
+    }
+
     private fun setupRecyclerView() {
         with(main_recyclerview) {
             adapter = GalleryBlockAdapter(galleries).apply {
@@ -281,8 +310,8 @@ class MainActivity : AppCompatActivity() {
                     //TODO: Maybe sprinke some transitions will be nice :D
                     startActivity(intent)
 
-                    Histories.default.add(gallery.id)
-                }.setOnItemLongClickListener { recyclerView, position, v ->
+                    histories.add(gallery.id)
+                }.setOnItemLongClickListener { recyclerView, position, _ ->
                     val galleryBlock = galleries[position].first
                     val view = LayoutInflater.from(this@MainActivity)
                         .inflate(R.layout.dialog_galleryblock, recyclerView, false)
@@ -301,7 +330,7 @@ class MainActivity : AppCompatActivity() {
                             val downloader = GalleryDownloader.get(galleryBlock.id)
                             if (downloader == null) {
                                 GalleryDownloader(context, galleryBlock, true).start()
-                                Histories.default.add(galleryBlock.id)
+                                downloads.add(galleryBlock.id)
                             } else {
                                 downloader.cancel()
                                 downloader.clearNotification()
@@ -489,13 +518,33 @@ class MainActivity : AppCompatActivity() {
             return
 
         galleryIDs = CoroutineScope(Dispatchers.IO).async {
-            when {
-                query.contains("HISTORY") ->
-                    Histories.default.toList()
-                query.isEmpty() and defaultQuery.isEmpty() ->
-                    fetchNozomi(start = from, count = perPage)
-                else ->
-                    doSearch("$defaultQuery $query")
+            when(mode) {
+                Mode.SEARCH -> {
+                    when {
+                        query.isEmpty() and defaultQuery.isEmpty() ->
+                            fetchNozomi(start = from, count = perPage)
+                        else ->
+                            doSearch("$defaultQuery $query")
+                    }
+                }
+                Mode.HISTORY -> {
+                    when {
+                        query.isEmpty() -> histories.toList()
+                        else -> {
+                            val result = doSearch(query).sorted()
+                            histories.filter { result.binarySearch(it) >= 0 }
+                        }
+                    }
+                }
+                Mode.DOWNLOAD -> {
+                    when {
+                        query.isEmpty() -> downloads.toList()
+                        else -> {
+                            val result = doSearch(query).sorted()
+                            downloads.filter { result.binarySearch(it) >= 0 }
+                        }
+                    }
+                }
             }
         }
     }

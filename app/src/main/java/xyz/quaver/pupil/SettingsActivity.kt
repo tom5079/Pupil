@@ -16,7 +16,6 @@ import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
 import kotlinx.android.synthetic.main.dialog_default_query.view.*
 import xyz.quaver.pupil.types.Tags
-import xyz.quaver.pupil.util.Histories
 import java.io.File
 
 class SettingsActivity : AppCompatActivity() {
@@ -99,7 +98,7 @@ class SettingsActivity : AppCompatActivity() {
             with(findPreference<Preference>("clear_history")) {
                 this ?: return@with
 
-                val histories = Histories.default
+                val histories = (activity!!.application as Pupil).histories
 
                 summary = getString(R.string.settings_clear_history_summary, histories.size)
 

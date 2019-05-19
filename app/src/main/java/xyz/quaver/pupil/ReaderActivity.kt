@@ -2,7 +2,6 @@ package xyz.quaver.pupil
 
 import android.graphics.drawable.Drawable
 import android.os.Bundle
-import android.util.Log
 import android.view.*
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -63,7 +62,7 @@ class ReaderActivity : AppCompatActivity() {
 
         initView()
 
-        if (!downloader.notify)
+        if (!downloader.download)
             downloader.start()
     }
 
@@ -113,7 +112,7 @@ class ReaderActivity : AppCompatActivity() {
     override fun onDestroy() {
         super.onDestroy()
 
-        if (!downloader.notify)
+        if (!downloader.download)
             downloader.cancel()
     }
 
@@ -159,18 +158,19 @@ class ReaderActivity : AppCompatActivity() {
                 }
             }
             onDownloadedHandler = {
+                val item = it.toList()
                 CoroutineScope(Dispatchers.Main).launch {
                     if (images.isEmpty()) {
-                        images.addAll(it)
+                        images.addAll(item)
                         reader_recyclerview.adapter?.notifyDataSetChanged()
                     } else {
-                        images.add(it.last())
+                        images.add(item.last())
                         reader_recyclerview.adapter?.notifyItemInserted(images.size-1)
                     }
                 }
             }
             onErrorHandler = {
-                downloader.notify = false
+                downloader.download = false
             }
             onCompleteHandler = {
                 CoroutineScope(Dispatchers.Main).launch {
@@ -184,7 +184,7 @@ class ReaderActivity : AppCompatActivity() {
                     val icon = AnimatedVectorDrawableCompat.create(this, R.drawable.ic_downloading)
                     icon?.registerAnimationCallback(object: Animatable2Compat.AnimationCallback() {
                         override fun onAnimationEnd(drawable: Drawable?) {
-                            if (downloader.notify)
+                            if (downloader.download)
                                 fab.post {
                                     icon.start()
                                     fab.labelText = getString(R.string.reader_fab_download_cancel)
@@ -205,7 +205,7 @@ class ReaderActivity : AppCompatActivity() {
             }
         }
 
-        if (downloader.notify) {
+        if (downloader.download) {
             downloader.invokeOnReaderLoaded()
             downloader.invokeOnNotifyChanged()
         }
@@ -255,9 +255,9 @@ class ReaderActivity : AppCompatActivity() {
         }
 
         reader_fab_download.setOnClickListener {
-            downloader.notify = !downloader.notify
+            downloader.download = !downloader.download
 
-            if (!downloader.notify)
+            if (!downloader.download)
                 downloader.clearNotification()
         }
     }
