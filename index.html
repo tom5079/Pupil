@@ -1,13 +1,26 @@
 ---
 layout: default
-lang: en
+lang: ko
 ---
 
-<script>
-    var userLang = navigator.language || navigator.userLanguage;
-    
-    if (userLang.search("ko") != -1)
-        window.location.href = "ko/";
-    else
-        window.location.href = "en/";
-</script>
+<div id="home">
+  <h1>글 목록</h1>
+  {% assign posts=site.posts | where:"lang", page.lang %}
+  <ul class="posts">
+    {% for post in posts %}
+      <li>
+        <span>
+          {{ post.date | date_to_string }}
+        </span>
+
+        &raquo;
+
+        <a href="{{ site.baseurl }}{{ post.url }}">
+          {{ post.title }}
+        </a>
+
+        {{ post.excerpt }}
+      </li>
+    {% endfor %}
+    </ul>
+</div>
