@@ -10,6 +10,10 @@
         <item android:id="@+id/main_drawer_history"
             android:title="@string/main_drawer_history"
             android:icon="@drawable/ic_history"/>
+
+        <item android:id="@+id/main_drawer_downloads"
+            android:title="@string/main_drawer_downloads"
+            android:icon="@drawable/ic_download"/>
     </group>
 
     <item android:title="@string/main_drawer_group_contact_title">

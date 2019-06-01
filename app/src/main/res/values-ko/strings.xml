@@ -3,8 +3,8 @@
     <string name="galleryblock_language">언어: %1$s</string>
     <string name="galleryblock_series">시리즈: %1$s</string>
     <string name="galleryblock_type">종류: %1$s</string>
-    <string name="permission_explain">권한을 거부하면 일부 기능이 작동하지 않을 수 있습니다</string>
     <string name="search_hint">갤러리 검색</string>
+    <string name="search_hint_with_page">갤러리 검색</string>
     <string name="settings_default_query">기본 검색어</string>
     <string name="settings_clear_image_cache">이미지 캐시 정리하기</string>
     <string name="settings_clear_cache_alert_message">캐시를 정리하면 이미지 로딩속도가 느려질 수 있습니다. 계속하시겠습니까?</string>
@@ -52,4 +52,11 @@
     <string name="reader_notification_error">다운로드 오류</string>
     <string name="reader_fab_download_cancel">백그라운드 다운로드 취소</string>
     <string name="main_dialog_delete">갤러리 삭제</string>
+    <string name="main_drawer_downloads">다운로드</string>
+    <string name="main_jump_title">페이지 이동</string>
+    <string name="main_jump_message">현재 페이지: %1$d\n페이지 수: %2$d</string>
+    <string name="unable_to_connect">hitomi.la에 연결할 수 없습니다</string>
+    <string name="main_move">%1$d 페이지로 이동</string>
+    <string name="https_block_alert_title">접속 불가 현상 안내</string>
+    <string name="https_block_alert">최근 https 차단으로 접속이 안 되는 경우가 발생하고 있습니다\n이 경우 플레이스토어에서 SNIper앱을 이용하시면 정상이용이 가능합니다.</string>
 </resources>

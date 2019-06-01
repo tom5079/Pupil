@@ -2,7 +2,6 @@ package xyz.quaver.pupil
 
 import android.graphics.drawable.Drawable
 import android.os.Bundle
-import android.util.Log
 import android.view.*
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -13,12 +12,14 @@ import androidx.recyclerview.widget.PagerSnapHelper
 import androidx.recyclerview.widget.RecyclerView
 import androidx.vectordrawable.graphics.drawable.Animatable2Compat
 import androidx.vectordrawable.graphics.drawable.AnimatedVectorDrawableCompat
+import com.google.android.material.snackbar.Snackbar
 import kotlinx.android.synthetic.main.activity_reader.*
 import kotlinx.android.synthetic.main.activity_reader.view.*
 import kotlinx.android.synthetic.main.dialog_numberpicker.view.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.io.IOException
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonConfiguration
 import xyz.quaver.hitomi.GalleryBlock
@@ -63,7 +64,7 @@ class ReaderActivity : AppCompatActivity() {
 
         initView()
 
-        if (!downloader.notify)
+        if (!downloader.download)
             downloader.start()
     }
 
@@ -90,7 +91,7 @@ class ReaderActivity : AppCompatActivity() {
         when(item?.itemId) {
             R.id.reader_menu_page_indicator -> {
                 val view = LayoutInflater.from(this).inflate(R.layout.dialog_numberpicker, findViewById(android.R.id.content), false)
-                with(view.reader_dialog_number_picker) {
+                with(view.dialog_number_picker) {
                     minValue=1
                     maxValue=gallerySize
                     value=currentPage
@@ -98,8 +99,8 @@ class ReaderActivity : AppCompatActivity() {
                 val dialog = AlertDialog.Builder(this).apply {
                     setView(view)
                 }.create()
-                view.reader_dialog_ok.setOnClickListener {
-                    (reader_recyclerview.layoutManager as LinearLayoutManager?)?.scrollToPositionWithOffset(view.reader_dialog_number_picker.value-1, 0)
+                view.dialog_ok.setOnClickListener {
+                    (reader_recyclerview.layoutManager as LinearLayoutManager?)?.scrollToPositionWithOffset(view.dialog_number_picker.value-1, 0)
                     dialog.dismiss()
                 }
 
@@ -113,7 +114,7 @@ class ReaderActivity : AppCompatActivity() {
     override fun onDestroy() {
         super.onDestroy()
 
-        if (!downloader.notify)
+        if (!downloader.download)
             downloader.cancel()
     }
 
@@ -136,7 +137,13 @@ class ReaderActivity : AppCompatActivity() {
         var d: GalleryDownloader? = GalleryDownloader.get(galleryBlock.id)
 
         if (d == null) {
-            d = GalleryDownloader(this, galleryBlock)
+            try {
+                d = GalleryDownloader(this, galleryBlock)
+            } catch (e: IOException) {
+                Snackbar.make(reader_layout, R.string.unable_to_connect, Snackbar.LENGTH_LONG).show()
+                finish()
+                return
+            }
         }
 
         downloader = d.apply {
@@ -159,18 +166,21 @@ class ReaderActivity : AppCompatActivity() {
                 }
             }
             onDownloadedHandler = {
+                val item = it.toList()
                 CoroutineScope(Dispatchers.Main).launch {
                     if (images.isEmpty()) {
-                        images.addAll(it)
+                        images.addAll(item)
                         reader_recyclerview.adapter?.notifyDataSetChanged()
                     } else {
-                        images.add(it.last())
+                        images.add(item.last())
                         reader_recyclerview.adapter?.notifyItemInserted(images.size-1)
                     }
                 }
             }
             onErrorHandler = {
-                downloader.notify = false
+                if (it is IOException)
+                    Snackbar.make(reader_layout, R.string.unable_to_connect, Snackbar.LENGTH_LONG).show()
+                downloader.download = false
             }
             onCompleteHandler = {
                 CoroutineScope(Dispatchers.Main).launch {
@@ -180,32 +190,36 @@ class ReaderActivity : AppCompatActivity() {
             onNotifyChangedHandler = { notify ->
                 val fab = reader_fab_download
 
-                if (notify) {
-                    val icon = AnimatedVectorDrawableCompat.create(this, R.drawable.ic_downloading)
-                    icon?.registerAnimationCallback(object: Animatable2Compat.AnimationCallback() {
-                        override fun onAnimationEnd(drawable: Drawable?) {
-                            if (downloader.notify)
-                                fab.post {
-                                    icon.start()
-                                    fab.labelText = getString(R.string.reader_fab_download_cancel)
-                                }
-                            else
-                                fab.post {
-                                    fab.setImageResource(R.drawable.ic_download)
-                                    fab.labelText = getString(R.string.reader_fab_download)
-                                }
-                        }
-                    })
+                runOnUiThread {
+                    if (notify) {
+                        val icon = AnimatedVectorDrawableCompat.create(this, R.drawable.ic_downloading)
+                        icon?.registerAnimationCallback(object: Animatable2Compat.AnimationCallback() {
+                            override fun onAnimationEnd(drawable: Drawable?) {
+                                if (downloader.download)
+                                    fab.post {
+                                        icon.start()
+                                        fab.labelText = getString(R.string.reader_fab_download_cancel)
+                                    }
+                                else
+                                    fab.post {
+                                        fab.setImageResource(R.drawable.ic_download)
+                                        fab.labelText = getString(R.string.reader_fab_download)
+                                    }
+                            }
+                        })
 
-                    fab.setImageDrawable(icon)
-                    icon?.start()
-                } else {
-                    fab.setImageResource(R.drawable.ic_download)
+                        fab.setImageDrawable(icon)
+                        icon?.start()
+                    } else {
+                        runOnUiThread {
+                            fab.setImageResource(R.drawable.ic_download)
+                        }
+                    }
                 }
             }
         }
 
-        if (downloader.notify) {
+        if (downloader.download) {
             downloader.invokeOnReaderLoaded()
             downloader.invokeOnNotifyChanged()
         }
@@ -255,9 +269,9 @@ class ReaderActivity : AppCompatActivity() {
         }
 
         reader_fab_download.setOnClickListener {
-            downloader.notify = !downloader.notify
+            downloader.download = !downloader.download
 
-            if (!downloader.notify)
+            if (!downloader.download)
                 downloader.clearNotification()
         }
     }

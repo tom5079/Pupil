@@ -6,12 +6,12 @@
     <string name="main_no_result">結果なし</string>
     <string name="main_search">検索</string>
     <string name="search_hint">ギャラリー検索</string>
+    <string name="search_hint_with_page">ギャラリー検索</string>
     <string name="settings_cache_title">キャッシュ</string>
     <string name="settings_clear_image_cache">イメージキャッシュクリア</string>
     <string name="settings_clear_cache_alert_message">キャッシュをクリアするとイメージのロード速度に影響を与えます。実行しますか？</string>
     <string name="settings_clear_cache_summary">キャッシュサイズ: %1$d%2$s</string>
     <string name="settings_default_query">デフォルトキーワード</string>
-    <string name="permission_explain">権限を拒否すると一部の機能が利用できません</string>
     <string name="settings_galleries_per_page">一回にロードするギャラリー数</string>
     <string name="settings_search_title">検索設定</string>
     <string name="settings_title">設定</string>
@@ -52,4 +52,11 @@
     <string name="reader_notification_error">ダウンロードエラー</string>
     <string name="reader_fab_download_cancel">バックグラウンドダウンロード中止</string>
     <string name="main_dialog_delete">このギャラリーを削除</string>
+    <string name="main_drawer_downloads">ダウンロード</string>
+    <string name="main_jump_title">ページ移動</string>
+    <string name="main_jump_message">現ページ番号: %1$d\nページ数: %2$d</string>
+    <string name="unable_to_connect">hitomi.laに接続できません</string>
+    <string name="main_move">%1$dページへ移動</string>
+    <string name="https_block_alert_title">(Korean only)</string>
+    <string name="https_block_alert">(Korean only)</string>
 </resources>

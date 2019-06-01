@@ -6,16 +6,17 @@ import android.os.Bundle
 import android.preference.PreferenceManager
 import android.text.*
 import android.text.style.AlignmentSpan
-import android.view.LayoutInflater
-import android.view.View
-import android.view.WindowManager
+import android.util.Log
+import android.view.*
+import android.widget.EditText
+import android.widget.ImageView
+import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.cardview.widget.CardView
 import androidx.core.content.res.ResourcesCompat
 import androidx.core.view.GravityCompat
-import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
 import com.arlib.floatingsearchview.FloatingSearchView
 import com.arlib.floatingsearchview.suggestions.model.SearchSuggestion
 import com.arlib.floatingsearchview.util.view.SearchInputView
@@ -39,107 +40,64 @@ import java.net.URL
 import java.util.*
 import javax.net.ssl.HttpsURLConnection
 import kotlin.collections.ArrayList
+import kotlin.math.roundToInt
 
 class MainActivity : AppCompatActivity() {
+
+    enum class Mode {
+        SEARCH,
+        HISTORY,
+        DOWNLOAD
+    }
 
     private val galleries = ArrayList<Pair<GalleryBlock, Deferred<String>>>()
 
     private var query = ""
+    private var mode = Mode.SEARCH
 
     private val SETTINGS = 45162
 
     private var galleryIDs: Deferred<List<Int>>? = null
+    private var totalItems = 0
     private var loadingJob: Job? = null
+    private var currentPage = 0
+
+    private lateinit var histories: Histories
+    private lateinit var downloads: Histories
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        Histories.default = Histories(File(cacheDir, "histories.json"))
         super.onCreate(savedInstanceState)
 
-        window.setFlags(
-            WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
-            WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS
-        )
+        val preference = PreferenceManager.getDefaultSharedPreferences(this)
+
+        if (Locale.getDefault().language == "ko") {
+            if (!preference.getBoolean("https_block_alert", false)) {
+                android.app.AlertDialog.Builder(this).apply {
+                    setTitle(R.string.https_block_alert_title)
+                    setMessage(R.string.https_block_alert)
+                    setPositiveButton(android.R.string.ok) { _, _ -> }
+                }.show()
+
+                preference.edit().putBoolean("https_block_alert", true).apply()
+            }
+        }
+
+        with(application as Pupil) {
+            this@MainActivity.histories = histories
+            this@MainActivity.downloads = downloads
+        }
 
         setContentView(R.layout.activity_main)
 
         checkUpdate()
 
-        main_appbar_layout.addOnOffsetChangedListener(
-            AppBarLayout.OnOffsetChangedListener { _, p1 ->
-                main_searchview.translationY = p1.toFloat()
-                main_recyclerview.translationY = p1.toFloat()
-            }
-        )
-
-        with(main_swipe_layout) {
-            setProgressViewOffset(
-                false,
-                resources.getDimensionPixelSize(R.dimen.progress_view_start),
-                resources.getDimensionPixelSize(R.dimen.progress_view_offset)
-            )
-
-            setOnRefreshListener {
-                CoroutineScope(Dispatchers.Main).launch {
-                    cancelFetch()
-                    clearGalleries()
-                    fetchGalleries(query)
-                    loadBlocks()
-                }
-            }
-        }
-
-        main_nav_view.setNavigationItemSelectedListener {
-            CoroutineScope(Dispatchers.Main).launch {
-                main_drawer_layout.closeDrawers()
-
-                when(it.itemId) {
-                    R.id.main_drawer_home -> {
-                        cancelFetch()
-                        clearGalleries()
-                        query = query.replace("HISTORY", "")
-                        fetchGalleries(query)
-                    }
-                    R.id.main_drawer_history -> {
-                        cancelFetch()
-                        clearGalleries()
-                        query += "HISTORY"
-                        fetchGalleries(query)
-                    }
-                    R.id.main_drawer_help -> {
-                        AlertDialog.Builder(this@MainActivity).apply {
-                            title = getString(R.string.help_dialog_title)
-                            setMessage(R.string.help_dialog_message)
-
-                            setPositiveButton(android.R.string.ok) { _, _ -> }
-                        }.show()
-                    }
-                    R.id.main_drawer_github -> {
-                        startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(getString(R.string.github))))
-                    }
-                    R.id.main_drawer_homepage -> {
-                        startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(getString(R.string.home_page))))
-                    }
-                    R.id.main_drawer_email -> {
-                        startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(getString(R.string.email))))
-                    }
-                }
-                loadBlocks()
-            }
-
-            true
-        }
-
-        setupSearchBar()
-        setupRecyclerView()
-        fetchGalleries(query)
-        loadBlocks()
+        initView()
     }
 
     override fun onBackPressed() {
-        if (main_drawer_layout.isDrawerOpen(GravityCompat.START))
-            main_drawer_layout.closeDrawer(GravityCompat.START)
-        else if (query.isNotEmpty()) {
-            runOnUiThread {
+        when {
+            main_drawer_layout.isDrawerOpen(GravityCompat.START) -> main_drawer_layout.closeDrawer(GravityCompat.START)
+            query.isNotEmpty() -> runOnUiThread {
                 query = ""
                 findViewById<SearchInputView>(R.id.search_bar_text).setText(query, TextView.BufferType.EDITABLE)
 
@@ -148,9 +106,8 @@ class MainActivity : AppCompatActivity() {
                 fetchGalleries(query)
                 loadBlocks()
             }
+            else -> super.onBackPressed()
         }
-        else
-            super.onBackPressed()
     }
 
     override fun onResume() {
@@ -163,6 +120,44 @@ class MainActivity : AppCompatActivity() {
         else
             window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
         super.onResume()
+    }
+
+    override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
+        val preference = PreferenceManager.getDefaultSharedPreferences(this)
+        val perPage = preference.getString("per_page", "25")!!.toInt()
+        val maxPage = Math.ceil(totalItems / perPage.toDouble()).roundToInt()
+
+        return when(keyCode) {
+            KeyEvent.KEYCODE_VOLUME_DOWN -> {
+                if (currentPage < maxPage) {
+                    runOnUiThread {
+                        currentPage++
+
+                        cancelFetch()
+                        clearGalleries()
+                        fetchGalleries(query)
+                        loadBlocks()
+                    }
+                }
+
+                true
+            }
+            KeyEvent.KEYCODE_VOLUME_UP -> {
+                if (currentPage > 0) {
+                    runOnUiThread {
+                        currentPage--
+
+                        cancelFetch()
+                        clearGalleries()
+                        fetchGalleries(query)
+                        loadBlocks()
+                    }
+                }
+
+                true
+            }
+            else -> super.onKeyDown(keyCode, event)
+        }
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -243,11 +238,81 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun initView() {
+        var prevP1 = 0
+        main_appbar_layout.addOnOffsetChangedListener(
+            AppBarLayout.OnOffsetChangedListener { _, p1 ->
+                main_searchview.translationY = p1.toFloat()
+                main_recyclerview.scrollBy(0, prevP1 - p1)
+
+                prevP1 = p1
+            }
+        )
+
+        //NavigationView
+        main_nav_view.setNavigationItemSelectedListener {
+            runOnUiThread {
+                main_drawer_layout.closeDrawers()
+
+                when(it.itemId) {
+                    R.id.main_drawer_home -> {
+                        cancelFetch()
+                        clearGalleries()
+                        query = ""
+                        mode = Mode.SEARCH
+                        fetchGalleries(query)
+                        loadBlocks()
+                    }
+                    R.id.main_drawer_history -> {
+                        cancelFetch()
+                        clearGalleries()
+                        query = ""
+                        mode = Mode.HISTORY
+                        fetchGalleries(query)
+                        loadBlocks()
+                    }
+                    R.id.main_drawer_downloads -> {
+                        cancelFetch()
+                        clearGalleries()
+                        query = ""
+                        mode = Mode.DOWNLOAD
+                        fetchGalleries(query)
+                        loadBlocks()
+                    }
+                    R.id.main_drawer_help -> {
+                        AlertDialog.Builder(this@MainActivity).apply {
+                            title = getString(R.string.help_dialog_title)
+                            setMessage(R.string.help_dialog_message)
+
+                            setPositiveButton(android.R.string.ok) { _, _ -> }
+                        }.show()
+                    }
+                    R.id.main_drawer_github -> {
+                        startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(getString(R.string.github))))
+                    }
+                    R.id.main_drawer_homepage -> {
+                        startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(getString(R.string.home_page))))
+                    }
+                    R.id.main_drawer_email -> {
+                        startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(getString(R.string.email))))
+                    }
+                }
+            }
+
+            true
+        }
+
+        setupSearchBar()
+        setupRecyclerView()
+        fetchGalleries(query)
+        loadBlocks()
+    }
+
     private fun setupRecyclerView() {
         with(main_recyclerview) {
             adapter = GalleryBlockAdapter(galleries).apply {
                 onChipClickedHandler.add {
-                    post {
+                    runOnUiThread {
                         query = it.toQuery()
                         this@MainActivity.findViewById<SearchInputView>(R.id.search_bar_text)
                             .setText(query, TextView.BufferType.EDITABLE)
@@ -259,21 +324,12 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
             }
-            addOnScrollListener(
-                object: RecyclerView.OnScrollListener() {
-                    override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
-                        super.onScrolled(recyclerView, dx, dy)
-
-                        val layoutManager = recyclerView.layoutManager as LinearLayoutManager
-
-                        if (loadingJob?.isActive != true)
-                            if (layoutManager.findLastCompletelyVisibleItemPosition() == galleries.size)
-                                loadBlocks()
-                    }
-                }
-            )
             ItemClickSupport.addTo(this)
-                .setOnItemClickListener { _, position, _ ->
+                .setOnItemClickListener { _, position, v ->
+
+                    if (v !is CardView)
+                        return@setOnItemClickListener
+
                     val intent = Intent(this@MainActivity, ReaderActivity::class.java)
                     val gallery = galleries[position].first
                     intent.putExtra("galleryblock", Json(JsonConfiguration.Stable).stringify(GalleryBlock.serializer(), gallery))
@@ -281,8 +337,12 @@ class MainActivity : AppCompatActivity() {
                     //TODO: Maybe sprinke some transitions will be nice :D
                     startActivity(intent)
 
-                    Histories.default.add(gallery.id)
+                    histories.add(gallery.id)
                 }.setOnItemLongClickListener { recyclerView, position, v ->
+
+                    if (v !is CardView)
+                        return@setOnItemLongClickListener true
+
                     val galleryBlock = galleries[position].first
                     val view = LayoutInflater.from(this@MainActivity)
                         .inflate(R.layout.dialog_galleryblock, recyclerView, false)
@@ -301,7 +361,7 @@ class MainActivity : AppCompatActivity() {
                             val downloader = GalleryDownloader.get(galleryBlock.id)
                             if (downloader == null) {
                                 GalleryDownloader(context, galleryBlock, true).start()
-                                Histories.default.add(galleryBlock.id)
+                                downloads.add(galleryBlock.id)
                             } else {
                                 downloader.cancel()
                                 downloader.clearNotification()
@@ -329,6 +389,209 @@ class MainActivity : AppCompatActivity() {
 
                     true
                 }
+
+            var origin = 0f
+            var target = -1
+            val preferences = PreferenceManager.getDefaultSharedPreferences(context)
+            val perPage = preferences.getString("per_page", "25")!!.toInt()
+            setOnTouchListener { _, event ->
+                when(event.action) {
+                    MotionEvent.ACTION_UP -> {
+                        origin = 0f
+
+                        with(main_recyclerview.adapter as GalleryBlockAdapter) {
+                            if(showPrev) {
+                                showPrev = false
+
+                                val prev = main_recyclerview.layoutManager?.getChildAt(0)
+
+                                if (prev is LinearLayout) {
+                                    val icon = prev.findViewById<ImageView>(R.id.icon_prev)
+                                    prev.layoutParams.height = 1
+                                    icon.layoutParams.height = 1
+                                    icon.rotation = 180f
+                                }
+
+                                prev?.requestLayout()
+
+                                notifyItemRemoved(0)
+                            }
+
+                            if(showNext) {
+                                showNext = false
+
+                                val next = main_recyclerview.layoutManager?.let {
+                                    getChildAt(childCount-1)
+                                }
+
+                                if (next is LinearLayout) {
+                                    val icon = next.findViewById<ImageView>(R.id.icon_next)
+                                    next.layoutParams.height = 1
+                                    icon.layoutParams.height = 1
+                                    icon.rotation = 0f
+                                }
+
+                                next?.requestLayout()
+
+                                notifyItemRemoved(itemCount)
+                            }
+                        }
+
+                        if (target != -1) {
+                            currentPage = target
+
+                            runOnUiThread {
+                                cancelFetch()
+                                clearGalleries()
+                                fetchGalleries(query)
+                                loadBlocks()
+                            }
+
+                            target = -1
+                        }
+                    }
+                    MotionEvent.ACTION_DOWN -> origin = event.y
+                    MotionEvent.ACTION_MOVE -> {
+                        if (origin == 0f)
+                            origin = event.y
+
+                        val dist = event.y - origin
+
+                        when {
+                            !canScrollVertically(-1) -> {
+                                //TOP
+
+                                //Scrolling UP
+                                if (dist > 0 && currentPage != 0) {
+                                    with(main_recyclerview.adapter as GalleryBlockAdapter) {
+                                        if(!showPrev) {
+                                            showPrev = true
+                                            notifyItemInserted(0)
+                                        }
+                                    }
+
+                                    val prev = main_recyclerview.layoutManager?.getChildAt(0)
+
+                                    if (prev is LinearLayout) {
+                                        val icon = prev.findViewById<ImageView>(R.id.icon_prev)
+                                        val text = prev.findViewById<TextView>(R.id.text_prev).apply {
+                                            text = getString(R.string.main_move, currentPage)
+                                        }
+                                        if (dist < 360) {
+                                            prev.layoutParams.height = (dist/2).roundToInt()
+                                            icon.layoutParams.height = (dist/2).roundToInt()
+                                            icon.rotation = dist+180
+                                            text.layoutParams.width = dist.roundToInt()
+
+                                            target = -1
+                                        }
+                                        else {
+                                            prev.layoutParams.height = 180
+                                            icon.layoutParams.height = 180
+                                            icon.rotation = 180f
+                                            text.layoutParams.width = LinearLayout.LayoutParams.WRAP_CONTENT
+
+                                            target = currentPage-1
+                                        }
+                                    }
+
+                                    prev?.requestLayout()
+
+                                    return@setOnTouchListener true
+                                } else {
+                                    with(main_recyclerview.adapter as GalleryBlockAdapter) {
+                                        if(showPrev) {
+                                            showPrev = false
+
+                                            val prev = main_recyclerview.layoutManager?.getChildAt(0)
+
+                                            if (prev is LinearLayout) {
+                                                val icon = prev.findViewById<ImageView>(R.id.icon_prev)
+                                                prev.layoutParams.height = 1
+                                                icon.layoutParams.height = 1
+                                                icon.rotation = 180f
+                                            }
+
+                                            prev?.requestLayout()
+
+                                            notifyItemRemoved(0)
+                                        }
+                                    }
+                                }
+                            }
+                            !canScrollVertically(1) -> {
+                                //BOTTOM
+
+                                //Scrolling DOWN
+                                if (dist < 0 && currentPage != Math.ceil(totalItems.toDouble()/perPage).roundToInt()-1) {
+                                    with(main_recyclerview.adapter as GalleryBlockAdapter) {
+                                        if(!showNext) {
+                                            showNext = true
+                                            notifyItemInserted(itemCount-1)
+                                        }
+                                    }
+
+                                    val next = main_recyclerview.layoutManager?.let {
+                                        getChildAt(childCount-1)
+                                    }
+
+                                    val absDist = Math.abs(dist)
+
+                                    if (next is LinearLayout) {
+                                        val icon = next.findViewById<ImageView>(R.id.icon_next)
+                                        val text = next.findViewById<TextView>(R.id.text_next).apply {
+                                            text = getString(R.string.main_move, currentPage+2)
+                                        }
+                                        if (absDist < 360) {
+                                            next.layoutParams.height = (absDist/2).roundToInt()
+                                            icon.layoutParams.height = (absDist/2).roundToInt()
+                                            icon.rotation = -absDist
+                                            text.layoutParams.width = absDist.roundToInt()
+
+                                            target = -1
+                                        }
+                                        else {
+                                            next.layoutParams.height = 180
+                                            icon.layoutParams.height = 180
+                                            icon.rotation = 0f
+                                            text.layoutParams.width = LinearLayout.LayoutParams.WRAP_CONTENT
+
+                                            target = currentPage+1
+                                        }
+                                    }
+
+                                    next?.requestLayout()
+
+                                    return@setOnTouchListener true
+                                } else {
+                                    with(main_recyclerview.adapter as GalleryBlockAdapter) {
+                                        if(showNext) {
+                                            showNext = false
+
+                                            val next = main_recyclerview.layoutManager?.let {
+                                                getChildAt(childCount-1)
+                                            }
+
+                                            if (next is LinearLayout) {
+                                                val icon = next.findViewById<ImageView>(R.id.icon_next)
+                                                next.layoutParams.height = 1
+                                                icon.layoutParams.height = 1
+                                                icon.rotation = 180f
+                                            }
+
+                                            next?.requestLayout()
+
+                                            notifyItemRemoved(itemCount)
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                false
+            }
         }
     }
 
@@ -357,7 +620,33 @@ class MainActivity : AppCompatActivity() {
             setOnMenuItemClickListener {
                 when(it.itemId) {
                     R.id.main_menu_settings -> startActivityForResult(Intent(this@MainActivity, SettingsActivity::class.java), SETTINGS)
-                    R.id.main_menu_search -> setSearchFocused(true)
+                    R.id.main_menu_page_indicator -> {
+                        val preference = PreferenceManager.getDefaultSharedPreferences(context)
+                        val perPage = preference.getString("per_page", "25")!!.toInt()
+                        val editText = EditText(context)
+
+                        AlertDialog.Builder(context).apply {
+                            title = getString(R.string.reader_go_to_page)
+                            setView(editText)
+                            setTitle(R.string.main_jump_title)
+                            setMessage(getString(
+                                R.string.main_jump_message,
+                                currentPage+1,
+                                Math.ceil(totalItems / perPage.toDouble()).roundToInt()
+                            ))
+
+                            setPositiveButton(android.R.string.ok) { _, _ ->
+                                currentPage = (editText.text.toString().toIntOrNull() ?: return@setPositiveButton)-1
+
+                                runOnUiThread {
+                                    cancelFetch()
+                                    clearGalleries()
+                                    fetchGalleries(query)
+                                    loadBlocks()
+                                }
+                            }
+                        }.show()
+                    }
                 }
             }
 
@@ -442,7 +731,7 @@ class MainActivity : AppCompatActivity() {
                     if (query != this@MainActivity.query) {
                         this@MainActivity.query = query
 
-                        CoroutineScope(Dispatchers.Main).launch {
+                        runOnUiThread {
                             cancelFetch()
                             clearGalleries()
                             fetchGalleries(query)
@@ -473,12 +762,12 @@ class MainActivity : AppCompatActivity() {
             this.notifyDataSetChanged()
         }
 
+        main_appbar_layout.setExpanded(true)
         main_noresult.visibility = View.INVISIBLE
         main_progressbar.show()
-        main_swipe_layout.isRefreshing = false
     }
 
-    private fun fetchGalleries(query: String, from: Int = 0) {
+    private fun fetchGalleries(query: String) {
         val preference = PreferenceManager.getDefaultSharedPreferences(this)
         val perPage = preference.getString("per_page", "25")?.toInt() ?: 25
         val defaultQuery = preference.getString("default_query", "")!!
@@ -489,13 +778,48 @@ class MainActivity : AppCompatActivity() {
             return
 
         galleryIDs = CoroutineScope(Dispatchers.IO).async {
-            when {
-                query.contains("HISTORY") ->
-                    Histories.default.toList()
-                query.isEmpty() and defaultQuery.isEmpty() ->
-                    fetchNozomi(start = from, count = perPage)
-                else ->
-                    doSearch("$defaultQuery $query")
+            when(mode) {
+                Mode.SEARCH -> {
+                    when {
+                        query.isEmpty() and defaultQuery.isEmpty() -> {
+                            fetchNozomi(start = currentPage*perPage, count = perPage).let {
+                                totalItems = it.second
+                                it.first
+                            }
+                        }
+                        else -> doSearch("$defaultQuery $query").apply {
+                            totalItems = size
+                        }
+                    }
+                }
+                Mode.HISTORY -> {
+                    when {
+                        query.isEmpty() -> {
+                            histories.toList().apply {
+                                totalItems = size
+                            }
+                        }
+                        else -> {
+                            val result = doSearch(query).sorted()
+                            histories.filter { result.binarySearch(it) >= 0 }.apply {
+                                totalItems = size
+                            }
+                        }
+                    }
+                }
+                Mode.DOWNLOAD -> {
+                    when {
+                        query.isEmpty() -> downloads.toList().apply {
+                            totalItems = size
+                        }
+                        else -> {
+                            val result = doSearch(query).sorted()
+                            downloads.filter { result.binarySearch(it) >= 0 }.apply {
+                                totalItems = size
+                            }
+                        }
+                    }
+                }
             }
         }
     }
@@ -517,18 +841,11 @@ class MainActivity : AppCompatActivity() {
                 return@launch
             }
 
-            if (query.isEmpty() and defaultQuery.isEmpty())
-                fetchGalleries("", galleries.size+perPage)
-            else
-                with(main_recyclerview.adapter as GalleryBlockAdapter) {
-                    noMore = galleries.size + perPage >= galleryIDs.size
-                }
-
             when {
-                query.isEmpty() and defaultQuery.isEmpty() ->
+                query.isEmpty() and defaultQuery.isEmpty() and (mode == Mode.SEARCH) ->
                     galleryIDs
                 else ->
-                    galleryIDs.slice(galleries.size until Math.min(galleries.size+perPage, galleryIDs.size))
+                    galleryIDs.slice(currentPage*perPage until Math.min(currentPage*perPage+perPage, galleryIDs.size))
             }.chunked(5).let { chunks ->
                 for (chunk in chunks)
                     chunk.map {
@@ -586,8 +903,7 @@ class MainActivity : AppCompatActivity() {
 
                             if (galleryBlock != null) {
                                 galleries.add(galleryBlock)
-
-                                main_recyclerview.adapter?.notifyItemInserted(galleries.size - 1)
+                                main_recyclerview.adapter!!.notifyItemInserted(galleries.size - 1)
                             }
                         }
                     }

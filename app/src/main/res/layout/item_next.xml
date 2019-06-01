@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:gravity="center">
+
+    <View
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"/>
+
+    <ImageView
+        android:id="@+id/icon_next"
+        android:contentDescription="@string/page_indicator_placeholder"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:src="@drawable/ic_navigate_next_black_24dp"
+        android:tint="@color/colorAccent"
+        android:rotation="180"/>
+
+    <TextView
+        android:id="@+id/text_next"
+        android:layout_width="1dp"
+        android:layout_height="wrap_content"
+        android:maxLines="1"
+        android:ellipsize="end" />
+
+    <View
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"/>
+
+</LinearLayout>

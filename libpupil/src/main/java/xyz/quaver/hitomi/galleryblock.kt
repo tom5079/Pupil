@@ -10,7 +10,7 @@ import java.util.*
 import javax.net.ssl.HttpsURLConnection
 
 //galleryblock.js
-fun fetchNozomi(area: String? = null, tag: String = "index", language: String = "all", start: Int = -1, count: Int = -1) : List<Int> {
+fun fetchNozomi(area: String? = null, tag: String = "index", language: String = "all", start: Int = -1, count: Int = -1) : Pair<List<Int>, Int> {
     val url =
             when(area) {
                 null -> "$protocol//$domain/$tag-$language$nozomiextension"
@@ -28,6 +28,11 @@ fun fetchNozomi(area: String? = null, tag: String = "index", language: String = 
                 setRequestProperty("Range", "bytes=$startByte-$endByte")
             }
 
+            connect()
+
+            val totalItems = getHeaderField("Content-Range")
+                .replace(Regex("^[Bb]ytes \\d+-\\d+/"), "").toInt() / 4
+
             val nozomi = ArrayList<Int>()
 
             val arrayBuffer = ByteBuffer
@@ -37,10 +42,10 @@ fun fetchNozomi(area: String? = null, tag: String = "index", language: String = 
             while (arrayBuffer.hasRemaining())
                 nozomi.add(arrayBuffer.int)
 
-            return nozomi
+            return Pair(nozomi, totalItems)
         }
     } catch (e: Exception) {
-        return emptyList()
+        return Pair(emptyList(), 0)
     }
 }
 

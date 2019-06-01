@@ -6,16 +6,22 @@ import android.app.NotificationManager
 import android.content.Context
 import android.os.Build
 import android.preference.PreferenceManager
-import android.util.SparseArray
+import androidx.core.content.ContextCompat
 import com.finotes.android.finotescore.Fn
 import com.finotes.android.finotescore.ObservableApplication
-import com.finotes.android.finotescore.Severity
-import kotlinx.coroutines.Job
+import xyz.quaver.pupil.util.Histories
+import java.io.File
 
 class Pupil : ObservableApplication() {
 
+    lateinit var histories: Histories
+    lateinit var downloads: Histories
+
     override fun onCreate() {
         val preference = PreferenceManager.getDefaultSharedPreferences(this)
+
+        histories = Histories(File(ContextCompat.getDataDir(this), "histories.json"))
+        downloads = Histories(File(ContextCompat.getDataDir(this), "downloads.json"))
 
         super.onCreate()
         Fn.init(this)
