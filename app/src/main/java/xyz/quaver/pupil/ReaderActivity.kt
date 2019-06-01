@@ -190,27 +190,31 @@ class ReaderActivity : AppCompatActivity() {
             onNotifyChangedHandler = { notify ->
                 val fab = reader_fab_download
 
-                if (notify) {
-                    val icon = AnimatedVectorDrawableCompat.create(this, R.drawable.ic_downloading)
-                    icon?.registerAnimationCallback(object: Animatable2Compat.AnimationCallback() {
-                        override fun onAnimationEnd(drawable: Drawable?) {
-                            if (downloader.download)
-                                fab.post {
-                                    icon.start()
-                                    fab.labelText = getString(R.string.reader_fab_download_cancel)
-                                }
-                            else
-                                fab.post {
-                                    fab.setImageResource(R.drawable.ic_download)
-                                    fab.labelText = getString(R.string.reader_fab_download)
-                                }
-                        }
-                    })
+                runOnUiThread {
+                    if (notify) {
+                        val icon = AnimatedVectorDrawableCompat.create(this, R.drawable.ic_downloading)
+                        icon?.registerAnimationCallback(object: Animatable2Compat.AnimationCallback() {
+                            override fun onAnimationEnd(drawable: Drawable?) {
+                                if (downloader.download)
+                                    fab.post {
+                                        icon.start()
+                                        fab.labelText = getString(R.string.reader_fab_download_cancel)
+                                    }
+                                else
+                                    fab.post {
+                                        fab.setImageResource(R.drawable.ic_download)
+                                        fab.labelText = getString(R.string.reader_fab_download)
+                                    }
+                            }
+                        })
 
-                    fab.setImageDrawable(icon)
-                    icon?.start()
-                } else {
-                    fab.setImageResource(R.drawable.ic_download)
+                        fab.setImageDrawable(icon)
+                        icon?.start()
+                    } else {
+                        runOnUiThread {
+                            fab.setImageResource(R.drawable.ic_download)
+                        }
+                    }
                 }
             }
         }

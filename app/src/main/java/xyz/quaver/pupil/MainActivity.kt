@@ -573,7 +573,6 @@ class MainActivity : AppCompatActivity() {
                                             }
 
                                             if (next is LinearLayout) {
-                                                Log.d("Pupil", "hmm...")
                                                 val icon = next.findViewById<ImageView>(R.id.icon_next)
                                                 next.layoutParams.height = 1
                                                 icon.layoutParams.height = 1
