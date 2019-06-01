@@ -12,7 +12,7 @@
     <string name="galleryblock_thumbnail_description" translatable="false">Thumbnail</string>
 
     <string name="reader_imageview_description" translatable="false">Content ImageView</string>
-    <string name="reader_page_indicator_placeholder" translatable="false">-/-</string>
+    <string name="page_indicator_placeholder" translatable="false">-/-</string>
 
     <string name="plus_to_close" translatable="false">Fab</string>
 
@@ -20,10 +20,13 @@
 
     <string name="warning">Warning</string>
 
-    <string name="permission_explain">Denying any permission can deactivate some functions</string>
+    <string name="https_block_alert_title">(Korean only)</string>
+    <string name="https_block_alert">(Korean only)</string>
 
     <string name="channel_download">Download</string>
     <string name="channel_download_description">Shows download status</string>
+
+    <string name="unable_to_connect">Unable to connect to hitomi.la</string>
 
     <string name="main_search">Search</string>
     <string name="main_no_result">No result</string>
@@ -37,6 +40,11 @@
     <string name="main_drawer_group_contact_github">Visit github</string>
     <string name="main_drawer_group_contact_email">Email me!</string>
 
+    <string name="main_jump_title">Jump to page</string>
+    <string name="main_jump_message">Current page: %1$d\nMaximum page: %2$d</string>
+
+    <string name="main_move">Move to page %1$d</string>
+
     <string name="main_dialog_delete">Delete this gallery</string>
 
     <string name="help_dialog_title">WIP</string>
@@ -48,6 +56,7 @@
     <string name="update_release_note"># Release Note(v%1$s)\n%2$s</string>
 
     <string name="search_hint">Search galleries</string>
+    <string name="search_hint_with_page">Search galleries</string>
 
     <string name="galleryblock_series">Series: %1$s</string>
     <string name="galleryblock_type">Type: %1$s</string>

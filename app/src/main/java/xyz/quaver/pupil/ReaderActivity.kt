@@ -12,12 +12,14 @@ import androidx.recyclerview.widget.PagerSnapHelper
 import androidx.recyclerview.widget.RecyclerView
 import androidx.vectordrawable.graphics.drawable.Animatable2Compat
 import androidx.vectordrawable.graphics.drawable.AnimatedVectorDrawableCompat
+import com.google.android.material.snackbar.Snackbar
 import kotlinx.android.synthetic.main.activity_reader.*
 import kotlinx.android.synthetic.main.activity_reader.view.*
 import kotlinx.android.synthetic.main.dialog_numberpicker.view.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.io.IOException
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonConfiguration
 import xyz.quaver.hitomi.GalleryBlock
@@ -89,7 +91,7 @@ class ReaderActivity : AppCompatActivity() {
         when(item?.itemId) {
             R.id.reader_menu_page_indicator -> {
                 val view = LayoutInflater.from(this).inflate(R.layout.dialog_numberpicker, findViewById(android.R.id.content), false)
-                with(view.reader_dialog_number_picker) {
+                with(view.dialog_number_picker) {
                     minValue=1
                     maxValue=gallerySize
                     value=currentPage
@@ -97,8 +99,8 @@ class ReaderActivity : AppCompatActivity() {
                 val dialog = AlertDialog.Builder(this).apply {
                     setView(view)
                 }.create()
-                view.reader_dialog_ok.setOnClickListener {
-                    (reader_recyclerview.layoutManager as LinearLayoutManager?)?.scrollToPositionWithOffset(view.reader_dialog_number_picker.value-1, 0)
+                view.dialog_ok.setOnClickListener {
+                    (reader_recyclerview.layoutManager as LinearLayoutManager?)?.scrollToPositionWithOffset(view.dialog_number_picker.value-1, 0)
                     dialog.dismiss()
                 }
 
@@ -135,7 +137,13 @@ class ReaderActivity : AppCompatActivity() {
         var d: GalleryDownloader? = GalleryDownloader.get(galleryBlock.id)
 
         if (d == null) {
-            d = GalleryDownloader(this, galleryBlock)
+            try {
+                d = GalleryDownloader(this, galleryBlock)
+            } catch (e: IOException) {
+                Snackbar.make(reader_layout, R.string.unable_to_connect, Snackbar.LENGTH_LONG).show()
+                finish()
+                return
+            }
         }
 
         downloader = d.apply {
@@ -170,6 +178,8 @@ class ReaderActivity : AppCompatActivity() {
                 }
             }
             onErrorHandler = {
+                if (it is IOException)
+                    Snackbar.make(reader_layout, R.string.unable_to_connect, Snackbar.LENGTH_LONG).show()
                 downloader.download = false
             }
             onCompleteHandler = {

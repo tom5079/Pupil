@@ -1,12 +1,13 @@
 package xyz.quaver.pupil.adapters
 
 import android.graphics.BitmapFactory
-import android.util.SparseArray
+import android.util.Log
 import android.util.SparseBooleanArray
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.LinearLayout
+import android.widget.RelativeLayout
 import androidx.cardview.widget.CardView
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
@@ -27,66 +28,28 @@ import xyz.quaver.pupil.types.Tag
 import java.io.File
 import java.util.*
 import kotlin.collections.ArrayList
+import kotlin.collections.HashMap
 import kotlin.concurrent.schedule
 
 class GalleryBlockAdapter(private val galleries: List<Pair<GalleryBlock, Deferred<String>>>) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
-    private enum class ViewType {
-        VIEW_ITEM,
-        VIEW_PROG
+    enum class ViewType {
+        NEXT,
+        GALLERY,
+        PREV
     }
 
-    private fun String.wordCapitalize() : String {
-        val result = ArrayList<String>()
-
-        for (word in this.split(" "))
-            result.add(word.capitalize())
-
-        return result.joinToString(" ")
-    }
-
-    var noMore = false
-    private val refreshTasks = SparseArray<TimerTask>()
-    val completeFlag = SparseBooleanArray()
-
-    val onChipClickedHandler = ArrayList<((Tag) -> Unit)>()
-
-    class ViewHolder(val view: CardView, var galleryID: Int? = null) : RecyclerView.ViewHolder(view)
-    class ProgressViewHolder(val view: LinearLayout) : RecyclerView.ViewHolder(view)
-
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
-        when(viewType) {
-            ViewType.VIEW_ITEM.ordinal -> {
-                val view = LayoutInflater.from(parent.context).inflate(
-                    R.layout.item_galleryblock, parent, false
-                ) as CardView
-
-                return ViewHolder(view)
-            }
-            ViewType.VIEW_PROG.ordinal -> {
-                val view = LayoutInflater.from(parent.context).inflate(
-                    R.layout.item_progressbar, parent, false
-                ) as LinearLayout
-
-                return ProgressViewHolder(view)
-            }
-        }
-
-        throw Exception("Unexpected ViewType")
-    }
-
-    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
-        if (holder is ViewHolder) {
-            with(holder.view) {
+    inner class GalleryViewHolder(private val view: CardView) : RecyclerView.ViewHolder(view) {
+        fun bind(item: Pair<GalleryBlock, Deferred<String>>) {
+            with(view) {
                 val resources = context.resources
                 val languages = resources.getStringArray(R.array.languages).map {
                     it.split("|").let { split ->
                         Pair(split[0], split[1])
                     }
                 }.toMap()
-                val (gallery, thumbnail) = galleries[position]
 
-                holder.galleryID = gallery.id
+                val (gallery: GalleryBlock, thumbnail: Deferred<String>) = item
 
                 val artists = gallery.artists
                 val series = gallery.series
@@ -99,7 +62,7 @@ class GalleryBlockAdapter(private val galleries: List<Pair<GalleryBlock, Deferre
 
                     val bitmap = BitmapFactory.decodeFile(thumbnail.await())
 
-                    CoroutineScope(Dispatchers.Main).launch {
+                    post {
                         galleryblock_thumbnail.setImageBitmap(bitmap)
                     }
                 }
@@ -122,10 +85,10 @@ class GalleryBlockAdapter(private val galleries: List<Pair<GalleryBlock, Deferre
                     galleryblock_progressbar.visibility = View.GONE
                 }
 
-                if (refreshTasks.get(gallery.id) == null) {
+                if (refreshTasks[this@GalleryViewHolder] == null) {
                     val refresh = Timer(false).schedule(0, 1000) {
                         post {
-                            with(galleryblock_progressbar) {
+                            with(view.galleryblock_progressbar) {
                                 progress = imageCache.list()?.size ?: 0
 
                                 if (!readerCache.exists()) {
@@ -133,7 +96,7 @@ class GalleryBlockAdapter(private val galleries: List<Pair<GalleryBlock, Deferre
                                     max = 0
                                     progress = 0
 
-                                    holder.view.galleryblock_progress_complete.visibility = View.INVISIBLE
+                                    view.galleryblock_progress_complete.visibility = View.INVISIBLE
                                 } else {
                                     if (visibility == View.GONE) {
                                         val reader = Json(JsonConfiguration.Stable)
@@ -144,24 +107,21 @@ class GalleryBlockAdapter(private val galleries: List<Pair<GalleryBlock, Deferre
 
                                     if (progress == max) {
                                         if (completeFlag.get(gallery.id, false)) {
-                                            with(holder.view.galleryblock_progress_complete) {
+                                            with(view.galleryblock_progress_complete) {
                                                 setImageResource(R.drawable.ic_progressbar)
                                                 visibility = View.VISIBLE
                                             }
                                         } else {
                                             val drawable = AnimatedVectorDrawableCompat.create(context, R.drawable.ic_progressbar_complete)
-                                            with(holder.view.galleryblock_progress_complete) {
+                                            with(view.galleryblock_progress_complete) {
                                                 setImageDrawable(drawable)
                                                 visibility = View.VISIBLE
                                             }
                                             drawable?.start()
                                             completeFlag.put(gallery.id, true)
                                         }
-                                    } else {
-                                        with(holder.view.galleryblock_progress_complete) {
-                                            visibility = View.INVISIBLE
-                                        }
-                                    }
+                                    } else
+                                        view.galleryblock_progress_complete.visibility = View.INVISIBLE
 
                                     null
                                 }
@@ -169,7 +129,7 @@ class GalleryBlockAdapter(private val galleries: List<Pair<GalleryBlock, Deferre
                         }
                     }
 
-                    refreshTasks.put(gallery.id, refresh)
+                    refreshTasks[this@GalleryViewHolder] = refresh
                 }
 
                 galleryblock_title.text = gallery.title
@@ -205,7 +165,7 @@ class GalleryBlockAdapter(private val galleries: List<Pair<GalleryBlock, Deferre
                     val tag = Tag.parse(it)
 
                     val chip = LayoutInflater.from(context)
-                            .inflate(R.layout.tag_chip, holder.view, false) as Chip
+                        .inflate(R.layout.tag_chip, this, false) as Chip
 
                     val icon = when(tag.area) {
                         "male" -> {
@@ -232,32 +192,85 @@ class GalleryBlockAdapter(private val galleries: List<Pair<GalleryBlock, Deferre
                 }
             }
         }
-        if (holder is ProgressViewHolder) {
-            holder.view.visibility = when(noMore) {
-                true -> View.GONE
-                false -> View.VISIBLE
+    }
+    class NextViewHolder(view: LinearLayout) : RecyclerView.ViewHolder(view)
+    class PrevViewHolder(view: LinearLayout) : RecyclerView.ViewHolder(view)
+
+    class ViewHolderFactory {
+        companion object {
+            fun getLayoutID(type: Int): Int {
+                return when(ViewType.values()[type]) {
+                    ViewType.NEXT -> R.layout.item_next
+                    ViewType.PREV -> R.layout.item_prev
+                    ViewType.GALLERY -> R.layout.item_galleryblock
+                }
             }
         }
+    }
+
+    private fun String.wordCapitalize() : String {
+        val result = ArrayList<String>()
+
+        for (word in this.split(" "))
+            result.add(word.capitalize())
+
+        return result.joinToString(" ")
+    }
+
+    private val refreshTasks = HashMap<GalleryViewHolder, TimerTask>()
+    val completeFlag = SparseBooleanArray()
+
+    val onChipClickedHandler = ArrayList<((Tag) -> Unit)>()
+
+    var showNext = false
+    var showPrev = false
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+
+        fun getViewHolder(type: Int, view: View): RecyclerView.ViewHolder {
+            return when(ViewType.values()[type]) {
+                ViewType.NEXT -> NextViewHolder(view as LinearLayout)
+                ViewType.PREV -> PrevViewHolder(view as LinearLayout)
+                ViewType.GALLERY -> GalleryViewHolder(view as CardView)
+            }
+        }
+
+        return getViewHolder(
+            viewType,
+            LayoutInflater.from(parent.context).inflate(
+                ViewHolderFactory.getLayoutID(viewType),
+                parent,
+                false
+            )
+        )
+    }
+
+    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+        if (holder is GalleryViewHolder)
+            holder.bind(galleries[position-(if (showPrev) 1 else 0)])
     }
 
     override fun onViewDetachedFromWindow(holder: RecyclerView.ViewHolder) {
         super.onViewDetachedFromWindow(holder)
 
-        if (holder is ViewHolder) {
-            val galleryID = holder.galleryID ?: return
-            val task = refreshTasks.get(galleryID) ?: return
+        if (holder is GalleryViewHolder) {
+            val task = refreshTasks[holder] ?: return
 
-            refreshTasks.remove(galleryID)
             task.cancel()
+            refreshTasks.remove(holder)
         }
     }
 
-    override fun getItemCount() = if (galleries.isEmpty()) 0 else galleries.size+1
+    override fun getItemCount() =
+        (if (galleries.isEmpty()) 0 else galleries.size)+
+        (if (showNext) 1 else 0)+
+        (if (showPrev) 1 else 0)
 
     override fun getItemViewType(position: Int): Int {
         return when {
-            galleries.getOrNull(position) == null -> ViewType.VIEW_PROG.ordinal
-            else -> ViewType.VIEW_ITEM.ordinal
-        }
+            showPrev && position == 0 -> ViewType.PREV
+            showNext && position == galleries.size+(if (showPrev) 1 else 0) -> ViewType.NEXT
+            else -> ViewType.GALLERY
+        }.ordinal
     }
 }

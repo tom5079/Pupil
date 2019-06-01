@@ -55,7 +55,7 @@ class GalleryDownloader(
     var onReaderLoadedHandler: ((Reader) -> Unit)? = null
     var onProgressHandler: ((Int) -> Unit)? = null
     var onDownloadedHandler: ((List<String>) -> Unit)? = null
-    var onErrorHandler: (() -> Unit)? = null
+    var onErrorHandler: ((Exception) -> Unit)? = null
     var onCompleteHandler: (() -> Unit)? = null
     var onNotifyChangedHandler: ((Boolean) -> Unit)? = null
 
@@ -100,15 +100,13 @@ class GalleryDownloader(
                 }
             }
 
-            //Could not retrieve reader
-            if (reader.isEmpty())
-                throw IOException("Can't retrieve Reader")
+            if (reader.isNotEmpty()) {
+                //Save cache
+                if (!cache.parentFile.exists())
+                    cache.parentFile.mkdirs()
 
-            //Save cache
-            if (!cache.parentFile.exists())
-                cache.parentFile.mkdirs()
-
-            cache.writeText(json.stringify(serializer, reader))
+                cache.writeText(json.stringify(serializer, reader))
+            }
 
             reader
         }
@@ -119,6 +117,9 @@ class GalleryDownloader(
     fun start() {
         downloadJob = CoroutineScope(Dispatchers.Default).launch {
             val reader = reader.await()
+
+            if (reader.isEmpty())
+                onErrorHandler?.invoke(IOException("Couldn't retrieve Reader"))
 
             val list = ArrayList<String>()
 
@@ -162,7 +163,7 @@ class GalleryDownloader(
                             } catch (e: Exception) {
                                 cache.delete()
 
-                                onErrorHandler?.invoke()
+                                onErrorHandler?.invoke(e)
 
                                 notificationBuilder
                                     .setContentTitle(galleryBlock.title)

@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <item android:id="@+id/reader_menu_page_indicator"
-        android:title="@string/reader_page_indicator_placeholder"
+        android:title="@string/page_indicator_placeholder"
         app:showAsAction="always|withText"/>
 
 </menu>
