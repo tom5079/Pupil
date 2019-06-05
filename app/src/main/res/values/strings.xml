@@ -46,6 +46,7 @@
     <string name="main_move">Move to page %1$d</string>
 
     <string name="main_dialog_delete">Delete this gallery</string>
+    <string name="main_dialog_export">Export this gallery</string>
 
     <string name="help_dialog_title">WIP</string>
     <string name="help_dialog_message">While in progress!</string>

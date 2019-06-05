@@ -59,4 +59,5 @@
     <string name="main_move">%1$dページへ移動</string>
     <string name="https_block_alert_title">(Korean only)</string>
     <string name="https_block_alert">(Korean only)</string>
+    <string name="main_dialog_export">ギャラリーエクスポート</string>
 </resources>

@@ -8,6 +8,7 @@ import android.util.SparseArray
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.app.TaskStackBuilder
+import androidx.core.content.ContextCompat
 import androidx.preference.PreferenceManager
 import kotlinx.coroutines.*
 import kotlinx.io.IOException
@@ -15,6 +16,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonConfiguration
 import kotlinx.serialization.list
 import xyz.quaver.hitomi.*
+import xyz.quaver.pupil.Pupil
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.ReaderActivity
 import java.io.File
@@ -31,16 +33,30 @@ class GalleryDownloader(
     _notify: Boolean = false
 ) : ContextWrapper(base) {
 
+    val downloads = (applicationContext as Pupil).downloads
+
     var download: Boolean = false
         set(value) {
             if (value) {
                 field = true
                 notificationManager.notify(galleryBlock.id, notificationBuilder.build())
 
+                val data = File(ContextCompat.getDataDir(this), "images/${galleryBlock.id}")
+                val cache = File(cacheDir, "imageCache/${galleryBlock.id}")
+
+                if (cache.exists() && !data.exists()) {
+                    cache.copyRecursively(data, true)
+                    cache.deleteRecursively()
+                }
+
                 if (!reader.isActive && downloadJob?.isActive != true)
                     field = false
+
+                downloads.add(galleryBlock.id)
             } else {
                 field = false
+
+                downloads.remove(galleryBlock.id)
             }
 
             onNotifyChangedHandler?.invoke(value)
@@ -74,7 +90,12 @@ class GalleryDownloader(
             val useHiyobi = preference.getBoolean("use_hiyobi", false)
 
             //Check cache
-            val cache = File(cacheDir, "imageCache/${galleryBlock.id}/reader.json")
+            val cache = File(ContextCompat.getDataDir(this@GalleryDownloader), "images/${galleryBlock.id}/reader.json").let {
+                when {
+                    it.exists() -> it
+                    else -> File(cacheDir, "imageCache/${galleryBlock.id}/reader.json")
+                }
+            }
 
             if (cache.exists()) {
                 val cached = json.parse(serializer, cache.readText())
@@ -148,7 +169,12 @@ class GalleryDownloader(
                         val name = "$index".padStart(4, '0')
                         val ext = url.split('.').last()
 
-                        val cache = File(cacheDir, "/imageCache/${galleryBlock.id}/images/$name.$ext")
+                        val cache = File(ContextCompat.getDataDir(this@GalleryDownloader), "images/${galleryBlock.id}/images/$name.$ext").let {
+                            when {
+                                it.exists() -> it
+                                else -> File(cacheDir, "/imageCache/${galleryBlock.id}/images/$name.$ext")
+                            }
+                        }
 
                         if (!cache.exists())
                             try {
@@ -162,6 +188,8 @@ class GalleryDownloader(
                                 }
                             } catch (e: Exception) {
                                 cache.delete()
+
+                                downloads.remove(galleryBlock.id)
 
                                 onErrorHandler?.invoke(e)
 
@@ -189,8 +217,19 @@ class GalleryDownloader(
                     .setContentText(getString(R.string.reader_notification_complete))
                     .setProgress(0, 0, false)
 
-                if (download)
+                if (download) {
+                    File(cacheDir, "imageCache/${galleryBlock.id}").let {
+                        if (it.exists()) {
+                            it.copyRecursively(
+                                File(ContextCompat.getDataDir(this@GalleryDownloader), "images/${galleryBlock.id}"),
+                                true
+                            )
+                            it.deleteRecursively()
+                        }
+                    }
+
                     notificationManager.notify(galleryBlock.id, notificationBuilder.build())
+                }
 
                 download = false
             }
@@ -207,6 +246,8 @@ class GalleryDownloader(
 
     suspend fun cancelAndJoin() {
         downloadJob?.cancelAndJoin()
+
+        remove(galleryBlock.id)
     }
 
     fun invokeOnReaderLoaded() {

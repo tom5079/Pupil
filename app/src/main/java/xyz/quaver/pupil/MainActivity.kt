@@ -15,6 +15,7 @@ import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.cardview.widget.CardView
+import androidx.core.content.ContextCompat
 import androidx.core.content.res.ResourcesCompat
 import androidx.core.view.GravityCompat
 import com.arlib.floatingsearchview.FloatingSearchView
@@ -359,10 +360,9 @@ class MainActivity : AppCompatActivity() {
                         isEnabled = !(adapter as GalleryBlockAdapter).completeFlag.get(galleryBlock.id, false)
                         setOnClickListener {
                             val downloader = GalleryDownloader.get(galleryBlock.id)
-                            if (downloader == null) {
+                            if (downloader == null)
                                 GalleryDownloader(context, galleryBlock, true).start()
-                                downloads.add(galleryBlock.id)
-                            } else {
+                            else {
                                 downloader.cancel()
                                 downloader.clearNotification()
                             }
@@ -377,12 +377,25 @@ class MainActivity : AppCompatActivity() {
                                 this?.cancelAndJoin()
                                 this?.clearNotification()
                             }
-                            val cache = File(cacheDir, "imageCache/${galleryBlock.id}/images/")
+                            val cache = File(cacheDir, "imageCache/${galleryBlock.id}")
+                            val data = File(ContextCompat.getDataDir(this@MainActivity), "images/${galleryBlock.id}")
                             cache.deleteRecursively()
+                            data.deleteRecursively()
 
-                            dialog.dismiss()
+                            downloads.remove(galleryBlock.id)
+
+                            if (mode == Mode.DOWNLOAD) {
+                                runOnUiThread {
+                                    cancelFetch()
+                                    clearGalleries()
+                                    fetchGalleries(query)
+                                    loadBlocks()
+                                }
+                            }
+
                             (adapter as GalleryBlockAdapter).completeFlag.put(galleryBlock.id, false)
                         }
+                        dialog.dismiss()
                     }
 
                     dialog.show()
