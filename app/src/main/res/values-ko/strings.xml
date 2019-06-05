@@ -63,4 +63,6 @@
     <string name="main_export_error">내보내기 오류가 발생했습니다</string>
     <string name="settings_export_zip_title">zip 파일로 내보내기</string>
     <string name="settings_export_zip_summary">이미지 폴더 대신 zip 파일로 내보내기</string>
+    <string name="settings_auto_export_title">자동 내보내기</string>
+    <string name="settings_auto_export_summary">다운로드가 끝난 후 자동 내보내기</string>
 </resources>

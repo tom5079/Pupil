@@ -63,4 +63,6 @@
     <string name="main_export_error">エクスポートエラーが発生しました</string>
     <string name="settings_export_zip_title">zipエクスポート</string>
     <string name="settings_export_zip_summary">イメージフォルダの代わりzipファイルでエクスポート</string>
+    <string name="settings_auto_export_title">自動エクスポート</string>
+    <string name="settings_auto_export_summary">ダウンロード完了後自動的にエクスポート</string>
 </resources>

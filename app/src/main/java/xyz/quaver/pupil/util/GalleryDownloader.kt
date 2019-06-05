@@ -59,8 +59,6 @@ class GalleryDownloader(
                 downloads.add(galleryBlock.id)
             } else {
                 field = false
-
-                downloads.remove(galleryBlock.id)
             }
 
             onNotifyChangedHandler?.invoke(value)
@@ -232,7 +230,23 @@ class GalleryDownloader(
                         }
                     }
 
-                    notificationManager.notify(galleryBlock.id, notificationBuilder.build())
+                    val preference = PreferenceManager.getDefaultSharedPreferences(this@GalleryDownloader)
+                    val autoExport = preference.getBoolean("auto_export", false)
+
+                    if (autoExport) {
+                        export({
+                            notificationManager.notify(galleryBlock.id, notificationBuilder.build())
+                        }, {
+                            notificationBuilder
+                                .setContentTitle(galleryBlock.title)
+                                .setContentText(getString(R.string.main_export_error))
+                                .setProgress(0, 0, false)
+
+                            notificationManager.notify(galleryBlock.id, notificationBuilder.build())
+                        })
+                    } else {
+                        notificationManager.notify(galleryBlock.id, notificationBuilder.build())
+                    }
                 }
 
                 download = false

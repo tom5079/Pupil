@@ -48,6 +48,11 @@
             app:summary="@string/settings_export_zip_summary"/>
 
         <SwitchPreference
+            app:key="auto_export"
+            app:title="@string/settings_auto_export_title"
+            app:summary="@string/settings_auto_export_summary"/>
+
+        <SwitchPreference
             app:key="security_mode"
             app:title="@string/settings_security_mode_title"
             app:summary="@string/settings_security_mode_summary"
