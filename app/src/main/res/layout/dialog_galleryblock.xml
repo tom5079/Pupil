@@ -21,7 +21,7 @@
         app:layout_constraintTop_toBottomOf="@id/main_dialog_download"/>
 
     <Button
-        android:id="@+id/main_export"
+        android:id="@+id/main_dialog_export"
         style="?borderlessButtonStyle"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

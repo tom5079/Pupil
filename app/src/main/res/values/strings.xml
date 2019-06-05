@@ -5,6 +5,7 @@
     <string name="release_name" translatable="false">Pupil-v(\\d+\\.)+\\d+\\.apk</string>
 
     <string name="home_page" translatable="false">https://tom5079.github.io/Pupil</string>
+    <string name="help" translatable="false">https://tom5079.github.io/Pupil/2019/06/02/manual-kr.html</string>
     <string name="github" translatable="false">https://github.com/tom5079/Pupil-issue/issues/new/choose</string>
     <string name="email" translatable="false">mailto:pupil.hentai@gmail.com</string>
 
@@ -48,8 +49,9 @@
     <string name="main_dialog_delete">Delete this gallery</string>
     <string name="main_dialog_export">Export this gallery</string>
 
-    <string name="help_dialog_title">WIP</string>
-    <string name="help_dialog_message">While in progress!</string>
+    <string name="main_export_complete">Export completed</string>
+    <string name="main_export_open_folder">Open Folder</string>
+    <string name="main_export_error">Error occurred during export</string>
 
     <string name="update_title">Update available</string>
     <string name="update_download_started">Download started</string>
@@ -85,6 +87,8 @@
     <string name="settings_miscellaneous_title">Miscellaneous</string>
     <string name="settings_use_hiyobi_title">Use hiyobi.me</string>
     <string name="settings_use_hiyobi_summary">Load images from hiyobi.me to improve loading speed (if available)</string>
+    <string name="settings_export_zip_title">Export zip</string>
+    <string name="settings_export_zip_summary">Export to zip instead of image folder</string>
     <string name="settings_security_mode_title">Enable security mode</string>
     <string name="settings_security_mode_summary">Enable security mode to make the screen invisible on recent app window</string>
 

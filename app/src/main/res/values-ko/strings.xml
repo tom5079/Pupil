@@ -41,8 +41,6 @@
     <string name="main_drawer_group_contact_help">도움말</string>
     <string name="main_drawer_group_contact_homepage">홈페이지</string>
     <string name="main_drawer_group_contact_title">문의</string>
-    <string name="help_dialog_title">준비 중</string>
-    <string name="help_dialog_message">준비중입니다.</string>
     <string name="reader_fab_fullscreen">전체 화면</string>
     <string name="channel_download">다운로드</string>
     <string name="channel_download_description">다운로드 상태 알림</string>
@@ -59,5 +57,10 @@
     <string name="main_move">%1$d 페이지로 이동</string>
     <string name="https_block_alert_title">접속 불가 현상 안내</string>
     <string name="https_block_alert">최근 https 차단으로 접속이 안 되는 경우가 발생하고 있습니다\n이 경우 플레이스토어에서 SNIper앱을 이용하시면 정상이용이 가능합니다.</string>
-    <string name="main_dialog_export">갤러리 저장</string>
+    <string name="main_dialog_export">갤러리 내보내기</string>
+    <string name="main_export_complete">내보내기 완료</string>
+    <string name="main_export_open_folder">폴더 열기</string>
+    <string name="main_export_error">내보내기 오류가 발생했습니다</string>
+    <string name="settings_export_zip_title">zip 파일로 내보내기</string>
+    <string name="settings_export_zip_summary">이미지 폴더 대신 zip 파일로 내보내기</string>
 </resources>

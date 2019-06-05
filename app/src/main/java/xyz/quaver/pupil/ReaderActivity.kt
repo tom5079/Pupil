@@ -2,6 +2,7 @@ package xyz.quaver.pupil
 
 import android.graphics.drawable.Drawable
 import android.os.Bundle
+import android.os.Environment
 import android.view.*
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -26,6 +27,11 @@ import xyz.quaver.hitomi.GalleryBlock
 import xyz.quaver.pupil.adapters.ReaderAdapter
 import xyz.quaver.pupil.util.GalleryDownloader
 import xyz.quaver.pupil.util.ItemClickSupport
+import java.io.File
+import java.io.FileInputStream
+import java.io.FileOutputStream
+import java.util.zip.ZipEntry
+import java.util.zip.ZipOutputStream
 
 class ReaderActivity : AppCompatActivity() {
 
@@ -273,6 +279,14 @@ class ReaderActivity : AppCompatActivity() {
 
             if (!downloader.download)
                 downloader.clearNotification()
+        }
+
+        reader_fab_export.setOnClickListener {
+            downloader.export( {
+                Snackbar.make(reader_layout, getString(R.string.main_export_complete), Snackbar.LENGTH_LONG).show()
+            },  {
+                Snackbar.make(reader_layout, getString(R.string.main_export_error), Snackbar.LENGTH_LONG).show()
+            })
         }
     }
 

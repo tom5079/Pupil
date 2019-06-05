@@ -43,6 +43,11 @@
             app:summary="@string/settings_use_hiyobi_summary"/>
 
         <SwitchPreference
+            app:key="export_zip"
+            app:title="@string/settings_export_zip_title"
+            app:summary="@string/settings_export_zip_summary"/>
+
+        <SwitchPreference
             app:key="security_mode"
             app:title="@string/settings_security_mode_title"
             app:summary="@string/settings_security_mode_summary"

@@ -4,6 +4,7 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.ContextWrapper
 import android.content.Intent
+import android.os.Environment
 import android.util.SparseArray
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
@@ -20,9 +21,12 @@ import xyz.quaver.pupil.Pupil
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.ReaderActivity
 import java.io.File
+import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.net.URL
 import java.util.*
+import java.util.zip.ZipEntry
+import java.util.zip.ZipOutputStream
 import javax.net.ssl.HttpsURLConnection
 import kotlin.collections.ArrayList
 import kotlin.concurrent.schedule
@@ -282,6 +286,71 @@ class GalleryDownloader(
             priority = NotificationCompat.PRIORITY_LOW
         }
         notificationManager = NotificationManagerCompat.from(this)
+    }
+
+    fun export(onSuccess: (() -> Unit)? = null, onError: (() -> Unit)? = null) {
+        val images = File(ContextCompat.getDataDir(this), "images/${galleryBlock.id}/images").let {
+            when {
+                it.exists() -> it
+                else -> File(cacheDir, "imageCache/${galleryBlock.id}/images")
+            }
+        }
+
+        if (!images.exists())
+            return
+
+        CoroutineScope(Dispatchers.Default).launch {
+            val preference = PreferenceManager.getDefaultSharedPreferences(this@GalleryDownloader)
+            val zip = preference.getBoolean("export_zip", false)
+
+            if (zip) {
+                var target = File(Environment.getExternalStorageDirectory(), "Pupil/${galleryBlock.id} ${galleryBlock.title}.zip")
+
+                try {
+                    target.createNewFile()
+                } catch (e: IOException) {
+                    target = File(Environment.getExternalStorageDirectory(), "Pupil/${galleryBlock.id}.zip")
+
+                    try {
+                        target.createNewFile()
+                    } catch (e: IOException) {
+                        onError?.invoke()
+                        return@launch
+                    }
+                }
+
+                FileOutputStream(target).use { targetStream ->
+                    ZipOutputStream(targetStream).use { zipStream ->
+                        images.listFiles().forEach {
+                            zipStream.putNextEntry(ZipEntry(it.name))
+
+                            FileInputStream(it).use { fileStream ->
+                                fileStream.copyTo(zipStream)
+                            }
+                        }
+                    }
+                }
+            } else {
+                var target = File(Environment.getExternalStorageDirectory(), "Pupil/${galleryBlock.id} ${galleryBlock.title}")
+
+                try {
+                    target.canonicalPath
+                } catch (e: IOException) {
+                    target = File(Environment.getExternalStorageDirectory(), "Pupil/${galleryBlock.id}")
+
+                    try {
+                        target.canonicalPath
+                    } catch (e: IOException) {
+                        onError?.invoke()
+                        return@launch
+                    }
+                }
+
+                images.copyRecursively(target, true)
+            }
+
+            onSuccess?.invoke()
+        }
     }
 
 }

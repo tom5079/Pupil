@@ -41,8 +41,6 @@
     <string name="main_drawer_group_contact_help">ヘルプ</string>
     <string name="main_drawer_group_contact_github">Github</string>
     <string name="main_drawer_group_contact_email">メールを送る</string>
-    <string name="help_dialog_title">準備中</string>
-    <string name="help_dialog_message">準備中です。</string>
     <string name="reader_fab_fullscreen">フルスクリーン</string>
     <string name="channel_download">ダウンロード</string>
     <string name="channel_download_description">ダウンロードの進行を通知</string>
@@ -60,4 +58,9 @@
     <string name="https_block_alert_title">(Korean only)</string>
     <string name="https_block_alert">(Korean only)</string>
     <string name="main_dialog_export">ギャラリーエクスポート</string>
+    <string name="main_export_complete">エクスポート完了</string>
+    <string name="main_export_open_folder">フォルダを開く</string>
+    <string name="main_export_error">エクスポートエラーが発生しました</string>
+    <string name="settings_export_zip_title">zipエクスポート</string>
+    <string name="settings_export_zip_summary">イメージフォルダの代わりzipファイルでエクスポート</string>
 </resources>
