@@ -19,7 +19,6 @@
     <string name="main_search">검색</string>
     <string name="settings_cache_title">캐시</string>
     <string name="settings_miscellaneous_title">기타</string>
-    <string name="settings_use_hiyobi_summary">속도 향상을 위해 가능한 경우 hiyobi.me에서 이미지 로드</string>
     <string name="settings_use_hiyobi_title">hiyobi.me 사용</string>
     <string name="settings_clear_history">기록 삭제</string>
     <string name="settings_clear_history_alert_message">기록을 삭제하시겠습니까?</string>
@@ -67,4 +66,5 @@
     <string name="settings_auto_export_summary">다운로드가 끝난 후 자동 내보내기</string>
     <string name="settings_clear_downloads">다운로드 삭제</string>
     <string name="settings_clear_downloads_alert_message">다운로드 된 만화를 모두 삭제합니다.\n계속하시겠습니까?</string>
+    <string name="settings_use_hiyobi_summary">점검중</string>
 </resources>

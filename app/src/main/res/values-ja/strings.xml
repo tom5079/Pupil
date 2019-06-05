@@ -19,7 +19,6 @@
     <string name="update_title">新しいアップデートがあります</string>
     <string name="warning">注意</string>
     <string name="settings_miscellaneous_title">その他</string>
-    <string name="settings_use_hiyobi_summary">ロード速度を向上させるためhiyobi.meからイメージロード</string>
     <string name="settings_use_hiyobi_title">hiyobi.meからロード</string>
     <string name="settings_clear_history">履歴を削除</string>
     <string name="settings_clear_history_alert_message">履歴を削除しますか？</string>
@@ -67,4 +66,5 @@
     <string name="settings_auto_export_summary">ダウンロード完了後自動的にエクスポート</string>
     <string name="settings_clear_downloads">ダウンロード削除</string>
     <string name="settings_clear_downloads_alert_message">ダウンロードしたギャラリーを全て削除します。\n実行しますか？</string>
+    <string name="settings_use_hiyobi_summary">点検中</string>
 </resources>

@@ -88,7 +88,7 @@
     <string name="settings_clear_history_summary">%1$d histories saved</string>
     <string name="settings_miscellaneous_title">Miscellaneous</string>
     <string name="settings_use_hiyobi_title">Use hiyobi.me</string>
-    <string name="settings_use_hiyobi_summary">Load images from hiyobi.me to improve loading speed (if available)</string>
+    <string name="settings_use_hiyobi_summary">Under maintenance</string>
     <string name="settings_export_zip_title">Export zip</string>
     <string name="settings_export_zip_summary">Export to zip instead of image folder</string>
     <string name="settings_auto_export_title">Auto Export</string>

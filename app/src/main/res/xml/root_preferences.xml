@@ -42,11 +42,6 @@
         app:title="@string/settings_miscellaneous_title">
 
         <SwitchPreference
-            app:key="use_hiyobi"
-            app:title="@string/settings_use_hiyobi_title"
-            app:summary="@string/settings_use_hiyobi_summary"/>
-
-        <SwitchPreference
             app:key="export_zip"
             app:title="@string/settings_export_zip_title"
             app:summary="@string/settings_export_zip_summary"/>

@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.ContextWrapper
 import android.content.Intent
 import android.os.Environment
+import android.util.Log
 import android.util.SparseArray
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
@@ -17,6 +18,8 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonConfiguration
 import kotlinx.serialization.list
 import xyz.quaver.hitomi.*
+import xyz.quaver.hiyobi.cookie
+import xyz.quaver.hiyobi.user_agent
 import xyz.quaver.pupil.Pupil
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.ReaderActivity
@@ -88,8 +91,6 @@ class GalleryDownloader(
             download = _notify
             val json = Json(JsonConfiguration.Stable)
             val serializer = ReaderItem.serializer().list
-            val preference = PreferenceManager.getDefaultSharedPreferences(this@GalleryDownloader)
-            val useHiyobi = preference.getBoolean("use_hiyobi", false)
 
             //Check cache
             val cache = File(ContextCompat.getDataDir(this@GalleryDownloader), "images/${galleryBlock.id}/reader.json").let {
@@ -109,19 +110,7 @@ class GalleryDownloader(
             }
 
             //Cache doesn't exist. Load from internet
-            val reader = when {
-                useHiyobi -> {
-                    xyz.quaver.hiyobi.getReader(galleryBlock.id).let {
-                        when {
-                            it.isEmpty() -> getReader(galleryBlock.id)
-                            else -> it
-                        }
-                    }
-                }
-                else -> {
-                    getReader(galleryBlock.id)
-                }
-            }
+            val reader = getReader(galleryBlock.id)
 
             if (reader.isNotEmpty()) {
                 //Save cache
@@ -191,7 +180,7 @@ class GalleryDownloader(
                             } catch (e: Exception) {
                                 cache.delete()
 
-                                downloads.remove(galleryBlock.id)
+                                Log.e("Pupil", e.toString())
 
                                 onErrorHandler?.invoke(e)
 
