@@ -29,6 +29,10 @@
             app:key="delete_image_cache"/>
 
         <Preference
+            app:title="@string/settings_clear_downloads"
+            app:key="delete_downloads"/>
+
+        <Preference
             app:title="@string/settings_clear_history"
             app:key="clear_history"/>
 

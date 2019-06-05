@@ -12,6 +12,7 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
 import kotlinx.android.synthetic.main.dialog_default_query.view.*
@@ -86,6 +87,33 @@ class SettingsActivity : AppCompatActivity() {
                         setPositiveButton(android.R.string.yes) { _, _ ->
                             if (dir.exists())
                                 dir.deleteRecursively()
+
+                            summary = getCacheSize(dir)
+                        }
+                        setNegativeButton(android.R.string.no) { _, _ -> }
+                    }.show()
+
+                    true
+                }
+            }
+            with(findPreference<Preference>("delete_downloads")) {
+                this ?: return@with
+
+                val dir = File(ContextCompat.getDataDir(context), "images")
+
+                summary = getCacheSize(dir)
+
+                setOnPreferenceClickListener {
+                    AlertDialog.Builder(context).apply {
+                        setTitle(R.string.warning)
+                        setMessage(R.string.settings_clear_downloads_alert_message)
+                        setPositiveButton(android.R.string.yes) { _, _ ->
+                            if (dir.exists())
+                                dir.deleteRecursively()
+
+                            val downloads = (activity!!.application as Pupil).downloads
+
+                            downloads.clear()
 
                             summary = getCacheSize(dir)
                         }
