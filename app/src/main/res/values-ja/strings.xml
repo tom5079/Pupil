@@ -66,5 +66,5 @@
     <string name="settings_auto_export_summary">ダウンロード完了後自動的にエクスポート</string>
     <string name="settings_clear_downloads">ダウンロード削除</string>
     <string name="settings_clear_downloads_alert_message">ダウンロードしたギャラリーを全て削除します。\n実行しますか？</string>
-    <string name="settings_use_hiyobi_summary">点検中</string>
+    <string name="settings_use_hiyobi_summary">ロード速度を向上させるため可能であればhiyobi.meからイメージロード</string>
 </resources>

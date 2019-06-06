@@ -169,6 +169,7 @@ class ReaderActivity : AppCompatActivity() {
             onProgressHandler = {
                 CoroutineScope(Dispatchers.Main).launch {
                     reader_progressbar.progress = it
+                    menu?.findItem(R.id.reader_menu_use_hiyobi)?.isVisible = true
                 }
             }
             onDownloadedHandler = {

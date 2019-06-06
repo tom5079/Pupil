@@ -40,7 +40,8 @@ class GalleryDownloader(
     _notify: Boolean = false
 ) : ContextWrapper(base) {
 
-    val downloads = (applicationContext as Pupil).downloads
+    private val downloads = (applicationContext as Pupil).downloads
+    var useHiyobi = PreferenceManager.getDefaultSharedPreferences(this).getBoolean("use_hiyobi", false)
 
     var download: Boolean = false
         set(value) {
@@ -110,7 +111,22 @@ class GalleryDownloader(
             }
 
             //Cache doesn't exist. Load from internet
-            val reader = getReader(galleryBlock.id)
+            val reader = when {
+                useHiyobi -> {
+                    xyz.quaver.hiyobi.getReader(galleryBlock.id).let {
+                        when {
+                            it.isEmpty() -> {
+                                useHiyobi = false
+                                getReader(galleryBlock.id)
+                            }
+                            else -> it
+                        }
+                    }
+                }
+                else -> {
+                    getReader(galleryBlock.id)
+                }
+            }
 
             if (reader.isNotEmpty()) {
                 //Save cache
@@ -170,7 +186,11 @@ class GalleryDownloader(
                         if (!cache.exists())
                             try {
                                 with(URL(url).openConnection() as HttpsURLConnection) {
-                                    setRequestProperty("Referer", getReferer(galleryBlock.id))
+                                    if (useHiyobi) {
+                                        setRequestProperty("User-Agent", user_agent)
+                                        setRequestProperty("Cookie", cookie)
+                                    } else
+                                        setRequestProperty("Referer", getReferer(galleryBlock.id))
 
                                     if (!cache.parentFile.exists())
                                         cache.parentFile.mkdirs()
@@ -179,8 +199,6 @@ class GalleryDownloader(
                                 }
                             } catch (e: Exception) {
                                 cache.delete()
-
-                                Log.e("Pupil", e.toString())
 
                                 onErrorHandler?.invoke(e)
 
