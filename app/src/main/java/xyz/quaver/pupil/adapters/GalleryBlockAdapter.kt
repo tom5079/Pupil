@@ -68,16 +68,30 @@ class GalleryBlockAdapter(private val galleries: List<Pair<GalleryBlock, Deferre
                 }
 
                 //Check cache
-                val readerCache = File(context.cacheDir, "imageCache/${gallery.id}/reader.json")
-                val imageCache = File(context.cacheDir, "imageCache/${gallery.id}/images")
+                val readerCache = {
+                    File(ContextCompat.getDataDir(context), "images/${gallery.id}/reader.json").let {
+                        when {
+                            it.exists() -> it
+                            else -> File(context.cacheDir, "imageCache/${gallery.id}/reader.json")
+                        }
+                    }
+                }
+                val imageCache = {
+                    File(ContextCompat.getDataDir(context), "images/${gallery.id}/images").let {
+                        when {
+                            it.exists() -> it
+                            else -> File(context.cacheDir, "imageCache/${gallery.id}/images")
+                        }
+                    }
+                }
 
-                if (readerCache.exists()) {
+                if (readerCache.invoke().exists()) {
                     val reader = Json(JsonConfiguration.Stable)
-                        .parse(ReaderItem.serializer().list, readerCache.readText())
+                        .parse(ReaderItem.serializer().list, readerCache.invoke().readText())
 
                     with(galleryblock_progressbar) {
                         max = reader.size
-                        progress = imageCache.list()?.size ?: 0
+                        progress = imageCache.invoke().list()?.size ?: 0
 
                         visibility = View.VISIBLE
                     }
@@ -89,9 +103,9 @@ class GalleryBlockAdapter(private val galleries: List<Pair<GalleryBlock, Deferre
                     val refresh = Timer(false).schedule(0, 1000) {
                         post {
                             with(view.galleryblock_progressbar) {
-                                progress = imageCache.list()?.size ?: 0
+                                progress = imageCache.invoke().list()?.size ?: 0
 
-                                if (!readerCache.exists()) {
+                                if (!readerCache.invoke().exists()) {
                                     visibility = View.GONE
                                     max = 0
                                     progress = 0
@@ -100,7 +114,7 @@ class GalleryBlockAdapter(private val galleries: List<Pair<GalleryBlock, Deferre
                                 } else {
                                     if (visibility == View.GONE) {
                                         val reader = Json(JsonConfiguration.Stable)
-                                            .parse(ReaderItem.serializer().list, readerCache.readText())
+                                            .parse(ReaderItem.serializer().list, readerCache.invoke().readText())
                                         max = reader.size
                                         visibility = View.VISIBLE
                                     }

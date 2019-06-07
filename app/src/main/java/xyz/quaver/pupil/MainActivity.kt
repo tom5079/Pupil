@@ -1,12 +1,14 @@
 package xyz.quaver.pupil
 
+import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
+import android.os.Environment
 import android.preference.PreferenceManager
 import android.text.*
 import android.text.style.AlignmentSpan
-import android.util.Log
 import android.view.*
 import android.widget.EditText
 import android.widget.ImageView
@@ -15,16 +17,20 @@ import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.cardview.widget.CardView
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import androidx.core.content.res.ResourcesCompat
 import androidx.core.view.GravityCompat
 import com.arlib.floatingsearchview.FloatingSearchView
 import com.arlib.floatingsearchview.suggestions.model.SearchSuggestion
 import com.arlib.floatingsearchview.util.view.SearchInputView
 import com.google.android.material.appbar.AppBarLayout
+import com.google.android.material.snackbar.Snackbar
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.activity_main_content.*
 import kotlinx.android.synthetic.main.dialog_galleryblock.view.*
 import kotlinx.coroutines.*
+import kotlinx.io.IOException
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonConfiguration
 import kotlinx.serialization.json.JsonObject
@@ -35,9 +41,12 @@ import xyz.quaver.pupil.adapters.GalleryBlockAdapter
 import xyz.quaver.pupil.types.TagSuggestion
 import xyz.quaver.pupil.util.*
 import java.io.File
+import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.net.URL
 import java.util.*
+import java.util.zip.ZipEntry
+import java.util.zip.ZipOutputStream
 import javax.net.ssl.HttpsURLConnection
 import kotlin.collections.ArrayList
 import kotlin.math.roundToInt
@@ -67,6 +76,8 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        checkPermissions()
 
         val preference = PreferenceManager.getDefaultSharedPreferences(this)
 
@@ -238,6 +249,11 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun checkPermissions() {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED)
+            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE), 13489)
+    }
+
     private fun initView() {
         var prevP1 = 0
         main_appbar_layout.addOnOffsetChangedListener(
@@ -280,12 +296,7 @@ class MainActivity : AppCompatActivity() {
                         loadBlocks()
                     }
                     R.id.main_drawer_help -> {
-                        AlertDialog.Builder(this@MainActivity).apply {
-                            title = getString(R.string.help_dialog_title)
-                            setMessage(R.string.help_dialog_message)
-
-                            setPositiveButton(android.R.string.ok) { _, _ -> }
-                        }.show()
+                        startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(getString(R.string.help))))
                     }
                     R.id.main_drawer_github -> {
                         startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(getString(R.string.github))))
@@ -359,10 +370,9 @@ class MainActivity : AppCompatActivity() {
                         isEnabled = !(adapter as GalleryBlockAdapter).completeFlag.get(galleryBlock.id, false)
                         setOnClickListener {
                             val downloader = GalleryDownloader.get(galleryBlock.id)
-                            if (downloader == null) {
+                            if (downloader == null)
                                 GalleryDownloader(context, galleryBlock, true).start()
-                                downloads.add(galleryBlock.id)
-                            } else {
+                            else {
                                 downloader.cancel()
                                 downloader.clearNotification()
                             }
@@ -377,11 +387,91 @@ class MainActivity : AppCompatActivity() {
                                 this?.cancelAndJoin()
                                 this?.clearNotification()
                             }
-                            val cache = File(cacheDir, "imageCache/${galleryBlock.id}/images/")
+                            val cache = File(cacheDir, "imageCache/${galleryBlock.id}")
+                            val data = File(ContextCompat.getDataDir(this@MainActivity), "images/${galleryBlock.id}")
                             cache.deleteRecursively()
+                            data.deleteRecursively()
+
+                            downloads.remove(galleryBlock.id)
+
+                            if (mode == Mode.DOWNLOAD) {
+                                runOnUiThread {
+                                    cancelFetch()
+                                    clearGalleries()
+                                    fetchGalleries(query)
+                                    loadBlocks()
+                                }
+                            }
+
+                            (adapter as GalleryBlockAdapter).completeFlag.put(galleryBlock.id, false)
+                        }
+                        dialog.dismiss()
+                    }
+
+                    with(view.main_dialog_export) {
+                        val images = File(ContextCompat.getDataDir(this@MainActivity), "images/${galleryBlock.id}/images").let {
+                            when {
+                                it.exists() -> it
+                                else -> File(cacheDir, "imageCache/${galleryBlock.id}/images")
+                            }
+                        }
+                        isEnabled = images.exists()
+
+                        setOnClickListener {
+                            CoroutineScope(Dispatchers.Default).launch {
+                                val preference = PreferenceManager.getDefaultSharedPreferences(context)
+                                val zip = preference.getBoolean("export_zip", false)
+
+                                if (zip) {
+                                    var target = File(Environment.getExternalStorageDirectory(), "Pupil/${galleryBlock.id} ${galleryBlock.title}.zip")
+
+                                    try {
+                                        target.createNewFile()
+                                    } catch (e: IOException) {
+                                        target = File(Environment.getExternalStorageDirectory(), "Pupil/${galleryBlock.id}.zip")
+
+                                        try {
+                                            target.createNewFile()
+                                        } catch (e: IOException) {
+                                            Snackbar.make(main_layout, getString(R.string.main_export_error), Snackbar.LENGTH_LONG).show()
+                                            return@launch
+                                        }
+                                    }
+
+                                    FileOutputStream(target).use { targetStream ->
+                                        ZipOutputStream(targetStream).use {zipStream ->
+                                            images.listFiles().forEach {
+                                                zipStream.putNextEntry(ZipEntry(it.name))
+
+                                                FileInputStream(it).use { fileStream ->
+                                                    fileStream.copyTo(zipStream)
+                                                }
+                                            }
+                                        }
+                                    }
+                                } else {
+                                    var target = File(Environment.getExternalStorageDirectory(), "Pupil/${galleryBlock.id} ${galleryBlock.title}")
+
+                                    try {
+                                        target.canonicalPath
+                                    } catch (e: IOException) {
+                                        target = File(Environment.getExternalStorageDirectory(), "Pupil/${galleryBlock.id}")
+
+                                        try {
+                                            target.canonicalPath
+                                        } catch (e: IOException) {
+                                            Snackbar.make(main_layout, getString(R.string.main_export_error), Snackbar.LENGTH_LONG).show()
+                                            return@launch
+                                        }
+                                    }
+
+                                    images.copyRecursively(target, true)
+                                }
+
+                                Snackbar.make(main_layout, getString(R.string.main_export_complete), Snackbar.LENGTH_LONG).show()
+                            }
 
                             dialog.dismiss()
-                            (adapter as GalleryBlockAdapter).completeFlag.put(galleryBlock.id, false)
                         }
                     }
 

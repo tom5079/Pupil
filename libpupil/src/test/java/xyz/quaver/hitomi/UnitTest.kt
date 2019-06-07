@@ -14,8 +14,7 @@ class UnitTest {
     fun test_nozomi() {
         val nozomi = fetchNozomi(start = 0, count = 5)
 
-        for (n in nozomi)
-            println(n)
+        nozomi.first
     }
 
     @Test
@@ -62,6 +61,8 @@ class UnitTest {
 
     @Test
     fun test_hiyobi() {
-        print(xyz.quaver.hiyobi.getReader(1415416).size)
+        xyz.quaver.hiyobi.getReader(1415416).forEach {
+            println(it.url)
+        }
     }
 }

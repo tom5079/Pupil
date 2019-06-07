@@ -2,6 +2,12 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
+    <item android:id="@+id/reader_menu_use_hiyobi"
+        android:title=""
+        android:icon="@drawable/ic_hiyobi"
+        app:showAsAction="ifRoom"
+        android:visible="false"/>
+
     <item android:id="@+id/reader_menu_page_indicator"
         android:title="@string/page_indicator_placeholder"
         app:showAsAction="always|withText"/>

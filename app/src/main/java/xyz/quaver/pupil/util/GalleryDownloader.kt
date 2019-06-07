@@ -4,10 +4,13 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.ContextWrapper
 import android.content.Intent
+import android.os.Environment
+import android.util.Log
 import android.util.SparseArray
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.app.TaskStackBuilder
+import androidx.core.content.ContextCompat
 import androidx.preference.PreferenceManager
 import kotlinx.coroutines.*
 import kotlinx.io.IOException
@@ -15,12 +18,18 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonConfiguration
 import kotlinx.serialization.list
 import xyz.quaver.hitomi.*
+import xyz.quaver.hiyobi.cookie
+import xyz.quaver.hiyobi.user_agent
+import xyz.quaver.pupil.Pupil
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.ReaderActivity
 import java.io.File
+import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.net.URL
 import java.util.*
+import java.util.zip.ZipEntry
+import java.util.zip.ZipOutputStream
 import javax.net.ssl.HttpsURLConnection
 import kotlin.collections.ArrayList
 import kotlin.concurrent.schedule
@@ -31,14 +40,27 @@ class GalleryDownloader(
     _notify: Boolean = false
 ) : ContextWrapper(base) {
 
+    private val downloads = (applicationContext as Pupil).downloads
+    var useHiyobi = PreferenceManager.getDefaultSharedPreferences(this).getBoolean("use_hiyobi", false)
+
     var download: Boolean = false
         set(value) {
             if (value) {
                 field = true
                 notificationManager.notify(galleryBlock.id, notificationBuilder.build())
 
+                val data = File(ContextCompat.getDataDir(this), "images/${galleryBlock.id}")
+                val cache = File(cacheDir, "imageCache/${galleryBlock.id}")
+
+                if (cache.exists() && !data.exists()) {
+                    cache.copyRecursively(data, true)
+                    cache.deleteRecursively()
+                }
+
                 if (!reader.isActive && downloadJob?.isActive != true)
                     field = false
+
+                downloads.add(galleryBlock.id)
             } else {
                 field = false
             }
@@ -70,11 +92,14 @@ class GalleryDownloader(
             download = _notify
             val json = Json(JsonConfiguration.Stable)
             val serializer = ReaderItem.serializer().list
-            val preference = PreferenceManager.getDefaultSharedPreferences(this@GalleryDownloader)
-            val useHiyobi = preference.getBoolean("use_hiyobi", false)
 
             //Check cache
-            val cache = File(cacheDir, "imageCache/${galleryBlock.id}/reader.json")
+            val cache = File(ContextCompat.getDataDir(this@GalleryDownloader), "images/${galleryBlock.id}/reader.json").let {
+                when {
+                    it.exists() -> it
+                    else -> File(cacheDir, "imageCache/${galleryBlock.id}/reader.json")
+                }
+            }
 
             if (cache.exists()) {
                 val cached = json.parse(serializer, cache.readText())
@@ -90,7 +115,10 @@ class GalleryDownloader(
                 useHiyobi -> {
                     xyz.quaver.hiyobi.getReader(galleryBlock.id).let {
                         when {
-                            it.isEmpty() -> getReader(galleryBlock.id)
+                            it.isEmpty() -> {
+                                useHiyobi = false
+                                getReader(galleryBlock.id)
+                            }
                             else -> it
                         }
                     }
@@ -148,12 +176,21 @@ class GalleryDownloader(
                         val name = "$index".padStart(4, '0')
                         val ext = url.split('.').last()
 
-                        val cache = File(cacheDir, "/imageCache/${galleryBlock.id}/images/$name.$ext")
+                        val cache = File(ContextCompat.getDataDir(this@GalleryDownloader), "images/${galleryBlock.id}/images/$name.$ext").let {
+                            when {
+                                it.exists() -> it
+                                else -> File(cacheDir, "/imageCache/${galleryBlock.id}/images/$name.$ext")
+                            }
+                        }
 
                         if (!cache.exists())
                             try {
                                 with(URL(url).openConnection() as HttpsURLConnection) {
-                                    setRequestProperty("Referer", getReferer(galleryBlock.id))
+                                    if (useHiyobi) {
+                                        setRequestProperty("User-Agent", user_agent)
+                                        setRequestProperty("Cookie", cookie)
+                                    } else
+                                        setRequestProperty("Referer", getReferer(galleryBlock.id))
 
                                     if (!cache.parentFile.exists())
                                         cache.parentFile.mkdirs()
@@ -189,8 +226,35 @@ class GalleryDownloader(
                     .setContentText(getString(R.string.reader_notification_complete))
                     .setProgress(0, 0, false)
 
-                if (download)
-                    notificationManager.notify(galleryBlock.id, notificationBuilder.build())
+                if (download) {
+                    File(cacheDir, "imageCache/${galleryBlock.id}").let {
+                        if (it.exists()) {
+                            it.copyRecursively(
+                                File(ContextCompat.getDataDir(this@GalleryDownloader), "images/${galleryBlock.id}"),
+                                true
+                            )
+                            it.deleteRecursively()
+                        }
+                    }
+
+                    val preference = PreferenceManager.getDefaultSharedPreferences(this@GalleryDownloader)
+                    val autoExport = preference.getBoolean("auto_export", false)
+
+                    if (autoExport) {
+                        export({
+                            notificationManager.notify(galleryBlock.id, notificationBuilder.build())
+                        }, {
+                            notificationBuilder
+                                .setContentTitle(galleryBlock.title)
+                                .setContentText(getString(R.string.main_export_error))
+                                .setProgress(0, 0, false)
+
+                            notificationManager.notify(galleryBlock.id, notificationBuilder.build())
+                        })
+                    } else {
+                        notificationManager.notify(galleryBlock.id, notificationBuilder.build())
+                    }
+                }
 
                 download = false
             }
@@ -207,6 +271,8 @@ class GalleryDownloader(
 
     suspend fun cancelAndJoin() {
         downloadJob?.cancelAndJoin()
+
+        remove(galleryBlock.id)
     }
 
     fun invokeOnReaderLoaded() {
@@ -241,6 +307,71 @@ class GalleryDownloader(
             priority = NotificationCompat.PRIORITY_LOW
         }
         notificationManager = NotificationManagerCompat.from(this)
+    }
+
+    fun export(onSuccess: (() -> Unit)? = null, onError: (() -> Unit)? = null) {
+        val images = File(ContextCompat.getDataDir(this), "images/${galleryBlock.id}/images").let {
+            when {
+                it.exists() -> it
+                else -> File(cacheDir, "imageCache/${galleryBlock.id}/images")
+            }
+        }
+
+        if (!images.exists())
+            return
+
+        CoroutineScope(Dispatchers.Default).launch {
+            val preference = PreferenceManager.getDefaultSharedPreferences(this@GalleryDownloader)
+            val zip = preference.getBoolean("export_zip", false)
+
+            if (zip) {
+                var target = File(Environment.getExternalStorageDirectory(), "Pupil/${galleryBlock.id} ${galleryBlock.title}.zip")
+
+                try {
+                    target.createNewFile()
+                } catch (e: IOException) {
+                    target = File(Environment.getExternalStorageDirectory(), "Pupil/${galleryBlock.id}.zip")
+
+                    try {
+                        target.createNewFile()
+                    } catch (e: IOException) {
+                        onError?.invoke()
+                        return@launch
+                    }
+                }
+
+                FileOutputStream(target).use { targetStream ->
+                    ZipOutputStream(targetStream).use { zipStream ->
+                        images.listFiles().forEach {
+                            zipStream.putNextEntry(ZipEntry(it.name))
+
+                            FileInputStream(it).use { fileStream ->
+                                fileStream.copyTo(zipStream)
+                            }
+                        }
+                    }
+                }
+            } else {
+                var target = File(Environment.getExternalStorageDirectory(), "Pupil/${galleryBlock.id} ${galleryBlock.title}")
+
+                try {
+                    target.canonicalPath
+                } catch (e: IOException) {
+                    target = File(Environment.getExternalStorageDirectory(), "Pupil/${galleryBlock.id}")
+
+                    try {
+                        target.canonicalPath
+                    } catch (e: IOException) {
+                        onError?.invoke()
+                        return@launch
+                    }
+                }
+
+                images.copyRecursively(target, true)
+            }
+
+            onSuccess?.invoke()
+        }
     }
 
 }

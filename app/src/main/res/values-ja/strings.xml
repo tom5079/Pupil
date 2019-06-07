@@ -9,8 +9,8 @@
     <string name="search_hint_with_page">ギャラリー検索</string>
     <string name="settings_cache_title">キャッシュ</string>
     <string name="settings_clear_image_cache">イメージキャッシュクリア</string>
-    <string name="settings_clear_cache_alert_message">キャッシュをクリアするとイメージのロード速度に影響を与えます。実行しますか？</string>
-    <string name="settings_clear_cache_summary">キャッシュサイズ: %1$d%2$s</string>
+    <string name="settings_clear_cache_alert_message">キャッシュをクリアするとイメージのロード速度に影響を与えます。\n実行しますか？</string>
+    <string name="settings_clear_cache_summary">サイズ: %1$d%2$s</string>
     <string name="settings_default_query">デフォルトキーワード</string>
     <string name="settings_galleries_per_page">一回にロードするギャラリー数</string>
     <string name="settings_search_title">検索設定</string>
@@ -19,7 +19,6 @@
     <string name="update_title">新しいアップデートがあります</string>
     <string name="warning">注意</string>
     <string name="settings_miscellaneous_title">その他</string>
-    <string name="settings_use_hiyobi_summary">ロード速度を向上させるためhiyobi.meからイメージロード</string>
     <string name="settings_use_hiyobi_title">hiyobi.meからロード</string>
     <string name="settings_clear_history">履歴を削除</string>
     <string name="settings_clear_history_alert_message">履歴を削除しますか？</string>
@@ -41,8 +40,6 @@
     <string name="main_drawer_group_contact_help">ヘルプ</string>
     <string name="main_drawer_group_contact_github">Github</string>
     <string name="main_drawer_group_contact_email">メールを送る</string>
-    <string name="help_dialog_title">準備中</string>
-    <string name="help_dialog_message">準備中です。</string>
     <string name="reader_fab_fullscreen">フルスクリーン</string>
     <string name="channel_download">ダウンロード</string>
     <string name="channel_download_description">ダウンロードの進行を通知</string>
@@ -59,4 +56,15 @@
     <string name="main_move">%1$dページへ移動</string>
     <string name="https_block_alert_title">(Korean only)</string>
     <string name="https_block_alert">(Korean only)</string>
+    <string name="main_dialog_export">ギャラリーエクスポート</string>
+    <string name="main_export_complete">エクスポート完了</string>
+    <string name="main_export_open_folder">フォルダを開く</string>
+    <string name="main_export_error">エクスポートエラーが発生しました</string>
+    <string name="settings_export_zip_title">zipエクスポート</string>
+    <string name="settings_export_zip_summary">イメージフォルダの代わりzipファイルでエクスポート</string>
+    <string name="settings_auto_export_title">自動エクスポート</string>
+    <string name="settings_auto_export_summary">ダウンロード完了後自動的にエクスポート</string>
+    <string name="settings_clear_downloads">ダウンロード削除</string>
+    <string name="settings_clear_downloads_alert_message">ダウンロードしたギャラリーを全て削除します。\n実行しますか？</string>
+    <string name="settings_use_hiyobi_summary">ロード速度を向上させるため可能であればhiyobi.meからイメージロード</string>
 </resources>

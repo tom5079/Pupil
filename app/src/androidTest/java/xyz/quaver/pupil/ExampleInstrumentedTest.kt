@@ -7,7 +7,12 @@ import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.junit.runner.RunWith
+import xyz.quaver.hiyobi.cookie
+import xyz.quaver.hiyobi.getReader
+import xyz.quaver.hiyobi.user_agent
 import java.io.File
+import java.net.URL
+import javax.net.ssl.HttpsURLConnection
 
 /**
  * Instrumented test, which will execute on an Android device.
@@ -35,6 +40,17 @@ class ExampleInstrumentedTest {
 
     @Test
     fun test_doSearch() {
+        val reader = getReader(1426382)
 
+        val data: ByteArray
+
+        with(URL(reader[0].url).openConnection() as HttpsURLConnection) {
+            setRequestProperty("User-Agent", user_agent)
+            setRequestProperty("Cookie", cookie)
+
+            data = inputStream.readBytes()
+        }
+
+        Log.d("Pupil", data.size.toString())
     }
 }

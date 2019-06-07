@@ -3,6 +3,7 @@
     package="xyz.quaver.pupil">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
 
     <application
         android:allowBackup="true"
@@ -13,16 +14,6 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme"
         android:name=".Pupil">
-
-        <provider
-            android:name="androidx.core.content.FileProvider"
-            android:authorities="xyz.quaver.pupil.provider"
-            android:exported="false"
-            android:grantUriPermissions="true">
-            <meta-data
-                android:name="android.support.FILE_PROVIDER_PATHS"
-                android:resource="@xml/filepaths"/>
-        </provider>
 
         <activity android:name=".ReaderActivity"
             android:parentActivityName=".MainActivity"

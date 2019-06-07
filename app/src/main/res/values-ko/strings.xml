@@ -7,8 +7,8 @@
     <string name="search_hint_with_page">갤러리 검색</string>
     <string name="settings_default_query">기본 검색어</string>
     <string name="settings_clear_image_cache">이미지 캐시 정리하기</string>
-    <string name="settings_clear_cache_alert_message">캐시를 정리하면 이미지 로딩속도가 느려질 수 있습니다. 계속하시겠습니까?</string>
-    <string name="settings_clear_cache_summary">현재 캐시 사용량: %1$d%2$s</string>
+    <string name="settings_clear_cache_alert_message">캐시를 정리하면 이미지 로딩속도가 느려질 수 있습니다.\n계속하시겠습니까?</string>
+    <string name="settings_clear_cache_summary">사용량: %1$d%2$s</string>
     <string name="settings_galleries_per_page">한 번에 로드할 갤러리 수</string>
     <string name="settings_search_title">검색 설정</string>
     <string name="settings_title">설정</string>
@@ -19,7 +19,6 @@
     <string name="main_search">검색</string>
     <string name="settings_cache_title">캐시</string>
     <string name="settings_miscellaneous_title">기타</string>
-    <string name="settings_use_hiyobi_summary">속도 향상을 위해 가능하면 hiyobi.me에서 이미지 로드</string>
     <string name="settings_use_hiyobi_title">hiyobi.me 사용</string>
     <string name="settings_clear_history">기록 삭제</string>
     <string name="settings_clear_history_alert_message">기록을 삭제하시겠습니까?</string>
@@ -41,8 +40,6 @@
     <string name="main_drawer_group_contact_help">도움말</string>
     <string name="main_drawer_group_contact_homepage">홈페이지</string>
     <string name="main_drawer_group_contact_title">문의</string>
-    <string name="help_dialog_title">준비 중</string>
-    <string name="help_dialog_message">준비중입니다.</string>
     <string name="reader_fab_fullscreen">전체 화면</string>
     <string name="channel_download">다운로드</string>
     <string name="channel_download_description">다운로드 상태 알림</string>
@@ -59,4 +56,15 @@
     <string name="main_move">%1$d 페이지로 이동</string>
     <string name="https_block_alert_title">접속 불가 현상 안내</string>
     <string name="https_block_alert">최근 https 차단으로 접속이 안 되는 경우가 발생하고 있습니다\n이 경우 플레이스토어에서 SNIper앱을 이용하시면 정상이용이 가능합니다.</string>
+    <string name="main_dialog_export">갤러리 내보내기</string>
+    <string name="main_export_complete">내보내기 완료</string>
+    <string name="main_export_open_folder">폴더 열기</string>
+    <string name="main_export_error">내보내기 오류가 발생했습니다</string>
+    <string name="settings_export_zip_title">zip 파일로 내보내기</string>
+    <string name="settings_export_zip_summary">이미지 폴더 대신 zip 파일로 내보내기</string>
+    <string name="settings_auto_export_title">자동 내보내기</string>
+    <string name="settings_auto_export_summary">다운로드가 끝난 후 자동 내보내기</string>
+    <string name="settings_clear_downloads">다운로드 삭제</string>
+    <string name="settings_clear_downloads_alert_message">다운로드 된 만화를 모두 삭제합니다.\n계속하시겠습니까?</string>
+    <string name="settings_use_hiyobi_summary">속도 향상을 위해 가능하면 hiyobi.me에서 이미지 로드</string>
 </resources>
