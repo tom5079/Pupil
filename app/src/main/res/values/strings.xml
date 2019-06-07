@@ -5,7 +5,7 @@
     <string name="release_name" translatable="false">Pupil-v(\\d+\\.)+\\d+\\.apk</string>
 
     <string name="home_page" translatable="false">https://tom5079.github.io/Pupil</string>
-    <string name="help" translatable="false">https://tom5079.github.io/Pupil/2019/06/02/manual-kr.html</string>
+    <string name="help" translatable="false">https://tom5079.github.io/Pupil/2019/06/06/manual-kr.html</string>
     <string name="github" translatable="false">https://github.com/tom5079/Pupil-issue/issues/new/choose</string>
     <string name="email" translatable="false">mailto:pupil.hentai@gmail.com</string>
 

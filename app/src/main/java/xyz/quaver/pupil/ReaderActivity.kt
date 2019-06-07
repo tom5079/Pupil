@@ -2,7 +2,6 @@ package xyz.quaver.pupil
 
 import android.graphics.drawable.Drawable
 import android.os.Bundle
-import android.os.Environment
 import android.view.*
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -27,11 +26,6 @@ import xyz.quaver.hitomi.GalleryBlock
 import xyz.quaver.pupil.adapters.ReaderAdapter
 import xyz.quaver.pupil.util.GalleryDownloader
 import xyz.quaver.pupil.util.ItemClickSupport
-import java.io.File
-import java.io.FileInputStream
-import java.io.FileOutputStream
-import java.util.zip.ZipEntry
-import java.util.zip.ZipOutputStream
 
 class ReaderActivity : AppCompatActivity() {
 
@@ -169,7 +163,7 @@ class ReaderActivity : AppCompatActivity() {
             onProgressHandler = {
                 CoroutineScope(Dispatchers.Main).launch {
                     reader_progressbar.progress = it
-                    menu?.findItem(R.id.reader_menu_use_hiyobi)?.isVisible = true
+                    menu?.findItem(R.id.reader_menu_use_hiyobi)?.isVisible = downloader.useHiyobi
                 }
             }
             onDownloadedHandler = {
