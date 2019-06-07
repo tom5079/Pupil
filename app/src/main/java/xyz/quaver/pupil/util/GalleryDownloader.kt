@@ -5,7 +5,6 @@ import android.content.Context
 import android.content.ContextWrapper
 import android.content.Intent
 import android.os.Environment
-import android.util.Log
 import android.util.SparseArray
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
