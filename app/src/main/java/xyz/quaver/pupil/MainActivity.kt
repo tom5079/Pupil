@@ -809,7 +809,15 @@ class MainActivity : AppCompatActivity() {
                 suggestionJob?.cancel()
 
                 suggestionJob = CoroutineScope(Dispatchers.IO).launch {
-                    val suggestions = getSuggestionsForQuery(currentQuery).map { TagSuggestion(it) }
+                    val suggestions = ArrayList(getSuggestionsForQuery(currentQuery).map { TagSuggestion(it) })
+
+                    suggestions.filter {
+                        val tag = "${it.n}:${it.s.replace(Regex("\\s"), "_")}"
+                        Tags(json.parse(serializer, favoritesFile.readText())).contains(tag)
+                    }.reversed().forEach {
+                        suggestions.remove(it)
+                        suggestions.add(0, it)
+                    }
 
                     withContext(Dispatchers.Main) {
                         swapSuggestions(suggestions)
