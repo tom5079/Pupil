@@ -743,13 +743,12 @@ class MainActivity : AppCompatActivity() {
             setOnMenuItemClickListener {
                 when(it.itemId) {
                     R.id.main_menu_settings -> startActivityForResult(Intent(this@MainActivity, SettingsActivity::class.java), SETTINGS)
-                    R.id.main_menu_page_indicator -> {
+                    R.id.main_menu_jump -> {
                         val preference = PreferenceManager.getDefaultSharedPreferences(context)
                         val perPage = preference.getString("per_page", "25")!!.toInt()
                         val editText = EditText(context)
 
                         AlertDialog.Builder(context).apply {
-                            title = getString(R.string.reader_go_to_page)
                             setView(editText)
                             setTitle(R.string.main_jump_title)
                             setMessage(getString(
@@ -766,6 +765,32 @@ class MainActivity : AppCompatActivity() {
                                     clearGalleries()
                                     fetchGalleries(query)
                                     loadBlocks()
+                                }
+                            }
+                        }.show()
+                    }
+                    R.id.main_menu_id -> {
+                        val editText = EditText(context)
+
+                        AlertDialog.Builder(context).apply {
+                            setView(editText)
+                            setTitle(R.string.main_open_gallery_by_id)
+
+                            setPositiveButton(android.R.string.ok) { _, _ ->
+                                CoroutineScope(Dispatchers.Default).launch {
+                                    try {
+                                        val intent = Intent(this@MainActivity, ReaderActivity::class.java)
+                                        val gallery =
+                                            getGalleryBlock(editText.text.toString().toInt()) ?: throw Exception()
+                                        intent.putExtra(
+                                            "galleryblock",
+                                            Json(JsonConfiguration.Stable).stringify(GalleryBlock.serializer(), gallery)
+                                        )
+
+                                        startActivity(intent)
+                                    } catch (e: Exception) {
+                                        Snackbar.make(main_layout, R.string.main_open_gallery_by_id_error, Snackbar.LENGTH_LONG).show()
+                                    }
                                 }
                             }
                         }.show()

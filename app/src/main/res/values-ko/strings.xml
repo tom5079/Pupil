@@ -68,4 +68,6 @@
     <string name="settings_clear_downloads_alert_message">다운로드 된 만화를 모두 삭제합니다.\n계속하시겠습니까?</string>
     <string name="settings_use_hiyobi_summary">속도 향상을 위해 가능하면 hiyobi.me에서 이미지 로드</string>
     <string name="main_drawer_favorite">즐겨찾기</string>
+    <string name="main_open_gallery_by_id">갤러리 번호로 열기</string>
+    <string name="main_open_gallery_by_id_error">갤러리를 찾지 못했습니다</string>
 </resources>
