@@ -838,10 +838,11 @@ class MainActivity : AppCompatActivity() {
                 )
 
                 with(suggestionView.findViewById<ImageView>(R.id.right_icon)) {
-                    setImageDrawable(AnimatedVectorDrawableCompat.create(context, R.drawable.avd_star))
 
                     if (Tags(json.parse(serializer, favoritesFile.readText())).contains(tag))
-                        (drawable as Animatable).start()
+                        setImageResource(R.drawable.ic_star_filled)
+                    else
+                        setImageResource(R.drawable.ic_star_empty)
 
                     visibility = View.VISIBLE
                     rotation = 0f
@@ -854,11 +855,13 @@ class MainActivity : AppCompatActivity() {
                         val favorites = Tags(json.parse(serializer, favoritesFile.readText()))
 
                         if (favorites.contains(tag)) {
-                            setImageDrawable(AnimatedVectorDrawableCompat.create(context, R.drawable.avd_star))
+                            setImageResource(R.drawable.ic_star_empty)
                             favorites.remove(tag)
                         }
                         else {
+                            setImageDrawable(AnimatedVectorDrawableCompat.create(context, R.drawable.avd_star))
                             (drawable as Animatable).start()
+
                             favorites.add(tag)
                         }
 
