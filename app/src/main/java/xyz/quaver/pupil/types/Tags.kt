@@ -1,5 +1,8 @@
 package xyz.quaver.pupil.types
 
+import kotlinx.serialization.Serializable
+
+@Serializable
 data class Tag(val area: String?, val tag: String, val isNegative: Boolean = false) {
     companion object {
         fun parse(tag: String) : Tag {

@@ -104,7 +104,13 @@ class GalleryDownloader(
                 val cached = json.parse(serializer, cache.readText())
 
                 if (cached.isNotEmpty()) {
+                    useHiyobi = when {
+                        cached.first().url.contains("hitomi.la") -> false
+                        else -> true
+                    }
+
                     onReaderLoadedHandler?.invoke(cached)
+
                     return@async cached
                 }
             }

@@ -1,6 +1,8 @@
 package xyz.quaver.pupil.adapters
 
 import android.graphics.BitmapFactory
+import android.graphics.drawable.Animatable
+import android.util.Log
 import android.util.SparseBooleanArray
 import android.view.LayoutInflater
 import android.view.View
@@ -21,8 +23,10 @@ import kotlinx.serialization.json.JsonConfiguration
 import kotlinx.serialization.list
 import xyz.quaver.hitomi.GalleryBlock
 import xyz.quaver.hitomi.ReaderItem
+import xyz.quaver.pupil.Pupil
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.types.Tag
+import xyz.quaver.pupil.util.Histories
 import java.io.File
 import java.util.*
 import kotlin.collections.ArrayList
@@ -36,6 +40,8 @@ class GalleryBlockAdapter(private val galleries: List<Pair<GalleryBlock, Deferre
         GALLERY,
         PREV
     }
+
+    private lateinit var favorites: Histories
 
     inner class GalleryViewHolder(private val view: CardView) : RecyclerView.ViewHolder(view) {
         fun bind(item: Pair<GalleryBlock, Deferred<String>>) {
@@ -201,6 +207,27 @@ class GalleryBlockAdapter(private val galleries: List<Pair<GalleryBlock, Deferre
                     }
 
                     galleryblock_tag_group.addView(chip)
+                }
+
+                if (!::favorites.isInitialized)
+                    favorites = (context.applicationContext as Pupil).favorites
+
+                with(galleryblock_favorite) {
+                    post {
+                        isChecked = favorites.contains(gallery.id)
+                    }
+                    setOnClickListener {
+                        when {
+                            isChecked -> favorites.add(gallery.id)
+                            else -> favorites.remove(gallery.id)
+                        }
+                    }
+                    setOnCheckedChangeListener { _, isChecked ->
+                        when {
+                            isChecked -> (background as Animatable).start()
+                            else -> background = AnimatedVectorDrawableCompat.create(context, R.drawable.avd_star)
+                        }
+                    }
                 }
             }
         }

@@ -16,12 +16,14 @@ class Pupil : ObservableApplication() {
 
     lateinit var histories: Histories
     lateinit var downloads: Histories
+    lateinit var favorites: Histories
 
     override fun onCreate() {
         val preference = PreferenceManager.getDefaultSharedPreferences(this)
 
         histories = Histories(File(ContextCompat.getDataDir(this), "histories.json"))
         downloads = Histories(File(ContextCompat.getDataDir(this), "downloads.json"))
+        favorites = Histories(File(ContextCompat.getDataDir(this), "favorites.json"))
 
         super.onCreate()
         Fn.init(this)

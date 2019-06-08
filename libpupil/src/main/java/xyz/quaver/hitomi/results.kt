@@ -11,9 +11,11 @@ fun doSearch(query: String) : List<Int> {
     val terms = query
         .trim()
         .replace(Regex("""^\?"""), "")
-        .replace('_', ' ')
         .toLowerCase()
         .split(Regex("\\s+"))
+        .map {
+            it.replace('_', ' ')
+        }
 
     val positiveTerms = LinkedList<String>()
     val negativeTerms = LinkedList<String>()
@@ -42,7 +44,8 @@ fun doSearch(query: String) : List<Int> {
         //positive results
         positiveTerms.map {
             launch(searchDispatcher) {
-                filterPositive(getGalleryIDsForQuery(it).sorted())
+                val newResults = getGalleryIDsForQuery(it)
+                filterPositive(newResults.sorted())
             }
         }.forEach {
             it.join()

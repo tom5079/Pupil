@@ -7,7 +7,9 @@ import java.net.URL
 class UnitTest {
     @Test
     fun test() {
-        print(File("C:\\asdf").list()?.size ?: 0)
+        val galleries = getGalleryIDsForQuery("series:touhou_project")
+
+        println(galleries.size)
     }
 
     @Test

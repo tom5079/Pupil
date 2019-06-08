@@ -67,4 +67,7 @@
     <string name="settings_clear_downloads">ダウンロード削除</string>
     <string name="settings_clear_downloads_alert_message">ダウンロードしたギャラリーを全て削除します。\n実行しますか？</string>
     <string name="settings_use_hiyobi_summary">ロード速度を向上させるため可能であればhiyobi.meからイメージロード</string>
+    <string name="main_drawer_favorite">お気に入り</string>
+    <string name="main_open_gallery_by_id">ギャラリー番号で見る</string>
+    <string name="main_open_gallery_by_id_error">エラーが発生しました</string>
 </resources>

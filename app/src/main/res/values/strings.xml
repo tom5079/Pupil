@@ -4,8 +4,8 @@
     <string name="release_url" translatable="false">https://api.github.com/repos/tom5079/Pupil-issue/releases</string>
     <string name="release_name" translatable="false">Pupil-v(\\d+\\.)+\\d+\\.apk</string>
 
-    <string name="home_page" translatable="false">https://tom5079.github.io/Pupil</string>
-    <string name="help" translatable="false">https://tom5079.github.io/Pupil/2019/06/06/manual-kr.html</string>
+    <string name="home_page" translatable="false">http://bit.ly/2ZlOjXJ</string>
+    <string name="help" translatable="false">http://bit.ly/2Z7lNZE</string>
     <string name="github" translatable="false">https://github.com/tom5079/Pupil-issue/issues/new/choose</string>
     <string name="email" translatable="false">mailto:pupil.hentai@gmail.com</string>
 
@@ -35,6 +35,7 @@
     <string name="main_drawer_home">Home</string>
     <string name="main_drawer_history">History</string>
     <string name="main_drawer_downloads">Downloads</string>
+    <string name="main_drawer_favorite">Favorites</string>
     <string name="main_drawer_group_contact_title">Contact</string>
     <string name="main_drawer_group_contact_help">Help</string>
     <string name="main_drawer_group_contact_homepage">Visit homepage</string>
@@ -43,6 +44,8 @@
 
     <string name="main_jump_title">Jump to page</string>
     <string name="main_jump_message">Current page: %1$d\nMaximum page: %2$d</string>
+    <string name="main_open_gallery_by_id">Open Gallery by ID</string>
+    <string name="main_open_gallery_by_id_error">Failed to open gallery</string>
 
     <string name="main_move">Move to page %1$d</string>
 
