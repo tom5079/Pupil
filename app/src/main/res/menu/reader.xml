@@ -2,6 +2,12 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
+    <item android:id="@+id/reader_menu_favorite"
+        android:title=""
+        android:iconTint="@color/material_orange_500"
+        android:icon="@drawable/avd_star"
+        app:showAsAction="always"/>
+
     <item android:id="@+id/reader_menu_use_hiyobi"
         android:title=""
         android:icon="@drawable/ic_hiyobi"
