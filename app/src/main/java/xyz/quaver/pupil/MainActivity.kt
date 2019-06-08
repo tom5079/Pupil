@@ -3,6 +3,7 @@ package xyz.quaver.pupil
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.drawable.Animatable
 import android.net.Uri
 import android.os.Bundle
 import android.os.Environment
@@ -21,6 +22,7 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.res.ResourcesCompat
 import androidx.core.view.GravityCompat
+import androidx.vectordrawable.graphics.drawable.AnimatedVectorDrawableCompat
 import com.arlib.floatingsearchview.FloatingSearchView
 import com.arlib.floatingsearchview.suggestions.model.SearchSuggestion
 import com.arlib.floatingsearchview.util.view.SearchInputView
@@ -31,14 +33,20 @@ import kotlinx.android.synthetic.main.activity_main_content.*
 import kotlinx.android.synthetic.main.dialog_galleryblock.view.*
 import kotlinx.coroutines.*
 import kotlinx.io.IOException
+import kotlinx.serialization.ImplicitReflectionSerializer
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonConfiguration
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.content
+import kotlinx.serialization.list
+import kotlinx.serialization.parseList
+import kotlinx.serialization.stringify
 import ru.noties.markwon.Markwon
 import xyz.quaver.hitomi.*
 import xyz.quaver.pupil.adapters.GalleryBlockAdapter
+import xyz.quaver.pupil.types.Tag
 import xyz.quaver.pupil.types.TagSuggestion
+import xyz.quaver.pupil.types.Tags
 import xyz.quaver.pupil.util.*
 import java.io.File
 import java.io.FileInputStream
@@ -56,7 +64,8 @@ class MainActivity : AppCompatActivity() {
     enum class Mode {
         SEARCH,
         HISTORY,
-        DOWNLOAD
+        DOWNLOAD,
+        FAVORITE
     }
 
     private val galleries = ArrayList<Pair<GalleryBlock, Deferred<String>>>()
@@ -73,6 +82,7 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var histories: Histories
     private lateinit var downloads: Histories
+    private lateinit var favorites: Histories
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -96,6 +106,7 @@ class MainActivity : AppCompatActivity() {
         with(application as Pupil) {
             this@MainActivity.histories = histories
             this@MainActivity.downloads = downloads
+            this@MainActivity.favorites = favorites
         }
 
         setContentView(R.layout.activity_main)
@@ -274,6 +285,7 @@ class MainActivity : AppCompatActivity() {
                     R.id.main_drawer_home -> {
                         cancelFetch()
                         clearGalleries()
+                        currentPage = 0
                         query = ""
                         mode = Mode.SEARCH
                         fetchGalleries(query)
@@ -282,6 +294,7 @@ class MainActivity : AppCompatActivity() {
                     R.id.main_drawer_history -> {
                         cancelFetch()
                         clearGalleries()
+                        currentPage = 0
                         query = ""
                         mode = Mode.HISTORY
                         fetchGalleries(query)
@@ -290,8 +303,18 @@ class MainActivity : AppCompatActivity() {
                     R.id.main_drawer_downloads -> {
                         cancelFetch()
                         clearGalleries()
+                        currentPage = 0
                         query = ""
                         mode = Mode.DOWNLOAD
+                        fetchGalleries(query)
+                        loadBlocks()
+                    }
+                    R.id.main_drawer_favorite -> {
+                        cancelFetch()
+                        clearGalleries()
+                        currentPage = 0
+                        query = ""
+                        mode = Mode.FAVORITE
                         fetchGalleries(query)
                         loadBlocks()
                     }
@@ -686,6 +709,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private var suggestionJob : Job? = null
+    @UseExperimental(ImplicitReflectionSerializer::class)
     private fun setupSearchBar() {
         val searchInputView = findViewById<SearchInputView>(R.id.search_bar_text)
         //Change upper case letters to lower case
@@ -707,6 +731,15 @@ class MainActivity : AppCompatActivity() {
         })
 
         with(main_searchview as FloatingSearchView) {
+            val favoritesFile = File(ContextCompat.getDataDir(context), "favorites_tags.json")
+            val json = Json(JsonConfiguration.Stable)
+            val serializer = Tag.serializer().list
+
+            if (!favoritesFile.exists()) {
+                favoritesFile.createNewFile()
+                favoritesFile.writeText(json.stringify(Tags(listOf())))
+            }
+
             setOnMenuItemClickListener {
                 when(it.itemId) {
                     R.id.main_menu_settings -> startActivityForResult(Intent(this@MainActivity, SettingsActivity::class.java), SETTINGS)
@@ -759,8 +792,9 @@ class MainActivity : AppCompatActivity() {
                 }
             }
 
-            setOnBindSuggestionCallback { _, leftIcon, textView, item, _ ->
+            setOnBindSuggestionCallback { suggestionView, leftIcon, textView, item, _ ->
                 val suggestion = item as TagSuggestion
+                val tag = "${suggestion.n}:${suggestion.s.replace(Regex("\\s"), "_")}"
 
                 leftIcon.setImageDrawable(
                     ResourcesCompat.getDrawable(
@@ -778,16 +812,49 @@ class MainActivity : AppCompatActivity() {
                         null)
                 )
 
-                val text = "${suggestion.s}\n ${suggestion.t}"
+                with(suggestionView.findViewById<ImageView>(R.id.right_icon)) {
+                    setImageDrawable(AnimatedVectorDrawableCompat.create(context, R.drawable.avd_star))
 
-                val len = text.length
-                val left = suggestion.s.length
+                    if (Tags(json.parse(serializer, favoritesFile.readText())).contains(tag))
+                        (drawable as Animatable).start()
 
-                textView.text = SpannableString(text).apply {
-                    val s = AlignmentSpan.Standard(Layout.Alignment.ALIGN_OPPOSITE)
-                    setSpan(s, left, len, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
-                    setSpan(SetLineOverlap(true), 1, len-2, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
-                    setSpan(SetLineOverlap(false), len-1, len, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+                    visibility = View.VISIBLE
+                    rotation = 0f
+                    isEnabled = true
+
+                    setColorFilter(ContextCompat.getColor(context, R.color.material_orange_500))
+
+                    isClickable = true
+                    setOnClickListener {
+                        val favorites = Tags(json.parse(serializer, favoritesFile.readText()))
+
+                        if (favorites.contains(tag)) {
+                            setImageDrawable(AnimatedVectorDrawableCompat.create(context, R.drawable.avd_star))
+                            favorites.remove(tag)
+                        }
+                        else {
+                            (drawable as Animatable).start()
+                            favorites.add(tag)
+                        }
+
+                        favoritesFile.writeText(json.stringify(favorites))
+                    }
+                }
+
+                if (suggestion.t == -1) {
+                    textView.text = suggestion.s
+                } else {
+                    val text = "${suggestion.s}\n ${suggestion.t}"
+
+                    val len = text.length
+                    val left = suggestion.s.length
+
+                    textView.text = SpannableString(text).apply {
+                        val s = AlignmentSpan.Standard(Layout.Alignment.ALIGN_OPPOSITE)
+                        setSpan(s, left, len, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+                        setSpan(SetLineOverlap(true), 1, len-2, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+                        setSpan(SetLineOverlap(false), len-1, len, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+                    }
                 }
             }
 
@@ -810,7 +877,10 @@ class MainActivity : AppCompatActivity() {
 
             setOnFocusChangeListener(object: FloatingSearchView.OnFocusChangeListener {
                 override fun onFocus() {
-                    //Do Nothing
+                    if (searchInputView.text.isEmpty())
+                        swapSuggestions(json.parse(serializer, favoritesFile.readText()).map {
+                            TagSuggestion(it.tag, -1, "", it.area ?: "tag")
+                        })
                 }
 
                 override fun onFocusCleared() {
@@ -824,6 +894,7 @@ class MainActivity : AppCompatActivity() {
                         runOnUiThread {
                             cancelFetch()
                             clearGalleries()
+                            currentPage = 0
                             fetchGalleries(query)
                             loadBlocks()
                         }
@@ -905,6 +976,19 @@ class MainActivity : AppCompatActivity() {
                         else -> {
                             val result = doSearch(query).sorted()
                             downloads.filter { result.binarySearch(it) >= 0 }.apply {
+                                totalItems = size
+                            }
+                        }
+                    }
+                }
+                Mode.FAVORITE -> {
+                    when {
+                        query.isEmpty() -> favorites.toList().apply {
+                            totalItems = size
+                        }
+                        else -> {
+                            val result = doSearch(query).sorted()
+                            favorites.filter { result.binarySearch(it) >= 0 }.apply {
                                 totalItems = size
                             }
                         }
