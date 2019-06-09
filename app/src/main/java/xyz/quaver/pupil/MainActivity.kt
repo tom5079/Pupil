@@ -6,7 +6,6 @@ import android.content.pm.PackageManager
 import android.graphics.drawable.Animatable
 import android.net.Uri
 import android.os.Bundle
-import android.os.Environment
 import android.preference.PreferenceManager
 import android.text.*
 import android.text.style.AlignmentSpan
@@ -32,7 +31,6 @@ import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.activity_main_content.*
 import kotlinx.android.synthetic.main.dialog_galleryblock.view.*
 import kotlinx.coroutines.*
-import kotlinx.io.IOException
 import kotlinx.serialization.ImplicitReflectionSerializer
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonConfiguration
@@ -48,12 +46,9 @@ import xyz.quaver.pupil.types.TagSuggestion
 import xyz.quaver.pupil.types.Tags
 import xyz.quaver.pupil.util.*
 import java.io.File
-import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.net.URL
 import java.util.*
-import java.util.zip.ZipEntry
-import java.util.zip.ZipOutputStream
 import javax.net.ssl.HttpsURLConnection
 import kotlin.collections.ArrayList
 import kotlin.math.roundToInt
@@ -417,7 +412,7 @@ class MainActivity : AppCompatActivity() {
                                 this?.clearNotification()
                             }
                             val cache = File(cacheDir, "imageCache/${galleryBlock.id}")
-                            val data = File(ContextCompat.getDataDir(this@MainActivity), "images/${galleryBlock.id}")
+                            val data = getCachedGallery(context, galleryBlock.id)
                             cache.deleteRecursively()
                             data.deleteRecursively()
 
@@ -435,73 +430,6 @@ class MainActivity : AppCompatActivity() {
                             (adapter as GalleryBlockAdapter).completeFlag.put(galleryBlock.id, false)
                         }
                         dialog.dismiss()
-                    }
-
-                    with(view.main_dialog_export) {
-                        val images = File(ContextCompat.getDataDir(this@MainActivity), "images/${galleryBlock.id}/images").let {
-                            when {
-                                it.exists() -> it
-                                else -> File(cacheDir, "imageCache/${galleryBlock.id}/images")
-                            }
-                        }
-                        isEnabled = images.exists()
-
-                        setOnClickListener {
-                            CoroutineScope(Dispatchers.Default).launch {
-                                val preference = PreferenceManager.getDefaultSharedPreferences(context)
-                                val zip = preference.getBoolean("export_zip", false)
-
-                                if (zip) {
-                                    var target = File(Environment.getExternalStorageDirectory(), "Pupil/${galleryBlock.id} ${galleryBlock.title}.zip")
-
-                                    try {
-                                        target.createNewFile()
-                                    } catch (e: IOException) {
-                                        target = File(Environment.getExternalStorageDirectory(), "Pupil/${galleryBlock.id}.zip")
-
-                                        try {
-                                            target.createNewFile()
-                                        } catch (e: IOException) {
-                                            Snackbar.make(main_layout, getString(R.string.main_export_error), Snackbar.LENGTH_LONG).show()
-                                            return@launch
-                                        }
-                                    }
-
-                                    FileOutputStream(target).use { targetStream ->
-                                        ZipOutputStream(targetStream).use {zipStream ->
-                                            images.listFiles().forEach {
-                                                zipStream.putNextEntry(ZipEntry(it.name))
-
-                                                FileInputStream(it).use { fileStream ->
-                                                    fileStream.copyTo(zipStream)
-                                                }
-                                            }
-                                        }
-                                    }
-                                } else {
-                                    var target = File(Environment.getExternalStorageDirectory(), "Pupil/${galleryBlock.id} ${galleryBlock.title}")
-
-                                    try {
-                                        target.canonicalPath
-                                    } catch (e: IOException) {
-                                        target = File(Environment.getExternalStorageDirectory(), "Pupil/${galleryBlock.id}")
-
-                                        try {
-                                            target.canonicalPath
-                                        } catch (e: IOException) {
-                                            Snackbar.make(main_layout, getString(R.string.main_export_error), Snackbar.LENGTH_LONG).show()
-                                            return@launch
-                                        }
-                                    }
-
-                                    images.copyRecursively(target, true)
-                                }
-
-                                Snackbar.make(main_layout, getString(R.string.main_export_complete), Snackbar.LENGTH_LONG).show()
-                            }
-
-                            dialog.dismiss()
-                        }
                     }
 
                     dialog.show()
@@ -1064,18 +992,18 @@ class MainActivity : AppCompatActivity() {
                     galleryIDs.slice(currentPage*perPage until Math.min(currentPage*perPage+perPage, galleryIDs.size))
             }.chunked(5).let { chunks ->
                 for (chunk in chunks)
-                    chunk.map {
+                    chunk.map { galleryID ->
                         async {
                             try {
                                 val json = Json(JsonConfiguration.Stable)
                                 val serializer = GalleryBlock.serializer()
 
                                 val galleryBlock =
-                                    File(cacheDir, "imageCache/$it/galleryBlock.json").let { cache ->
+                                    File(getCachedGallery(this@MainActivity, galleryID), "galleryBlock.json").let { cache ->
                                         when {
                                             cache.exists() -> json.parse(serializer, cache.readText())
                                             else -> {
-                                                getGalleryBlock(it).apply {
+                                                getGalleryBlock(galleryID).apply {
                                                     this ?: return@apply
 
                                                     if (!cache.parentFile.exists())
@@ -1089,19 +1017,17 @@ class MainActivity : AppCompatActivity() {
 
                                 val thumbnail = async {
                                     val ext = galleryBlock.thumbnails[0].split('.').last()
-                                    File(cacheDir, "imageCache/$it/thumbnail.$ext").apply {
-                                        val cache = this
-
-                                        if (!cache.exists())
+                                    File(getCachedGallery(this@MainActivity, galleryBlock.id), "thumbnail.$ext").apply {
+                                        if (!exists())
                                             try {
                                                 with(URL(galleryBlock.thumbnails[0]).openConnection() as HttpsURLConnection) {
-                                                    if (!cache.parentFile.exists())
-                                                        cache.parentFile.mkdirs()
+                                                    if (!this@apply.parentFile.exists())
+                                                        this@apply.parentFile.mkdirs()
 
-                                                    inputStream.copyTo(FileOutputStream(cache))
+                                                    inputStream.copyTo(FileOutputStream(this@apply))
                                                 }
                                             } catch (e: Exception) {
-                                                cache.delete()
+                                                delete()
                                             }
                                     }.absolutePath
                                 }

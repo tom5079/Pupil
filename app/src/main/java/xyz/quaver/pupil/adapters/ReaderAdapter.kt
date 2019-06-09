@@ -38,10 +38,7 @@ class ReaderAdapter(private val images: List<String>) : RecyclerView.Adapter<Rea
 
                 options.inJustDecodeBounds = false
 
-                val image = when {
-                    BuildConfig.DEBUG -> Bitmap.createScaledBitmap(BitmapFactory.decodeFile(images[position], options), 5, 8, true)
-                    else -> BitmapFactory.decodeFile(images[position], options)
-                }
+                val image = BitmapFactory.decodeFile(images[position], options)
 
                 post { setImageBitmap(image) }
             }

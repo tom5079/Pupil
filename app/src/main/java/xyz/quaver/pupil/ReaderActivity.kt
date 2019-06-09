@@ -309,14 +309,6 @@ class ReaderActivity : AppCompatActivity() {
             if (!downloader.download)
                 downloader.clearNotification()
         }
-
-        reader_fab_export.setOnClickListener {
-            downloader.export( {
-                Snackbar.make(reader_layout, getString(R.string.main_export_complete), Snackbar.LENGTH_LONG).show()
-            },  {
-                Snackbar.make(reader_layout, getString(R.string.main_export_error), Snackbar.LENGTH_LONG).show()
-            })
-        }
     }
 
     private fun fullscreen(isFullscreen: Boolean) {

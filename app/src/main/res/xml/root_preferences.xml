@@ -22,11 +22,7 @@
     </PreferenceCategory>
 
     <PreferenceCategory
-        app:title="@string/settings_cache_title">
-
-        <Preference
-            app:title="@string/settings_clear_image_cache"
-            app:key="delete_image_cache"/>
+        app:title="@string/settings_storage">
 
         <Preference
             app:title="@string/settings_clear_downloads"
@@ -45,16 +41,6 @@
             app:key="use_hiyobi"
             app:title="@string/settings_use_hiyobi_title"
             app:summary="@string/settings_use_hiyobi_summary"/>
-
-        <SwitchPreference
-            app:key="export_zip"
-            app:title="@string/settings_export_zip_title"
-            app:summary="@string/settings_export_zip_summary"/>
-
-        <SwitchPreference
-            app:key="auto_export"
-            app:title="@string/settings_auto_export_title"
-            app:summary="@string/settings_auto_export_summary"/>
 
         <SwitchPreference
             app:key="security_mode"

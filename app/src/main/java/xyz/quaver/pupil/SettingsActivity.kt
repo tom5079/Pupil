@@ -1,6 +1,7 @@
 package xyz.quaver.pupil
 
 import android.os.Bundle
+import android.os.Environment
 import android.preference.PreferenceManager
 import android.text.Editable
 import android.text.TextWatcher
@@ -12,7 +13,6 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.ContextCompat
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
 import kotlinx.android.synthetic.main.dialog_default_query.view.*
@@ -67,39 +67,16 @@ class SettingsActivity : AppCompatActivity() {
                 suffixIndex++
             }
 
-            return getString(R.string.settings_clear_cache_summary, size, suffix[suffixIndex])
+            return getString(R.string.settings_clear_downloads_summary, size, suffix[suffixIndex])
         }
 
         override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
             setPreferencesFromResource(R.xml.root_preferences, rootKey)
 
-            with(findPreference<Preference>("delete_image_cache")) {
-                this ?: return@with
-
-                val dir = File(context.cacheDir, "imageCache")
-
-                summary = getCacheSize(dir)
-
-                setOnPreferenceClickListener {
-                    AlertDialog.Builder(context).apply {
-                        setTitle(R.string.warning)
-                        setMessage(R.string.settings_clear_cache_alert_message)
-                        setPositiveButton(android.R.string.yes) { _, _ ->
-                            if (dir.exists())
-                                dir.deleteRecursively()
-
-                            summary = getCacheSize(dir)
-                        }
-                        setNegativeButton(android.R.string.no) { _, _ -> }
-                    }.show()
-
-                    true
-                }
-            }
             with(findPreference<Preference>("delete_downloads")) {
                 this ?: return@with
 
-                val dir = File(ContextCompat.getDataDir(context), "images")
+                val dir = File(Environment.getExternalStorageDirectory(), "Pupil")
 
                 summary = getCacheSize(dir)
 

@@ -9,7 +9,6 @@ import android.util.SparseArray
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.app.TaskStackBuilder
-import androidx.core.content.ContextCompat
 import androidx.preference.PreferenceManager
 import kotlinx.coroutines.*
 import kotlinx.io.IOException
@@ -23,12 +22,9 @@ import xyz.quaver.pupil.Pupil
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.ReaderActivity
 import java.io.File
-import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.net.URL
 import java.util.*
-import java.util.zip.ZipEntry
-import java.util.zip.ZipOutputStream
 import javax.net.ssl.HttpsURLConnection
 import kotlin.collections.ArrayList
 import kotlin.concurrent.schedule
@@ -48,7 +44,12 @@ class GalleryDownloader(
                 field = true
                 notificationManager.notify(galleryBlock.id, notificationBuilder.build())
 
-                val data = File(ContextCompat.getDataDir(this), "images/${galleryBlock.id}")
+                val data = File(Environment.getExternalStorageDirectory(), "Pupil/${galleryBlock.id} ${galleryBlock.title}").let {
+                    when {
+                        it.exists() -> it
+                        else -> File(Environment.getExternalStorageDirectory(), "Pupil/${galleryBlock.id}")
+                    }
+                }
                 val cache = File(cacheDir, "imageCache/${galleryBlock.id}")
 
                 if (cache.exists() && !data.exists()) {
@@ -93,12 +94,7 @@ class GalleryDownloader(
             val serializer = ReaderItem.serializer().list
 
             //Check cache
-            val cache = File(ContextCompat.getDataDir(this@GalleryDownloader), "images/${galleryBlock.id}/reader.json").let {
-                when {
-                    it.exists() -> it
-                    else -> File(cacheDir, "imageCache/${galleryBlock.id}/reader.json")
-                }
-            }
+            val cache = File(getCachedGallery(this@GalleryDownloader, galleryBlock.id), "reader.json")
 
             if (cache.exists()) {
                 val cached = json.parse(serializer, cache.readText())
@@ -181,12 +177,7 @@ class GalleryDownloader(
                         val name = "$index".padStart(4, '0')
                         val ext = url.split('.').last()
 
-                        val cache = File(ContextCompat.getDataDir(this@GalleryDownloader), "images/${galleryBlock.id}/images/$name.$ext").let {
-                            when {
-                                it.exists() -> it
-                                else -> File(cacheDir, "/imageCache/${galleryBlock.id}/images/$name.$ext")
-                            }
-                        }
+                        val cache = File(getCachedGallery(this@GalleryDownloader, galleryBlock.id), "images/$name.$ext")
 
                         if (!cache.exists())
                             try {
@@ -234,31 +225,17 @@ class GalleryDownloader(
                 if (download) {
                     File(cacheDir, "imageCache/${galleryBlock.id}").let {
                         if (it.exists()) {
-                            it.copyRecursively(
-                                File(ContextCompat.getDataDir(this@GalleryDownloader), "images/${galleryBlock.id}"),
-                                true
-                            )
+                            val target = File(Environment.getExternalStorageDirectory(), "Pupil/${galleryBlock.id}")
+
+                            if (!target.exists())
+                                target.mkdirs()
+
+                            it.copyRecursively(target, true)
                             it.deleteRecursively()
                         }
                     }
 
-                    val preference = PreferenceManager.getDefaultSharedPreferences(this@GalleryDownloader)
-                    val autoExport = preference.getBoolean("auto_export", false)
-
-                    if (autoExport) {
-                        export({
-                            notificationManager.notify(galleryBlock.id, notificationBuilder.build())
-                        }, {
-                            notificationBuilder
-                                .setContentTitle(galleryBlock.title)
-                                .setContentText(getString(R.string.main_export_error))
-                                .setProgress(0, 0, false)
-
-                            notificationManager.notify(galleryBlock.id, notificationBuilder.build())
-                        })
-                    } else {
-                        notificationManager.notify(galleryBlock.id, notificationBuilder.build())
-                    }
+                    notificationManager.notify(galleryBlock.id, notificationBuilder.build())
                 }
 
                 download = false
@@ -312,71 +289,6 @@ class GalleryDownloader(
             priority = NotificationCompat.PRIORITY_LOW
         }
         notificationManager = NotificationManagerCompat.from(this)
-    }
-
-    fun export(onSuccess: (() -> Unit)? = null, onError: (() -> Unit)? = null) {
-        val images = File(ContextCompat.getDataDir(this), "images/${galleryBlock.id}/images").let {
-            when {
-                it.exists() -> it
-                else -> File(cacheDir, "imageCache/${galleryBlock.id}/images")
-            }
-        }
-
-        if (!images.exists())
-            return
-
-        CoroutineScope(Dispatchers.Default).launch {
-            val preference = PreferenceManager.getDefaultSharedPreferences(this@GalleryDownloader)
-            val zip = preference.getBoolean("export_zip", false)
-
-            if (zip) {
-                var target = File(Environment.getExternalStorageDirectory(), "Pupil/${galleryBlock.id} ${galleryBlock.title}.zip")
-
-                try {
-                    target.createNewFile()
-                } catch (e: IOException) {
-                    target = File(Environment.getExternalStorageDirectory(), "Pupil/${galleryBlock.id}.zip")
-
-                    try {
-                        target.createNewFile()
-                    } catch (e: IOException) {
-                        onError?.invoke()
-                        return@launch
-                    }
-                }
-
-                FileOutputStream(target).use { targetStream ->
-                    ZipOutputStream(targetStream).use { zipStream ->
-                        images.listFiles().forEach {
-                            zipStream.putNextEntry(ZipEntry(it.name))
-
-                            FileInputStream(it).use { fileStream ->
-                                fileStream.copyTo(zipStream)
-                            }
-                        }
-                    }
-                }
-            } else {
-                var target = File(Environment.getExternalStorageDirectory(), "Pupil/${galleryBlock.id} ${galleryBlock.title}")
-
-                try {
-                    target.canonicalPath
-                } catch (e: IOException) {
-                    target = File(Environment.getExternalStorageDirectory(), "Pupil/${galleryBlock.id}")
-
-                    try {
-                        target.canonicalPath
-                    } catch (e: IOException) {
-                        onError?.invoke()
-                        return@launch
-                    }
-                }
-
-                images.copyRecursively(target, true)
-            }
-
-            onSuccess?.invoke()
-        }
     }
 
 }
