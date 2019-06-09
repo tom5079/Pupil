@@ -331,6 +331,9 @@ class MainActivity : AppCompatActivity() {
                     R.id.main_drawer_email -> {
                         startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(getString(R.string.email))))
                     }
+                    R.id.main_drawer_kakaotalk -> {
+                        startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(getString(R.string.kakaotalk))))
+                    }
                 }
             }
 
