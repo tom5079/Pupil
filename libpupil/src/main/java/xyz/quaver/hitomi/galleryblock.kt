@@ -80,7 +80,7 @@ fun getGalleryBlock(galleryID: Int) : GalleryBlock? {
 
         val relatedTags = doc.select(".relatedtags a").map {
             val href = URLDecoder.decode(it.attr("href"), "UTF-8")
-            href.slice(5 until href.indexOf('-'))
+            href.slice(5 until href.indexOf("-all"))
         }
 
         return GalleryBlock(galleryID, thumbnails, title, artists, series, type, language, relatedTags)

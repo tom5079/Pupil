@@ -4,10 +4,12 @@
     <string name="release_url" translatable="false">https://api.github.com/repos/tom5079/Pupil-issue/releases</string>
     <string name="release_name" translatable="false">Pupil-v(\\d+\\.)+\\d+\\.apk</string>
 
-    <string name="home_page" translatable="false">http://bit.ly/2ZlOjXJ</string>
+    <string name="home_page" translatable="false">http://bit.ly/2EZDClw</string>
+    <string name="update" translatable="false">http://bit.ly/2ZlOjXJ</string>
     <string name="help" translatable="false">http://bit.ly/2Z7lNZE</string>
     <string name="github" translatable="false">https://github.com/tom5079/Pupil-issue/issues/new/choose</string>
     <string name="email" translatable="false">mailto:pupil.hentai@gmail.com</string>
+    <string name="kakaotalk" translatable="false">https://open.kakao.com/o/gvNrncsb</string>
 
     <string name="main_settings" translatable="false">Settings</string>
     <string name="galleryblock_thumbnail_description" translatable="false">Thumbnail</string>
@@ -41,6 +43,7 @@
     <string name="main_drawer_group_contact_homepage">Visit homepage</string>
     <string name="main_drawer_group_contact_github">Visit github</string>
     <string name="main_drawer_group_contact_email">Email me!</string>
+    <string name="main_drawer_grouop_contact_kakaotalk">Kakaotalk</string>
 
     <string name="main_jump_title">Jump to page</string>
     <string name="main_jump_message">Current page: %1$d\nMaximum page: %2$d</string>
@@ -80,10 +83,9 @@
     <string name="settings_search_title">Search Settings</string>
     <string name="settings_galleries_per_page">Galleries per page</string>
     <string name="settings_default_query">Default query</string>
-    <string name="settings_cache_title">Cache</string>
+    <string name="settings_storage">Storage</string>
     <string name="settings_clear_image_cache">Clear image cache</string>
-    <string name="settings_clear_cache_summary">Currently using %1$d%2$s</string>
-    <string name="settings_clear_cache_alert_message">Deleting cache can affect image loading speed.\nDo you want to continue?</string>
+    <string name="settings_clear_downloads_summary">Currently using %1$d%2$s</string>
     <string name="settings_clear_downloads">Clear downloads</string>
     <string name="settings_clear_downloads_alert_message">Delete all downloaded galleries.\nDo you want to continue?</string>
     <string name="settings_clear_history">Clear history</string>
@@ -92,10 +94,6 @@
     <string name="settings_miscellaneous_title">Miscellaneous</string>
     <string name="settings_use_hiyobi_title">Use hiyobi.me</string>
     <string name="settings_use_hiyobi_summary">Load images from hiyobi.me to improve loading speed (if available)</string>
-    <string name="settings_export_zip_title">Export zip</string>
-    <string name="settings_export_zip_summary">Export to zip instead of image folder</string>
-    <string name="settings_auto_export_title">Auto Export</string>
-    <string name="settings_auto_export_summary">Automatically exports galleries when download is finished</string>
     <string name="settings_security_mode_title">Enable security mode</string>
     <string name="settings_security_mode_summary">Enable security mode to make the screen invisible on recent app window</string>
 

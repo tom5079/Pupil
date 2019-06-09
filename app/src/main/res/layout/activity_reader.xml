@@ -52,14 +52,6 @@
             app:fab_size="mini"/>
 
         <com.github.clans.fab.FloatingActionButton
-            android:id="@+id/reader_fab_export"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:src="@drawable/ic_export"
-            app:fab_label="@string/main_dialog_export"
-            app:fab_size="mini"/>
-
-        <com.github.clans.fab.FloatingActionButton
             android:id="@+id/reader_fab_fullscreen"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
