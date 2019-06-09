@@ -6,7 +6,6 @@ import android.os.Bundle
 import android.view.*
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.ContextCompat
 import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.LinearSmoothScroller
@@ -25,16 +24,11 @@ import kotlinx.io.IOException
 import kotlinx.serialization.ImplicitReflectionSerializer
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonConfiguration
-import kotlinx.serialization.list
-import kotlinx.serialization.stringify
 import xyz.quaver.hitomi.GalleryBlock
 import xyz.quaver.pupil.adapters.ReaderAdapter
-import xyz.quaver.pupil.types.Tag
-import xyz.quaver.pupil.types.Tags
 import xyz.quaver.pupil.util.GalleryDownloader
 import xyz.quaver.pupil.util.Histories
 import xyz.quaver.pupil.util.ItemClickSupport
-import java.io.File
 
 class ReaderActivity : AppCompatActivity() {
 

@@ -1,11 +1,8 @@
 package xyz.quaver.pupil.adapters
 
 import android.app.AlertDialog
-import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.drawable.Animatable
-import android.os.Environment
-import android.util.Log
 import android.util.SparseBooleanArray
 import android.view.LayoutInflater
 import android.view.View
@@ -27,7 +24,6 @@ import kotlinx.serialization.json.JsonConfiguration
 import kotlinx.serialization.list
 import xyz.quaver.hitomi.GalleryBlock
 import xyz.quaver.hitomi.ReaderItem
-import xyz.quaver.pupil.BuildConfig
 import xyz.quaver.pupil.Pupil
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.types.Tag
