@@ -65,4 +65,5 @@
     <string name="main_open_gallery_by_id">갤러리 번호로 열기</string>
     <string name="main_open_gallery_by_id_error">갤러리를 찾지 못했습니다</string>
     <string name="settings_storage">저장 공간</string>
+    <string name="main_drawer_grouop_contact_kakaotalk">카카오톡 오픈채팅방</string>
 </resources>

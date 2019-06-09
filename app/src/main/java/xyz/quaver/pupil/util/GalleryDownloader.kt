@@ -44,15 +44,10 @@ class GalleryDownloader(
                 field = true
                 notificationManager.notify(galleryBlock.id, notificationBuilder.build())
 
-                val data = File(Environment.getExternalStorageDirectory(), "Pupil/${galleryBlock.id} ${galleryBlock.title}").let {
-                    when {
-                        it.exists() -> it
-                        else -> File(Environment.getExternalStorageDirectory(), "Pupil/${galleryBlock.id}")
-                    }
-                }
+                val data = getCachedGallery(this, galleryBlock.id)
                 val cache = File(cacheDir, "imageCache/${galleryBlock.id}")
 
-                if (cache.exists() && !data.exists()) {
+                if (File(cache, "images").exists() && !data.exists()) {
                     cache.copyRecursively(data, true)
                     cache.deleteRecursively()
                 }
