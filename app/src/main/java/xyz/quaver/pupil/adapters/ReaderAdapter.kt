@@ -10,6 +10,7 @@ import androidx.recyclerview.widget.RecyclerView
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import xyz.quaver.pupil.BuildConfig
 import xyz.quaver.pupil.R
 
 class ReaderAdapter(private val images: List<String>) : RecyclerView.Adapter<ReaderAdapter.ViewHolder>() {
@@ -37,7 +38,10 @@ class ReaderAdapter(private val images: List<String>) : RecyclerView.Adapter<Rea
 
                 options.inJustDecodeBounds = false
 
-                val image = BitmapFactory.decodeFile(images[position], options)
+                val image = when {
+                    BuildConfig.DEBUG -> Bitmap.createScaledBitmap(BitmapFactory.decodeFile(images[position], options), 5, 8, true)
+                    else -> BitmapFactory.decodeFile(images[position], options)
+                }
 
                 post { setImageBitmap(image) }
             }

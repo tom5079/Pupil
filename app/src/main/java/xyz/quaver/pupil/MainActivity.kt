@@ -39,7 +39,6 @@ import kotlinx.serialization.json.JsonConfiguration
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.content
 import kotlinx.serialization.list
-import kotlinx.serialization.parseList
 import kotlinx.serialization.stringify
 import ru.noties.markwon.Markwon
 import xyz.quaver.hitomi.*
@@ -114,6 +113,13 @@ class MainActivity : AppCompatActivity() {
         checkUpdate()
 
         initView()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+
+        if (cacheDir.exists())
+            cacheDir.deleteRecursively()
     }
 
     override fun onBackPressed() {
@@ -249,7 +255,7 @@ class MainActivity : AppCompatActivity() {
                 val msg = extractReleaseNote(update, Locale.getDefault().language)
                 setMessage(Markwon.create(context).toMarkdown(msg))
                 setPositiveButton(android.R.string.yes) { _, _ ->
-                    startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(getString(R.string.home_page))))
+                    startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(getString(R.string.update))))
                 }
                 setNegativeButton(android.R.string.no) { _, _ ->}
             }
