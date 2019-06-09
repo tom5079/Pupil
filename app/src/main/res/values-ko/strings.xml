@@ -7,8 +7,7 @@
     <string name="search_hint_with_page">갤러리 검색</string>
     <string name="settings_default_query">기본 검색어</string>
     <string name="settings_clear_image_cache">이미지 캐시 정리하기</string>
-    <string name="settings_clear_cache_alert_message">캐시를 정리하면 이미지 로딩속도가 느려질 수 있습니다.\n계속하시겠습니까?</string>
-    <string name="settings_clear_cache_summary">사용량: %1$d%2$s</string>
+    <string name="settings_clear_downloads_summary">사용량: %1$d%2$s</string>
     <string name="settings_galleries_per_page">한 번에 로드할 갤러리 수</string>
     <string name="settings_search_title">검색 설정</string>
     <string name="settings_title">설정</string>
@@ -17,7 +16,6 @@
     <string name="warning">경고</string>
     <string name="main_no_result">결과 없음</string>
     <string name="main_search">검색</string>
-    <string name="settings_cache_title">캐시</string>
     <string name="settings_miscellaneous_title">기타</string>
     <string name="settings_use_hiyobi_title">hiyobi.me 사용</string>
     <string name="settings_clear_history">기록 삭제</string>
@@ -60,14 +58,12 @@
     <string name="main_export_complete">내보내기 완료</string>
     <string name="main_export_open_folder">폴더 열기</string>
     <string name="main_export_error">내보내기 오류가 발생했습니다</string>
-    <string name="settings_export_zip_title">zip 파일로 내보내기</string>
-    <string name="settings_export_zip_summary">이미지 폴더 대신 zip 파일로 내보내기</string>
-    <string name="settings_auto_export_title">자동 내보내기</string>
-    <string name="settings_auto_export_summary">다운로드가 끝난 후 자동 내보내기</string>
     <string name="settings_clear_downloads">다운로드 삭제</string>
     <string name="settings_clear_downloads_alert_message">다운로드 된 만화를 모두 삭제합니다.\n계속하시겠습니까?</string>
     <string name="settings_use_hiyobi_summary">속도 향상을 위해 가능하면 hiyobi.me에서 이미지 로드</string>
     <string name="main_drawer_favorite">즐겨찾기</string>
     <string name="main_open_gallery_by_id">갤러리 번호로 열기</string>
     <string name="main_open_gallery_by_id_error">갤러리를 찾지 못했습니다</string>
+    <string name="settings_storage">저장 공간</string>
+    <string name="main_drawer_grouop_contact_kakaotalk">카카오톡 오픈채팅방</string>
 </resources>
