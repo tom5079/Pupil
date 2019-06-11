@@ -4,12 +4,12 @@ lang: ko
 title: 접속 불가 현상 해결법
 ---
 
+**1줄요약: [Intra](https://play.google.com/store/apps/details?id=app.intra&hl=ko)쓰세요**
+
 ![로고]({{ "assets/images/warning.or.kr.jpg" | absolute_url  }})  
 *익숙한 `그` 화면*
 
 현재 일부 통신사에서 https 차단이 시행되고 있는 관계로 우회접속을 해야합니다.
-
-**1줄요약: [Intra](https://play.google.com/store/apps/details?id=app.intra&hl=ko)쓰세요**
 
 # 해결 방법
 
