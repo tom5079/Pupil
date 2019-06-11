@@ -8,10 +8,11 @@ show_downloads: true
 google_analytics: UA-119938781-2
 
 disqus_url: "https://pupil.disqus.com"
+kakaotalk_url: "https://open.kakao.com/o/gvNrncsb"
 
 github:
-  app_url: https://github.com/tom5079/Pupil-issue/releases/download/2.8/Pupil-v2.8.apk
-  issue_url: https://github.com/tom5079/Pupil-issue/issues/new/choose
+  app_url: "https://github.com/tom5079/Pupil-issue/releases/download/2.8/Pupil-v2.8.apk"
+  issue_url: "https://github.com/tom5079/Pupil-issue/issues/new/choose"
 
 t:
   en:
@@ -21,6 +22,7 @@ t:
       issue: "Having a problem?"
       or: "or…"
       email: "Send an E-mail"
+      kakaotalk: "Kakaotalk group chat"
   ko:
     header:
       description: "안드로이드 Hitomi.la 뷰어"
@@ -28,3 +30,4 @@ t:
       issue: "문제가 있으세요?"
       or: "또는…"
       email: "이메일 보내기"
+      kakaotalk: "카카오톡 오픈채팅"
