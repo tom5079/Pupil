@@ -2,6 +2,7 @@
 layout: default
 lang: ko
 title: 접속 불가 현상 해결법
+description: 히토미 뷰어 Pupil 접속 불가 현상 해결법
 ---
 
 **1줄요약: [Intra](https://play.google.com/store/apps/details?id=app.intra&hl=ko)쓰세요**

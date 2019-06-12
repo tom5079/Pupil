@@ -1,5 +1,8 @@
 theme: jekyll-theme-cayman
 
+plugins:
+  - jekyll-sitemap
+
 title: Pupil
 description: Hitomi.la viewer for Android
 baseurl: "/Pupil"
