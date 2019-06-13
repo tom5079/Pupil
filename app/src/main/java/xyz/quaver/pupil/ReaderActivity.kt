@@ -72,6 +72,11 @@ class ReaderActivity : AppCompatActivity() {
 
         handleIntent(intent)
 
+        if (!::galleryBlock.isInitialized) {
+            finish()
+            return
+        }
+
         supportActionBar?.title = galleryBlock.title
         supportActionBar?.setDisplayHomeAsUpEnabled(false)
 
