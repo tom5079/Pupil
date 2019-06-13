@@ -1,5 +1,6 @@
 package xyz.quaver.pupil
 
+import android.content.Intent
 import android.graphics.drawable.Animatable
 import android.graphics.drawable.Drawable
 import android.os.Bundle
@@ -20,11 +21,13 @@ import kotlinx.android.synthetic.main.dialog_numberpicker.view.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.io.IOException
 import kotlinx.serialization.ImplicitReflectionSerializer
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonConfiguration
 import xyz.quaver.hitomi.GalleryBlock
+import xyz.quaver.hitomi.getGalleryBlock
 import xyz.quaver.pupil.adapters.ReaderAdapter
 import xyz.quaver.pupil.util.GalleryDownloader
 import xyz.quaver.pupil.util.Histories
@@ -39,6 +42,14 @@ class ReaderActivity : AppCompatActivity() {
 
     private var isScroll = true
     private var isFullscreen = false
+    set(value) {
+        field = value
+
+        reader_progressbar.visibility = when {
+            value -> View.VISIBLE
+            else -> View.GONE
+        }
+    }
 
     private lateinit var downloader: GalleryDownloader
 
@@ -59,10 +70,7 @@ class ReaderActivity : AppCompatActivity() {
 
         setContentView(R.layout.activity_reader)
 
-        galleryBlock = Json(JsonConfiguration.Stable).parse(
-            GalleryBlock.serializer(),
-            intent.getStringExtra("galleryblock")
-        )
+        handleIntent(intent)
 
         supportActionBar?.title = galleryBlock.title
         supportActionBar?.setDisplayHomeAsUpEnabled(false)
@@ -73,6 +81,40 @@ class ReaderActivity : AppCompatActivity() {
 
         if (!downloader.download)
             downloader.start()
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        handleIntent(intent)
+    }
+
+    private fun handleIntent(intent: Intent) {
+        if (intent.action == Intent.ACTION_VIEW) {
+            val uri = intent.data
+            val lastPathSegment = uri?.lastPathSegment
+            if (uri != null && lastPathSegment != null) {
+                val nonNumber = Regex("[^-?0-9]+")
+
+                val galleryID = when (uri.host) {
+                    "hitomi.la" -> lastPathSegment.replace(nonNumber, "").toInt()
+                    "히요비.asia" -> lastPathSegment.toInt()
+                    "xn--9w3b15m8vo.asia" -> lastPathSegment.toInt()
+                    "e-hentai.org" -> uri.pathSegments[1].toInt()
+                    else -> return
+                }
+
+                runBlocking {
+                    CoroutineScope(Dispatchers.IO).launch {
+                        galleryBlock = getGalleryBlock(galleryID) ?: return@launch
+                    }.join()
+                }
+            }
+        } else {
+            galleryBlock = Json(JsonConfiguration.Stable).parse(
+                GalleryBlock.serializer(),
+                intent.getStringExtra("galleryblock")
+            )
+        }
     }
 
     override fun onResume() {
@@ -177,11 +219,13 @@ class ReaderActivity : AppCompatActivity() {
         downloader = d.apply {
             onReaderLoadedHandler = {
                 CoroutineScope(Dispatchers.Main).launch {
+                    with(reader_download_progressbar) {
+                        max = it.size
+                        progress = 0
+                    }
                     with(reader_progressbar) {
                         max = it.size
                         progress = 0
-
-                        visibility = View.VISIBLE
                     }
 
                     gallerySize = it.size
@@ -190,7 +234,7 @@ class ReaderActivity : AppCompatActivity() {
             }
             onProgressHandler = {
                 CoroutineScope(Dispatchers.Main).launch {
-                    reader_progressbar.progress = it
+                    reader_download_progressbar.progress = it
                     menu?.findItem(R.id.reader_menu_use_hiyobi)?.isVisible = downloader.useHiyobi
                 }
             }
@@ -213,7 +257,7 @@ class ReaderActivity : AppCompatActivity() {
             }
             onCompleteHandler = {
                 CoroutineScope(Dispatchers.Main).launch {
-                    reader_progressbar.visibility = View.GONE
+                    reader_download_progressbar.visibility = View.GONE
                 }
             }
             onNotifyChangedHandler = { notify ->
@@ -268,6 +312,7 @@ class ReaderActivity : AppCompatActivity() {
                         return
                     currentPage = layoutManager.findFirstVisibleItemPosition()+1
                     menu?.findItem(R.id.reader_menu_page_indicator)?.title = "$currentPage/$gallerySize"
+                    this@ReaderActivity.reader_progressbar.progress = currentPage
                 }
             })
 
