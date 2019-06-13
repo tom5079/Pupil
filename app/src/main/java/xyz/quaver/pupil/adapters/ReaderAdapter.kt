@@ -25,21 +25,19 @@ class ReaderAdapter(private val images: List<String>) : RecyclerView.Adapter<Rea
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         with(holder.view as ImageView) {
-            CoroutineScope(Dispatchers.Default).launch {
-                val options = BitmapFactory.Options()
+            val options = BitmapFactory.Options()
 
-                options.inJustDecodeBounds = true
-                BitmapFactory.decodeFile(images[position], options)
+            options.inJustDecodeBounds = true
+            BitmapFactory.decodeFile(images[position], options)
 
-                options.inSampleSize = options.outWidth /
-                        context.resources.displayMetrics.widthPixels
+            options.inSampleSize = options.outWidth /
+                    context.resources.displayMetrics.widthPixels
 
-                options.inJustDecodeBounds = false
+            options.inJustDecodeBounds = false
 
-                val image = BitmapFactory.decodeFile(images[position], options)
+            val image = BitmapFactory.decodeFile(images[position], options)
 
-                post { setImageBitmap(image) }
-            }
+            setImageBitmap(image)
         }
     }
 
