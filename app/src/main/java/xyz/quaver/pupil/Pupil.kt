@@ -1,5 +1,6 @@
 package xyz.quaver.pupil
 
+import android.app.Application
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -7,12 +8,10 @@ import android.content.Context
 import android.os.Build
 import android.preference.PreferenceManager
 import androidx.core.content.ContextCompat
-import com.finotes.android.finotescore.Fn
-import com.finotes.android.finotescore.ObservableApplication
 import xyz.quaver.pupil.util.Histories
 import java.io.File
 
-class Pupil : ObservableApplication() {
+class Pupil : Application() {
 
     lateinit var histories: Histories
     lateinit var downloads: Histories
@@ -26,9 +25,6 @@ class Pupil : ObservableApplication() {
         favorites = Histories(File(ContextCompat.getDataDir(this), "favorites.json"))
 
         super.onCreate()
-        Fn.init(this)
-
-        Fn.enableFrameDetection()
 
         if (!preference.getBoolean("channel_created", false)) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
