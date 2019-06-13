@@ -9,9 +9,9 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.LinearSmoothScroller
 import androidx.recyclerview.widget.PagerSnapHelper
 import androidx.recyclerview.widget.RecyclerView
+import androidx.recyclerview.widget.SimpleItemAnimator
 import androidx.vectordrawable.graphics.drawable.Animatable2Compat
 import androidx.vectordrawable.graphics.drawable.AnimatedVectorDrawableCompat
 import com.google.android.material.snackbar.Snackbar
@@ -330,12 +330,7 @@ class ReaderActivity : AppCompatActivity() {
                         scrollMode(false)
                         fullscreen(true)
                     } else {
-                        val smoothScroller = object : LinearSmoothScroller(context) {
-                            override fun getVerticalSnapPreference() = SNAP_TO_START
-                        }.apply {
-                            targetPosition = currentPage
-                        }
-                        (reader_recyclerview.layoutManager as LinearLayoutManager?)?.startSmoothScroll(smoothScroller)
+                        (reader_recyclerview.layoutManager as LinearLayoutManager?)?.scrollToPosition(currentPage)
                     }
                 }
         }
@@ -377,7 +372,10 @@ class ReaderActivity : AppCompatActivity() {
             reader_recyclerview.layoutManager = LinearLayoutManager(this)
         } else {
             snapHelper.attachToRecyclerView(reader_recyclerview)
-            reader_recyclerview.layoutManager = LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
+            reader_recyclerview.layoutManager = LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false).apply {
+                isItemPrefetchEnabled = true
+                initialPrefetchItemCount = 4
+            }
         }
 
         (reader_recyclerview.layoutManager as LinearLayoutManager).scrollToPositionWithOffset(currentPage-1, 0)
