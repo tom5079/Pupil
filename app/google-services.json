@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "844152206517",
+    "firebase_url": "https://pupil-88795.firebaseio.com",
+    "project_id": "pupil-88795",
+    "storage_bucket": "pupil-88795.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:844152206517:android:ed7bdde2b57d6448",
+        "android_client_info": {
+          "package_name": "xyz.quaver.pupil"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "844152206517-5t8c3marg1hio8fotsip4s6qvs9bhrj0.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC47pCfQRw9D6bkdQzMSuCJ0xY52vK7Q8w"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "844152206517-5t8c3marg1hio8fotsip4s6qvs9bhrj0.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
