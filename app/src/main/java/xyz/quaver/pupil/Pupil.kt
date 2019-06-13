@@ -8,10 +8,11 @@ import android.content.Context
 import android.os.Build
 import android.preference.PreferenceManager
 import androidx.core.content.ContextCompat
+import androidx.multidex.MultiDexApplication
 import xyz.quaver.pupil.util.Histories
 import java.io.File
 
-class Pupil : Application() {
+class Pupil : MultiDexApplication() {
 
     lateinit var histories: Histories
     lateinit var downloads: Histories
