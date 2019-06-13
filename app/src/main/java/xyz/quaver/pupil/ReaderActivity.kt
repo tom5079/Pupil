@@ -73,7 +73,7 @@ class ReaderActivity : AppCompatActivity() {
         handleIntent(intent)
 
         if (!::galleryBlock.isInitialized) {
-            finish()
+            onBackPressed()
             return
         }
 
@@ -189,7 +189,7 @@ class ReaderActivity : AppCompatActivity() {
     override fun onDestroy() {
         super.onDestroy()
 
-        if (!downloader.download)
+        if (::downloader.isInitialized && !downloader.download)
             downloader.cancel()
     }
 
