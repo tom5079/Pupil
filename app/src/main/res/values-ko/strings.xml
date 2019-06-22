@@ -7,7 +7,8 @@
     <string name="search_hint_with_page">갤러리 검색</string>
     <string name="settings_default_query">기본 검색어</string>
     <string name="settings_clear_image_cache">이미지 캐시 정리하기</string>
-    <string name="settings_clear_downloads_summary">사용량: %1$d%2$s</string>
+    <string name="settings_clear_cache_alert_message">캐시를 정리하면 이미지 로딩속도가 느려질 수 있습니다. 계속하시겠습니까?</string>
+    <string name="settings_clear_summary">사용량: %1$d%2$s</string>
     <string name="settings_galleries_per_page">한 번에 로드할 갤러리 수</string>
     <string name="settings_search_title">검색 설정</string>
     <string name="settings_title">설정</string>
@@ -66,4 +67,7 @@
     <string name="main_open_gallery_by_id_error">갤러리를 찾지 못했습니다</string>
     <string name="settings_storage">저장 공간</string>
     <string name="main_drawer_grouop_contact_kakaotalk">카카오톡 오픈채팅방</string>
+    <string name="settings_app_lock">앱 잠금</string>
+    <string name="settings_app_lock_type">앱 잠금 종류</string>
+    <string name="settings_app_version_title">앱 버전</string>
 </resources>

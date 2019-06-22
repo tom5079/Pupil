@@ -1,8 +1,6 @@
-package xyz.quaver.pupil
+package xyz.quaver.pupil.ui
 
 import android.os.Bundle
-import android.os.Environment
-import android.preference.PreferenceManager
 import android.text.Editable
 import android.text.TextWatcher
 import android.view.LayoutInflater
@@ -15,7 +13,10 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
+import androidx.preference.PreferenceManager
+import io.fabric.sdk.android.BuildConfig
 import kotlinx.android.synthetic.main.dialog_default_query.view.*
+import xyz.quaver.pupil.R
 import xyz.quaver.pupil.types.Tags
 import java.io.File
 
@@ -58,7 +59,7 @@ class SettingsActivity : AppCompatActivity() {
             "TB" //really?
         )
 
-        private fun getCacheSize(dir: File) : String {
+        private fun getDirSize(dir: File) : String {
             var size = dir.walk().map { it.length() }.sum()
             var suffixIndex = 0
 
@@ -67,20 +68,53 @@ class SettingsActivity : AppCompatActivity() {
                 suffixIndex++
             }
 
-            return getString(R.string.settings_clear_downloads_summary, size, suffix[suffixIndex])
+            return getString(R.string.settings_clear_summary, size, suffix[suffixIndex])
         }
 
         override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
             setPreferencesFromResource(R.xml.root_preferences, rootKey)
 
+            with(findPreference<Preference>("app_version")) {
+                this ?: return@with
+
+                val manager = context.packageManager
+                val info = manager.getPackageInfo(context.packageName, 0)
+
+                summary = info.versionName
+            }
+
+            with(findPreference<Preference>("delete_cache")) {
+                this ?: return@with
+
+                val dir = File(context.cacheDir, "imageCache")
+
+                summary = getDirSize(dir)
+
+                onPreferenceClickListener = Preference.OnPreferenceClickListener {
+                    AlertDialog.Builder(context).apply {
+                        setTitle(R.string.warning)
+                        setMessage(R.string.settings_clear_cache_alert_message)
+                        setPositiveButton(android.R.string.yes) { _, _ ->
+                            if (dir.exists())
+                                dir.deleteRecursively()
+
+                            summary = getDirSize(dir)
+                        }
+                        setNegativeButton(android.R.string.no) { _, _ -> }
+                    }.show()
+
+                    true
+                }
+            }
+
             with(findPreference<Preference>("delete_downloads")) {
                 this ?: return@with
 
-                val dir = File(Environment.getExternalStorageDirectory(), "Pupil")
+                val dir = context.getExternalFilesDir("Pupil") ?: return@with
 
-                summary = getCacheSize(dir)
+                summary = getDirSize(dir)
 
-                setOnPreferenceClickListener {
+                onPreferenceClickListener = Preference.OnPreferenceClickListener {
                     AlertDialog.Builder(context).apply {
                         setTitle(R.string.warning)
                         setMessage(R.string.settings_clear_downloads_alert_message)
@@ -92,7 +126,7 @@ class SettingsActivity : AppCompatActivity() {
 
                             downloads.clear()
 
-                            summary = getCacheSize(dir)
+                            summary = getDirSize(dir)
                         }
                         setNegativeButton(android.R.string.no) { _, _ -> }
                     }.show()
@@ -107,7 +141,7 @@ class SettingsActivity : AppCompatActivity() {
 
                 summary = getString(R.string.settings_clear_history_summary, histories.size)
 
-                setOnPreferenceClickListener {
+                onPreferenceClickListener = Preference.OnPreferenceClickListener {
                     AlertDialog.Builder(context).apply {
                         setTitle(R.string.warning)
                         setMessage(R.string.settings_clear_history_alert_message)
@@ -139,7 +173,7 @@ class SettingsActivity : AppCompatActivity() {
                 val excludeBL = "-male:yaoi"
                 val excludeGuro = listOf("-female:guro", "-male:guro")
 
-                setOnPreferenceClickListener {
+                onPreferenceClickListener = Preference.OnPreferenceClickListener {
                     val dialogView = LayoutInflater.from(context).inflate(
                         R.layout.dialog_default_query,
                         LinearLayout(context),
@@ -154,7 +188,7 @@ class SettingsActivity : AppCompatActivity() {
 
                     with(dialogView.default_query_dialog_language_selector) {
                         adapter =
-                            ArrayAdapter<String>(
+                            ArrayAdapter(
                                 context,
                                 android.R.layout.simple_spinner_dropdown_item,
                                 arrayListOf(
@@ -236,6 +270,9 @@ class SettingsActivity : AppCompatActivity() {
 
                     true
                 }
+            }
+            with(findPreference<Preference>("app_lock")) {
+
             }
         }
     }
