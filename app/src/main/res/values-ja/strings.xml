@@ -8,7 +8,8 @@
     <string name="search_hint">ギャラリー検索</string>
     <string name="search_hint_with_page">ギャラリー検索</string>
     <string name="settings_clear_image_cache">イメージキャッシュクリア</string>
-    <string name="settings_clear_downloads_summary">サイズ: %1$d%2$s</string>
+    <string name="settings_clear_cache_alert_message">キャッシュをクリアするとイメージのロード速度に影響を与えます。実行しますか？</string>
+    <string name="settings_clear_summary">サイズ: %1$d%2$s</string>
     <string name="settings_default_query">デフォルトキーワード</string>
     <string name="settings_galleries_per_page">一回にロードするギャラリー数</string>
     <string name="settings_search_title">検索設定</string>
@@ -66,4 +67,7 @@
     <string name="main_open_gallery_by_id_error">エラーが発生しました</string>
     <string name="settings_storage">ストレージ</string>
     <string name="main_drawer_grouop_contact_kakaotalk">カカオトーク</string>
+    <string name="settings_app_lock">アプリロック</string>
+    <string name="settings_app_lock_type">アップロックの種類</string>
+    <string name="settings_app_version_title">バージョン</string>
 </resources>
