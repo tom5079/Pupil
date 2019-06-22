@@ -2,6 +2,10 @@
 <androidx.preference.PreferenceScreen
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
+    <Preference
+        app:title="@string/settings_app_version_title"
+        app:key="app_version"/>
+
     <PreferenceCategory
         app:title="@string/settings_search_title">
 
@@ -25,12 +29,25 @@
         app:title="@string/settings_storage">
 
         <Preference
+            app:title="Clear cache"
+            app:key="delete_cache"/>
+
+        <Preference
             app:title="@string/settings_clear_downloads"
             app:key="delete_downloads"/>
 
         <Preference
             app:title="@string/settings_clear_history"
             app:key="clear_history"/>
+
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        app:title="@string/settings_app_lock">
+
+        <Preference
+            app:title="@string/settings_app_lock_type"
+            app:key="app_lock"/>
 
     </PreferenceCategory>
 
