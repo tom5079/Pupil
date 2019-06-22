@@ -1,15 +1,24 @@
 package xyz.quaver.hitomi
 
 import org.junit.Test
-import java.io.File
-import java.net.URL
+import java.net.InetAddress
+import java.net.UnknownHostException
+
 
 class UnitTest {
     @Test
     fun test() {
-        val galleries = getGalleryIDsForQuery("series:touhou_project")
 
-        println(galleries.size)
+    }
+
+    private fun getByIp(host: String): InetAddress {
+        try {
+            return InetAddress.getByName(host)
+        } catch (e: UnknownHostException) {
+            // unlikely
+            throw RuntimeException(e)
+        }
+
     }
 
     @Test

@@ -6,20 +6,19 @@
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
 
     <application
+        android:name=".ui.Pupil"
         android:allowBackup="true"
         android:fullBackupContent="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/AppTheme"
-        android:name=".Pupil">
-
+        android:theme="@style/AppTheme">
+        <activity android:name=".ui.LockActivity"/>
         <activity
-            android:name=".ReaderActivity"
-            android:parentActivityName=".MainActivity"
-            android:configChanges="keyboardHidden|orientation|screenSize">
-
+            android:name=".ui.ReaderActivity"
+            android:configChanges="keyboardHidden|orientation|screenSize"
+            android:parentActivityName=".ui.MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
 
@@ -27,9 +26,9 @@
                 <category android:name="android.intent.category.BROWSABLE" />
 
                 <data
-                    android:scheme="https"
                     android:host="hitomi.la"
-                    android:pathPrefix="/galleries" />
+                    android:pathPrefix="/galleries"
+                    android:scheme="https" />
             </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
@@ -38,9 +37,9 @@
                 <category android:name="android.intent.category.BROWSABLE" />
 
                 <data
-                    android:scheme="https"
                     android:host="히요비.asia"
-                    android:pathPrefix="/reader" />
+                    android:pathPrefix="/reader"
+                    android:scheme="https" />
             </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
@@ -49,9 +48,9 @@
                 <category android:name="android.intent.category.BROWSABLE" />
 
                 <data
-                    android:scheme="https"
                     android:host="xn--9w3b15m8vo.asia"
-                    android:pathPrefix="/reader" />
+                    android:pathPrefix="/reader"
+                    android:scheme="https" />
             </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
@@ -60,9 +59,9 @@
                 <category android:name="android.intent.category.BROWSABLE" />
 
                 <data
-                    android:scheme="https"
                     android:host="e-hentai.org"
-                    android:pathPrefix="/g" />
+                    android:pathPrefix="/g"
+                    android:scheme="https" />
             </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
@@ -71,9 +70,9 @@
                 <category android:name="android.intent.category.BROWSABLE" />
 
                 <data
-                    android:scheme="http"
                     android:host="hitomi.la"
-                    android:pathPrefix="/galleries" />
+                    android:pathPrefix="/galleries"
+                    android:scheme="http" />
             </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
@@ -82,9 +81,9 @@
                 <category android:name="android.intent.category.BROWSABLE" />
 
                 <data
-                    android:scheme="http"
                     android:host="히요비.asia"
-                    android:pathPrefix="/reader" />
+                    android:pathPrefix="/reader"
+                    android:scheme="http" />
             </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
@@ -93,9 +92,9 @@
                 <category android:name="android.intent.category.BROWSABLE" />
 
                 <data
-                    android:scheme="http"
                     android:host="xn--9w3b15m8vo.asia"
-                    android:pathPrefix="/reader" />
+                    android:pathPrefix="/reader"
+                    android:scheme="http" />
             </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
@@ -104,16 +103,16 @@
                 <category android:name="android.intent.category.BROWSABLE" />
 
                 <data
-                    android:scheme="http"
                     android:host="e-hentai.org"
-                    android:pathPrefix="/g" />
+                    android:pathPrefix="/g"
+                    android:scheme="http" />
             </intent-filter>
         </activity>
         <activity
-            android:name=".SettingsActivity"
+            android:name=".ui.SettingsActivity"
             android:label="@string/settings_title" />
         <activity
-            android:name=".MainActivity"
+            android:name=".ui.MainActivity"
             android:configChanges="keyboardHidden|orientation|screenSize"
             android:theme="@style/NoActionBarAppTheme">
             <intent-filter>
