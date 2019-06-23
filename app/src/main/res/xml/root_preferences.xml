@@ -29,7 +29,7 @@
         app:title="@string/settings_storage">
 
         <Preference
-            app:title="Clear cache"
+            app:title="@string/settings_clear_cache"
             app:key="delete_cache"/>
 
         <Preference
