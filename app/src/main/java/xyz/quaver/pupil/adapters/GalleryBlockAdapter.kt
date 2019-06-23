@@ -24,7 +24,7 @@ import kotlinx.serialization.json.JsonConfiguration
 import kotlinx.serialization.list
 import xyz.quaver.hitomi.GalleryBlock
 import xyz.quaver.hitomi.ReaderItem
-import xyz.quaver.pupil.Pupil
+import xyz.quaver.pupil.ui.Pupil
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.types.Tag
 import xyz.quaver.pupil.util.Histories

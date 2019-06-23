@@ -6,9 +6,6 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import androidx.recyclerview.widget.RecyclerView
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import xyz.quaver.pupil.R
 
 class ReaderAdapter(private val images: List<String>) : RecyclerView.Adapter<ReaderAdapter.ViewHolder>() {
