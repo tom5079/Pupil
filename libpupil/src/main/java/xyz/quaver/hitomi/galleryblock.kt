@@ -2,6 +2,7 @@ package xyz.quaver.hitomi
 
 import kotlinx.serialization.Serializable
 import org.jsoup.Jsoup
+import sun.rmi.runtime.Log
 import java.net.URL
 import java.net.URLDecoder
 import java.nio.ByteBuffer

@@ -7,7 +7,7 @@
     <string name="main_search">検索</string>
     <string name="search_hint">ギャラリー検索</string>
     <string name="search_hint_with_page">ギャラリー検索</string>
-    <string name="settings_clear_image_cache">イメージキャッシュクリア</string>
+    <string name="settings_clear_cache">キャッシュクリア</string>
     <string name="settings_clear_cache_alert_message">キャッシュをクリアするとイメージのロード速度に影響を与えます。実行しますか？</string>
     <string name="settings_clear_summary">サイズ: %1$d%2$s</string>
     <string name="settings_default_query">デフォルトキーワード</string>
