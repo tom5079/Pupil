@@ -64,10 +64,6 @@ class ReaderAdapter(private val images: List<String>) : RecyclerView.Adapter<Rea
 
             val image = BitmapFactory.decodeFile(images[position], options)
 
-            Log.d("Pupil", image.byteCount.toString())
-            Log.d("Pupil", "${image.width}x${image.height}")
-            Log.d("Pupil", "deviceWidth ${context.resources.displayMetrics.widthPixels}")
-
             setImageBitmap(image)
         }
     }
