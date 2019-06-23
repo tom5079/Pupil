@@ -32,6 +32,16 @@
             app:fabSize="mini"/>
 
         <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/lock_pin"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/numeric"
+            android:layout_marginLeft="8dp"
+            android:layout_marginRight="8dp"
+            app:backgroundTint="@color/dark_gray"
+            app:fabSize="mini"/>
+
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
             android:id="@+id/lock_fingerprint"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
