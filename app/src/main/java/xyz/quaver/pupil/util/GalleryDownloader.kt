@@ -4,7 +4,6 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.ContextWrapper
 import android.content.Intent
-import android.util.Log
 import android.util.SparseArray
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
@@ -18,8 +17,8 @@ import kotlinx.serialization.list
 import xyz.quaver.hitomi.*
 import xyz.quaver.hiyobi.cookie
 import xyz.quaver.hiyobi.user_agent
-import xyz.quaver.pupil.ui.Pupil
 import xyz.quaver.pupil.R
+import xyz.quaver.pupil.Pupil
 import xyz.quaver.pupil.ui.ReaderActivity
 import java.io.File
 import java.io.FileOutputStream
@@ -218,7 +217,7 @@ class GalleryDownloader(
                 if (download) {
                     File(cacheDir, "imageCache/${galleryBlock.id}").let {
                         if (it.exists()) {
-                            val target = File(getExternalFilesDir("Pupil"), galleryBlock.id.toString())
+                            val target = File(getDownloadDirectory(this@GalleryDownloader), galleryBlock.id.toString())
 
                             if (!target.exists())
                                 target.mkdirs()
@@ -230,10 +229,10 @@ class GalleryDownloader(
 
                     notificationManager.notify(galleryBlock.id, notificationBuilder.build())
 
-                    onCompleteHandler?.invoke()
-
                     download = false
                 }
+
+                onCompleteHandler?.invoke()
             }
 
             remove(galleryBlock.id)

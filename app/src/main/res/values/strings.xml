@@ -85,7 +85,7 @@
     <string name="settings_galleries_per_page">Galleries per page</string>
     <string name="settings_default_query">Default query</string>
     <string name="settings_storage">Storage</string>
-    <string name="settings_clear_image_cache">Clear image cache</string>
+    <string name="settings_clear_cache">Clear cache</string>
     <string name="settings_clear_cache_alert_message">Deleting cache can affect image loading speed. Do you want to continue?</string>
     <string name="settings_clear_summary">Currently using %1$d%2$s</string>
     <string name="settings_clear_downloads">Clear downloads</string>

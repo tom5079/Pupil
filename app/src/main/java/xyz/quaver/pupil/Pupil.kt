@@ -1,14 +1,17 @@
-package xyz.quaver.pupil.ui
+package xyz.quaver.pupil
 
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
 import android.os.Build
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.content.ContextCompat
 import androidx.multidex.MultiDexApplication
 import androidx.preference.PreferenceManager
-import xyz.quaver.pupil.R
+import com.google.android.gms.common.GooglePlayServicesNotAvailableException
+import com.google.android.gms.common.GooglePlayServicesRepairableException
+import com.google.android.gms.security.ProviderInstaller
 import xyz.quaver.pupil.util.Histories
 import java.io.File
 
@@ -18,6 +21,10 @@ class Pupil : MultiDexApplication() {
     lateinit var downloads: Histories
     lateinit var favorites: Histories
 
+    init {
+        AppCompatDelegate.setCompatVectorFromResourcesEnabled(true)
+    }
+
     override fun onCreate() {
         val preference = PreferenceManager.getDefaultSharedPreferences(this)
 
@@ -25,7 +32,13 @@ class Pupil : MultiDexApplication() {
         downloads = Histories(File(ContextCompat.getDataDir(this), "downloads.json"))
         favorites = Histories(File(ContextCompat.getDataDir(this), "favorites.json"))
 
-        super.onCreate()
+        try {
+            ProviderInstaller.installIfNeeded(this)
+        } catch (e: GooglePlayServicesRepairableException) {
+            e.printStackTrace()
+        } catch (e: GooglePlayServicesNotAvailableException) {
+            e.printStackTrace()
+        }
 
         if (!preference.getBoolean("channel_created", false)) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -41,6 +54,8 @@ class Pupil : MultiDexApplication() {
 
             preference.edit().putBoolean("channel_created", true).apply()
         }
+
+        super.onCreate()
     }
 
 }
