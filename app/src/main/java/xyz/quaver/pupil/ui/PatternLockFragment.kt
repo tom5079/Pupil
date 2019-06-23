@@ -12,6 +12,7 @@ import kotlinx.android.synthetic.main.fragment_pattern_lock.*
 import kotlinx.android.synthetic.main.fragment_pattern_lock.view.*
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.util.hash
+import xyz.quaver.pupil.util.hashWithSalt
 
 class PatternLockFragment : Fragment(), PatternLockViewListener {
 
@@ -32,7 +33,7 @@ class PatternLockFragment : Fragment(), PatternLockViewListener {
 
     override fun onComplete(pattern: MutableList<PatternLockView.Dot>?) {
         val password = PatternLockUtils.patternToMD5(lock_pattern_view, pattern)
-        onPatternDrawn?.invoke(hash(password))
+        onPatternDrawn?.invoke(password)
     }
 
     override fun onProgress(progressPattern: MutableList<PatternLockView.Dot>?) {

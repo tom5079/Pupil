@@ -1,5 +1,7 @@
 package xyz.quaver.pupil.ui
 
+import android.app.Activity
+import android.content.Intent
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
@@ -14,13 +16,16 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
 import androidx.preference.PreferenceManager
-import io.fabric.sdk.android.BuildConfig
 import kotlinx.android.synthetic.main.dialog_default_query.view.*
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.types.Tags
+import xyz.quaver.pupil.util.Lock
+import xyz.quaver.pupil.util.LockManager
 import java.io.File
 
 class SettingsActivity : AppCompatActivity() {
+
+    val REQUEST_LOCK = 38238
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -59,6 +64,24 @@ class SettingsActivity : AppCompatActivity() {
             "TB" //really?
         )
 
+        override fun onResume() {
+            super.onResume()
+
+            val lockManager = LockManager(context!!)
+
+            findPreference<Preference>("app_lock")?.summary = if (lockManager.locks.isNullOrEmpty()) {
+                getString(R.string.settings_lock_none)
+            } else {
+                lockManager.locks?.joinToString(", ") {
+                    when(it.type) {
+                        Lock.Type.PATTERN -> getString(R.string.settings_lock_pattern)
+                        Lock.Type.PIN -> getString(R.string.settings_lock_pin)
+                        Lock.Type.PASSWORD -> getString(R.string.settings_lock_password)
+                    }
+                }
+            }
+        }
+
         private fun getDirSize(dir: File) : String {
             var size = dir.walk().map { it.length() }.sum()
             var suffixIndex = 0
@@ -75,7 +98,7 @@ class SettingsActivity : AppCompatActivity() {
             setPreferencesFromResource(R.xml.root_preferences, rootKey)
 
             with(findPreference<Preference>("app_version")) {
-                this ?: return@with
+                this!!
 
                 val manager = context.packageManager
                 val info = manager.getPackageInfo(context.packageName, 0)
@@ -84,7 +107,7 @@ class SettingsActivity : AppCompatActivity() {
             }
 
             with(findPreference<Preference>("delete_cache")) {
-                this ?: return@with
+                this!!
 
                 val dir = File(context.cacheDir, "imageCache")
 
@@ -108,7 +131,7 @@ class SettingsActivity : AppCompatActivity() {
             }
 
             with(findPreference<Preference>("delete_downloads")) {
-                this ?: return@with
+                this!!
 
                 val dir = context.getExternalFilesDir("Pupil") ?: return@with
 
@@ -135,7 +158,7 @@ class SettingsActivity : AppCompatActivity() {
                 }
             }
             with(findPreference<Preference>("clear_history")) {
-                this ?: return@with
+                this!!
 
                 val histories = (activity!!.application as Pupil).histories
 
@@ -157,7 +180,7 @@ class SettingsActivity : AppCompatActivity() {
             }
 
             with(findPreference<Preference>("default_query")) {
-                this ?: return@with
+                this!!
 
                 val preferences = PreferenceManager.getDefaultSharedPreferences(context)
 
@@ -272,7 +295,80 @@ class SettingsActivity : AppCompatActivity() {
                 }
             }
             with(findPreference<Preference>("app_lock")) {
+                this!!
 
+                val lockManager = LockManager(context)
+
+                summary = if (lockManager.locks.isNullOrEmpty()) {
+                    getString(R.string.settings_lock_none)
+                } else {
+                    lockManager.locks?.joinToString(", ") {
+                        when(it.type) {
+                            Lock.Type.PATTERN -> getString(R.string.settings_lock_pattern)
+                            Lock.Type.PIN -> getString(R.string.settings_lock_pin)
+                            Lock.Type.PASSWORD -> getString(R.string.settings_lock_password)
+                        }
+                    }
+                }
+
+                onPreferenceClickListener = Preference.OnPreferenceClickListener {
+                    val intent = Intent(context, LockActivity::class.java)
+                    activity?.startActivityForResult(intent, (activity as SettingsActivity).REQUEST_LOCK)
+
+                    true
+                }
+            }
+        }
+    }
+
+    class LockFragment : PreferenceFragmentCompat() {
+
+        override fun onResume() {
+            super.onResume()
+
+            val lockManager = LockManager(context!!)
+
+            findPreference<Preference>("lock_pattern")?.summary =
+                if (lockManager.contains(Lock.Type.PATTERN))
+                    getString(R.string.settings_lock_enabled)
+                else
+                    ""
+        }
+
+        override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
+            setPreferencesFromResource(R.xml.lock_preferences, rootKey)
+
+            with(findPreference<Preference>("lock_pattern")) {
+                this!!
+
+                if (LockManager(context!!).contains(Lock.Type.PATTERN))
+                    summary = getString(R.string.settings_lock_enabled)
+
+                onPreferenceClickListener = Preference.OnPreferenceClickListener {
+                    val lockManager = LockManager(context!!)
+
+                    if (lockManager.contains(Lock.Type.PATTERN)) {
+                        AlertDialog.Builder(context).apply {
+                            setTitle(R.string.warning)
+                            setMessage(R.string.settings_lock_remove_message)
+
+                            setPositiveButton(android.R.string.yes) { _, _ ->
+                                lockManager.remove(Lock.Type.PATTERN)
+                                onResume()
+                            }
+                            setNegativeButton(android.R.string.no) { _, _ -> }
+                        }.show()
+                    } else {
+                        val intent = Intent(context, LockActivity::class.java).apply {
+                            putExtra("mode", "add_lock")
+                            putExtra("type", "pattern")
+                        }
+
+                        startActivity(intent)
+                    }
+
+                    true
+                }
             }
         }
     }
@@ -283,5 +379,20 @@ class SettingsActivity : AppCompatActivity() {
         }
 
         return true
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        when(requestCode) {
+            REQUEST_LOCK -> {
+                if (resultCode == Activity.RESULT_OK) {
+                    supportFragmentManager
+                        .beginTransaction()
+                        .replace(R.id.settings, LockFragment())
+                        .addToBackStack("Lock")
+                        .commitAllowingStateLoss()
+                }
+            }
+            else -> super.onActivityResult(requestCode, resultCode, data)
+        }
     }
 }
