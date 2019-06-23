@@ -6,7 +6,7 @@
     <string name="search_hint">갤러리 검색</string>
     <string name="search_hint_with_page">갤러리 검색</string>
     <string name="settings_default_query">기본 검색어</string>
-    <string name="settings_clear_image_cache">이미지 캐시 정리하기</string>
+    <string name="settings_clear_cache">캐시 정리하기</string>
     <string name="settings_clear_cache_alert_message">캐시를 정리하면 이미지 로딩속도가 느려질 수 있습니다. 계속하시겠습니까?</string>
     <string name="settings_clear_summary">사용량: %1$d%2$s</string>
     <string name="settings_galleries_per_page">한 번에 로드할 갤러리 수</string>
