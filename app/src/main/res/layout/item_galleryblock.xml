@@ -158,15 +158,13 @@
 				android:layout_height="1dp"
 				android:layout_weight="1"/>
 
-			<ToggleButton
+			<ImageView
 				android:id="@+id/galleryblock_favorite"
+				android:contentDescription="@string/app_name"
 				android:layout_width="32dp"
 				android:layout_height="32dp"
-				android:background="@drawable/avd_star"
-				android:backgroundTint="@color/material_orange_500"
-				android:text=""
-				android:textOn=""
-				android:textOff=""/>
+				app:srcCompat="@drawable/ic_star_empty"
+				app:backgroundTint="@color/material_orange_500"/>
 
 		</LinearLayout>
 

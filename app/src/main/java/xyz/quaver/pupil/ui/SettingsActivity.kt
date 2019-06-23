@@ -17,10 +17,12 @@ import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
 import androidx.preference.PreferenceManager
 import kotlinx.android.synthetic.main.dialog_default_query.view.*
+import xyz.quaver.pupil.Pupil
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.types.Tags
 import xyz.quaver.pupil.util.Lock
 import xyz.quaver.pupil.util.LockManager
+import xyz.quaver.pupil.util.getDownloadDirectory
 import java.io.File
 
 class SettingsActivity : AppCompatActivity() {
@@ -133,7 +135,7 @@ class SettingsActivity : AppCompatActivity() {
             with(findPreference<Preference>("delete_downloads")) {
                 this!!
 
-                val dir = context.getExternalFilesDir("Pupil") ?: return@with
+                val dir = getDownloadDirectory(context)!!
 
                 summary = getDirSize(dir)
 

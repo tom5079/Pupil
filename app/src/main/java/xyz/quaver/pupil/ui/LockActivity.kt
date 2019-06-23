@@ -1,14 +1,12 @@
 package xyz.quaver.pupil.ui
 
 import android.app.Activity
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
 import com.andrognito.patternlockview.PatternLockView
 import com.google.android.material.snackbar.Snackbar
 import kotlinx.android.synthetic.main.activity_lock.*
 import kotlinx.android.synthetic.main.fragment_pattern_lock.*
-import kotlinx.android.synthetic.main.settings_activity.*
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.util.Lock
 import xyz.quaver.pupil.util.LockManager

@@ -28,6 +28,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonConfiguration
 import xyz.quaver.hitomi.GalleryBlock
 import xyz.quaver.hitomi.getGalleryBlock
+import xyz.quaver.pupil.Pupil
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.adapters.ReaderAdapter
 import xyz.quaver.pupil.util.GalleryDownloader
@@ -45,6 +46,8 @@ class ReaderActivity : AppCompatActivity() {
     private var isFullscreen = false
     set(value) {
         field = value
+
+        (reader_recyclerview.adapter as ReaderAdapter).isFullScreen = value
 
         reader_progressbar.visibility = when {
             value -> View.VISIBLE
