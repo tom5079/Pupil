@@ -70,4 +70,13 @@
     <string name="settings_app_lock">앱 잠금</string>
     <string name="settings_app_lock_type">앱 잠금 종류</string>
     <string name="settings_app_version_title">앱 버전</string>
+    <string name="settings_lock_biomatrics">생체 인식</string>
+    <string name="settings_lock_confirm">잠금 확인을 위해 한번 더 입력해주세요</string>
+    <string name="settings_lock_enabled">사용 중</string>
+    <string name="settings_lock_fingerprint">지문</string>
+    <string name="settings_lock_password">비밀번호</string>
+    <string name="settings_lock_pattern">패턴</string>
+    <string name="settings_lock_wrong_confirm">잠금이 일치하지 않습니다. 다시 시도하세요.</string>
+    <string name="settings_lock_none">없음</string>
+    <string name="settings_lock_remove_message">잠금을 해제할까요?</string>
 </resources>

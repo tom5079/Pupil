@@ -1,6 +1,7 @@
 package xyz.quaver.pupil.ui
 
 import android.Manifest
+import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.drawable.Animatable
@@ -76,7 +77,8 @@ class MainActivity : AppCompatActivity() {
 
     private var mode = Mode.SEARCH
 
-    private val SETTINGS = 45162
+    private val REQUEST_SETTINGS = 45162
+    private val REQUEST_LOCK = 561
 
     private var galleryIDs: Deferred<List<Int>>? = null
     private var totalItems = 0
@@ -89,6 +91,8 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        startActivityForResult(Intent(this, LockActivity::class.java), REQUEST_LOCK)
 
         checkPermissions()
 
@@ -143,6 +147,7 @@ class MainActivity : AppCompatActivity() {
                 WindowManager.LayoutParams.FLAG_SECURE)
         else
             window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
+
         super.onResume()
     }
 
@@ -187,13 +192,17 @@ class MainActivity : AppCompatActivity() {
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         when(requestCode) {
-            SETTINGS -> {
+            REQUEST_SETTINGS -> {
                 runOnUiThread {
                     cancelFetch()
                     clearGalleries()
                     fetchGalleries(query)
                     loadBlocks()
                 }
+            }
+            REQUEST_LOCK -> {
+                if (resultCode != Activity.RESULT_OK)
+                    finish()
             }
         }
     }
@@ -679,7 +688,7 @@ class MainActivity : AppCompatActivity() {
 
             setOnMenuItemClickListener {
                 when(it.itemId) {
-                    R.id.main_menu_settings -> startActivityForResult(Intent(this@MainActivity, SettingsActivity::class.java), SETTINGS)
+                    R.id.main_menu_settings -> startActivityForResult(Intent(this@MainActivity, SettingsActivity::class.java), REQUEST_SETTINGS)
                     R.id.main_menu_jump -> {
                         val preference = PreferenceManager.getDefaultSharedPreferences(context)
                         val perPage = preference.getString("per_page", "25")!!.toInt()
