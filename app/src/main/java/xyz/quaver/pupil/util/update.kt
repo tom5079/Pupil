@@ -1,5 +1,6 @@
 package xyz.quaver.pupil.util
 
+import android.util.Log
 import kotlinx.serialization.json.*
 import java.net.URL
 
@@ -19,8 +20,20 @@ fun checkUpdate(url: String, currentVersion: String) : JsonObject? {
     if (releases.isEmpty())
         return null
 
-    if (currentVersion != releases[0].jsonObject["tag_name"]?.content)
-        return releases[0].jsonObject
+    val latestVersion = releases[0].jsonObject["tag_name"]?.content
 
-    return null
+    return when {
+        currentVersion.split('-').size == 1 -> {
+            when {
+                currentVersion != latestVersion -> releases[0].jsonObject
+                else -> null
+            }
+        }
+        else -> {
+            when {
+                (currentVersion.split('-')[0] == latestVersion) -> releases[0].jsonObject
+                else -> null
+            }
+        }
+    }
 }
