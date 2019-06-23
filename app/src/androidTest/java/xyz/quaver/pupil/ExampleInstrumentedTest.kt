@@ -1,16 +1,18 @@
 package xyz.quaver.pupil
 
-import android.graphics.BitmapFactory
+import android.content.Intent
 import android.util.Log
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import androidx.test.rule.ActivityTestRule
 import org.junit.Assert.assertEquals
+import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import xyz.quaver.hiyobi.cookie
 import xyz.quaver.hiyobi.getReader
 import xyz.quaver.hiyobi.user_agent
-import java.io.File
+import xyz.quaver.pupil.ui.LockActivity
 import java.net.URL
 import javax.net.ssl.HttpsURLConnection
 
@@ -21,6 +23,7 @@ import javax.net.ssl.HttpsURLConnection
  */
 @RunWith(AndroidJUnit4::class)
 class ExampleInstrumentedTest {
+
     @Test
     fun useAppContext() {
         // Context of the app under test.
@@ -30,12 +33,12 @@ class ExampleInstrumentedTest {
 
     @Test
     fun checkCacheDir() {
+        val activityTestRule = ActivityTestRule<LockActivity>(LockActivity::class.java)
         val appContext = InstrumentationRegistry.getInstrumentation().targetContext
-        val file = File(appContext.cacheDir, "imageCache/1412251/01.jpg.webp")
 
-        val bitmap = BitmapFactory.decodeFile(file.absolutePath)
+        activityTestRule.launchActivity(Intent())
 
-        Log.d("Pupil", bitmap.byteCount.toString())
+        while(true);
     }
 
     @Test

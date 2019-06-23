@@ -1,12 +1,12 @@
-package xyz.quaver.pupil
+package xyz.quaver.pupil.ui
 
 import android.Manifest
+import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.drawable.Animatable
 import android.net.Uri
 import android.os.Bundle
-import android.preference.PreferenceManager
 import android.text.*
 import android.text.style.AlignmentSpan
 import android.view.*
@@ -21,6 +21,7 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.res.ResourcesCompat
 import androidx.core.view.GravityCompat
+import androidx.preference.PreferenceManager
 import androidx.vectordrawable.graphics.drawable.AnimatedVectorDrawableCompat
 import com.arlib.floatingsearchview.FloatingSearchView
 import com.arlib.floatingsearchview.suggestions.model.SearchSuggestion
@@ -40,6 +41,8 @@ import kotlinx.serialization.list
 import kotlinx.serialization.stringify
 import ru.noties.markwon.Markwon
 import xyz.quaver.hitomi.*
+import xyz.quaver.pupil.BuildConfig
+import xyz.quaver.pupil.R
 import xyz.quaver.pupil.adapters.GalleryBlockAdapter
 import xyz.quaver.pupil.types.Tag
 import xyz.quaver.pupil.types.TagSuggestion
@@ -51,6 +54,7 @@ import java.net.URL
 import java.util.*
 import javax.net.ssl.HttpsURLConnection
 import kotlin.collections.ArrayList
+import kotlin.math.min
 import kotlin.math.roundToInt
 
 class MainActivity : AppCompatActivity() {
@@ -65,9 +69,16 @@ class MainActivity : AppCompatActivity() {
     private val galleries = ArrayList<Pair<GalleryBlock, Deferred<String>>>()
 
     private var query = ""
+    set(value) {
+        field = value
+        findViewById<SearchInputView>(R.id.search_bar_text)
+            .setText(query, TextView.BufferType.EDITABLE)
+    }
+
     private var mode = Mode.SEARCH
 
-    private val SETTINGS = 45162
+    private val REQUEST_SETTINGS = 45162
+    private val REQUEST_LOCK = 561
 
     private var galleryIDs: Deferred<List<Int>>? = null
     private var totalItems = 0
@@ -80,6 +91,8 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        startActivityForResult(Intent(this, LockActivity::class.java), REQUEST_LOCK)
 
         checkPermissions()
 
@@ -110,19 +123,11 @@ class MainActivity : AppCompatActivity() {
         initView()
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-
-        if (cacheDir.exists())
-            cacheDir.deleteRecursively()
-    }
-
     override fun onBackPressed() {
         when {
             main_drawer_layout.isDrawerOpen(GravityCompat.START) -> main_drawer_layout.closeDrawer(GravityCompat.START)
             query.isNotEmpty() -> runOnUiThread {
                 query = ""
-                findViewById<SearchInputView>(R.id.search_bar_text).setText(query, TextView.BufferType.EDITABLE)
 
                 cancelFetch()
                 clearGalleries()
@@ -142,6 +147,7 @@ class MainActivity : AppCompatActivity() {
                 WindowManager.LayoutParams.FLAG_SECURE)
         else
             window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
+
         super.onResume()
     }
 
@@ -186,13 +192,17 @@ class MainActivity : AppCompatActivity() {
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         when(requestCode) {
-            SETTINGS -> {
+            REQUEST_SETTINGS -> {
                 runOnUiThread {
                     cancelFetch()
                     clearGalleries()
                     fetchGalleries(query)
                     loadBlocks()
                 }
+            }
+            REQUEST_LOCK -> {
+                if (resultCode != Activity.RESULT_OK)
+                    finish()
             }
         }
     }
@@ -352,8 +362,7 @@ class MainActivity : AppCompatActivity() {
                 onChipClickedHandler.add {
                     runOnUiThread {
                         query = it.toQuery()
-                        this@MainActivity.findViewById<SearchInputView>(R.id.search_bar_text)
-                            .setText(query, TextView.BufferType.EDITABLE)
+                        currentPage = 0
 
                         cancelFetch()
                         clearGalleries()
@@ -679,7 +688,7 @@ class MainActivity : AppCompatActivity() {
 
             setOnMenuItemClickListener {
                 when(it.itemId) {
-                    R.id.main_menu_settings -> startActivityForResult(Intent(this@MainActivity, SettingsActivity::class.java), SETTINGS)
+                    R.id.main_menu_settings -> startActivityForResult(Intent(this@MainActivity, SettingsActivity::class.java), REQUEST_SETTINGS)
                     R.id.main_menu_jump -> {
                         val preference = PreferenceManager.getDefaultSharedPreferences(context)
                         val perPage = preference.getString("per_page", "25")!!.toInt()
@@ -726,7 +735,8 @@ class MainActivity : AppCompatActivity() {
 
                                         startActivity(intent)
                                     } catch (e: Exception) {
-                                        Snackbar.make(main_layout, R.string.main_open_gallery_by_id_error, Snackbar.LENGTH_LONG).show()
+                                        Snackbar.make(main_layout,
+                                            R.string.main_open_gallery_by_id_error, Snackbar.LENGTH_LONG).show()
                                     }
                                 }
                             }
@@ -804,7 +814,9 @@ class MainActivity : AppCompatActivity() {
                             favorites.remove(tag)
                         }
                         else {
-                            setImageDrawable(AnimatedVectorDrawableCompat.create(context, R.drawable.avd_star))
+                            setImageDrawable(AnimatedVectorDrawableCompat.create(context,
+                                R.drawable.avd_star
+                            ))
                             (drawable as Animatable).start()
 
                             favorites.add(tag)
@@ -880,10 +892,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun cancelFetch() {
-        runBlocking {
-            galleryIDs?.cancelAndJoin()
-            loadingJob?.cancelAndJoin()
-        }
+        galleryIDs?.cancel()
+        loadingJob?.cancel()
     }
 
     private fun clearGalleries() {
@@ -992,7 +1002,7 @@ class MainActivity : AppCompatActivity() {
                 query.isEmpty() and defaultQuery.isEmpty() and (mode == Mode.SEARCH) ->
                     galleryIDs
                 else ->
-                    galleryIDs.slice(currentPage*perPage until Math.min(currentPage*perPage+perPage, galleryIDs.size))
+                    galleryIDs.slice(currentPage*perPage until min(currentPage*perPage+perPage, galleryIDs.size))
             }.chunked(5).let { chunks ->
                 for (chunk in chunks)
                     chunk.map { galleryID ->
@@ -1009,8 +1019,8 @@ class MainActivity : AppCompatActivity() {
                                                 getGalleryBlock(galleryID).apply {
                                                     this ?: return@apply
 
-                                                    if (!cache.parentFile.exists())
-                                                        cache.parentFile.mkdirs()
+                                                    if (cache.parentFile?.exists() == false)
+                                                        cache.parentFile!!.mkdirs()
 
                                                     cache.writeText(json.stringify(serializer, this))
                                                 }
@@ -1024,8 +1034,8 @@ class MainActivity : AppCompatActivity() {
                                         if (!exists())
                                             try {
                                                 with(URL(galleryBlock.thumbnails[0]).openConnection() as HttpsURLConnection) {
-                                                    if (!this@apply.parentFile.exists())
-                                                        this@apply.parentFile.mkdirs()
+                                                    if (this@apply.parentFile?.exists() == false)
+                                                        this@apply.parentFile!!.mkdirs()
 
                                                     inputStream.copyTo(FileOutputStream(this@apply))
                                                 }
