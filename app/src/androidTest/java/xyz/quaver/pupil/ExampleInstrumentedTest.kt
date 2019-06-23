@@ -9,6 +9,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import xyz.quaver.hitomi.fetchNozomi
 import xyz.quaver.hiyobi.cookie
 import xyz.quaver.hiyobi.getReader
 import xyz.quaver.hiyobi.user_agent
@@ -29,6 +30,8 @@ class ExampleInstrumentedTest {
         // Context of the app under test.
         val appContext = InstrumentationRegistry.getInstrumentation().targetContext
         assertEquals("xyz.quaver.pupil", appContext.packageName)
+
+        Log.d("Pupil", fetchNozomi().first.size.toString())
     }
 
     @Test
