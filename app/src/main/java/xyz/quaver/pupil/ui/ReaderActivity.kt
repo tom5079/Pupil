@@ -1,4 +1,4 @@
-package xyz.quaver.pupil
+package xyz.quaver.pupil.ui
 
 import android.content.Intent
 import android.graphics.drawable.Animatable
@@ -11,9 +11,9 @@ import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.PagerSnapHelper
 import androidx.recyclerview.widget.RecyclerView
-import androidx.recyclerview.widget.SimpleItemAnimator
 import androidx.vectordrawable.graphics.drawable.Animatable2Compat
 import androidx.vectordrawable.graphics.drawable.AnimatedVectorDrawableCompat
+import com.crashlytics.android.Crashlytics
 import com.google.android.material.snackbar.Snackbar
 import kotlinx.android.synthetic.main.activity_reader.*
 import kotlinx.android.synthetic.main.activity_reader.view.*
@@ -28,6 +28,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonConfiguration
 import xyz.quaver.hitomi.GalleryBlock
 import xyz.quaver.hitomi.getGalleryBlock
+import xyz.quaver.pupil.R
 import xyz.quaver.pupil.adapters.ReaderAdapter
 import xyz.quaver.pupil.util.GalleryDownloader
 import xyz.quaver.pupil.util.Histories
@@ -71,6 +72,8 @@ class ReaderActivity : AppCompatActivity() {
         setContentView(R.layout.activity_reader)
 
         handleIntent(intent)
+
+        Crashlytics.setInt("GalleryID", galleryBlock.id)
 
         if (!::galleryBlock.isInitialized) {
             onBackPressed()
@@ -117,7 +120,7 @@ class ReaderActivity : AppCompatActivity() {
         } else {
             galleryBlock = Json(JsonConfiguration.Stable).parse(
                 GalleryBlock.serializer(),
-                intent.getStringExtra("galleryblock")
+                intent.getStringExtra("galleryblock")!!
             )
         }
     }
@@ -372,10 +375,7 @@ class ReaderActivity : AppCompatActivity() {
             reader_recyclerview.layoutManager = LinearLayoutManager(this)
         } else {
             snapHelper.attachToRecyclerView(reader_recyclerview)
-            reader_recyclerview.layoutManager = LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false).apply {
-                isItemPrefetchEnabled = true
-                initialPrefetchItemCount = 4
-            }
+            reader_recyclerview.layoutManager = LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
         }
 
         (reader_recyclerview.layoutManager as LinearLayoutManager).scrollToPositionWithOffset(currentPage-1, 0)

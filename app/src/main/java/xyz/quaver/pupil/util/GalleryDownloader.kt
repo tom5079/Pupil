@@ -4,7 +4,7 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.ContextWrapper
 import android.content.Intent
-import android.os.Environment
+import android.util.Log
 import android.util.SparseArray
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
@@ -18,9 +18,9 @@ import kotlinx.serialization.list
 import xyz.quaver.hitomi.*
 import xyz.quaver.hiyobi.cookie
 import xyz.quaver.hiyobi.user_agent
-import xyz.quaver.pupil.Pupil
+import xyz.quaver.pupil.ui.Pupil
 import xyz.quaver.pupil.R
-import xyz.quaver.pupil.ReaderActivity
+import xyz.quaver.pupil.ui.ReaderActivity
 import java.io.File
 import java.io.FileOutputStream
 import java.net.URL
@@ -52,7 +52,7 @@ class GalleryDownloader(
                     cache.deleteRecursively()
                 }
 
-                if (!reader.isActive && downloadJob?.isActive != true)
+                if (reader?.isActive == false && downloadJob?.isActive != true)
                     field = false
 
                 downloads.add(galleryBlock.id)
@@ -63,7 +63,7 @@ class GalleryDownloader(
             onNotifyChangedHandler?.invoke(value)
         }
 
-    private val reader: Deferred<Reader>
+    private val reader: Deferred<Reader>?
     private var downloadJob: Job? = null
 
     private lateinit var notificationBuilder: NotificationCompat.Builder
@@ -126,8 +126,8 @@ class GalleryDownloader(
 
             if (reader.isNotEmpty()) {
                 //Save cache
-                if (!cache.parentFile.exists())
-                    cache.parentFile.mkdirs()
+                if (cache.parentFile?.exists() == false)
+                    cache.parentFile!!.mkdirs()
 
                 cache.writeText(json.stringify(serializer, reader))
             }
@@ -140,7 +140,7 @@ class GalleryDownloader(
 
     fun start() {
         downloadJob = CoroutineScope(Dispatchers.Default).launch {
-            val reader = reader.await()
+            val reader = reader!!.await()
 
             if (reader.isEmpty())
                 onErrorHandler?.invoke(IOException("Couldn't retrieve Reader"))
@@ -183,8 +183,8 @@ class GalleryDownloader(
                                     } else
                                         setRequestProperty("Referer", getReferer(galleryBlock.id))
 
-                                    if (!cache.parentFile.exists())
-                                        cache.parentFile.mkdirs()
+                                    if (cache.parentFile?.exists() == false)
+                                        cache.parentFile!!.mkdirs()
 
                                     inputStream.copyTo(FileOutputStream(cache))
                                 }
@@ -209,8 +209,6 @@ class GalleryDownloader(
                 }
             }
 
-            onCompleteHandler?.invoke()
-
             Timer(false).schedule(1000) {
                 notificationBuilder
                     .setContentTitle(galleryBlock.title)
@@ -220,7 +218,7 @@ class GalleryDownloader(
                 if (download) {
                     File(cacheDir, "imageCache/${galleryBlock.id}").let {
                         if (it.exists()) {
-                            val target = File(Environment.getExternalStorageDirectory(), "Pupil/${galleryBlock.id}")
+                            val target = File(getExternalFilesDir("Pupil"), galleryBlock.id.toString())
 
                             if (!target.exists())
                                 target.mkdirs()
@@ -231,9 +229,11 @@ class GalleryDownloader(
                     }
 
                     notificationManager.notify(galleryBlock.id, notificationBuilder.build())
-                }
 
-                download = false
+                    onCompleteHandler?.invoke()
+
+                    download = false
+                }
             }
 
             remove(galleryBlock.id)
@@ -254,7 +254,7 @@ class GalleryDownloader(
 
     fun invokeOnReaderLoaded() {
         CoroutineScope(Dispatchers.Default).launch {
-            onReaderLoadedHandler?.invoke(reader.await())
+            onReaderLoadedHandler?.invoke(reader?.await() ?: return@launch)
         }
     }
 
