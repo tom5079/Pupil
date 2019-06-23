@@ -101,6 +101,17 @@
     <string name="settings_security_mode_title">Enable security mode</string>
     <string name="settings_security_mode_summary">Enable security mode to make the screen invisible on recent app window</string>
 
+    <string name="settings_lock_none">None</string>
+    <string name="settings_lock_pattern">Pattern</string>
+    <string name="settings_lock_pin" translatable="false">PIN</string>
+    <string name="settings_lock_password">Password</string>
+    <string name="settings_lock_biomatrics">Biomatrics</string>
+    <string name="settings_lock_fingerprint">Fingerprint</string>
+    <string name="settings_lock_enabled">Enabled</string>
+    <string name="settings_lock_confirm">Input same lock once more to confirm Lock</string>
+    <string name="settings_lock_remove_message">Do you want to remove lock?</string>
+    <string name="settings_lock_wrong_confirm">Lock is different from last one. Please try again.</string>
+
     <string name="default_query_dialog_title">Set default query</string>
     <string name="default_query_dialog_language">Language: </string>
     <string name="default_query_dialog_filter_BL">Filter BL</string>
