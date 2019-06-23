@@ -27,7 +27,7 @@
             android:id="@+id/lock_pattern"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:src="@drawable/lock_pattern"
+            app:srcCompat="@drawable/lock_pattern"
             app:backgroundTint="@color/colorPrimary"
             app:fabSize="mini"/>
 
@@ -35,7 +35,7 @@
             android:id="@+id/lock_pin"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:src="@drawable/numeric"
+            app:srcCompat="@drawable/numeric"
             android:layout_marginLeft="8dp"
             android:layout_marginRight="8dp"
             app:backgroundTint="@color/dark_gray"
@@ -45,7 +45,7 @@
             android:id="@+id/lock_fingerprint"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:src="@drawable/fingerprint"
+            app:srcCompat="@drawable/fingerprint"
             android:layout_marginLeft="8dp"
             android:layout_marginRight="8dp"
             app:backgroundTint="@color/dark_gray"
@@ -55,7 +55,7 @@
             android:id="@+id/lock_password"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:src="@drawable/lastpass"
+            app:srcCompat="@drawable/lastpass"
             app:backgroundTint="@color/dark_gray"
             app:fabSize="mini"/>
 

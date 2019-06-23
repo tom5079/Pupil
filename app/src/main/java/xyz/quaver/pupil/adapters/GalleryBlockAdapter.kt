@@ -2,7 +2,8 @@ package xyz.quaver.pupil.adapters
 
 import android.app.AlertDialog
 import android.graphics.BitmapFactory
-import android.graphics.drawable.Animatable
+import android.graphics.drawable.Drawable
+import android.util.Log
 import android.util.SparseBooleanArray
 import android.view.LayoutInflater
 import android.view.View
@@ -12,6 +13,7 @@ import android.widget.LinearLayout
 import androidx.cardview.widget.CardView
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
+import androidx.vectordrawable.graphics.drawable.Animatable2Compat
 import androidx.vectordrawable.graphics.drawable.AnimatedVectorDrawableCompat
 import com.google.android.material.chip.Chip
 import kotlinx.android.synthetic.main.item_galleryblock.view.*
@@ -24,7 +26,7 @@ import kotlinx.serialization.json.JsonConfiguration
 import kotlinx.serialization.list
 import xyz.quaver.hitomi.GalleryBlock
 import xyz.quaver.hitomi.ReaderItem
-import xyz.quaver.pupil.ui.Pupil
+import xyz.quaver.pupil.Pupil
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.types.Tag
 import xyz.quaver.pupil.util.Histories
@@ -68,7 +70,7 @@ class GalleryBlockAdapter(private val galleries: List<Pair<GalleryBlock, Deferre
 
                     val bitmap = BitmapFactory.decodeFile(thumbnail.await())
 
-                    post {
+                    launch(Dispatchers.Main) {
                         galleryblock_thumbnail.setImageBitmap(bitmap)
                     }
                 }
@@ -118,12 +120,12 @@ class GalleryBlockAdapter(private val galleries: List<Pair<GalleryBlock, Deferre
                                                 visibility = View.VISIBLE
                                             }
                                         } else {
-                                            val drawable = AnimatedVectorDrawableCompat.create(context, R.drawable.ic_progressbar_complete)
                                             with(view.galleryblock_progress_complete) {
-                                                setImageDrawable(drawable)
+                                                setImageDrawable(AnimatedVectorDrawableCompat.create(context, R.drawable.ic_progressbar_complete).apply {
+                                                    this?.start()
+                                                })
                                                 visibility = View.VISIBLE
                                             }
-                                            drawable?.start()
                                             completeFlag.put(galleryBlock.id, true)
                                         }
                                     } else
@@ -250,19 +252,28 @@ class GalleryBlockAdapter(private val galleries: List<Pair<GalleryBlock, Deferre
                     favorites = (context.applicationContext as Pupil).favorites
 
                 with(galleryblock_favorite) {
-                    post {
-                        isChecked = favorites.contains(galleryBlock.id)
-                    }
+                    setImageResource(if (favorites.contains(galleryBlock.id)) R.drawable.ic_star_filled else R.drawable.ic_star_empty)
                     setOnClickListener {
                         when {
-                            isChecked -> favorites.add(galleryBlock.id)
-                            else -> favorites.remove(galleryBlock.id)
-                        }
-                    }
-                    setOnCheckedChangeListener { _, isChecked ->
-                        when {
-                            isChecked -> (background as Animatable).start()
-                            else -> background = AnimatedVectorDrawableCompat.create(context, R.drawable.avd_star)
+                            favorites.contains(galleryBlock.id) -> {
+                                favorites.remove(galleryBlock.id)
+
+                                setImageResource(R.drawable.ic_star_empty)
+                            }
+                            else -> {
+                                favorites.add(galleryBlock.id)
+
+                                setImageDrawable(AnimatedVectorDrawableCompat.create(context, R.drawable.avd_star).apply {
+                                    this ?: return@apply
+
+                                    registerAnimationCallback(object: Animatable2Compat.AnimationCallback() {
+                                        override fun onAnimationEnd(drawable: Drawable?) {
+                                            setImageResource(R.drawable.ic_star_filled)
+                                        }
+                                    })
+                                    start()
+                                })
+                            }
                         }
                     }
                 }
