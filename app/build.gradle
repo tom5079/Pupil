@@ -1,5 +1,6 @@
 apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
+apply plugin: 'kotlin-kapt'
 apply plugin: 'kotlin-android-extensions'
 apply plugin: 'kotlinx-serialization'
 apply plugin: 'com.google.gms.google-services'
@@ -52,8 +53,13 @@ dependencies {
     implementation 'com.crashlytics.sdk.android:crashlytics:2.10.1'
     implementation 'com.github.arimorty:floatingsearchview:2.1.1'
     implementation 'com.github.clans:fab:1.6.4'
+    implementation 'com.github.bumptech.glide:glide:4.9.0'
+    implementation ("com.github.bumptech.glide:recyclerview-integration:4.9.0") {
+        transitive = false
+    }
     implementation 'com.andrognito.patternlockview:patternlockview:1.0.0'
     implementation "ru.noties.markwon:core:${markwonVersion}"
+    kapt 'com.github.bumptech.glide:compiler:4.9.0'
     testImplementation 'junit:junit:4.12'
     androidTestImplementation 'androidx.test.ext:junit:1.1.1'
     androidTestImplementation 'androidx.test:rules:1.2.0'

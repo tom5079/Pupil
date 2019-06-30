@@ -5,10 +5,9 @@ import kotlinx.android.parcel.Parcelize
 import xyz.quaver.hitomi.Suggestion
 
 @Parcelize
-data class TagSuggestion(val s: String, val t: Int, val u: String, val n: String) : SearchSuggestion {
-    constructor(s: Suggestion) : this(s.s, s.t, s.u, s.n)
+class SelectorSuggestion : SearchSuggestion {
 
     override fun getBody(): String {
-        return s
+        return ""
     }
 }
