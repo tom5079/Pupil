@@ -79,4 +79,5 @@
     <string name="settings_lock_wrong_confirm">ロックが一致しません。やり直してください。</string>
     <string name="settings_lock_none">なし</string>
     <string name="settings_lock_remove_message">ロックを無効にしますか？</string>
+    <string name="reader_loading">ロード中</string>
 </resources>
