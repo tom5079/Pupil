@@ -3,7 +3,6 @@ package xyz.quaver.pupil.adapters
 import android.app.AlertDialog
 import android.graphics.BitmapFactory
 import android.graphics.drawable.Drawable
-import android.util.Log
 import android.util.SparseBooleanArray
 import android.view.LayoutInflater
 import android.view.View
@@ -15,6 +14,8 @@ import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import androidx.vectordrawable.graphics.drawable.Animatable2Compat
 import androidx.vectordrawable.graphics.drawable.AnimatedVectorDrawableCompat
+import com.bumptech.glide.Glide
+import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.google.android.material.chip.Chip
 import kotlinx.android.synthetic.main.item_galleryblock.view.*
 import kotlinx.coroutines.CoroutineScope
@@ -23,9 +24,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonConfiguration
-import kotlinx.serialization.list
 import xyz.quaver.hitomi.GalleryBlock
-import xyz.quaver.hitomi.ReaderItem
+import xyz.quaver.hitomi.Reader
 import xyz.quaver.pupil.Pupil
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.types.Tag
@@ -47,8 +47,8 @@ class GalleryBlockAdapter(private val galleries: List<Pair<GalleryBlock, Deferre
 
     private lateinit var favorites: Histories
 
-    inner class GalleryViewHolder(private val view: CardView) : RecyclerView.ViewHolder(view) {
-        fun bind(item: Pair<GalleryBlock, Deferred<String>>) {
+    inner class GalleryViewHolder(val view: CardView) : RecyclerView.ViewHolder(view) {
+        fun bind(holder: GalleryViewHolder, item: Pair<GalleryBlock, Deferred<String>>) {
             with(view) {
                 val resources = context.resources
                 val languages = resources.getStringArray(R.array.languages).map {
@@ -62,17 +62,15 @@ class GalleryBlockAdapter(private val galleries: List<Pair<GalleryBlock, Deferre
                 val artists = galleryBlock.artists
                 val series = galleryBlock.series
 
-                CoroutineScope(Dispatchers.Default).launch {
+                CoroutineScope(Dispatchers.Main).launch {
                     val cache = thumbnail.await()
 
-                    if (!File(cache).exists())
-                        return@launch
-
-                    val bitmap = BitmapFactory.decodeFile(thumbnail.await())
-
-                    launch(Dispatchers.Main) {
-                        galleryblock_thumbnail.setImageBitmap(bitmap)
-                    }
+                    Glide.with(holder.view)
+                        .load(cache)
+                        .skipMemoryCache(true)
+                        .diskCacheStrategy(DiskCacheStrategy.NONE)
+                        .error(R.drawable.image_broken_variant)
+                        .into(galleryblock_thumbnail)
                 }
 
                 //Check cache
@@ -81,10 +79,10 @@ class GalleryBlockAdapter(private val galleries: List<Pair<GalleryBlock, Deferre
 
                 if (readerCache.invoke().exists()) {
                     val reader = Json(JsonConfiguration.Stable)
-                        .parse(ReaderItem.serializer().list, readerCache.invoke().readText())
+                        .parse(Reader.serializer(), readerCache.invoke().readText())
 
                     with(galleryblock_progressbar) {
-                        max = reader.size
+                        max = reader.readerItems.size
                         progress = imageCache.invoke().list()?.size ?: 0
 
                         visibility = View.VISIBLE
@@ -108,8 +106,8 @@ class GalleryBlockAdapter(private val galleries: List<Pair<GalleryBlock, Deferre
                                 } else {
                                     if (visibility == View.GONE) {
                                         val reader = Json(JsonConfiguration.Stable)
-                                            .parse(ReaderItem.serializer().list, readerCache.invoke().readText())
-                                        max = reader.size
+                                            .parse(Reader.serializer(), readerCache.invoke().readText())
+                                        max = reader.readerItems.size
                                         visibility = View.VISIBLE
                                     }
 
@@ -334,7 +332,7 @@ class GalleryBlockAdapter(private val galleries: List<Pair<GalleryBlock, Deferre
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
         if (holder is GalleryViewHolder)
-            holder.bind(galleries[position-(if (showPrev) 1 else 0)])
+            holder.bind(holder, galleries[position-(if (showPrev) 1 else 0)])
     }
 
     override fun onViewDetachedFromWindow(holder: RecyclerView.ViewHolder) {

@@ -55,6 +55,8 @@ import java.net.URL
 import java.util.*
 import javax.net.ssl.HttpsURLConnection
 import kotlin.collections.ArrayList
+import kotlin.math.abs
+import kotlin.math.ceil
 import kotlin.math.min
 import kotlin.math.roundToInt
 
@@ -72,8 +74,10 @@ class MainActivity : AppCompatActivity() {
     private var query = ""
     set(value) {
         field = value
-        findViewById<SearchInputView>(R.id.search_bar_text)
-            .setText(query, TextView.BufferType.EDITABLE)
+        with(findViewById<SearchInputView>(R.id.search_bar_text)) {
+            if (text.toString() != value)
+                setText(query, TextView.BufferType.EDITABLE)
+        }
     }
 
     private var mode = Mode.SEARCH
@@ -155,7 +159,7 @@ class MainActivity : AppCompatActivity() {
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
         val preference = PreferenceManager.getDefaultSharedPreferences(this)
         val perPage = preference.getString("per_page", "25")!!.toInt()
-        val maxPage = Math.ceil(totalItems / perPage.toDouble()).roundToInt()
+        val maxPage = ceil(totalItems / perPage.toDouble()).roundToInt()
 
         return when(keyCode) {
             KeyEvent.KEYCODE_VOLUME_DOWN -> {
@@ -380,9 +384,9 @@ class MainActivity : AppCompatActivity() {
 
                     val intent = Intent(this@MainActivity, ReaderActivity::class.java)
                     val gallery = galleries[position].first
-                    intent.putExtra("galleryblock", Json(JsonConfiguration.Stable).stringify(GalleryBlock.serializer(), gallery))
+                    intent.putExtra("galleryID", gallery.id)
 
-                    //TODO: Maybe sprinke some transitions will be nice :D
+                    //TODO: Maybe sprinkling some transitions will be nice :D
                     startActivity(intent)
 
                     histories.add(gallery.id)
@@ -391,7 +395,7 @@ class MainActivity : AppCompatActivity() {
                     if (v !is CardView)
                         return@setOnItemLongClickListener true
 
-                    val galleryBlock = galleries[position].first
+                    val gallery = galleries[position].first
                     val view = LayoutInflater.from(this@MainActivity)
                         .inflate(R.layout.dialog_galleryblock, recyclerView, false)
 
@@ -400,15 +404,15 @@ class MainActivity : AppCompatActivity() {
                     }.create()
 
                     with(view.main_dialog_download) {
-                        text = when(GalleryDownloader.get(galleryBlock.id)) {
+                        text = when(GalleryDownloader.get(gallery.id)) {
                             null -> getString(R.string.reader_fab_download)
                             else -> getString(R.string.reader_fab_download_cancel)
                         }
-                        isEnabled = !(adapter as GalleryBlockAdapter).completeFlag.get(galleryBlock.id, false)
+                        isEnabled = !(adapter as GalleryBlockAdapter).completeFlag.get(gallery.id, false)
                         setOnClickListener {
-                            val downloader = GalleryDownloader.get(galleryBlock.id)
+                            val downloader = GalleryDownloader.get(gallery.id)
                             if (downloader == null)
-                                GalleryDownloader(context, galleryBlock, true).start()
+                                GalleryDownloader(context, gallery.id, true).start()
                             else {
                                 downloader.cancel()
                                 downloader.clearNotification()
@@ -420,16 +424,16 @@ class MainActivity : AppCompatActivity() {
 
                     view.main_dialog_delete.setOnClickListener {
                         CoroutineScope(Dispatchers.Default).launch {
-                            with(GalleryDownloader[galleryBlock.id]) {
+                            with(GalleryDownloader[gallery.id]) {
                                 this?.cancelAndJoin()
                                 this?.clearNotification()
                             }
-                            val cache = File(cacheDir, "imageCache/${galleryBlock.id}")
-                            val data = getCachedGallery(context, galleryBlock.id)
+                            val cache = File(cacheDir, "imageCache/${gallery.id}")
+                            val data = getCachedGallery(context, gallery.id)
                             cache.deleteRecursively()
                             data.deleteRecursively()
 
-                            downloads.remove(galleryBlock.id)
+                            downloads.remove(gallery.id)
 
                             if (mode == Mode.DOWNLOAD) {
                                 runOnUiThread {
@@ -440,7 +444,7 @@ class MainActivity : AppCompatActivity() {
                                 }
                             }
 
-                            (adapter as GalleryBlockAdapter).completeFlag.put(galleryBlock.id, false)
+                            (adapter as GalleryBlockAdapter).completeFlag.put(gallery.id, false)
                         }
                         dialog.dismiss()
                     }
@@ -583,7 +587,7 @@ class MainActivity : AppCompatActivity() {
                                 //BOTTOM
 
                                 //Scrolling DOWN
-                                if (dist < 0 && currentPage != Math.ceil(totalItems.toDouble()/perPage).roundToInt()-1) {
+                                if (dist < 0 && currentPage != ceil(totalItems.toDouble()/perPage).roundToInt()-1) {
                                     with(main_recyclerview.adapter as GalleryBlockAdapter) {
                                         if(!showNext) {
                                             showNext = true
@@ -595,7 +599,7 @@ class MainActivity : AppCompatActivity() {
                                         getChildAt(childCount-1)
                                     }
 
-                                    val absDist = Math.abs(dist)
+                                    val absDist = abs(dist)
 
                                     if (next is LinearLayout) {
                                         val icon = next.findViewById<ImageView>(R.id.icon_next)
@@ -701,7 +705,7 @@ class MainActivity : AppCompatActivity() {
                             setMessage(getString(
                                 R.string.main_jump_message,
                                 currentPage+1,
-                                Math.ceil(totalItems / perPage.toDouble()).roundToInt()
+                                ceil(totalItems / perPage.toDouble()).roundToInt()
                             ))
 
                             setPositiveButton(android.R.string.ok) { _, _ ->
@@ -729,10 +733,7 @@ class MainActivity : AppCompatActivity() {
                                         val intent = Intent(this@MainActivity, ReaderActivity::class.java)
                                         val gallery =
                                             getGalleryBlock(editText.text.toString().toInt()) ?: throw Exception()
-                                        intent.putExtra(
-                                            "galleryblock",
-                                            Json(JsonConfiguration.Stable).stringify(GalleryBlock.serializer(), gallery)
-                                        )
+                                        intent.putExtra("galleryID", gallery.id)
 
                                         startActivity(intent)
                                     } catch (e: Exception) {
@@ -747,10 +748,17 @@ class MainActivity : AppCompatActivity() {
             }
 
             setOnQueryChangeListener { _, query ->
+                this@MainActivity.query = query
+
                 clearSuggestions()
 
-                if (query.isEmpty() or query.endsWith(' '))
+                if (query.isEmpty() or query.endsWith(' ')) {
+                    swapSuggestions(json.parse(serializer, favoritesFile.readText()).map {
+                        TagSuggestion(it.tag, -1, "", it.area ?: "tag")
+                    })
+
                     return@setOnQueryChangeListener
+                }
 
                 val currentQuery = query.split(" ").last().replace('_', ' ')
 
@@ -852,8 +860,6 @@ class MainActivity : AppCompatActivity() {
                         delete(if (lastIndexOf(' ') == -1) 0 else lastIndexOf(' ')+1, length)
                         append("${suggestion.n}:${suggestion.s.replace(Regex("\\s"), "_")} ")
                     }
-
-                    clearSuggestions()
                 }
 
                 override fun onSearchAction(currentQuery: String?) {
@@ -863,7 +869,7 @@ class MainActivity : AppCompatActivity() {
 
             setOnFocusChangeListener(object: FloatingSearchView.OnFocusChangeListener {
                 override fun onFocus() {
-                    if (searchInputView.text.isEmpty())
+                    if (query.isEmpty() or query.endsWith(' '))
                         swapSuggestions(json.parse(serializer, favoritesFile.readText()).map {
                             TagSuggestion(it.tag, -1, "", it.area ?: "tag")
                         })
