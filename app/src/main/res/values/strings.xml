@@ -71,6 +71,7 @@
     <string name="galleryblock_type">Type: %1$s</string>
     <string name="galleryblock_language">Language: %1$s</string>
 
+    <string name="reader_loading">Loading</string>
     <string name="reader_go_to_page">Go to page</string>
     <string name="reader_fab_fullscreen">Fullscreen</string>
     <string name="reader_fab_download">Background download</string>

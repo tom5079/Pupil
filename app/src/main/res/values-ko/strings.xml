@@ -79,4 +79,5 @@
     <string name="settings_lock_wrong_confirm">잠금이 일치하지 않습니다. 다시 시도하세요.</string>
     <string name="settings_lock_none">없음</string>
     <string name="settings_lock_remove_message">잠금을 해제할까요?</string>
+    <string name="reader_loading">로딩중</string>
 </resources>
