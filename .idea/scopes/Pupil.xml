@@ -1,0 +1,3 @@
+<component name="DependencyValidationManager">
+  <scope name="Pupil" pattern="file[app]:*/" />
+</component>
