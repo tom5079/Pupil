@@ -222,14 +222,14 @@ class SettingsActivity : AppCompatActivity() {
                                     addAll(languages.values)
                                 }
                             )
-                        if (tags.any { it.area == "language" }) {
+                        if (tags.any { it.area == "language" && !it.isNegative }) {
                             val tag = languages[tags.first { it.area == "language" }.tag]
                             if (tag != null) {
                                 setSelection(
                                     @Suppress("UNCHECKED_CAST")
                                     (adapter as ArrayAdapter<String>).getPosition(tag)
                                 )
-                                tags.removeByArea("language")
+                                tags.removeByArea("language", false)
                             }
                         }
                     }
