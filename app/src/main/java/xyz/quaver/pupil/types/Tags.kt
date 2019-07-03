@@ -90,8 +90,8 @@ class Tags(tag: List<Tag?>?) : ArrayList<Tag>() {
         }
     }
 
-    fun removeByArea(area: String) {
-        filter { it.area == area }.forEach {
+    fun removeByArea(area: String, isNegative: Boolean? = null) {
+        filter { it.area == area && (if(isNegative == null) true else (it.isNegative == isNegative)) }.forEach {
             remove(it)
         }
     }
