@@ -1,13 +1,12 @@
 package xyz.quaver.hitomi
 
-import kotlinx.coroutines.asCoroutineDispatcher
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.*
 import java.util.*
 import java.util.concurrent.Executors
 
-val searchDispatcher = Executors.newFixedThreadPool(4).asCoroutineDispatcher()
 fun doSearch(query: String) : List<Int> {
+    val time = System.currentTimeMillis()
+
     val terms = query
         .trim()
         .replace(Regex("""^\?"""), "")
@@ -43,24 +42,24 @@ fun doSearch(query: String) : List<Int> {
 
         //positive results
         positiveTerms.map {
-            launch(searchDispatcher) {
-                val newResults = getGalleryIDsForQuery(it)
-                filterPositive(newResults.sorted())
+            async(Dispatchers.IO) {
+                Pair(getGalleryIDsForQuery(it), true)
+            }
+        }+negativeTerms.map {
+            async(Dispatchers.IO) {
+                Pair(getGalleryIDsForQuery(it), false)
             }
         }.forEach {
-            it.join()
-        }
+            val (result, isPositive) = it.await()
 
-        //negative results
-        negativeTerms.map {
-            launch(searchDispatcher) {
-                filterNegative(getGalleryIDsForQuery(it).sorted())
+            when {
+                isPositive -> filterPositive(result.sorted())
+                else -> filterNegative(result.sorted())
             }
-        }.forEach {
-            it.join()
         }
     }
 
-    return results
+    println("PUPIL/SEARCH TIME ${System.currentTimeMillis() - time}ms")
 
+    return results
 }

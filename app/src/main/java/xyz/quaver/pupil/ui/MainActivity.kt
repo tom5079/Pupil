@@ -17,6 +17,7 @@ import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.cardview.widget.CardView
+import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.res.ResourcesCompat
@@ -45,6 +46,7 @@ import xyz.quaver.pupil.BuildConfig
 import xyz.quaver.pupil.Pupil
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.adapters.GalleryBlockAdapter
+import xyz.quaver.pupil.types.SelectorSuggestion
 import xyz.quaver.pupil.types.Tag
 import xyz.quaver.pupil.types.TagSuggestion
 import xyz.quaver.pupil.types.Tags
@@ -755,7 +757,7 @@ class MainActivity : AppCompatActivity() {
                 if (query.isEmpty() or query.endsWith(' ')) {
                     swapSuggestions(json.parse(serializer, favoritesFile.readText()).map {
                         TagSuggestion(it.tag, -1, "", it.area ?: "tag")
-                    })
+                    } + SelectorSuggestion())
 
                     return@setOnQueryChangeListener
                 }
@@ -782,83 +784,115 @@ class MainActivity : AppCompatActivity() {
             }
 
             setOnBindSuggestionCallback { suggestionView, leftIcon, textView, item, _ ->
-                val suggestion = item as TagSuggestion
-                val tag = "${suggestion.n}:${suggestion.s.replace(Regex("\\s"), "_")}"
+                if (item is SelectorSuggestion) {
+                    var hasSelector = false
 
-                leftIcon.setImageDrawable(
-                    ResourcesCompat.getDrawable(
-                        resources,
-                        when(suggestion.n) {
-                            "female" -> R.drawable.ic_gender_female
-                            "male" -> R.drawable.ic_gender_male
-                            "language" -> R.drawable.ic_translate
-                            "group" -> R.drawable.ic_account_group
-                            "character" -> R.drawable.ic_account_star
-                            "series" -> R.drawable.ic_book_open
-                            "artist" -> R.drawable.ic_brush
-                            else -> R.drawable.ic_tag
-                        },
-                        null)
-                )
-
-                with(suggestionView.findViewById<ImageView>(R.id.right_icon)) {
-
-                    if (Tags(json.parse(serializer, favoritesFile.readText())).contains(tag))
-                        setImageResource(R.drawable.ic_star_filled)
-                    else
-                        setImageResource(R.drawable.ic_star_empty)
-
-                    visibility = View.VISIBLE
-                    rotation = 0f
-                    isEnabled = true
-
-                    setColorFilter(ContextCompat.getColor(context, R.color.material_orange_500))
-
-                    isClickable = true
-                    setOnClickListener {
-                        val favorites = Tags(json.parse(serializer, favoritesFile.readText()))
-
-                        if (favorites.contains(tag)) {
-                            setImageResource(R.drawable.ic_star_empty)
-                            favorites.remove(tag)
+                    with(suggestionView as LinearLayout) {
+                        for (i in 0 until childCount) {
+                            val child = getChildAt(i)
+                            if (child is ConstraintLayout) {
+                                child.visibility = View.VISIBLE
+                                hasSelector = true
+                            }
+                            else
+                                child.visibility = View.GONE
                         }
-                        else {
-                            setImageDrawable(AnimatedVectorDrawableCompat.create(context,
-                                R.drawable.avd_star
-                            ))
-                            (drawable as Animatable).start()
-
-                            favorites.add(tag)
-                        }
-
-                        favoritesFile.writeText(json.stringify(favorites))
                     }
-                }
 
-                if (suggestion.t == -1) {
-                    textView.text = suggestion.s
-                } else {
-                    val text = "${suggestion.s}\n ${suggestion.t}"
+                    if (!hasSelector) {
+                        val view = LayoutInflater.from(context)
+                            .inflate(R.layout.item_selector_suggestion, suggestionView, false)
 
-                    val len = text.length
-                    val left = suggestion.s.length
+                        suggestionView.addView(view)
+                    }
+                } else if(item is TagSuggestion) {
+                    with(suggestionView as LinearLayout) {
+                        for (i in 0 until childCount) {
+                            val child = getChildAt(i)
+                            if (child is ConstraintLayout) {
+                                child.visibility = View.GONE
+                            }
+                            else
+                                child.visibility = View.VISIBLE
+                        }
+                    }
+                    val tag = "${item.n}:${item.s.replace(Regex("\\s"), "_")}"
 
-                    textView.text = SpannableString(text).apply {
-                        val s = AlignmentSpan.Standard(Layout.Alignment.ALIGN_OPPOSITE)
-                        setSpan(s, left, len, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
-                        setSpan(SetLineOverlap(true), 1, len-2, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
-                        setSpan(SetLineOverlap(false), len-1, len, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+                    leftIcon.setImageDrawable(
+                        ResourcesCompat.getDrawable(
+                            resources,
+                            when(item.n) {
+                                "female" -> R.drawable.ic_gender_female
+                                "male" -> R.drawable.ic_gender_male
+                                "language" -> R.drawable.ic_translate
+                                "group" -> R.drawable.ic_account_group
+                                "character" -> R.drawable.ic_account_star
+                                "series" -> R.drawable.ic_book_open
+                                "artist" -> R.drawable.ic_brush
+                                else -> R.drawable.ic_tag
+                            },
+                            null)
+                    )
+
+                    with(suggestionView.findViewById<ImageView>(R.id.right_icon)) {
+
+                        if (Tags(json.parse(serializer, favoritesFile.readText())).contains(tag))
+                            setImageResource(R.drawable.ic_star_filled)
+                        else
+                            setImageResource(R.drawable.ic_star_empty)
+
+                        rotation = 0f
+                        isEnabled = true
+
+                        setColorFilter(ContextCompat.getColor(context, R.color.material_orange_500))
+
+                        isClickable = true
+                        setOnClickListener {
+                            val favorites = Tags(json.parse(serializer, favoritesFile.readText()))
+
+                            if (favorites.contains(tag)) {
+                                setImageResource(R.drawable.ic_star_empty)
+                                favorites.remove(tag)
+                            }
+                            else {
+                                setImageDrawable(AnimatedVectorDrawableCompat.create(context,
+                                    R.drawable.avd_star
+                                ))
+                                (drawable as Animatable).start()
+
+                                favorites.add(tag)
+                            }
+
+                            favoritesFile.writeText(json.stringify(favorites))
+                        }
+                    }
+
+                    if (item.t == -1) {
+                        textView.text = item.s
+                    } else {
+                        val text = "${item.s}\n ${item.t}"
+
+                        val len = text.length
+                        val left = item.s.length
+
+                        textView.text = SpannableString(text).apply {
+                            val s = AlignmentSpan.Standard(Layout.Alignment.ALIGN_OPPOSITE)
+                            setSpan(s, left, len, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+                            setSpan(SetLineOverlap(true), 1, len-2, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+                            setSpan(SetLineOverlap(false), len-1, len, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+                        }
                     }
                 }
             }
 
             setOnSearchListener(object : FloatingSearchView.OnSearchListener {
                 override fun onSuggestionClicked(searchSuggestion: SearchSuggestion?) {
-                    val suggestion = searchSuggestion as TagSuggestion
+                    if (searchSuggestion !is TagSuggestion)
+                        return
 
                     with(searchInputView.text) {
                         delete(if (lastIndexOf(' ') == -1) 0 else lastIndexOf(' ')+1, length)
-                        append("${suggestion.n}:${suggestion.s.replace(Regex("\\s"), "_")} ")
+                        append("${searchSuggestion.n}:${searchSuggestion.s.replace(Regex("\\s"), "_")} ")
                     }
                 }
 
@@ -872,7 +906,7 @@ class MainActivity : AppCompatActivity() {
                     if (query.isEmpty() or query.endsWith(' '))
                         swapSuggestions(json.parse(serializer, favoritesFile.readText()).map {
                             TagSuggestion(it.tag, -1, "", it.area ?: "tag")
-                        })
+                        } + SelectorSuggestion())
                 }
 
                 override fun onFocusCleared() {
