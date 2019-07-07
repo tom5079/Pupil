@@ -1,3 +1,21 @@
+/*
+ *     Pupil, Hitomi.la viewer for Android
+ *     Copyright (C) 2019  tom5079
+ *
+ *     This program is free software: you can redistribute it and/or modify
+ *     it under the terms of the GNU General Public License as published by
+ *     the Free Software Foundation, either version 3 of the License, or
+ *     (at your option) any later version.
+ *
+ *     This program is distributed in the hope that it will be useful,
+ *     but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *     GNU General Public License for more details.
+ *
+ *     You should have received a copy of the GNU General Public License
+ *     along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package xyz.quaver.pupil.ui
 
 import android.content.Intent
@@ -21,13 +39,7 @@ import kotlinx.android.synthetic.main.dialog_numberpicker.view.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
-import kotlinx.io.IOException
 import kotlinx.serialization.ImplicitReflectionSerializer
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonConfiguration
-import xyz.quaver.hitomi.GalleryBlock
-import xyz.quaver.hitomi.getGalleryBlock
 import xyz.quaver.pupil.Pupil
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.adapters.ReaderAdapter
@@ -37,8 +49,8 @@ import xyz.quaver.pupil.util.ItemClickSupport
 
 class ReaderActivity : AppCompatActivity() {
 
+    private var galleryID = 0
     private val images = ArrayList<String>()
-    private lateinit var galleryBlock: GalleryBlock
     private var gallerySize = 0
     private var currentPage = 0
 
@@ -66,6 +78,9 @@ class ReaderActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        title = getString(R.string.reader_loading)
+        supportActionBar?.setDisplayHomeAsUpEnabled(false)
+
         favorites = (application as Pupil).favorites
 
         window.setFlags(
@@ -76,15 +91,12 @@ class ReaderActivity : AppCompatActivity() {
 
         handleIntent(intent)
 
-        Crashlytics.setInt("GalleryID", galleryBlock.id)
+        Crashlytics.setInt("GalleryID", galleryID)
 
-        if (!::galleryBlock.isInitialized) {
+        if (galleryID == 0) {
             onBackPressed()
             return
         }
-
-        supportActionBar?.title = galleryBlock.title
-        supportActionBar?.setDisplayHomeAsUpEnabled(false)
 
         initDownloader()
 
@@ -106,25 +118,16 @@ class ReaderActivity : AppCompatActivity() {
             if (uri != null && lastPathSegment != null) {
                 val nonNumber = Regex("[^-?0-9]+")
 
-                val galleryID = when (uri.host) {
+                galleryID = when (uri.host) {
                     "hitomi.la" -> lastPathSegment.replace(nonNumber, "").toInt()
                     "히요비.asia" -> lastPathSegment.toInt()
                     "xn--9w3b15m8vo.asia" -> lastPathSegment.toInt()
                     "e-hentai.org" -> uri.pathSegments[1].toInt()
                     else -> return
                 }
-
-                runBlocking {
-                    CoroutineScope(Dispatchers.IO).launch {
-                        galleryBlock = getGalleryBlock(galleryID) ?: return@launch
-                    }.join()
-                }
             }
         } else {
-            galleryBlock = Json(JsonConfiguration.Stable).parse(
-                GalleryBlock.serializer(),
-                intent.getStringExtra("galleryblock")!!
-            )
+            galleryID = intent.getIntExtra("galleryID", 0)
         }
     }
 
@@ -148,7 +151,7 @@ class ReaderActivity : AppCompatActivity() {
         with(menu?.findItem(R.id.reader_menu_favorite)) {
             this ?: return@with
 
-            if (favorites.contains(galleryBlock.id))
+            if (favorites.contains(galleryID))
                 (icon as Animatable).start()
         }
 
@@ -176,7 +179,7 @@ class ReaderActivity : AppCompatActivity() {
                 dialog.show()
             }
             R.id.reader_menu_favorite -> {
-                val id = galleryBlock.id
+                val id = galleryID
                 val favorite = menu?.findItem(R.id.reader_menu_favorite) ?: return true
 
                 if (favorites.contains(id)) {
@@ -215,32 +218,26 @@ class ReaderActivity : AppCompatActivity() {
     }
 
     private fun initDownloader() {
-        var d: GalleryDownloader? = GalleryDownloader.get(galleryBlock.id)
+        var d: GalleryDownloader? = GalleryDownloader.get(galleryID)
 
-        if (d == null) {
-            try {
-                d = GalleryDownloader(this, galleryBlock)
-            } catch (e: IOException) {
-                Snackbar.make(reader_layout, R.string.unable_to_connect, Snackbar.LENGTH_LONG).show()
-                finish()
-                return
-            }
-        }
+        if (d == null)
+            d = GalleryDownloader(this, galleryID)
 
         downloader = d.apply {
             onReaderLoadedHandler = {
                 CoroutineScope(Dispatchers.Main).launch {
+                    title = it.title
                     with(reader_download_progressbar) {
-                        max = it.size
+                        max = it.readerItems.size
                         progress = 0
                     }
                     with(reader_progressbar) {
-                        max = it.size
+                        max = it.readerItems.size
                         progress = 0
                     }
 
-                    gallerySize = it.size
-                    menu?.findItem(R.id.reader_menu_page_indicator)?.title = "$currentPage/${it.size}"
+                    gallerySize = it.readerItems.size
+                    menu?.findItem(R.id.reader_menu_page_indicator)?.title = "$currentPage/${it.readerItems.size}"
                 }
             }
             onProgressHandler = {
@@ -262,8 +259,7 @@ class ReaderActivity : AppCompatActivity() {
                 }
             }
             onErrorHandler = {
-                if (it is IOException)
-                    Snackbar.make(reader_layout, R.string.unable_to_connect, Snackbar.LENGTH_LONG).show()
+                Snackbar.make(reader_layout, it.message ?: it.javaClass.name, Snackbar.LENGTH_INDEFINITE).show()
                 downloader.download = false
             }
             onCompleteHandler = {
@@ -317,6 +313,11 @@ class ReaderActivity : AppCompatActivity() {
                 override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
                     super.onScrolled(recyclerView, dx, dy)
 
+                    if (dy < 0)
+                        this@ReaderActivity.reader_fab.showMenuButton(true)
+                    else if (dy > 0)
+                        this@ReaderActivity.reader_fab.hideMenuButton(true)
+
                     val layoutManager = recyclerView.layoutManager as LinearLayoutManager
 
                     if (layoutManager.findFirstVisibleItemPosition() == -1)
@@ -341,18 +342,24 @@ class ReaderActivity : AppCompatActivity() {
                 }
         }
 
-        reader_fab_fullscreen.setOnClickListener {
-            isFullscreen = true
-            fullscreen(isFullscreen)
+        with(reader_fab_download) {
+            setImageResource(R.drawable.ic_download)
+            setOnClickListener {
+                downloader.download = !downloader.download
 
-            reader_fab.close(true)
+                if (!downloader.download)
+                    downloader.clearNotification()
+            }
         }
 
-        reader_fab_download.setOnClickListener {
-            downloader.download = !downloader.download
+        with(reader_fab_fullscreen) {
+            setImageResource(R.drawable.ic_fullscreen)
+            setOnClickListener {
+                isFullscreen = true
+                fullscreen(isFullscreen)
 
-            if (!downloader.download)
-                downloader.clearNotification()
+                this@ReaderActivity.reader_fab.close(true)
+            }
         }
     }
 
