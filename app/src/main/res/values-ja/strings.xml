@@ -80,4 +80,7 @@
     <string name="settings_lock_none">なし</string>
     <string name="settings_lock_remove_message">ロックを無効にしますか？</string>
     <string name="reader_loading">ロード中</string>
+    <string name="main_menu_sort">ソート</string>
+    <string name="main_menu_sort_newest">投稿日時順</string>
+    <string name="main_menu_sort_popular">人気順</string>
 </resources>

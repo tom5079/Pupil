@@ -39,6 +39,7 @@
             android:layout_width="match_parent"
             android:layout_height="4dp"
             android:progressTint="@color/material_green_a700"
+            tools:ignore="UnusedAttribute"
             android:visibility="gone"/>
 
     </LinearLayout>
@@ -55,7 +56,6 @@
             android:id="@+id/reader_fab_download"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            app:srcCompat="@drawable/ic_downloading"
             app:fab_label="@string/reader_fab_download"
             app:fab_size="mini"/>
 
@@ -63,7 +63,6 @@
             android:id="@+id/reader_fab_fullscreen"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            app:srcCompat="@drawable/ic_fullscreen"
             app:fab_label="@string/reader_fab_fullscreen"
             app:fab_size="mini"/>
 
