@@ -19,7 +19,6 @@
 package xyz.quaver.pupil.adapters
 
 import android.app.AlertDialog
-import android.graphics.BitmapFactory
 import android.graphics.drawable.Drawable
 import android.util.SparseBooleanArray
 import android.view.LayoutInflater
