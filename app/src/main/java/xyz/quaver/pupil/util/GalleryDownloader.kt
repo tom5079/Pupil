@@ -110,6 +110,12 @@ class GalleryDownloader(
                 //Check cache
                 val cache = File(getCachedGallery(this@GalleryDownloader, galleryID), "reader.json")
 
+                try {
+                    json.parse(serializer, cache.readText())
+                } catch(e: Exception) {
+                    cache.delete()
+                }
+
                 if (cache.exists()) {
                     val cached = json.parse(serializer, cache.readText())
 
