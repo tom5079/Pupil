@@ -40,19 +40,25 @@ fun checkUpdate(url: String) : JsonObject? {
 
     return releases.firstOrNull {
         if (BuildConfig.PRERELEASE) {
-            BuildConfig.VERSION_NAME != it.jsonObject["tag_name"]?.content
+            true
         } else {
-            it.jsonObject["prerelease"]?.boolean == false &&
-                    BuildConfig.VERSION_NAME != (it.jsonObject["tag_name"]?.content ?: "")
+            it.jsonObject["prerelease"]?.boolean == false
         }
-    }?.jsonObject
+    }?.let {
+        if (it.jsonObject["tag_name"]?.content == BuildConfig.VERSION_NAME)
+            null
+        else
+            it.jsonObject
+    }
 }
 
 fun getApkUrl(releases: JsonObject) : Pair<String?, String?>? {
-    releases["assets"]?.jsonArray?.forEach {
-        if (Regex("Pupil-v(\\d+\\.)+\\d+\\.apk").matches(it.jsonObject["name"]?.content ?: ""))
-            return Pair(it.jsonObject["browser_download_url"]?.content, it.jsonObject["name"]?.content)
+    return releases["assets"]?.jsonArray?.firstOrNull {
+        Regex("Pupil-v(\\d+\\.)+\\d+\\.apk").matches(it.jsonObject["name"]?.content ?: "")
+    }.let {
+        if (it == null)
+            null
+        else
+            Pair(it.jsonObject["browser_download_url"]?.content, it.jsonObject["name"]?.content)
     }
-
-    return null
 }
