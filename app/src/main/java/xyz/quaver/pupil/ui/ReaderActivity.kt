@@ -25,7 +25,6 @@ import android.os.Bundle
 import android.view.*
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.ContextCompat
 import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.PagerSnapHelper
@@ -40,7 +39,6 @@ import kotlinx.android.synthetic.main.dialog_numberpicker.view.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.io.IOException
 import kotlinx.serialization.ImplicitReflectionSerializer
 import xyz.quaver.pupil.Pupil
 import xyz.quaver.pupil.R
@@ -222,15 +220,8 @@ class ReaderActivity : AppCompatActivity() {
     private fun initDownloader() {
         var d: GalleryDownloader? = GalleryDownloader.get(galleryID)
 
-        if (d == null) {
-            try {
-                d = GalleryDownloader(this, galleryID)
-            } catch (e: IOException) {
-                Snackbar.make(reader_layout, R.string.unable_to_connect, Snackbar.LENGTH_LONG).show()
-                finish()
-                return
-            }
-        }
+        if (d == null)
+            d = GalleryDownloader(this, galleryID)
 
         downloader = d.apply {
             onReaderLoadedHandler = {
@@ -268,8 +259,7 @@ class ReaderActivity : AppCompatActivity() {
                 }
             }
             onErrorHandler = {
-                if (it is IOException)
-                    Snackbar.make(reader_layout, R.string.unable_to_connect, Snackbar.LENGTH_LONG).show()
+                Snackbar.make(reader_layout, it.message ?: it.javaClass.name, Snackbar.LENGTH_INDEFINITE).show()
                 downloader.download = false
             }
             onCompleteHandler = {
@@ -322,6 +312,11 @@ class ReaderActivity : AppCompatActivity() {
             addOnScrollListener(object: RecyclerView.OnScrollListener() {
                 override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
                     super.onScrolled(recyclerView, dx, dy)
+
+                    if (dy < 0)
+                        this@ReaderActivity.reader_fab.showMenuButton(true)
+                    else if (dy > 0)
+                        this@ReaderActivity.reader_fab.hideMenuButton(true)
 
                     val layoutManager = recyclerView.layoutManager as LinearLayoutManager
 

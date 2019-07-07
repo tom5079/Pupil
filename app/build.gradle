@@ -13,7 +13,7 @@ android {
         applicationId "xyz.quaver.pupil"
         minSdkVersion 16
         targetSdkVersion 29
-        versionCode 20
+        versionCode 21
         versionName "2.12"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         multiDexEnabled true
@@ -23,6 +23,9 @@ android {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+        buildTypes.each {
+            it.buildConfigField('boolean', 'PRERELEASE', 'true')
         }
     }
     kotlinOptions {
