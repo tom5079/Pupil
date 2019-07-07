@@ -2,15 +2,19 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
 	xmlns:app="http://schemas.android.com/apk/res-auto">
 
-	<item android:id="@+id/main_menu_jump"
-		android:icon="@drawable/ic_jump"
-		android:title="@string/main_jump_title"
-		app:showAsAction="ifRoom"/>
-
-	<item android:id="@+id/main_menu_id"
-		android:icon="@drawable/ic_numeric"
-		android:title="@string/main_open_gallery_by_id"
-		app:showAsAction="ifRoom"/>
+	<item
+		android:id="@+id/main_menu_sort"
+		android:title="@string/main_menu_sort">
+		<menu>
+			<group android:checkableBehavior="single">
+				<item android:id="@+id/main_menu_sort_newest"
+					android:title="@string/main_menu_sort_newest"
+					android:checked="true"/>
+				<item android:id="@+id/main_menu_sort_popular"
+					android:title="@string/main_menu_sort_popular"/>
+			</group>
+		</menu>
+	</item>
 
 	<item
 		android:id="@+id/main_menu_settings"

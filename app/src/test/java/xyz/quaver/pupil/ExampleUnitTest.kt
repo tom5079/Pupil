@@ -32,7 +32,10 @@ class ExampleUnitTest {
 
     @Test
     fun test() {
+        val current = "0.1"
+        val latest = "0.2"
 
+        print(current < latest)
     }
 
 }
