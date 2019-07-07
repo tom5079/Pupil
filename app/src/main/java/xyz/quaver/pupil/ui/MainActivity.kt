@@ -900,6 +900,7 @@ class MainActivity : AppCompatActivity() {
                     else
                         setImageResource(R.drawable.ic_star_empty)
 
+                    visibility = View.VISIBLE
                     rotation = 0f
                     isEnabled = true
 
