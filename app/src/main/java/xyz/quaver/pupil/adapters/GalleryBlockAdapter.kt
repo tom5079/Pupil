@@ -95,6 +95,13 @@ class GalleryBlockAdapter(private val galleries: List<Pair<GalleryBlock, Deferre
                 val readerCache = { File(getCachedGallery(context, galleryBlock.id), "reader.json") }
                 val imageCache = { File(getCachedGallery(context, galleryBlock.id), "images") }
 
+                try {
+                   Json(JsonConfiguration.Stable)
+                        .parse(Reader.serializer(), readerCache.invoke().readText())
+                } catch(e: Exception) {
+                    readerCache.invoke().delete()
+                }
+
                 if (readerCache.invoke().exists()) {
                     val reader = Json(JsonConfiguration.Stable)
                         .parse(Reader.serializer(), readerCache.invoke().readText())
@@ -146,8 +153,6 @@ class GalleryBlockAdapter(private val galleries: List<Pair<GalleryBlock, Deferre
                                         }
                                     } else
                                         view.galleryblock_progress_complete.visibility = View.INVISIBLE
-
-                                    null
                                 }
                             }
                         }
