@@ -1,3 +1,21 @@
+/*
+ *     Pupil, Hitomi.la viewer for Android
+ *     Copyright (C) 2019  tom5079
+ *
+ *     This program is free software: you can redistribute it and/or modify
+ *     it under the terms of the GNU General Public License as published by
+ *     the Free Software Foundation, either version 3 of the License, or
+ *     (at your option) any later version.
+ *
+ *     This program is distributed in the hope that it will be useful,
+ *     but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *     GNU General Public License for more details.
+ *
+ *     You should have received a copy of the GNU General Public License
+ *     along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package xyz.quaver.pupil.util
 
 import android.app.PendingIntent
@@ -13,12 +31,13 @@ import kotlinx.coroutines.*
 import kotlinx.io.IOException
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonConfiguration
-import kotlinx.serialization.list
-import xyz.quaver.hitomi.*
+import xyz.quaver.hitomi.Reader
+import xyz.quaver.hitomi.getReader
+import xyz.quaver.hitomi.getReferer
 import xyz.quaver.hiyobi.cookie
 import xyz.quaver.hiyobi.user_agent
-import xyz.quaver.pupil.R
 import xyz.quaver.pupil.Pupil
+import xyz.quaver.pupil.R
 import xyz.quaver.pupil.ui.ReaderActivity
 import java.io.File
 import java.io.FileOutputStream
@@ -30,7 +49,7 @@ import kotlin.concurrent.schedule
 
 class GalleryDownloader(
     base: Context,
-    private val galleryBlock: GalleryBlock,
+    private val galleryID: Int,
     _notify: Boolean = false
 ) : ContextWrapper(base) {
 
@@ -41,10 +60,10 @@ class GalleryDownloader(
         set(value) {
             if (value) {
                 field = true
-                notificationManager.notify(galleryBlock.id, notificationBuilder.build())
+                notificationManager.notify(galleryID, notificationBuilder.build())
 
-                val data = getCachedGallery(this, galleryBlock.id)
-                val cache = File(cacheDir, "imageCache/${galleryBlock.id}")
+                val data = getCachedGallery(this, galleryID)
+                val cache = File(cacheDir, "imageCache/$galleryID")
 
                 if (File(cache, "images").exists() && !data.exists()) {
                     cache.copyRecursively(data, true)
@@ -54,7 +73,7 @@ class GalleryDownloader(
                 if (reader?.isActive == false && downloadJob?.isActive != true)
                     field = false
 
-                downloads.add(galleryBlock.id)
+                downloads.add(galleryID)
             } else {
                 field = false
             }
@@ -78,60 +97,64 @@ class GalleryDownloader(
     companion object : SparseArray<GalleryDownloader>()
 
     init {
-        put(galleryBlock.id, this)
+        put(galleryID, this)
 
         initNotification()
 
         reader = CoroutineScope(Dispatchers.IO).async {
-            download = _notify
-            val json = Json(JsonConfiguration.Stable)
-            val serializer = ReaderItem.serializer().list
+            try {
+                download = _notify
+                val json = Json(JsonConfiguration.Stable)
+                val serializer = Reader.serializer()
 
-            //Check cache
-            val cache = File(getCachedGallery(this@GalleryDownloader, galleryBlock.id), "reader.json")
+                //Check cache
+                val cache = File(getCachedGallery(this@GalleryDownloader, galleryID), "reader.json")
 
-            if (cache.exists()) {
-                val cached = json.parse(serializer, cache.readText())
+                if (cache.exists()) {
+                    val cached = json.parse(serializer, cache.readText())
 
-                if (cached.isNotEmpty()) {
-                    useHiyobi = when {
-                        cached.first().url.contains("hitomi.la") -> false
-                        else -> true
+                    if (cached.readerItems.isNotEmpty()) {
+                        useHiyobi = when {
+                            cached.readerItems[0].url.contains("hitomi.la") -> false
+                            else -> true
+                        }
+
+                        onReaderLoadedHandler?.invoke(cached)
+
+                        return@async cached
                     }
-
-                    onReaderLoadedHandler?.invoke(cached)
-
-                    return@async cached
                 }
-            }
 
-            //Cache doesn't exist. Load from internet
-            val reader = when {
-                useHiyobi -> {
-                    xyz.quaver.hiyobi.getReader(galleryBlock.id).let {
-                        when {
-                            it.isEmpty() -> {
-                                useHiyobi = false
-                                getReader(galleryBlock.id)
+                //Cache doesn't exist. Load from internet
+                val reader = when {
+                    useHiyobi -> {
+                        xyz.quaver.hiyobi.getReader(galleryID).let {
+                            when {
+                                it.readerItems.isEmpty() -> {
+                                    useHiyobi = false
+                                    getReader(galleryID)
+                                }
+                                else -> it
                             }
-                            else -> it
                         }
                     }
+                    else -> {
+                        getReader(galleryID)
+                    }
                 }
-                else -> {
-                    getReader(galleryBlock.id)
+
+                if (reader.readerItems.isNotEmpty()) {
+                    //Save cache
+                    if (cache.parentFile?.exists() == false)
+                        cache.parentFile!!.mkdirs()
+
+                    cache.writeText(json.stringify(serializer, reader))
                 }
+
+                reader
+            } catch (e: Exception) {
+                Reader("", listOf())
             }
-
-            if (reader.isNotEmpty()) {
-                //Save cache
-                if (cache.parentFile?.exists() == false)
-                    cache.parentFile!!.mkdirs()
-
-                cache.writeText(json.stringify(serializer, reader))
-            }
-
-            reader
         }
     }
 
@@ -141,29 +164,22 @@ class GalleryDownloader(
         downloadJob = CoroutineScope(Dispatchers.Default).launch {
             val reader = reader!!.await()
 
-            if (reader.isEmpty())
-                onErrorHandler?.invoke(IOException("Couldn't retrieve Reader"))
+            if (reader.readerItems.isEmpty()) {
+                onErrorHandler?.invoke(IOException(getString(R.string.unable_to_connect)))
+                return@launch
+            }
 
             val list = ArrayList<String>()
 
             onReaderLoadedHandler?.invoke(reader)
 
             notificationBuilder
-                .setProgress(reader.size, 0, false)
-                .setContentText("0/${reader.size}")
+                .setProgress(reader.readerItems.size, 0, false)
+                .setContentText("0/${reader.readerItems.size}")
 
-            reader.chunked(4).forEachIndexed { chunkIndex, chunked ->
+            reader.readerItems.chunked(4).forEachIndexed { chunkIndex, chunked ->
                 chunked.mapIndexed { i, it ->
                     val index = chunkIndex*4+i
-
-                    onProgressHandler?.invoke(index)
-
-                    notificationBuilder
-                        .setProgress(reader.size, index, false)
-                        .setContentText("$index/${reader.size}")
-
-                    if (download)
-                        notificationManager.notify(galleryBlock.id, notificationBuilder.build())
 
                     async(Dispatchers.IO) {
                         val url = if (it.galleryInfo?.haswebp == 1) webpUrlFromUrl(it.url) else it.url
@@ -171,7 +187,7 @@ class GalleryDownloader(
                         val name = "$index".padStart(4, '0')
                         val ext = url.split('.').last()
 
-                        val cache = File(getCachedGallery(this@GalleryDownloader, galleryBlock.id), "images/$name.$ext")
+                        val cache = File(getCachedGallery(this@GalleryDownloader, galleryID), "images/$name.$ext")
 
                         if (!cache.exists())
                             try {
@@ -180,7 +196,7 @@ class GalleryDownloader(
                                         setRequestProperty("User-Agent", user_agent)
                                         setRequestProperty("Cookie", cookie)
                                     } else
-                                        setRequestProperty("Referer", getReferer(galleryBlock.id))
+                                        setRequestProperty("Referer", getReferer(galleryID))
 
                                     if (cache.parentFile?.exists() == false)
                                         cache.parentFile!!.mkdirs()
@@ -193,31 +209,43 @@ class GalleryDownloader(
                                 onErrorHandler?.invoke(e)
 
                                 notificationBuilder
-                                    .setContentTitle(galleryBlock.title)
+                                    .setContentTitle(reader.title)
                                     .setContentText(getString(R.string.reader_notification_error))
                                     .setProgress(0, 0, false)
 
-                                notificationManager.notify(galleryBlock.id, notificationBuilder.build())
+                                notificationManager.notify(galleryID, notificationBuilder.build())
                             }
 
                         cache.absolutePath
                     }
                 }.forEach {
                     list.add(it.await())
+
+                    val index = list.size
+
+                    onProgressHandler?.invoke(index)
+
+                    notificationBuilder
+                        .setProgress(reader.readerItems.size, index, false)
+                        .setContentText("$index/${reader.readerItems.size}")
+
+                    if (download)
+                        notificationManager.notify(galleryID, notificationBuilder.build())
+
                     onDownloadedHandler?.invoke(list)
                 }
             }
 
             Timer(false).schedule(1000) {
                 notificationBuilder
-                    .setContentTitle(galleryBlock.title)
+                    .setContentTitle(reader.title)
                     .setContentText(getString(R.string.reader_notification_complete))
                     .setProgress(0, 0, false)
 
                 if (download) {
-                    File(cacheDir, "imageCache/${galleryBlock.id}").let {
+                    File(cacheDir, "imageCache/${galleryID}").let {
                         if (it.exists()) {
-                            val target = File(getDownloadDirectory(this@GalleryDownloader), galleryBlock.id.toString())
+                            val target = File(getDownloadDirectory(this@GalleryDownloader), galleryID.toString())
 
                             if (!target.exists())
                                 target.mkdirs()
@@ -227,7 +255,7 @@ class GalleryDownloader(
                         }
                     }
 
-                    notificationManager.notify(galleryBlock.id, notificationBuilder.build())
+                    notificationManager.notify(galleryID, notificationBuilder.build())
 
                     download = false
                 }
@@ -235,20 +263,20 @@ class GalleryDownloader(
                 onCompleteHandler?.invoke()
             }
 
-            remove(galleryBlock.id)
+            remove(galleryID)
         }
     }
 
     fun cancel() {
         downloadJob?.cancel()
 
-        remove(galleryBlock.id)
+        remove(galleryID)
     }
 
     suspend fun cancelAndJoin() {
         downloadJob?.cancelAndJoin()
 
-        remove(galleryBlock.id)
+        remove(galleryID)
     }
 
     fun invokeOnReaderLoaded() {
@@ -258,7 +286,7 @@ class GalleryDownloader(
     }
 
     fun clearNotification() {
-        notificationManager.cancel(galleryBlock.id)
+        notificationManager.cancel(galleryID)
     }
 
     fun invokeOnNotifyChanged() {
@@ -267,22 +295,28 @@ class GalleryDownloader(
 
     private fun initNotification() {
         val intent = Intent(this, ReaderActivity::class.java).apply {
-            putExtra("galleryblock", Json(JsonConfiguration.Stable).stringify(GalleryBlock.serializer(), galleryBlock))
+            putExtra("galleryID", galleryID)
         }
         val pendingIntent = TaskStackBuilder.create(this).run {
             addNextIntentWithParentStack(intent)
             getPendingIntent(0, PendingIntent.FLAG_UPDATE_CURRENT)
         }
 
+        notificationManager = NotificationManagerCompat.from(this)
+
         notificationBuilder = NotificationCompat.Builder(this, "download").apply {
-            setContentTitle(galleryBlock.title)
+            setContentTitle(getString(R.string.reader_loading))
             setContentText(getString(R.string.reader_notification_text))
             setSmallIcon(R.drawable.ic_download)
             setContentIntent(pendingIntent)
             setProgress(0, 0, true)
             priority = NotificationCompat.PRIORITY_LOW
         }
-        notificationManager = NotificationManagerCompat.from(this)
+
+        CoroutineScope(Dispatchers.Default).launch {
+            while (reader == null) ;
+            notificationBuilder.setContentTitle(reader.await().title)
+        }
     }
 
 }

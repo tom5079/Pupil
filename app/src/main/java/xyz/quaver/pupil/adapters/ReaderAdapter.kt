@@ -1,13 +1,31 @@
+/*
+ *     Pupil, Hitomi.la viewer for Android
+ *     Copyright (C) 2019  tom5079
+ *
+ *     This program is free software: you can redistribute it and/or modify
+ *     it under the terms of the GNU General Public License as published by
+ *     the Free Software Foundation, either version 3 of the License, or
+ *     (at your option) any later version.
+ *
+ *     This program is distributed in the hope that it will be useful,
+ *     but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *     GNU General Public License for more details.
+ *
+ *     You should have received a copy of the GNU General Public License
+ *     along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package xyz.quaver.pupil.adapters
 
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import androidx.recyclerview.widget.RecyclerView
+import androidx.swiperefreshlayout.widget.CircularProgressDrawable
+import com.bumptech.glide.Glide
+import com.bumptech.glide.load.engine.DiskCacheStrategy
 import xyz.quaver.pupil.R
 
 class ReaderAdapter(private val images: List<String>) : RecyclerView.Adapter<ReaderAdapter.ViewHolder>() {
@@ -25,47 +43,19 @@ class ReaderAdapter(private val images: List<String>) : RecyclerView.Adapter<Rea
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-
-        fun calculateInSampleSize(options: BitmapFactory.Options, reqWidth: Int, reqHeight: Int): Int {
-            // Raw height and width of image
-            val (height: Int, width: Int) = options.run { outHeight to outWidth }
-            var inSampleSize = 1
-
-            if (height > reqHeight || width > reqWidth) {
-
-                val halfHeight: Int = height / 2
-                val halfWidth: Int = width / 2
-
-                // Calculate the largest inSampleSize value that is a power of 2 and keeps both
-                // height and width larger than the requested height and width.
-                while (halfHeight / inSampleSize >= reqHeight && halfWidth / inSampleSize >= reqWidth) {
-                    inSampleSize *= 2
-                }
-            }
-
-            return inSampleSize
+        val progressDrawable = CircularProgressDrawable(holder.view.context).apply {
+            strokeWidth = 10f
+            centerRadius = 100f
+            start()
         }
 
-        with(holder.view as ImageView) {
-            val options = BitmapFactory.Options()
-
-            options.inJustDecodeBounds = true
-            BitmapFactory.decodeFile(images[position], options)
-
-            val (reqWidth, reqHeight) = context.resources.displayMetrics.let {
-                Pair(it.widthPixels, it.heightPixels)
-            }
-
-            options.inSampleSize = calculateInSampleSize(options, reqWidth, reqHeight)
-
-            options.inPreferredConfig = Bitmap.Config.RGB_565
-
-            options.inJustDecodeBounds = false
-
-            val image = BitmapFactory.decodeFile(images[position], options)
-
-            setImageBitmap(image)
-        }
+        Glide.with(holder.view)
+            .load(images[position])
+            .diskCacheStrategy(DiskCacheStrategy.NONE)
+            .skipMemoryCache(true)
+            .placeholder(progressDrawable)
+            .error(R.drawable.image_broken_variant)
+            .into(holder.view as ImageView)
     }
 
     override fun getItemCount() = images.size

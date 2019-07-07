@@ -1,9 +1,24 @@
+/*
+ *    Copyright 2019 tom5079
+ *
+ *    Licensed under the Apache License, Version 2.0 (the "License");
+ *    you may not use this file except in compliance with the License.
+ *    You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *    Unless required by applicable law or agreed to in writing, software
+ *    distributed under the License is distributed on an "AS IS" BASIS,
+ *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *    See the License for the specific language governing permissions and
+ *    limitations under the License.
+ */
+
+@file:Suppress("UNUSED_VARIABLE")
+
 package xyz.quaver.hitomi
 
 import org.junit.Test
-import java.net.InetAddress
-import java.net.UnknownHostException
-
 
 class UnitTest {
     @Test
@@ -11,21 +26,11 @@ class UnitTest {
 
     }
 
-    private fun getByIp(host: String): InetAddress {
-        try {
-            return InetAddress.getByName(host)
-        } catch (e: UnknownHostException) {
-            // unlikely
-            throw RuntimeException(e)
-        }
-
-    }
-
     @Test
     fun test_nozomi() {
-        val nozomi = fetchNozomi(start = 0, count = 5)
+        val nozomi = getGalleryIDsFromNozomi(null, "popular", "all")
 
-        nozomi.first
+        print(nozomi.size)
     }
 
     @Test
@@ -44,7 +49,7 @@ class UnitTest {
 
     @Test
     fun test_doSearch() {
-        val r = doSearch("female:loli female:bondage language:korean -male:yaoi -male:guro -female:guro")
+        val r = doSearch("female:loli female:bondage language:korean -male:yaoi -male:guro -female:guro", true)
 
         print(r.size)
     }
@@ -72,8 +77,6 @@ class UnitTest {
 
     @Test
     fun test_hiyobi() {
-        xyz.quaver.hiyobi.getReader(1415416).forEach {
-            println(it.url)
-        }
+
     }
 }
