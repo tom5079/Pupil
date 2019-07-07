@@ -102,55 +102,59 @@ class GalleryDownloader(
         initNotification()
 
         reader = CoroutineScope(Dispatchers.IO).async {
-            download = _notify
-            val json = Json(JsonConfiguration.Stable)
-            val serializer = Reader.serializer()
+            try {
+                download = _notify
+                val json = Json(JsonConfiguration.Stable)
+                val serializer = Reader.serializer()
 
-            //Check cache
-            val cache = File(getCachedGallery(this@GalleryDownloader, galleryID), "reader.json")
+                //Check cache
+                val cache = File(getCachedGallery(this@GalleryDownloader, galleryID), "reader.json")
 
-            if (cache.exists()) {
-                val cached = json.parse(serializer, cache.readText())
+                if (cache.exists()) {
+                    val cached = json.parse(serializer, cache.readText())
 
-                if (cached.readerItems.isNotEmpty()) {
-                    useHiyobi = when {
-                        cached.readerItems[0].url.contains("hitomi.la") -> false
-                        else -> true
+                    if (cached.readerItems.isNotEmpty()) {
+                        useHiyobi = when {
+                            cached.readerItems[0].url.contains("hitomi.la") -> false
+                            else -> true
+                        }
+
+                        onReaderLoadedHandler?.invoke(cached)
+
+                        return@async cached
                     }
-
-                    onReaderLoadedHandler?.invoke(cached)
-
-                    return@async cached
                 }
-            }
 
-            //Cache doesn't exist. Load from internet
-            val reader = when {
-                useHiyobi -> {
-                    xyz.quaver.hiyobi.getReader(galleryID).let {
-                        when {
-                            it.readerItems.isEmpty() -> {
-                                useHiyobi = false
-                                getReader(galleryID)
+                //Cache doesn't exist. Load from internet
+                val reader = when {
+                    useHiyobi -> {
+                        xyz.quaver.hiyobi.getReader(galleryID).let {
+                            when {
+                                it.readerItems.isEmpty() -> {
+                                    useHiyobi = false
+                                    getReader(galleryID)
+                                }
+                                else -> it
                             }
-                            else -> it
                         }
                     }
+                    else -> {
+                        getReader(galleryID)
+                    }
                 }
-                else -> {
-                    getReader(galleryID)
+
+                if (reader.readerItems.isNotEmpty()) {
+                    //Save cache
+                    if (cache.parentFile?.exists() == false)
+                        cache.parentFile!!.mkdirs()
+
+                    cache.writeText(json.stringify(serializer, reader))
                 }
+
+                reader
+            } catch (e: Exception) {
+                Reader("", listOf())
             }
-
-            if (reader.readerItems.isNotEmpty()) {
-                //Save cache
-                if (cache.parentFile?.exists() == false)
-                    cache.parentFile!!.mkdirs()
-
-                cache.writeText(json.stringify(serializer, reader))
-            }
-
-            reader
         }
     }
 
@@ -160,8 +164,10 @@ class GalleryDownloader(
         downloadJob = CoroutineScope(Dispatchers.Default).launch {
             val reader = reader!!.await()
 
-            if (reader.readerItems.isEmpty())
-                onErrorHandler?.invoke(IOException("Couldn't retrieve Reader"))
+            if (reader.readerItems.isEmpty()) {
+                onErrorHandler?.invoke(IOException(getString(R.string.unable_to_connect)))
+                return@launch
+            }
 
             val list = ArrayList<String>()
 

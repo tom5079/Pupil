@@ -19,9 +19,6 @@
 package xyz.quaver.hitomi
 
 import org.junit.Test
-import java.net.InetAddress
-import java.net.UnknownHostException
-
 
 class UnitTest {
     @Test
@@ -31,9 +28,9 @@ class UnitTest {
 
     @Test
     fun test_nozomi() {
-        val nozomi = fetchNozomi(start = 0, count = 5)
+        val nozomi = getGalleryIDsFromNozomi(null, "popular", "all")
 
-        nozomi.first
+        print(nozomi.size)
     }
 
     @Test
@@ -52,7 +49,7 @@ class UnitTest {
 
     @Test
     fun test_doSearch() {
-        val r = doSearch("female:loli female:bondage language:korean -male:yaoi -male:guro -female:guro")
+        val r = doSearch("female:loli female:bondage language:korean -male:yaoi -male:guro -female:guro", true)
 
         print(r.size)
     }

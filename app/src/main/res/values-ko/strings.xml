@@ -54,7 +54,7 @@
     <string name="unable_to_connect">hitomi.la에 연결할 수 없습니다</string>
     <string name="main_move">%1$d 페이지로 이동</string>
     <string name="https_block_alert_title">접속 불가 현상 안내</string>
-    <string name="https_block_alert">최근 https 차단으로 접속이 안 되는 경우가 발생하고 있습니다\n이 경우 플레이스토어에서 SNIper앱을 이용하시면 정상이용이 가능합니다.</string>
+    <string name="https_block_alert">최근 https 차단으로 접속이 안 되는 경우가 발생하고 있습니다 이 경우 플레이스토어에서 Intra앱을 이용하시면 정상이용이 가능합니다.</string>
     <string name="main_dialog_export">갤러리 내보내기</string>
     <string name="main_export_complete">내보내기 완료</string>
     <string name="main_export_open_folder">폴더 열기</string>
@@ -80,4 +80,7 @@
     <string name="settings_lock_none">없음</string>
     <string name="settings_lock_remove_message">잠금을 해제할까요?</string>
     <string name="reader_loading">로딩중</string>
+    <string name="main_menu_sort">정렬</string>
+    <string name="main_menu_sort_popular">인기순</string>
+    <string name="main_menu_sort_newest">시간순</string>
 </resources>

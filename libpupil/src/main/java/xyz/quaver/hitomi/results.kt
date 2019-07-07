@@ -16,13 +16,13 @@
 
 package xyz.quaver.hitomi
 
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.runBlocking
 import java.util.*
-import java.util.concurrent.Executors
 
-fun doSearch(query: String) : List<Int> {
-    val time = System.currentTimeMillis()
-
+fun doSearch(query: String, sortByPopularity: Boolean = false) : List<Int> {
     val terms = query
         .trim()
         .replace(Regex("""^\?"""), "")
@@ -42,7 +42,20 @@ fun doSearch(query: String) : List<Int> {
             positiveTerms.push(term)
     }
 
+    val positiveResults = positiveTerms.map {
+        CoroutineScope(Dispatchers.IO).async {
+            getGalleryIDsForQuery(it)
+        }
+    }
+
+    val negativeResults = negativeTerms.map {
+        CoroutineScope(Dispatchers.IO).async {
+            getGalleryIDsForQuery(it)
+        }
+    }
+
     var results = when {
+        sortByPopularity -> getGalleryIDsFromNozomi(null, "popular", "all")
         positiveTerms.isEmpty() -> getGalleryIDsFromNozomi(null, "index", "all")
         else -> getGalleryIDsForQuery(positiveTerms.poll())
     }
@@ -57,25 +70,19 @@ fun doSearch(query: String) : List<Int> {
         }
 
         //positive results
-        positiveTerms.map {
-            async(Dispatchers.IO) {
-                Pair(getGalleryIDsForQuery(it), true)
-            }
-        }+negativeTerms.map {
-            async(Dispatchers.IO) {
-                Pair(getGalleryIDsForQuery(it), false)
-            }
-        }.forEach {
-            val (result, isPositive) = it.await()
+        positiveResults.forEach {
+            val result = it.await()
 
-            when {
-                isPositive -> filterPositive(result.sorted())
-                else -> filterNegative(result.sorted())
-            }
+            filterPositive(result.sorted())
+        }
+
+        //negative results
+        negativeResults.forEach {
+            val result = it.await()
+
+            filterNegative(result.sorted())
         }
     }
-
-    println("PUPIL/SEARCH TIME ${System.currentTimeMillis() - time}ms")
 
     return results
 }

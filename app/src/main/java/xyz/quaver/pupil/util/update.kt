@@ -19,6 +19,7 @@
 package xyz.quaver.pupil.util
 
 import kotlinx.serialization.json.*
+import xyz.quaver.pupil.BuildConfig
 import java.net.URL
 
 fun getReleases(url: String) : JsonArray {
@@ -31,26 +32,27 @@ fun getReleases(url: String) : JsonArray {
     }
 }
 
-fun checkUpdate(url: String, currentVersion: String) : JsonObject? {
+fun checkUpdate(url: String) : JsonObject? {
     val releases = getReleases(url)
 
     if (releases.isEmpty())
         return null
 
-    val latestVersion = releases[0].jsonObject["tag_name"]?.content
+    return releases.firstOrNull {
+        if (BuildConfig.PRERELEASE) {
+            BuildConfig.VERSION_NAME != it.jsonObject["tag_name"]?.content
+        } else {
+            it.jsonObject["prerelease"]?.boolean == false &&
+                    BuildConfig.VERSION_NAME != (it.jsonObject["tag_name"]?.content ?: "")
+        }
+    }?.jsonObject
+}
 
-    return when {
-        currentVersion.split('-').size == 1 -> {
-            when {
-                currentVersion != latestVersion -> releases[0].jsonObject
-                else -> null
-            }
-        }
-        else -> {
-            when {
-                (currentVersion.split('-')[0] == latestVersion) -> releases[0].jsonObject
-                else -> null
-            }
-        }
+fun getApkUrl(releases: JsonObject) : Pair<String?, String?>? {
+    releases["assets"]?.jsonArray?.forEach {
+        if (Regex("Pupil-v(\\d+\\.)+\\d+\\.apk").matches(it.jsonObject["name"]?.content ?: ""))
+            return Pair(it.jsonObject["browser_download_url"]?.content, it.jsonObject["name"]?.content)
     }
+
+    return null
 }
