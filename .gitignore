@@ -14,3 +14,6 @@
 
 #Github pages
 /gh-pages
+
+#Private files
+/app/google-services.json

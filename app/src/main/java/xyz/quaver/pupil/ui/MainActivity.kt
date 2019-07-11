@@ -42,7 +42,6 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.cardview.widget.CardView
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import androidx.core.content.FileProvider
 import androidx.core.content.res.ResourcesCompat
 import androidx.core.view.GravityCompat
 import androidx.preference.PreferenceManager
@@ -50,6 +49,7 @@ import androidx.vectordrawable.graphics.drawable.AnimatedVectorDrawableCompat
 import com.arlib.floatingsearchview.FloatingSearchView
 import com.arlib.floatingsearchview.suggestions.model.SearchSuggestion
 import com.arlib.floatingsearchview.util.view.SearchInputView
+import com.bumptech.glide.Glide
 import com.google.android.material.appbar.AppBarLayout
 import com.google.android.material.snackbar.Snackbar
 import kotlinx.android.synthetic.main.activity_main.*
@@ -435,7 +435,6 @@ class MainActivity : AppCompatActivity() {
                         runOnUiThread {
                             cancelFetch()
                             clearGalleries()
-                            fetchGalleries(query, sortMode)
                             loadBlocks()
                         }
                     }
@@ -461,6 +460,8 @@ class MainActivity : AppCompatActivity() {
                                 intent.putExtra("galleryID", gallery.id)
 
                                 startActivity(intent)
+
+                                histories.add(gallery.id)
                             } catch (e: Exception) {
                                 Snackbar.make(main_layout,
                                     R.string.main_open_gallery_by_id_error, Snackbar.LENGTH_LONG).show()
@@ -479,7 +480,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun setupRecyclerView() {
         with(main_recyclerview) {
-            adapter = GalleryBlockAdapter(galleries).apply {
+            adapter = GalleryBlockAdapter(Glide.with(this@MainActivity), galleries).apply {
                 onChipClickedHandler.add {
                     runOnUiThread {
                         query = it.toQuery()
