@@ -23,12 +23,11 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import androidx.recyclerview.widget.RecyclerView
-import androidx.swiperefreshlayout.widget.CircularProgressDrawable
-import com.bumptech.glide.Glide
+import com.bumptech.glide.RequestManager
 import com.bumptech.glide.load.engine.DiskCacheStrategy
 import xyz.quaver.pupil.R
 
-class ReaderAdapter(private val images: List<String>) : RecyclerView.Adapter<ReaderAdapter.ViewHolder>() {
+class ReaderAdapter(private val glide: RequestManager, private val images: List<String>) : RecyclerView.Adapter<ReaderAdapter.ViewHolder>() {
 
     var isFullScreen = false
 
@@ -43,18 +42,12 @@ class ReaderAdapter(private val images: List<String>) : RecyclerView.Adapter<Rea
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        val progressDrawable = CircularProgressDrawable(holder.view.context).apply {
-            strokeWidth = 10f
-            centerRadius = 100f
-            start()
-        }
-
-        Glide.with(holder.view)
+        glide
             .load(images[position])
             .diskCacheStrategy(DiskCacheStrategy.NONE)
             .skipMemoryCache(true)
-            .placeholder(progressDrawable)
             .error(R.drawable.image_broken_variant)
+            .dontTransform()
             .into(holder.view as ImageView)
     }
 

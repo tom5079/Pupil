@@ -32,6 +32,7 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.vectordrawable.graphics.drawable.Animatable2Compat
 import androidx.vectordrawable.graphics.drawable.AnimatedVectorDrawableCompat
 import com.bumptech.glide.Glide
+import com.bumptech.glide.RequestManager
 import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.google.android.material.chip.Chip
 import kotlinx.android.synthetic.main.item_galleryblock.view.*
@@ -54,7 +55,7 @@ import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
 import kotlin.concurrent.schedule
 
-class GalleryBlockAdapter(private val galleries: List<Pair<GalleryBlock, Deferred<String>>>) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+class GalleryBlockAdapter(private val glide: RequestManager, private val galleries: List<Pair<GalleryBlock, Deferred<String>>>) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     enum class ViewType {
         NEXT,
@@ -65,7 +66,7 @@ class GalleryBlockAdapter(private val galleries: List<Pair<GalleryBlock, Deferre
     private lateinit var favorites: Histories
 
     inner class GalleryViewHolder(val view: CardView) : RecyclerView.ViewHolder(view) {
-        fun bind(holder: GalleryViewHolder, item: Pair<GalleryBlock, Deferred<String>>) {
+        fun bind(item: Pair<GalleryBlock, Deferred<String>>) {
             with(view) {
                 val resources = context.resources
                 val languages = resources.getStringArray(R.array.languages).map {
@@ -82,7 +83,7 @@ class GalleryBlockAdapter(private val galleries: List<Pair<GalleryBlock, Deferre
                 CoroutineScope(Dispatchers.Main).launch {
                     val cache = thumbnail.await()
 
-                    Glide.with(holder.view)
+                    glide
                         .load(cache)
                         .skipMemoryCache(true)
                         .diskCacheStrategy(DiskCacheStrategy.NONE)
@@ -354,7 +355,7 @@ class GalleryBlockAdapter(private val galleries: List<Pair<GalleryBlock, Deferre
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
         if (holder is GalleryViewHolder)
-            holder.bind(holder, galleries[position-(if (showPrev) 1 else 0)])
+            holder.bind(galleries[position-(if (showPrev) 1 else 0)])
     }
 
     override fun onViewDetachedFromWindow(holder: RecyclerView.ViewHolder) {

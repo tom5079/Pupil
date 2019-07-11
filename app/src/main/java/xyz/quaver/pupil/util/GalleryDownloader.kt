@@ -27,6 +27,7 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.app.TaskStackBuilder
 import androidx.preference.PreferenceManager
+import com.crashlytics.android.Crashlytics
 import kotlinx.coroutines.*
 import kotlinx.io.IOException
 import kotlinx.serialization.json.Json
@@ -134,14 +135,11 @@ class GalleryDownloader(
                 //Cache doesn't exist. Load from internet
                 val reader = when {
                     useHiyobi -> {
-                        xyz.quaver.hiyobi.getReader(galleryID).let {
-                            when {
-                                it.readerItems.isEmpty() -> {
-                                    useHiyobi = false
-                                    getReader(galleryID)
-                                }
-                                else -> it
-                            }
+                        try {
+                            xyz.quaver.hiyobi.getReader(galleryID)
+                        } catch(e: Exception) {
+                            useHiyobi = false
+                            getReader(galleryID)
                         }
                     }
                     else -> {
@@ -159,6 +157,7 @@ class GalleryDownloader(
 
                 reader
             } catch (e: Exception) {
+                Crashlytics.logException(e)
                 Reader("", listOf())
             }
         }
