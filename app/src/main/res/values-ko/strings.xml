@@ -83,4 +83,9 @@
     <string name="main_menu_sort">정렬</string>
     <string name="main_menu_sort_popular">인기순</string>
     <string name="main_menu_sort_newest">시간순</string>
+    <string name="update_failed">"업데이트 "</string>
+    <string name="update_failed_message">수동 업데이트가 필요합니다. APK 파일은 다운로드 폴더에 있습니다.</string>
+    <string name="ignore_update">무시</string>
+    <string name="lock_corrupted">잠금 파일이 손상되었습니다! 앱을 재설치 해 주시기 바랍니다.</string>
+    <string name="update_no_permission">권한이 부여되어 있지 않아 자동 업데이트를 진행할 수 없습니다. 홈페이지에서 직접 다운로드 받으시기 바랍니다.</string>
 </resources>
