@@ -18,6 +18,7 @@
 
 package xyz.quaver.pupil.adapters
 
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -25,6 +26,11 @@ import android.widget.ImageView
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.RequestManager
 import com.bumptech.glide.load.engine.DiskCacheStrategy
+import com.bumptech.glide.request.target.Target
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import xyz.quaver.pupil.R
 
 class ReaderAdapter(private val glide: RequestManager, private val images: List<String>) : RecyclerView.Adapter<ReaderAdapter.ViewHolder>() {
@@ -34,21 +40,27 @@ class ReaderAdapter(private val glide: RequestManager, private val images: List<
     class ViewHolder(val view: View) : RecyclerView.ViewHolder(view)
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
-        LayoutInflater.from(parent.context).inflate(
+        return LayoutInflater.from(parent.context).inflate(
             R.layout.item_reader, parent, false
         ).let {
-            return ViewHolder(it)
+            ViewHolder(it)
         }
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        glide
-            .load(images[position])
-            .diskCacheStrategy(DiskCacheStrategy.NONE)
-            .skipMemoryCache(true)
-            .error(R.drawable.image_broken_variant)
-            .dontTransform()
-            .into(holder.view as ImageView)
+        runBlocking {
+            CoroutineScope(Dispatchers.Default).launch {
+                val image = glide
+                    .load(images[position])
+                    .diskCacheStrategy(DiskCacheStrategy.NONE)
+                    .skipMemoryCache(true)
+                    .error(R.drawable.image_broken_variant)
+                    .submit()
+                    .get()
+
+                (holder.view as ImageView).setImageDrawable(image)
+            }.join()
+        }
     }
 
     override fun getItemCount() = images.size
