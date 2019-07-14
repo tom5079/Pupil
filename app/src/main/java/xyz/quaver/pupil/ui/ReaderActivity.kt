@@ -18,6 +18,7 @@
 
 package xyz.quaver.pupil.ui
 
+import android.Manifest
 import android.content.Intent
 import android.graphics.drawable.Animatable
 import android.graphics.drawable.Drawable
@@ -47,6 +48,7 @@ import xyz.quaver.pupil.adapters.ReaderAdapter
 import xyz.quaver.pupil.util.GalleryDownloader
 import xyz.quaver.pupil.util.Histories
 import xyz.quaver.pupil.util.ItemClickSupport
+import xyz.quaver.pupil.util.hasPermission
 
 class ReaderActivity : AppCompatActivity() {
 
@@ -346,6 +348,17 @@ class ReaderActivity : AppCompatActivity() {
         with(reader_fab_download) {
             setImageResource(R.drawable.ic_download)
             setOnClickListener {
+
+                if (!this@ReaderActivity.hasPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
+                    AlertDialog.Builder(this@ReaderActivity).apply {
+                        setTitle(R.string.warning)
+                        setMessage(R.string.update_no_permission)
+                        setPositiveButton(android.R.string.ok) { _, _ -> }
+                    }.show()
+
+                    return@setOnClickListener
+                }
+
                 downloader.download = !downloader.download
 
                 if (!downloader.download)
