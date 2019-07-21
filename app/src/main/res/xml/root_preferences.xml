@@ -65,6 +65,11 @@
             app:summary="@string/settings_security_mode_summary"
             app:defaultValue="true"/>
 
+        <SwitchPreference
+            app:key="dark_mode"
+            app:title="@string/settings_dark_mode_title"
+            app:summary="@string/settings_dark_mode_summary"/>
+
     </PreferenceCategory>
 
 </androidx.preference.PreferenceScreen>

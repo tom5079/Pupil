@@ -88,4 +88,15 @@
     <string name="ignore_update">無視</string>
     <string name="lock_corrupted">ロックファイルが破損されています。Pupilを再再インストールしてください。</string>
     <string name="update_no_permission">権限がないため自動アップデートを行えません。ホームページで直接ダウンロードしてください。</string>
+    <string name="settings_dark_mode_title">ダークモード</string>
+    <string name="settings_dark_mode_summary">夜にシコりたい方々へ</string>
+    <string name="gallery_details">ギャラリー情報</string>
+    <string name="gallery_artists">アーティスト</string>
+    <string name="gallery_characters">キャラクター</string>
+    <string name="gallery_groups">グループ</string>
+    <string name="gallery_language">言語</string>
+    <string name="gallery_series">シリーズ</string>
+    <string name="gallery_tags">タグ</string>
+    <string name="gallery_thumbnails">サムネイル</string>
+    <string name="gallery_related">おすすめ</string>
 </resources>

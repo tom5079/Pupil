@@ -127,7 +127,21 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        startActivityForResult(Intent(this, LockActivity::class.java), REQUEST_LOCK)
+        val lockManager = try {
+            LockManager(this)
+        } catch (e: Exception) {
+            android.app.AlertDialog.Builder(this).apply {
+                setTitle(R.string.warning)
+                setMessage(R.string.lock_corrupted)
+                setPositiveButton(android.R.string.ok) { _, _ ->
+                    finish()
+                }
+            }.show()
+            return
+        }
+
+        if (lockManager.isNotEmpty())
+            startActivityForResult(Intent(this, LockActivity::class.java), REQUEST_LOCK)
 
         checkPermissions()
 
@@ -524,7 +538,6 @@ class MainActivity : AppCompatActivity() {
             }
             ItemClickSupport.addTo(this)
                 .setOnItemClickListener { _, position, v ->
-
                     if (v !is CardView)
                         return@setOnItemClickListener
 
@@ -543,8 +556,20 @@ class MainActivity : AppCompatActivity() {
 
                     val galleryID = galleries[position].first.id
 
-                    GalleryDialog(this@MainActivity, galleryID)
-                        .show()
+                    GalleryDialog(this@MainActivity, galleryID).apply {
+                        onChipClickedHandler.add {
+                            runOnUiThread {
+                                query = it.toQuery()
+                                currentPage = 0
+
+                                cancelFetch()
+                                clearGalleries()
+                                fetchGalleries(query, sortMode)
+                                loadBlocks()
+                            }
+                            dismiss()
+                        }
+                    }.show()
 
                     true
                 }
