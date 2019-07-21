@@ -112,9 +112,11 @@ class LockManager(base: Context): ContextWrapper(base) {
         }
     }
 
-    fun empty(): Boolean {
+    fun isEmpty(): Boolean {
         return locks.isNullOrEmpty()
     }
+
+    fun isNotEmpty(): Boolean = !isEmpty()
 
     fun contains(type: Lock.Type): Boolean {
         return locks?.any { it.type == type } ?: false

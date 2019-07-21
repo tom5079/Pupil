@@ -18,20 +18,17 @@
 
 package xyz.quaver.pupil.adapters
 
-import android.app.AlertDialog
 import android.graphics.drawable.Drawable
 import android.util.SparseBooleanArray
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.ArrayAdapter
 import android.widget.LinearLayout
 import androidx.cardview.widget.CardView
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import androidx.vectordrawable.graphics.drawable.Animatable2Compat
 import androidx.vectordrawable.graphics.drawable.AnimatedVectorDrawableCompat
-import com.bumptech.glide.Glide
 import com.bumptech.glide.RequestManager
 import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.google.android.material.chip.Chip
@@ -49,6 +46,7 @@ import xyz.quaver.pupil.R
 import xyz.quaver.pupil.types.Tag
 import xyz.quaver.pupil.util.Histories
 import xyz.quaver.pupil.util.getCachedGallery
+import xyz.quaver.pupil.util.wordCapitalize
 import java.io.File
 import java.util.*
 import kotlin.collections.ArrayList
@@ -168,19 +166,6 @@ class GalleryBlockAdapter(private val glide: RequestManager, private val galleri
                         artists.isNotEmpty() -> View.VISIBLE
                         else -> View.GONE
                     }
-                    setOnClickListener {
-                        if (artists.size > 1) {
-                            AlertDialog.Builder(context).apply {
-                                setAdapter(ArrayAdapter(context, android.R.layout.select_dialog_item, artists)) { _, index ->
-                                    for (callback in onChipClickedHandler)
-                                        callback.invoke(Tag("artist", artists[index]))
-                                }
-                            }.show()
-                        } else {
-                            for(callback in onChipClickedHandler)
-                                callback.invoke(Tag("artist", artists.first()))
-                        }
-                    }
                 }
                 with(galleryblock_series) {
                     text =
@@ -191,31 +176,8 @@ class GalleryBlockAdapter(private val glide: RequestManager, private val galleri
                         series.isNotEmpty() -> View.VISIBLE
                         else -> View.GONE
                     }
-                    setOnClickListener {
-                        setOnClickListener {
-                            if (series.size > 1) {
-                                AlertDialog.Builder(context).apply {
-                                    setAdapter(ArrayAdapter(context, android.R.layout.select_dialog_item, series)) { _, index ->
-                                        for (callback in onChipClickedHandler)
-                                            callback.invoke(Tag("series", series[index]))
-                                    }
-                                }.show()
-                            } else {
-                                for(callback in onChipClickedHandler)
-                                    callback.invoke(Tag("series", series.first()))
-                            }
-                        }
-                    }
                 }
-                with(galleryblock_type) {
-                    text = resources.getString(R.string.galleryblock_type, galleryBlock.type).wordCapitalize()
-                    setOnClickListener {
-                        setOnClickListener {
-                            for(callback in onChipClickedHandler)
-                                callback.invoke(Tag("type", galleryBlock.type))
-                        }
-                    }
-                }
+                galleryblock_type.text = resources.getString(R.string.galleryblock_type, galleryBlock.type).wordCapitalize()
                 with(galleryblock_language) {
                     text =
                         resources.getString(R.string.galleryblock_language, languages[galleryBlock.language])
@@ -223,48 +185,37 @@ class GalleryBlockAdapter(private val glide: RequestManager, private val galleri
                         galleryBlock.language.isNotEmpty() -> View.VISIBLE
                         else -> View.GONE
                     }
-                    setOnClickListener {
-                        setOnClickListener {
-                            for(callback in onChipClickedHandler)
-                                callback.invoke(Tag("language", galleryBlock.language))
-                        }
-                    }
                 }
 
                 galleryblock_tag_group.removeAllViews()
                 galleryBlock.relatedTags.forEach {
-                    val tag = Tag.parse(it).let {  tag ->
-                        when {
-                            tag.area != null -> tag
-                            else -> Tag("tag", it)
+                    galleryblock_tag_group.addView(Chip(context).apply {
+                        val tag = Tag.parse(it).let {  tag ->
+                            when {
+                                tag.area != null -> tag
+                                else -> Tag("tag", it)
+                            }
                         }
-                    }
 
-                    val chip = LayoutInflater.from(context)
-                        .inflate(R.layout.tag_chip, this, false) as Chip
-
-                    val icon = when(tag.area) {
-                        "male" -> {
-                            chip.setChipBackgroundColorResource(R.color.material_blue_700)
-                            chip.setTextColor(ContextCompat.getColor(context, android.R.color.white))
-                            ContextCompat.getDrawable(context, R.drawable.ic_gender_male_white)
+                        chipIcon = when(tag.area) {
+                            "male" -> {
+                                setChipBackgroundColorResource(R.color.material_blue_700)
+                                setTextColor(ContextCompat.getColor(context, android.R.color.white))
+                                ContextCompat.getDrawable(context, R.drawable.ic_gender_male_white)
+                            }
+                            "female" -> {
+                                setChipBackgroundColorResource(R.color.material_pink_600)
+                                setTextColor(ContextCompat.getColor(context, android.R.color.white))
+                                ContextCompat.getDrawable(context, R.drawable.ic_gender_female_white)
+                            }
+                            else -> null
                         }
-                        "female" -> {
-                            chip.setChipBackgroundColorResource(R.color.material_pink_600)
-                            chip.setTextColor(ContextCompat.getColor(context, android.R.color.white))
-                            ContextCompat.getDrawable(context, R.drawable.ic_gender_female_white)
+                        text = tag.tag.wordCapitalize()
+                        setOnClickListener {
+                            for (callback in onChipClickedHandler)
+                                callback.invoke(tag)
                         }
-                        else -> null
-                    }
-
-                    chip.chipIcon = icon
-                    chip.text = tag.tag.wordCapitalize()
-                    chip.setOnClickListener {
-                        for (callback in onChipClickedHandler)
-                            callback.invoke(tag)
-                    }
-
-                    galleryblock_tag_group.addView(chip)
+                    })
                 }
 
                 galleryblock_id.text = galleryBlock.id.toString()
@@ -314,15 +265,6 @@ class GalleryBlockAdapter(private val glide: RequestManager, private val galleri
                 }
             }
         }
-    }
-
-    private fun String.wordCapitalize() : String {
-        val result = ArrayList<String>()
-
-        for (word in this.split(" "))
-            result.add(word.capitalize())
-
-        return result.joinToString(" ")
     }
 
     private val refreshTasks = HashMap<GalleryViewHolder, TimerTask>()

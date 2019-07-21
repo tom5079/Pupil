@@ -16,20 +16,27 @@
  *     along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package xyz.quaver.pupil.util
+package xyz.quaver.pupil.adapters
 
-import android.content.Context
-import android.content.pm.PackageManager
-import androidx.core.content.ContextCompat
+import android.view.ViewGroup
+import android.widget.ImageView
+import androidx.recyclerview.widget.RecyclerView
+import com.bumptech.glide.RequestManager
 
-fun Context.hasPermission(permission: String) =
-    ContextCompat.checkSelfPermission(this, permission) == PackageManager.PERMISSION_GRANTED
+class ThumbnailAdapter(private val glide: RequestManager, private val thumbnails: List<String>) : RecyclerView.Adapter<ThumbnailAdapter.ViewHolder>() {
 
-fun String.wordCapitalize() : String {
-    val result = ArrayList<String>()
+    class ViewHolder(val view: ImageView) : RecyclerView.ViewHolder(view)
 
-    for (word in this.split(" "))
-        result.add(word.capitalize())
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
+        return ViewHolder(ImageView(parent.context))
+    }
 
-    return result.joinToString(" ")
+    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+        glide
+            .load(thumbnails[position])
+            .into(holder.view)
+    }
+
+    override fun getItemCount() = thumbnails.size
+
 }

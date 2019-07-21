@@ -58,7 +58,7 @@ class LockActivity : AppCompatActivity() {
 
         when(mode) {
             null -> {
-                if (lockManager.empty()) {
+                if (lockManager.isEmpty()) {
                     setResult(RESULT_OK)
                     finish()
                     return
