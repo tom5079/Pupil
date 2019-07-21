@@ -104,6 +104,7 @@
         android:id="@+id/main_searchview"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        app:floatingSearch_backgroundColor="?attr/colorSurface"
         app:floatingSearch_searchBarMarginLeft="8dp"
         app:floatingSearch_searchBarMarginRight="8dp"
         app:floatingSearch_searchBarMarginTop="8dp"

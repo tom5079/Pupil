@@ -78,6 +78,16 @@
     <string name="search_hint">Search galleries</string>
     <string name="search_hint_with_page">Search galleries</string>
 
+    <string name="gallery_details">Details</string>
+    <string name="gallery_thumbnails">Thumbnails</string>
+    <string name="gallery_related">Related Galleries</string>
+    <string name="gallery_artists">Artists</string>
+    <string name="gallery_groups">Groups</string>
+    <string name="gallery_language">Language</string>
+    <string name="gallery_series">Series</string>
+    <string name="gallery_characters">Characters</string>
+    <string name="gallery_tags">Tags</string>
+
     <string name="galleryblock_series">Series: %1$s</string>
     <string name="galleryblock_type">Type: %1$s</string>
     <string name="galleryblock_language">Language: %1$s</string>
@@ -112,6 +122,8 @@
     <string name="settings_use_hiyobi_summary">Load images from hiyobi.me to improve loading speed (if available)</string>
     <string name="settings_security_mode_title">Enable security mode</string>
     <string name="settings_security_mode_summary">Enable security mode to make the screen invisible on recent app window</string>
+    <string name="settings_dark_mode_title">Dark mode</string>
+    <string name="settings_dark_mode_summary">Protect yourself against light attacks!</string>
 
     <string name="settings_lock_none">None</string>
     <string name="settings_lock_pattern">Pattern</string>
