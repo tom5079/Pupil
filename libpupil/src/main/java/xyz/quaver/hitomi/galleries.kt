@@ -18,6 +18,7 @@ package xyz.quaver.hitomi
 
 import org.jsoup.Jsoup
 import java.net.URL
+import java.net.URLDecoder
 
 data class Gallery(
     val related: List<Int>,
@@ -63,11 +64,11 @@ fun getGallery(galleryID: Int) : Gallery {
     val characters = doc.select(".gallery-info a[href~=^/character/]").map { it.text() }
 
     val tags = doc.select(".gallery-info a[href~=^/tag/]").map {
-        val href = it.attr("href")
+        val href = URLDecoder.decode(it.attr("href"), "UTF-8")
         href.slice(5 until href.indexOf('-'))
     }
 
-    val thumbnails = Regex("'(//tn.hitomi.la/smalltn/\\d+/\\d+.+)',")
+    val thumbnails = Regex("'(//tn.hitomi.la/smalltn/\\d+/.+)',")
         .findAll(doc.select("script").last().html())
         .map {
             protocol + it.groups[1]!!.value
