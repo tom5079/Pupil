@@ -1,74 +1,76 @@
 <!DOCTYPE html>
-<html lang="{{ site.lang | default: "en-US" }}">
-  <head>
+<html lang="{{ site.lang | default: " en-US " }}">
+
+<head>
 
     {% if site.google_analytics %}
-      <script async src="https://www.googletagmanager.com/gtag/js?id={{ site.google_analytics }}"></script>
-      <script>
+    <script async src="https://www.googletagmanager.com/gtag/js?id={{ site.google_analytics }}"></script>
+    <script>
         window.dataLayer = window.dataLayer || [];
-        function gtag(){dataLayer.push(arguments);}
+
+        function gtag() {
+            dataLayer.push(arguments);
+        }
         gtag('js', new Date());
         gtag('config', '{{ site.google_analytics }}');
-      </script>
+    </script>
     {% endif %}
     <meta charset="UTF-8">
-	
-	{% seo %}
-	
+    
+    {% seo %}
+
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#157878">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="stylesheet" href="{{ '/assets/css/style.css?v=' | append: site.github.build_revision | relative_url }}">
     <link rel="stylesheet" href="{{ '/assets/css/styles.css' | relative_url }}">
     <link rel="shortcut icon" href="/Pupil/favicon.ico" type="image/x-icon" />
-	
-    <script>
 
-      /**
-      *  RECOMMENDED CONFIGURATION VARIABLES: EDIT AND UNCOMMENT THE SECTION BELOW TO INSERT DYNAMIC VALUES FROM YOUR PLATFORM OR CMS.
-        *  LEARN WHY DEFINING THESE VARIABLES IS IMPORTANT: https://disqus.com/admin/universalcode/#configuration-variables*/
-        
-        var disqus_config = function () {
-          this.page.url = '{{ site.url }}{{ page.url }}';  // Replace PAGE_URL with your page's canonical URL variable
-          this.page.identifier = '{{ page.id }}'; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
-          this.page.language = '{{ page.lang }}';
+    <script>
+        /**
+         *  RECOMMENDED CONFIGURATION VARIABLES: EDIT AND UNCOMMENT THE SECTION BELOW TO INSERT DYNAMIC VALUES FROM YOUR PLATFORM OR CMS.
+         *  LEARN WHY DEFINING THESE VARIABLES IS IMPORTANT: https://disqus.com/admin/universalcode/#configuration-variables*/
+
+        var disqus_config = function() {
+            this.page.url = '{{ site.url }}{{ page.url }}'; // Replace PAGE_URL with your page's canonical URL variable
+            this.page.identifier = '{{ page.id }}'; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
+            this.page.language = '{{ page.lang }}';
         };
-      
+
         (function() { // DON'T EDIT BELOW THIS LINE
-        var d = document, s = d.createElement('script');
-        s.src = 'https://pupil.disqus.com/embed.js';
-        s.setAttribute('data-timestamp', +new Date());
-        (d.head || d.body).appendChild(s);
+            var d = document,
+                s = d.createElement('script');
+            s.src = 'https://pupil.disqus.com/embed.js';
+            s.setAttribute('data-timestamp', +new Date());
+            (d.head || d.body).appendChild(s);
         })();
     </script>
 
-  </head>
-  <body>
+</head>
+
+<body>
     <header class="page-header" role="banner">
-      <h1 class="project-name">{{ page.title | default: site.title | default: site.github.repository_name }}</h1>
-      <h2 class="project-tagline">{{ site.t[page.lang].header.description }}</h2>
-      {% if site.show_downloads %}
+        <a href="https://tom5079.github.io/Pupil" style="text-decoration:none; color:inherit;"><h1 class="project-name">{{ page.title | default: site.title | default: site.github.repository_name }}</h1></a>
+        <h2 class="project-tagline">{{ site.t[page.lang].header.description }}</h2>
         <a href="{{ site.github.latest_url }}" class="btn">{{ site.t[page.lang].header.download }}</a>
-        <a href="{{ site.github.issue_url }}" target="_blank" class="btn">{{ site.t[page.lang].header.issue }}</a>
-        {{ site.t[page.lang].header.or }}
+        <a href="{{ site.github.issue_url }}" target="_blank" class="btn">{{ site.t[page.lang].header.issue }}</a> {{ site.t[page.lang].header.or }}
         <a href="mailto:pupil.hentai@gmail.com" class="btn">{{ site.t[page.lang].header.email }}</a>
         <a href="{{ site.kakaotalk_url }}" class="btn">{{ site.t[page.lang].header.kakaotalk }}</a>
-      {% endif %}
     </header>
 
     <main id="content" class="main-content" role="main">
-      {{ content }}
+        {{ content }}
 
-      <footer class="site-footer">
+        <footer class="site-footer">
 
-        <div id="disqus_thread"></div>
-        <noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+            <div id="disqus_thread"></div>
+            <noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
 
-        {% if site.github.is_project_page %}
-          <span class="site-footer-owner">{{ site.github.repository_name }} is maintained by <a href="{{ site.github.owner_url }}">{{ site.github.owner_name }}</a>.</span>
-        {% endif %}
-        <span class="site-footer-credits">This page was generated by <a href="https://pages.github.com">GitHub Pages</a>.</span>
-      </footer>
+            {% if site.github.is_project_page %}
+            <span class="site-footer-owner">{{ site.github.repository_name }} is maintained by <a href="{{ site.github.owner_url }}">{{ site.github.owner_name }}</a>.</span> {% endif %}
+            <span class="site-footer-credits">This page was generated by <a href="https://pages.github.com">GitHub Pages</a>.</span>
+        </footer>
     </main>
-  </body>
+</body>
+
 </html>
