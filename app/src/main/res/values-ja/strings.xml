@@ -70,7 +70,7 @@
     <string name="settings_app_lock">アプリロック</string>
     <string name="settings_app_lock_type">アップロックの種類</string>
     <string name="settings_app_version_title">バージョン</string>
-    <string name="settings_lock_biomatrics">生体認識</string>
+    <string name="settings_lock_biometrics">生体認識</string>
     <string name="settings_lock_confirm">ロック確認のためもう一回入力してください。</string>
     <string name="settings_lock_enabled">有効</string>
     <string name="settings_lock_fingerprint">指紋</string>
@@ -99,4 +99,7 @@
     <string name="gallery_tags">タグ</string>
     <string name="gallery_thumbnails">サムネイル</string>
     <string name="gallery_related">おすすめ</string>
+    <string name="settings_nomedia_summary">イメージを隠す</string>
+    <string name="settings_nomedia_title">イメージをギャラリーから見えなくする</string>
+    <string name="reader_help">ヘルプ</string>
 </resources>

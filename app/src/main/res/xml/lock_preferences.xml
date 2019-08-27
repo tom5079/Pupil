@@ -15,7 +15,7 @@
         app:key="lock_password"/>
 
     <PreferenceCategory
-        app:title="@string/settings_lock_biomatrics">
+        app:title="@string/settings_lock_biometrics">
 
         <Preference
             app:title="@string/settings_lock_fingerprint"

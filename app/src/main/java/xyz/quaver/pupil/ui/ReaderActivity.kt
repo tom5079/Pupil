@@ -22,6 +22,7 @@ import android.Manifest
 import android.content.Intent
 import android.graphics.drawable.Animatable
 import android.graphics.drawable.Drawable
+import android.net.Uri
 import android.os.Bundle
 import android.view.*
 import androidx.appcompat.app.AlertDialog
@@ -45,10 +46,7 @@ import kotlinx.serialization.ImplicitReflectionSerializer
 import xyz.quaver.pupil.Pupil
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.adapters.ReaderAdapter
-import xyz.quaver.pupil.util.GalleryDownloader
-import xyz.quaver.pupil.util.Histories
-import xyz.quaver.pupil.util.ItemClickSupport
-import xyz.quaver.pupil.util.hasPermission
+import xyz.quaver.pupil.util.*
 
 class ReaderActivity : AppCompatActivity() {
 
@@ -220,6 +218,23 @@ class ReaderActivity : AppCompatActivity() {
         }
     }
 
+    override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
+        //currentPage is 1-based
+        return when(keyCode) {
+            KeyEvent.KEYCODE_VOLUME_UP -> {
+                (reader_recyclerview.layoutManager as LinearLayoutManager?)?.scrollToPositionWithOffset(currentPage-2, 0)
+
+                true
+            }
+            KeyEvent.KEYCODE_VOLUME_DOWN -> {
+                (reader_recyclerview.layoutManager as LinearLayoutManager?)?.scrollToPositionWithOffset(currentPage, 0)
+
+                true
+            }
+            else -> super.onKeyDown(keyCode, event)
+        }
+    }
+
     private fun initDownloader() {
         var d: GalleryDownloader? = GalleryDownloader.get(galleryID)
 
@@ -262,7 +277,12 @@ class ReaderActivity : AppCompatActivity() {
                 }
             }
             onErrorHandler = {
-                Snackbar.make(reader_layout, it.message ?: it.javaClass.name, Snackbar.LENGTH_INDEFINITE).show()
+                Snackbar
+                    .make(reader_layout, it.message ?: it.javaClass.name, Snackbar.LENGTH_INDEFINITE)
+                    .setAction(R.string.reader_help) { view ->
+                        startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(getString(R.string.error_help))))
+                    }
+                    .show()
                 downloader.download = false
             }
             onCompleteHandler = {
@@ -340,7 +360,7 @@ class ReaderActivity : AppCompatActivity() {
                         scrollMode(false)
                         fullscreen(true)
                     } else {
-                        (reader_recyclerview.layoutManager as LinearLayoutManager?)?.scrollToPosition(currentPage)
+                        (reader_recyclerview.layoutManager as LinearLayoutManager?)?.scrollToPosition(currentPage) //Moves to next page because currentPage is 1-based indexing
                     }
                 }
         }

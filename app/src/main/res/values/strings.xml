@@ -10,6 +10,7 @@
     <string name="github" translatable="false">https://github.com/tom5079/Pupil-issue/issues/new/choose</string>
     <string name="email" translatable="false">mailto:pupil.hentai@gmail.com</string>
     <string name="kakaotalk" translatable="false">https://open.kakao.com/o/gvNrncsb</string>
+    <string name="error_help" translatable="false">http://bit.ly/2KYYhto</string>
 
     <string name="main_settings" translatable="false">Settings</string>
     <string name="galleryblock_thumbnail_description" translatable="false">Thumbnail</string>
@@ -101,6 +102,8 @@
     <string name="reader_notification_complete">Download complete</string>
     <string name="reader_notification_error">Download error</string>
 
+    <string name="reader_help">Help</string>
+
     <string name="settings_title">Settings</string>
     <string name="settings_app_version_title">App version</string>
     <string name="settings_search_title">Search Settings</string>
@@ -124,12 +127,14 @@
     <string name="settings_security_mode_summary">Enable security mode to make the screen invisible on recent app window</string>
     <string name="settings_dark_mode_title">Dark mode</string>
     <string name="settings_dark_mode_summary">Protect yourself against light attacks!</string>
+    <string name="settings_nomedia_title">Hide image from gallery</string>
+    <string name="settings_nomedia_summary">Hides image from gallery</string>
 
     <string name="settings_lock_none">None</string>
     <string name="settings_lock_pattern">Pattern</string>
     <string name="settings_lock_pin" translatable="false">PIN</string>
     <string name="settings_lock_password">Password</string>
-    <string name="settings_lock_biomatrics">Biomatrics</string>
+    <string name="settings_lock_biometrics">Biometrics</string>
     <string name="settings_lock_fingerprint">Fingerprint</string>
     <string name="settings_lock_enabled">Enabled</string>
     <string name="settings_lock_confirm">Input same lock once more to confirm Lock</string>

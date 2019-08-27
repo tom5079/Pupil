@@ -20,7 +20,6 @@
         <Preference
             app:key="default_query"
             app:title="@string/settings_default_query"
-            app:defaultValue=""
             app:useSimpleSummaryProvider="true"/>
 
     </PreferenceCategory>
@@ -69,6 +68,11 @@
             app:key="dark_mode"
             app:title="@string/settings_dark_mode_title"
             app:summary="@string/settings_dark_mode_summary"/>
+
+        <SwitchPreference
+            app:key="nomedia"
+            app:title="@string/settings_nomedia_title"
+            app:summary="@string/settings_nomedia_title"/>
 
     </PreferenceCategory>
 
