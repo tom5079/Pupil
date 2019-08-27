@@ -169,6 +169,8 @@ class GalleryDownloader(
         downloadJob = CoroutineScope(Dispatchers.Default).launch {
             val reader = reader!!.await()
 
+            notificationBuilder.setContentTitle(reader.title)
+
             if (reader.readerItems.isEmpty()) {
                 onErrorHandler?.invoke(IOException(getString(R.string.unable_to_connect)))
                 return@launch
@@ -312,15 +314,10 @@ class GalleryDownloader(
         notificationBuilder = NotificationCompat.Builder(this, "download").apply {
             setContentTitle(getString(R.string.reader_loading))
             setContentText(getString(R.string.reader_notification_text))
-            setSmallIcon(R.drawable.ic_download)
+            setSmallIcon(android.R.drawable.stat_sys_download)
             setContentIntent(pendingIntent)
             setProgress(0, 0, true)
             priority = NotificationCompat.PRIORITY_LOW
-        }
-
-        CoroutineScope(Dispatchers.Default).launch {
-            while (reader == null) ;
-            notificationBuilder.setContentTitle(reader.await().title)
         }
     }
 

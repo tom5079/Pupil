@@ -22,6 +22,7 @@ import android.view.ViewGroup
 import android.widget.ImageView
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.RequestManager
+import xyz.quaver.pupil.BuildConfig
 
 class ThumbnailAdapter(private val glide: RequestManager, private val thumbnails: List<String>) : RecyclerView.Adapter<ThumbnailAdapter.ViewHolder>() {
 
@@ -34,6 +35,10 @@ class ThumbnailAdapter(private val glide: RequestManager, private val thumbnails
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         glide
             .load(thumbnails[position])
+            .apply {
+                if (BuildConfig.CENSOR)
+                    override(5, 8)
+            }
             .into(holder.view)
     }
 

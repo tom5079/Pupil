@@ -41,6 +41,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonConfiguration
 import xyz.quaver.hitomi.GalleryBlock
 import xyz.quaver.hitomi.Reader
+import xyz.quaver.pupil.BuildConfig
 import xyz.quaver.pupil.Pupil
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.types.Tag
@@ -86,6 +87,10 @@ class GalleryBlockAdapter(private val glide: RequestManager, private val galleri
                         .skipMemoryCache(true)
                         .diskCacheStrategy(DiskCacheStrategy.NONE)
                         .error(R.drawable.image_broken_variant)
+                        .apply {
+                            if (BuildConfig.CENSOR)
+                                override(5, 8)
+                        }
                         .into(galleryblock_thumbnail)
                 }
 

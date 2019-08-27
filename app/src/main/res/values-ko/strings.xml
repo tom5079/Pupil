@@ -70,7 +70,7 @@
     <string name="settings_app_lock">앱 잠금</string>
     <string name="settings_app_lock_type">앱 잠금 종류</string>
     <string name="settings_app_version_title">앱 버전</string>
-    <string name="settings_lock_biomatrics">생체 인식</string>
+    <string name="settings_lock_biometrics">생체 인식</string>
     <string name="settings_lock_confirm">잠금 확인을 위해 한번 더 입력해주세요</string>
     <string name="settings_lock_enabled">사용 중</string>
     <string name="settings_lock_fingerprint">지문</string>
@@ -99,4 +99,7 @@
     <string name="gallery_tags">태그</string>
     <string name="gallery_related">관련 갤러리</string>
     <string name="gallery_thumbnails">미리보기</string>
+    <string name="settings_nomedia_summary">이미지 숨기기</string>
+    <string name="settings_nomedia_title">갤러리에서 이미지 검색이 되지 않도록 합니다</string>
+    <string name="reader_help">도움말</string>
 </resources>

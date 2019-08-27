@@ -206,10 +206,10 @@ class MainActivity : AppCompatActivity() {
         val maxPage = ceil(totalItems / perPage.toDouble()).roundToInt()
 
         return when(keyCode) {
-            KeyEvent.KEYCODE_VOLUME_DOWN -> {
-                if (currentPage < maxPage) {
+            KeyEvent.KEYCODE_VOLUME_UP -> {
+                if (currentPage > 0) {
                     runOnUiThread {
-                        currentPage++
+                        currentPage--
 
                         cancelFetch()
                         clearGalleries()
@@ -220,10 +220,10 @@ class MainActivity : AppCompatActivity() {
 
                 true
             }
-            KeyEvent.KEYCODE_VOLUME_UP -> {
-                if (currentPage > 0) {
+            KeyEvent.KEYCODE_VOLUME_DOWN -> {
+                if (currentPage < maxPage) {
                     runOnUiThread {
-                        currentPage--
+                        currentPage++
 
                         cancelFetch()
                         clearGalleries()
@@ -796,7 +796,7 @@ class MainActivity : AppCompatActivity() {
                 s ?: return
 
                 if (s.any { it.isUpperCase() })
-                    s.replace(0, s.length, s.toString().toLowerCase())
+                    s.replace(0, s.length, s.toString().toLowerCase(Locale.getDefault()))
             }
         })
 
