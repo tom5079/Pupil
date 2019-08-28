@@ -63,7 +63,7 @@ class GalleryDownloader(
                 field = true
                 notificationManager.notify(galleryID, notificationBuilder.build())
 
-                val data = getCachedGallery(this, galleryID)
+                val data = File(getDownloadDirectory(this), galleryID.toString())
                 val cache = File(cacheDir, "imageCache/$galleryID")
 
                 if (File(cache, "images").exists() && !data.exists()) {
