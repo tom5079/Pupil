@@ -330,7 +330,7 @@ class ReaderActivity : AppCompatActivity() {
 
     private fun initView() {
         with(reader_recyclerview) {
-            adapter = ReaderAdapter(Glide.with(this@ReaderActivity), images)
+            adapter = ReaderAdapter(Glide.with(this@ReaderActivity), galleryID, images)
 
             addOnScrollListener(object: RecyclerView.OnScrollListener() {
                 override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
