@@ -63,16 +63,17 @@ class GalleryDownloader(
                 field = true
                 notificationManager.notify(galleryID, notificationBuilder.build())
 
-                val data = File(getDownloadDirectory(this), galleryID.toString())
-                val cache = File(cacheDir, "imageCache/$galleryID")
+                if (reader?.isActive == false && downloadJob?.isActive != true) {
+                    val data = File(getDownloadDirectory(this), galleryID.toString())
+                    val cache = File(cacheDir, "imageCache/$galleryID")
 
-                if (File(cache, "images").exists() && !data.exists()) {
-                    cache.copyRecursively(data, true)
-                    cache.deleteRecursively()
-                }
+                    if (File(cache, "images").exists() && !data.exists()) {
+                        cache.copyRecursively(data, true)
+                        cache.deleteRecursively()
+                    }
 
-                if (reader?.isActive == false && downloadJob?.isActive != true)
                     field = false
+                }
 
                 downloads.add(galleryID)
             } else {
@@ -223,7 +224,7 @@ class GalleryDownloader(
                                 notificationManager.notify(galleryID, notificationBuilder.build())
                             }
 
-                        cache.absolutePath
+                        "images/$name.$ext"
                     }
                 }.forEach {
                     list.add(it.await())

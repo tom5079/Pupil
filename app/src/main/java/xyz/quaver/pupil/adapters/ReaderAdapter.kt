@@ -32,8 +32,12 @@ import com.bumptech.glide.request.RequestListener
 import com.bumptech.glide.request.target.Target
 import xyz.quaver.pupil.BuildConfig
 import xyz.quaver.pupil.R
+import xyz.quaver.pupil.util.getCachedGallery
+import java.io.File
 
-class ReaderAdapter(private val glide: RequestManager, private val images: List<String>) : RecyclerView.Adapter<ReaderAdapter.ViewHolder>() {
+class ReaderAdapter(private val glide: RequestManager,
+                    private val galleryID: Int,
+                    private val images: List<String>) : RecyclerView.Adapter<ReaderAdapter.ViewHolder>() {
 
     var isFullScreen = false
     private var prev : Drawable? = null
@@ -52,7 +56,7 @@ class ReaderAdapter(private val glide: RequestManager, private val images: List<
         holder.view as ImageView
 
         glide
-            .load(images[position])
+            .load(File(getCachedGallery(holder.view.context, galleryID), images[position]))
             .dontTransform()
             .diskCacheStrategy(DiskCacheStrategy.NONE)
             .skipMemoryCache(true)
