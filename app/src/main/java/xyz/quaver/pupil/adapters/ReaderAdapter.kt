@@ -18,30 +18,19 @@
 
 package xyz.quaver.pupil.adapters
 
-<<<<<<< HEAD
 import android.graphics.drawable.Drawable
-=======
->>>>>>> origin/development
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.RequestManager
-<<<<<<< HEAD
 import com.bumptech.glide.load.DataSource
 import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.load.engine.GlideException
 import com.bumptech.glide.request.RequestListener
 import com.bumptech.glide.request.target.Target
 import xyz.quaver.pupil.BuildConfig
-=======
-import com.bumptech.glide.load.engine.DiskCacheStrategy
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
->>>>>>> origin/development
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.util.getCachedGallery
 import java.io.File
@@ -50,14 +39,8 @@ class ReaderAdapter(private val glide: RequestManager,
                     private val galleryID: Int,
                     private val images: List<String>) : RecyclerView.Adapter<ReaderAdapter.ViewHolder>() {
 
-<<<<<<< HEAD
     var isFullScreen = false
     private var prev : Drawable? = null
-=======
-class ReaderAdapter(private val glide: RequestManager, private val images: List<String>) : RecyclerView.Adapter<ReaderAdapter.ViewHolder>() {
-
-    var isFullScreen = false
->>>>>>> origin/development
 
     class ViewHolder(val view: View) : RecyclerView.ViewHolder(view)
 
@@ -70,7 +53,6 @@ class ReaderAdapter(private val glide: RequestManager, private val images: List<
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-<<<<<<< HEAD
         holder.view as ImageView
 
         glide
@@ -106,21 +88,6 @@ class ReaderAdapter(private val glide: RequestManager, private val images: List<
                 }
             })
             .into(holder.view)
-=======
-        runBlocking {
-            CoroutineScope(Dispatchers.Default).launch {
-                val image = glide
-                    .load(images[position])
-                    .diskCacheStrategy(DiskCacheStrategy.NONE)
-                    .skipMemoryCache(true)
-                    .error(R.drawable.image_broken_variant)
-                    .submit()
-                    .get()
-
-                (holder.view as ImageView).setImageDrawable(image)
-            }.join()
-        }
->>>>>>> origin/development
     }
 
     override fun getItemCount() = images.size
