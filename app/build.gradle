@@ -14,7 +14,7 @@ android {
         minSdkVersion 16
         targetSdkVersion 29
         versionCode 27
-        versionName "3.2-beta2"
+        versionName "3.2"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         multiDexEnabled true
         vectorDrawables.useSupportLibrary = true
@@ -25,7 +25,7 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
         buildTypes.each {
-            it.buildConfigField('boolean', 'PRERELEASE', 'true')
+            it.buildConfigField('boolean', 'PRERELEASE', 'false')
             it.buildConfigField('boolean', 'CENSOR', 'false')
         }
     }
