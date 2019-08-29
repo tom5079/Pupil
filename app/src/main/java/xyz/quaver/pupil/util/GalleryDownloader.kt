@@ -63,15 +63,24 @@ class GalleryDownloader(
                 field = true
                 notificationManager.notify(galleryID, notificationBuilder.build())
 
+<<<<<<< HEAD
                 if (reader?.isActive == false && downloadJob?.isActive != true) {
                     val data = File(getDownloadDirectory(this), galleryID.toString())
                     val cache = File(cacheDir, "imageCache/$galleryID")
+=======
+                val data = getCachedGallery(this, galleryID)
+                val cache = File(cacheDir, "imageCache/$galleryID")
+>>>>>>> origin/development
 
                     if (File(cache, "images").exists() && !data.exists()) {
                         cache.copyRecursively(data, true)
                         cache.deleteRecursively()
                     }
 
+<<<<<<< HEAD
+=======
+                if (reader?.isActive == false && downloadJob?.isActive != true)
+>>>>>>> origin/development
                     field = false
                 }
 
@@ -170,8 +179,11 @@ class GalleryDownloader(
         downloadJob = CoroutineScope(Dispatchers.Default).launch {
             val reader = reader!!.await()
 
+<<<<<<< HEAD
             notificationBuilder.setContentTitle(reader.title)
 
+=======
+>>>>>>> origin/development
             if (reader.readerItems.isEmpty()) {
                 onErrorHandler?.invoke(IOException(getString(R.string.unable_to_connect)))
                 return@launch
@@ -320,6 +332,14 @@ class GalleryDownloader(
             setProgress(0, 0, true)
             priority = NotificationCompat.PRIORITY_LOW
         }
+<<<<<<< HEAD
+=======
+
+        CoroutineScope(Dispatchers.Default).launch {
+            while (reader == null) ;
+            notificationBuilder.setContentTitle(reader.await().title)
+        }
+>>>>>>> origin/development
     }
 
 }

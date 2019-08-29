@@ -43,7 +43,6 @@ import xyz.quaver.pupil.util.Lock
 import xyz.quaver.pupil.util.LockManager
 import xyz.quaver.pupil.util.getDownloadDirectory
 import java.io.File
-import java.util.*
 
 class SettingsActivity : AppCompatActivity() {
 
@@ -279,7 +278,7 @@ class SettingsActivity : AppCompatActivity() {
                                 s ?: return
 
                                 if (s.any { it.isUpperCase() })
-                                    s.replace(0, s.length, s.toString().toLowerCase(Locale.getDefault()))
+                                    s.replace(0, s.length, s.toString().toLowerCase())
                             }
                         })
                     }
@@ -349,38 +348,6 @@ class SettingsActivity : AppCompatActivity() {
                             true -> AppCompatDelegate.MODE_NIGHT_YES
                             false -> AppCompatDelegate.MODE_NIGHT_NO
                     })
-
-                    true
-                }
-            }
-
-            with(findPreference<Preference>("nomedia")) {
-                this!!
-
-                onPreferenceChangeListener = Preference.OnPreferenceChangeListener { _, newValue ->
-                    val directories = listOf(
-                        context.cacheDir,
-                        getDownloadDirectory(context)
-                    )
-
-                    when (newValue as Boolean) {
-                        true -> {
-                            directories.forEach {
-                                it ?: return@forEach
-
-                                if (it.exists())
-                                    File(it, ".nomedia").createNewFile()
-                            }
-                        }
-                        false -> {
-                            directories.forEach {
-                                it ?: return@forEach
-
-                                if (it.exists())
-                                    File(it, ".nomedia").delete()
-                            }
-                        }
-                    }
 
                     true
                 }
