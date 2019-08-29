@@ -127,14 +127,21 @@
     <string name="settings_security_mode_summary">Enable security mode to make the screen invisible on recent app window</string>
     <string name="settings_dark_mode_title">Dark mode</string>
     <string name="settings_dark_mode_summary">Protect yourself against light attacks!</string>
+<<<<<<< HEAD
     <string name="settings_nomedia_title">Hide image from gallery</string>
     <string name="settings_nomedia_summary">Hides image from gallery</string>
+=======
+>>>>>>> origin/development
 
     <string name="settings_lock_none">None</string>
     <string name="settings_lock_pattern">Pattern</string>
     <string name="settings_lock_pin" translatable="false">PIN</string>
     <string name="settings_lock_password">Password</string>
+<<<<<<< HEAD
     <string name="settings_lock_biometrics">Biometrics</string>
+=======
+    <string name="settings_lock_biomatrics">Biomatrics</string>
+>>>>>>> origin/development
     <string name="settings_lock_fingerprint">Fingerprint</string>
     <string name="settings_lock_enabled">Enabled</string>
     <string name="settings_lock_confirm">Input same lock once more to confirm Lock</string>

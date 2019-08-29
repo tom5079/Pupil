@@ -46,7 +46,14 @@ import kotlinx.serialization.ImplicitReflectionSerializer
 import xyz.quaver.pupil.Pupil
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.adapters.ReaderAdapter
+<<<<<<< HEAD:app/src/main/java/xyz/quaver/pupil/ui/ReaderActivity.kt
 import xyz.quaver.pupil.util.*
+=======
+import xyz.quaver.pupil.util.GalleryDownloader
+import xyz.quaver.pupil.util.Histories
+import xyz.quaver.pupil.util.ItemClickSupport
+import xyz.quaver.pupil.util.hasPermission
+>>>>>>> origin/development:app/src/main/java/xyz/quaver/pupil/ReaderActivity.kt
 
 class ReaderActivity : AppCompatActivity() {
 
@@ -218,6 +225,7 @@ class ReaderActivity : AppCompatActivity() {
         }
     }
 
+<<<<<<< HEAD:app/src/main/java/xyz/quaver/pupil/ui/ReaderActivity.kt
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
         //currentPage is 1-based
         return when(keyCode) {
@@ -235,6 +243,8 @@ class ReaderActivity : AppCompatActivity() {
         }
     }
 
+=======
+>>>>>>> origin/development:app/src/main/java/xyz/quaver/pupil/ReaderActivity.kt
     private fun initDownloader() {
         var d: GalleryDownloader? = GalleryDownloader.get(galleryID)
 
@@ -277,12 +287,16 @@ class ReaderActivity : AppCompatActivity() {
                 }
             }
             onErrorHandler = {
+<<<<<<< HEAD:app/src/main/java/xyz/quaver/pupil/ui/ReaderActivity.kt
                 Snackbar
                     .make(reader_layout, it.message ?: it.javaClass.name, Snackbar.LENGTH_INDEFINITE)
                     .setAction(R.string.reader_help) { view ->
                         startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(getString(R.string.error_help))))
                     }
                     .show()
+=======
+                Snackbar.make(reader_layout, it.message ?: it.javaClass.name, Snackbar.LENGTH_INDEFINITE).show()
+>>>>>>> origin/development:app/src/main/java/xyz/quaver/pupil/ReaderActivity.kt
                 downloader.download = false
             }
             onCompleteHandler = {
@@ -330,7 +344,11 @@ class ReaderActivity : AppCompatActivity() {
 
     private fun initView() {
         with(reader_recyclerview) {
+<<<<<<< HEAD:app/src/main/java/xyz/quaver/pupil/ui/ReaderActivity.kt
             adapter = ReaderAdapter(Glide.with(this@ReaderActivity), galleryID, images)
+=======
+            adapter = ReaderAdapter(Glide.with(this@ReaderActivity), images)
+>>>>>>> origin/development:app/src/main/java/xyz/quaver/pupil/ReaderActivity.kt
 
             addOnScrollListener(object: RecyclerView.OnScrollListener() {
                 override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
@@ -360,7 +378,11 @@ class ReaderActivity : AppCompatActivity() {
                         scrollMode(false)
                         fullscreen(true)
                     } else {
+<<<<<<< HEAD:app/src/main/java/xyz/quaver/pupil/ui/ReaderActivity.kt
                         (reader_recyclerview.layoutManager as LinearLayoutManager?)?.scrollToPosition(currentPage) //Moves to next page because currentPage is 1-based indexing
+=======
+                        (reader_recyclerview.layoutManager as LinearLayoutManager?)?.scrollToPosition(currentPage)
+>>>>>>> origin/development:app/src/main/java/xyz/quaver/pupil/ReaderActivity.kt
                     }
                 }
         }
@@ -368,6 +390,7 @@ class ReaderActivity : AppCompatActivity() {
         with(reader_fab_download) {
             setImageResource(R.drawable.ic_download)
             setOnClickListener {
+<<<<<<< HEAD:app/src/main/java/xyz/quaver/pupil/ui/ReaderActivity.kt
 
                 if (!this@ReaderActivity.hasPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
                     AlertDialog.Builder(this@ReaderActivity).apply {
@@ -381,6 +404,21 @@ class ReaderActivity : AppCompatActivity() {
 
                 downloader.download = !downloader.download
 
+=======
+
+                if (!this@ReaderActivity.hasPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
+                    AlertDialog.Builder(this@ReaderActivity).apply {
+                        setTitle(R.string.warning)
+                        setMessage(R.string.update_no_permission)
+                        setPositiveButton(android.R.string.ok) { _, _ -> }
+                    }.show()
+
+                    return@setOnClickListener
+                }
+
+                downloader.download = !downloader.download
+
+>>>>>>> origin/development:app/src/main/java/xyz/quaver/pupil/ReaderActivity.kt
                 if (!downloader.download)
                     downloader.clearNotification()
             }
