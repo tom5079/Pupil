@@ -54,7 +54,7 @@ fun checkUpdate(url: String) : JsonObject? {
 
 fun getApkUrl(releases: JsonObject) : Pair<String?, String?>? {
     return releases["assets"]?.jsonArray?.firstOrNull {
-        Regex("Pupil-v(\\d+\\.)+\\d+\\.apk").matches(it.jsonObject["name"]?.content ?: "")
+        Regex("Pupil-v.+\\.apk").matches(it.jsonObject["name"]?.content ?: "")
     }.let {
         if (it == null)
             null

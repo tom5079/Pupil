@@ -282,7 +282,7 @@ class ReaderActivity : AppCompatActivity() {
             onErrorHandler = {
                 Snackbar
                     .make(reader_layout, it.message ?: it.javaClass.name, Snackbar.LENGTH_INDEFINITE)
-                    .setAction(R.string.reader_help) { _ ->
+                    .setAction(R.string.reader_help) {
                         startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(getString(R.string.error_help))))
                     }
                     .show()
