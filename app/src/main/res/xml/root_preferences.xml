@@ -69,14 +69,10 @@
             app:title="@string/settings_dark_mode_title"
             app:summary="@string/settings_dark_mode_summary"/>
 
-<<<<<<< HEAD
         <SwitchPreference
             app:key="nomedia"
             app:title="@string/settings_nomedia_title"
             app:summary="@string/settings_nomedia_title"/>
-
-=======
->>>>>>> origin/development
     </PreferenceCategory>
 
 </androidx.preference.PreferenceScreen>
