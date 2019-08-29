@@ -18,9 +18,11 @@
 
 package xyz.quaver.pupil.ui
 
+import android.Manifest
 import android.content.Intent
 import android.graphics.drawable.Animatable
 import android.graphics.drawable.Drawable
+import android.net.Uri
 import android.os.Bundle
 import android.view.*
 import androidx.appcompat.app.AlertDialog
@@ -31,6 +33,7 @@ import androidx.recyclerview.widget.PagerSnapHelper
 import androidx.recyclerview.widget.RecyclerView
 import androidx.vectordrawable.graphics.drawable.Animatable2Compat
 import androidx.vectordrawable.graphics.drawable.AnimatedVectorDrawableCompat
+import com.bumptech.glide.Glide
 import com.crashlytics.android.Crashlytics
 import com.google.android.material.snackbar.Snackbar
 import kotlinx.android.synthetic.main.activity_reader.*
@@ -46,6 +49,7 @@ import xyz.quaver.pupil.adapters.ReaderAdapter
 import xyz.quaver.pupil.util.GalleryDownloader
 import xyz.quaver.pupil.util.Histories
 import xyz.quaver.pupil.util.ItemClickSupport
+import xyz.quaver.pupil.util.hasPermission
 
 class ReaderActivity : AppCompatActivity() {
 
@@ -217,6 +221,23 @@ class ReaderActivity : AppCompatActivity() {
         }
     }
 
+    override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
+        //currentPage is 1-based
+        return when(keyCode) {
+            KeyEvent.KEYCODE_VOLUME_UP -> {
+                (reader_recyclerview.layoutManager as LinearLayoutManager?)?.scrollToPositionWithOffset(currentPage-2, 0)
+
+                true
+            }
+            KeyEvent.KEYCODE_VOLUME_DOWN -> {
+                (reader_recyclerview.layoutManager as LinearLayoutManager?)?.scrollToPositionWithOffset(currentPage, 0)
+
+                true
+            }
+            else -> super.onKeyDown(keyCode, event)
+        }
+    }
+
     private fun initDownloader() {
         var d: GalleryDownloader? = GalleryDownloader.get(galleryID)
 
@@ -259,7 +280,12 @@ class ReaderActivity : AppCompatActivity() {
                 }
             }
             onErrorHandler = {
-                Snackbar.make(reader_layout, it.message ?: it.javaClass.name, Snackbar.LENGTH_INDEFINITE).show()
+                Snackbar
+                    .make(reader_layout, it.message ?: it.javaClass.name, Snackbar.LENGTH_INDEFINITE)
+                    .setAction(R.string.reader_help) { _ ->
+                        startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(getString(R.string.error_help))))
+                    }
+                    .show()
                 downloader.download = false
             }
             onCompleteHandler = {
@@ -307,7 +333,7 @@ class ReaderActivity : AppCompatActivity() {
 
     private fun initView() {
         with(reader_recyclerview) {
-            adapter = ReaderAdapter(images)
+            adapter = ReaderAdapter(Glide.with(this@ReaderActivity), galleryID, images)
 
             addOnScrollListener(object: RecyclerView.OnScrollListener() {
                 override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
@@ -337,7 +363,7 @@ class ReaderActivity : AppCompatActivity() {
                         scrollMode(false)
                         fullscreen(true)
                     } else {
-                        (reader_recyclerview.layoutManager as LinearLayoutManager?)?.scrollToPosition(currentPage)
+                        (reader_recyclerview.layoutManager as LinearLayoutManager?)?.scrollToPosition(currentPage) //Moves to next page because currentPage is 1-based indexing
                     }
                 }
         }
@@ -345,6 +371,17 @@ class ReaderActivity : AppCompatActivity() {
         with(reader_fab_download) {
             setImageResource(R.drawable.ic_download)
             setOnClickListener {
+
+                if (!this@ReaderActivity.hasPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
+                    AlertDialog.Builder(this@ReaderActivity).apply {
+                        setTitle(R.string.warning)
+                        setMessage(R.string.update_no_permission)
+                        setPositiveButton(android.R.string.ok) { _, _ -> }
+                    }.show()
+
+                    return@setOnClickListener
+                }
+
                 downloader.download = !downloader.download
 
                 if (!downloader.download)

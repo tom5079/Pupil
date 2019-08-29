@@ -57,30 +57,33 @@ fun doSearch(query: String, sortByPopularity: Boolean = false) : List<Int> {
     var results = when {
         sortByPopularity -> getGalleryIDsFromNozomi(null, "popular", "all")
         positiveTerms.isEmpty() -> getGalleryIDsFromNozomi(null, "index", "all")
-        else -> getGalleryIDsForQuery(positiveTerms.poll())
+        else -> listOf()
     }
 
     runBlocking {
         @Synchronized fun filterPositive(newResults: List<Int>) {
-            results = results.filter { newResults.binarySearch(it) >= 0 }
+            results = when {
+                results.isEmpty() -> newResults
+                else -> newResults.sorted().let { sorted ->
+                    results.filter { sorted.binarySearch(it) >= 0 }
+                }
+            }
         }
 
         @Synchronized fun filterNegative(newResults: List<Int>) {
-            results = results.filter { newResults.binarySearch(it) < 0 }
+            results = newResults.sorted().let { sorted ->
+                results.filter { sorted.binarySearch(it) < 0 }
+            }
         }
 
         //positive results
         positiveResults.forEach {
-            val result = it.await()
-
-            filterPositive(result.sorted())
+            filterPositive(it.await())
         }
 
         //negative results
         negativeResults.forEach {
-            val result = it.await()
-
-            filterNegative(result.sorted())
+            filterNegative(it.await())
         }
     }
 

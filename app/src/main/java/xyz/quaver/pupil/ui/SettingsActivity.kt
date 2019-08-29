@@ -31,6 +31,7 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
 import androidx.preference.PreferenceManager
@@ -334,6 +335,19 @@ class SettingsActivity : AppCompatActivity() {
                 onPreferenceClickListener = Preference.OnPreferenceClickListener {
                     val intent = Intent(context, LockActivity::class.java)
                     activity?.startActivityForResult(intent, (activity as SettingsActivity).REQUEST_LOCK)
+
+                    true
+                }
+            }
+
+            with(findPreference<Preference>("dark_mode")) {
+                this!!
+
+                onPreferenceChangeListener = Preference.OnPreferenceChangeListener { _, newValue ->
+                    AppCompatDelegate.setDefaultNightMode(when (newValue as Boolean) {
+                            true -> AppCompatDelegate.MODE_NIGHT_YES
+                            false -> AppCompatDelegate.MODE_NIGHT_NO
+                    })
 
                     true
                 }

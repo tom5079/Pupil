@@ -16,7 +16,6 @@
 
 package xyz.quaver.hitomi
 
-import java.io.ByteArrayOutputStream
 import java.net.URL
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
@@ -175,22 +174,18 @@ fun getGalleryIDsFromNozomi(area: String?, tag: String, language: String) : List
             }
 
     try {
-        with (URL(nozomiAddress).openConnection() as HttpsURLConnection) {
-            requestMethod = "GET"
+        val bytes = URL(nozomiAddress).readBytes()
 
-            val nozomi = ArrayList<Int>()
+        val nozomi = ArrayList<Int>()
 
-            val bytes = inputStream.readBytes()
+        val arrayBuffer = ByteBuffer
+            .wrap(bytes)
+            .order(ByteOrder.BIG_ENDIAN)
 
-            val arrayBuffer = ByteBuffer
-                .wrap(bytes)
-                .order(ByteOrder.BIG_ENDIAN)
+        while (arrayBuffer.hasRemaining())
+            nozomi.add(arrayBuffer.int)
 
-            while (arrayBuffer.hasRemaining())
-                nozomi.add(arrayBuffer.int)
-
-            return nozomi
-        }
+        return nozomi
     } catch (e: Exception) {
         return emptyList()
     }

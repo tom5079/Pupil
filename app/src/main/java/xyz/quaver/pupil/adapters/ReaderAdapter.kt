@@ -18,44 +18,76 @@
 
 package xyz.quaver.pupil.adapters
 
+import android.graphics.drawable.Drawable
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import androidx.recyclerview.widget.RecyclerView
-import androidx.swiperefreshlayout.widget.CircularProgressDrawable
-import com.bumptech.glide.Glide
+import com.bumptech.glide.RequestManager
+import com.bumptech.glide.load.DataSource
 import com.bumptech.glide.load.engine.DiskCacheStrategy
+import com.bumptech.glide.load.engine.GlideException
+import com.bumptech.glide.request.RequestListener
+import com.bumptech.glide.request.target.Target
+import xyz.quaver.pupil.BuildConfig
 import xyz.quaver.pupil.R
+import xyz.quaver.pupil.util.getCachedGallery
+import java.io.File
 
-class ReaderAdapter(private val images: List<String>) : RecyclerView.Adapter<ReaderAdapter.ViewHolder>() {
+class ReaderAdapter(private val glide: RequestManager,
+                    private val galleryID: Int,
+                    private val images: List<String>) : RecyclerView.Adapter<ReaderAdapter.ViewHolder>() {
 
     var isFullScreen = false
+    private var prev : Drawable? = null
 
     class ViewHolder(val view: View) : RecyclerView.ViewHolder(view)
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
-        LayoutInflater.from(parent.context).inflate(
+        return LayoutInflater.from(parent.context).inflate(
             R.layout.item_reader, parent, false
         ).let {
-            return ViewHolder(it)
+            ViewHolder(it)
         }
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        val progressDrawable = CircularProgressDrawable(holder.view.context).apply {
-            strokeWidth = 10f
-            centerRadius = 100f
-            start()
-        }
+        holder.view as ImageView
 
-        Glide.with(holder.view)
-            .load(images[position])
+        glide
+            .load(File(getCachedGallery(holder.view.context, galleryID), images[position]))
+            .dontTransform()
             .diskCacheStrategy(DiskCacheStrategy.NONE)
             .skipMemoryCache(true)
-            .placeholder(progressDrawable)
             .error(R.drawable.image_broken_variant)
-            .into(holder.view as ImageView)
+            .apply {
+                if (BuildConfig.CENSOR)
+                    override(5, 8)
+                if (isFullScreen)
+                    placeholder(prev)
+            }
+            .listener(object: RequestListener<Drawable> {
+                override fun onLoadFailed(
+                    e: GlideException?,
+                    model: Any?,
+                    target: Target<Drawable>?,
+                    isFirstResource: Boolean
+                ) = false
+
+                override fun onResourceReady(
+                    resource: Drawable?,
+                    model: Any?,
+                    target: Target<Drawable>?,
+                    dataSource: DataSource?,
+                    isFirstResource: Boolean
+                ): Boolean {
+                    prev = resource?.constantState?.newDrawable()?.mutate()
+
+                    return false
+                }
+            })
+            .into(holder.view)
     }
 
     override fun getItemCount() = images.size

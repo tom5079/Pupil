@@ -27,6 +27,7 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.app.TaskStackBuilder
 import androidx.preference.PreferenceManager
+import com.crashlytics.android.Crashlytics
 import kotlinx.coroutines.*
 import kotlinx.io.IOException
 import kotlinx.serialization.json.Json
@@ -62,16 +63,17 @@ class GalleryDownloader(
                 field = true
                 notificationManager.notify(galleryID, notificationBuilder.build())
 
-                val data = getCachedGallery(this, galleryID)
-                val cache = File(cacheDir, "imageCache/$galleryID")
+                if (reader?.isActive == false && downloadJob?.isActive != true) {
+                    val data = File(getDownloadDirectory(this), galleryID.toString())
+                    val cache = File(cacheDir, "imageCache/$galleryID")
 
-                if (File(cache, "images").exists() && !data.exists()) {
-                    cache.copyRecursively(data, true)
-                    cache.deleteRecursively()
-                }
+                    if (File(cache, "images").exists() && !data.exists()) {
+                        cache.copyRecursively(data, true)
+                        cache.deleteRecursively()
+                    }
 
-                if (reader?.isActive == false && downloadJob?.isActive != true)
                     field = false
+                }
 
                 downloads.add(galleryID)
             } else {
@@ -110,6 +112,12 @@ class GalleryDownloader(
                 //Check cache
                 val cache = File(getCachedGallery(this@GalleryDownloader, galleryID), "reader.json")
 
+                try {
+                    json.parse(serializer, cache.readText())
+                } catch(e: Exception) {
+                    cache.delete()
+                }
+
                 if (cache.exists()) {
                     val cached = json.parse(serializer, cache.readText())
 
@@ -128,14 +136,11 @@ class GalleryDownloader(
                 //Cache doesn't exist. Load from internet
                 val reader = when {
                     useHiyobi -> {
-                        xyz.quaver.hiyobi.getReader(galleryID).let {
-                            when {
-                                it.readerItems.isEmpty() -> {
-                                    useHiyobi = false
-                                    getReader(galleryID)
-                                }
-                                else -> it
-                            }
+                        try {
+                            xyz.quaver.hiyobi.getReader(galleryID)
+                        } catch(e: Exception) {
+                            useHiyobi = false
+                            getReader(galleryID)
                         }
                     }
                     else -> {
@@ -153,6 +158,7 @@ class GalleryDownloader(
 
                 reader
             } catch (e: Exception) {
+                Crashlytics.logException(e)
                 Reader("", listOf())
             }
         }
@@ -163,6 +169,8 @@ class GalleryDownloader(
     fun start() {
         downloadJob = CoroutineScope(Dispatchers.Default).launch {
             val reader = reader!!.await()
+
+            notificationBuilder.setContentTitle(reader.title)
 
             if (reader.readerItems.isEmpty()) {
                 onErrorHandler?.invoke(IOException(getString(R.string.unable_to_connect)))
@@ -216,7 +224,7 @@ class GalleryDownloader(
                                 notificationManager.notify(galleryID, notificationBuilder.build())
                             }
 
-                        cache.absolutePath
+                        "images/$name.$ext"
                     }
                 }.forEach {
                     list.add(it.await())
@@ -307,15 +315,10 @@ class GalleryDownloader(
         notificationBuilder = NotificationCompat.Builder(this, "download").apply {
             setContentTitle(getString(R.string.reader_loading))
             setContentText(getString(R.string.reader_notification_text))
-            setSmallIcon(R.drawable.ic_download)
+            setSmallIcon(android.R.drawable.stat_sys_download)
             setContentIntent(pendingIntent)
             setProgress(0, 0, true)
             priority = NotificationCompat.PRIORITY_LOW
-        }
-
-        CoroutineScope(Dispatchers.Default).launch {
-            while (reader == null) ;
-            notificationBuilder.setContentTitle(reader.await().title)
         }
     }
 

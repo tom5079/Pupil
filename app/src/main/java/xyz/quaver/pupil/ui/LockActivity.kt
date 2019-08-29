@@ -19,6 +19,7 @@
 package xyz.quaver.pupil.ui
 
 import android.app.Activity
+import android.app.AlertDialog
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import com.andrognito.patternlockview.PatternLockView
@@ -35,7 +36,18 @@ class LockActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_lock)
 
-        val lockManager = LockManager(this)
+        val lockManager = try {
+            LockManager(this)
+        } catch (e: Exception) {
+            AlertDialog.Builder(this).apply {
+                setTitle(R.string.warning)
+                setMessage(R.string.lock_corrupted)
+                setPositiveButton(android.R.string.ok) { _, _ ->
+                    finish()
+                }
+            }.show()
+            return
+        }
 
         val mode = intent.getStringExtra("mode")
 
@@ -46,9 +58,10 @@ class LockActivity : AppCompatActivity() {
 
         when(mode) {
             null -> {
-                if (lockManager.empty()) {
+                if (lockManager.isEmpty()) {
                     setResult(RESULT_OK)
                     finish()
+                    return
                 }
             }
             "add_lock" -> {

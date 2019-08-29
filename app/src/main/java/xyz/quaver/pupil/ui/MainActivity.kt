@@ -25,14 +25,16 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
-import android.content.pm.PackageManager
 import android.graphics.drawable.Animatable
 import android.net.Uri
 import android.os.Bundle
 import android.os.Environment
 import android.text.*
 import android.text.style.AlignmentSpan
-import android.view.*
+import android.view.KeyEvent
+import android.view.MotionEvent
+import android.view.View
+import android.view.WindowManager
 import android.widget.EditText
 import android.widget.ImageView
 import android.widget.LinearLayout
@@ -42,7 +44,6 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.cardview.widget.CardView
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import androidx.core.content.FileProvider
 import androidx.core.content.res.ResourcesCompat
 import androidx.core.view.GravityCompat
 import androidx.preference.PreferenceManager
@@ -50,11 +51,11 @@ import androidx.vectordrawable.graphics.drawable.AnimatedVectorDrawableCompat
 import com.arlib.floatingsearchview.FloatingSearchView
 import com.arlib.floatingsearchview.suggestions.model.SearchSuggestion
 import com.arlib.floatingsearchview.util.view.SearchInputView
+import com.bumptech.glide.Glide
 import com.google.android.material.appbar.AppBarLayout
 import com.google.android.material.snackbar.Snackbar
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.activity_main_content.*
-import kotlinx.android.synthetic.main.dialog_galleryblock.view.*
 import kotlinx.coroutines.*
 import kotlinx.serialization.ImplicitReflectionSerializer
 import kotlinx.serialization.json.Json
@@ -126,7 +127,21 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        startActivityForResult(Intent(this, LockActivity::class.java), REQUEST_LOCK)
+        val lockManager = try {
+            LockManager(this)
+        } catch (e: Exception) {
+            android.app.AlertDialog.Builder(this).apply {
+                setTitle(R.string.warning)
+                setMessage(R.string.lock_corrupted)
+                setPositiveButton(android.R.string.ok) { _, _ ->
+                    finish()
+                }
+            }.show()
+            return
+        }
+
+        if (lockManager.isNotEmpty())
+            startActivityForResult(Intent(this, LockActivity::class.java), REQUEST_LOCK)
 
         checkPermissions()
 
@@ -191,10 +206,10 @@ class MainActivity : AppCompatActivity() {
         val maxPage = ceil(totalItems / perPage.toDouble()).roundToInt()
 
         return when(keyCode) {
-            KeyEvent.KEYCODE_VOLUME_DOWN -> {
-                if (currentPage < maxPage) {
+            KeyEvent.KEYCODE_VOLUME_UP -> {
+                if (currentPage > 0) {
                     runOnUiThread {
-                        currentPage++
+                        currentPage--
 
                         cancelFetch()
                         clearGalleries()
@@ -205,10 +220,10 @@ class MainActivity : AppCompatActivity() {
 
                 true
             }
-            KeyEvent.KEYCODE_VOLUME_UP -> {
-                if (currentPage > 0) {
+            KeyEvent.KEYCODE_VOLUME_DOWN -> {
+                if (currentPage < maxPage) {
                     runOnUiThread {
-                        currentPage--
+                        currentPage++
 
                         cancelFetch()
                         clearGalleries()
@@ -242,6 +257,12 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun checkUpdate() {
+
+        val preferences = PreferenceManager.getDefaultSharedPreferences(this)
+        val ignoreUpdateUntil = preferences.getLong("ignore_update_until", 0)
+
+        if (ignoreUpdateUntil > System.currentTimeMillis())
+            return
 
         fun extractReleaseNote(update: JsonObject, locale: String) : String {
             val markdown = update["body"]!!.content
@@ -297,6 +318,16 @@ class MainActivity : AppCompatActivity() {
                 val msg = extractReleaseNote(update, Locale.getDefault().language)
                 setMessage(Markwon.create(context).toMarkdown(msg))
                 setPositiveButton(android.R.string.yes) { _, _ ->
+                    if (!this@MainActivity.hasPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
+                        AlertDialog.Builder(this@MainActivity).apply {
+                            setTitle(R.string.warning)
+                            setMessage(R.string.update_no_permission)
+                            setPositiveButton(android.R.string.ok) { _, _ -> }
+                        }.show()
+
+                        return@setPositiveButton
+                    }
+
                     val request = DownloadManager.Request(Uri.parse(url)).apply {
                         setDescription(getString(R.string.update_notification_description))
                         setTitle(getString(R.string.app_name))
@@ -308,17 +339,29 @@ class MainActivity : AppCompatActivity() {
 
                     registerReceiver(object: BroadcastReceiver() {
                         override fun onReceive(context: Context?, intent: Intent?) {
-                            val install = Intent(Intent.ACTION_VIEW).apply {
-                                flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_GRANT_READ_URI_PERMISSION
-                                setDataAndType(manager.getUriForDownloadedFile(id), manager.getMimeTypeForDownloadedFile(id))
-                            }
+                            try {
+                                val install = Intent(Intent.ACTION_VIEW).apply {
+                                    flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_GRANT_READ_URI_PERMISSION
+                                    setDataAndType(manager.getUriForDownloadedFile(id), manager.getMimeTypeForDownloadedFile(id))
+                                }
 
-                            startActivity(install)
-                            unregisterReceiver(this)
+                                startActivity(install)
+                                unregisterReceiver(this)
+                            } catch (e: Exception) {
+                                AlertDialog.Builder(this@MainActivity).apply {
+                                    setTitle(R.string.update_failed)
+                                    setMessage(R.string.update_failed_message)
+                                    setPositiveButton(android.R.string.ok) { _, _ -> }
+                                }.show()
+                            }
                         }
                     }, IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE))
                 }
-                setNegativeButton(android.R.string.no) { _, _ ->}
+                setNegativeButton(R.string.ignore_update) { _, _ ->
+                    preferences.edit()
+                        .putLong("ignore_update_until", System.currentTimeMillis() + 604800000)
+                        .apply()
+                }
             }
 
             launch(Dispatchers.Main) {
@@ -328,7 +371,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun checkPermissions() {
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED)
+        if (this.hasPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE))
             ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE), 13489)
     }
 
@@ -435,7 +478,6 @@ class MainActivity : AppCompatActivity() {
                         runOnUiThread {
                             cancelFetch()
                             clearGalleries()
-                            fetchGalleries(query, sortMode)
                             loadBlocks()
                         }
                     }
@@ -461,6 +503,8 @@ class MainActivity : AppCompatActivity() {
                                 intent.putExtra("galleryID", gallery.id)
 
                                 startActivity(intent)
+
+                                histories.add(gallery.id)
                             } catch (e: Exception) {
                                 Snackbar.make(main_layout,
                                     R.string.main_open_gallery_by_id_error, Snackbar.LENGTH_LONG).show()
@@ -479,7 +523,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun setupRecyclerView() {
         with(main_recyclerview) {
-            adapter = GalleryBlockAdapter(galleries).apply {
+            adapter = GalleryBlockAdapter(Glide.with(this@MainActivity), galleries).apply {
                 onChipClickedHandler.add {
                     runOnUiThread {
                         query = it.toQuery()
@@ -494,7 +538,6 @@ class MainActivity : AppCompatActivity() {
             }
             ItemClickSupport.addTo(this)
                 .setOnItemClickListener { _, position, v ->
-
                     if (v !is CardView)
                         return@setOnItemClickListener
 
@@ -506,66 +549,27 @@ class MainActivity : AppCompatActivity() {
                     startActivity(intent)
 
                     histories.add(gallery.id)
-                }.setOnItemLongClickListener { recyclerView, position, v ->
+                }.setOnItemLongClickListener { _, position, v ->
 
                     if (v !is CardView)
                         return@setOnItemLongClickListener true
 
-                    val gallery = galleries[position].first
-                    val view = LayoutInflater.from(this@MainActivity)
-                        .inflate(R.layout.dialog_galleryblock, recyclerView, false)
+                    val galleryID = galleries[position].first.id
 
-                    val dialog = AlertDialog.Builder(this@MainActivity).apply {
-                        setView(view)
-                    }.create()
+                    GalleryDialog(this@MainActivity, galleryID).apply {
+                        onChipClickedHandler.add {
+                            runOnUiThread {
+                                query = it.toQuery()
+                                currentPage = 0
 
-                    with(view.main_dialog_download) {
-                        text = when(GalleryDownloader.get(gallery.id)) {
-                            null -> getString(R.string.reader_fab_download)
-                            else -> getString(R.string.reader_fab_download_cancel)
-                        }
-                        isEnabled = !(adapter as GalleryBlockAdapter).completeFlag.get(gallery.id, false)
-                        setOnClickListener {
-                            val downloader = GalleryDownloader.get(gallery.id)
-                            if (downloader == null)
-                                GalleryDownloader(context, gallery.id, true).start()
-                            else {
-                                downloader.cancel()
-                                downloader.clearNotification()
+                                cancelFetch()
+                                clearGalleries()
+                                fetchGalleries(query, sortMode)
+                                loadBlocks()
                             }
-
-                            dialog.dismiss()
+                            dismiss()
                         }
-                    }
-
-                    view.main_dialog_delete.setOnClickListener {
-                        CoroutineScope(Dispatchers.Default).launch {
-                            with(GalleryDownloader[gallery.id]) {
-                                this?.cancelAndJoin()
-                                this?.clearNotification()
-                            }
-                            val cache = File(cacheDir, "imageCache/${gallery.id}")
-                            val data = getCachedGallery(context, gallery.id)
-                            cache.deleteRecursively()
-                            data.deleteRecursively()
-
-                            downloads.remove(gallery.id)
-
-                            if (mode == Mode.DOWNLOAD) {
-                                runOnUiThread {
-                                    cancelFetch()
-                                    clearGalleries()
-                                    fetchGalleries(query, sortMode)
-                                    loadBlocks()
-                                }
-                            }
-
-                            (adapter as GalleryBlockAdapter).completeFlag.put(gallery.id, false)
-                        }
-                        dialog.dismiss()
-                    }
-
-                    dialog.show()
+                    }.show()
 
                     true
                 }
@@ -721,6 +725,7 @@ class MainActivity : AppCompatActivity() {
                                         val text = next.findViewById<TextView>(R.id.text_next).apply {
                                             text = getString(R.string.main_move, currentPage+2)
                                         }
+
                                         if (absDist < 360) {
                                             next.layoutParams.height = (absDist/2).roundToInt()
                                             icon.layoutParams.height = (absDist/2).roundToInt()
@@ -728,8 +733,7 @@ class MainActivity : AppCompatActivity() {
                                             text.layoutParams.width = absDist.roundToInt()
 
                                             target = -1
-                                        }
-                                        else {
+                                        } else {
                                             next.layoutParams.height = 180
                                             icon.layoutParams.height = 180
                                             icon.rotation = 0f
@@ -792,7 +796,7 @@ class MainActivity : AppCompatActivity() {
                 s ?: return
 
                 if (s.any { it.isUpperCase() })
-                    s.replace(0, s.length, s.toString().toLowerCase())
+                    s.replace(0, s.length, s.toString().toLowerCase(Locale.getDefault()))
             }
         })
 
@@ -900,10 +904,9 @@ class MainActivity : AppCompatActivity() {
                     else
                         setImageResource(R.drawable.ic_star_empty)
 
+                    visibility = View.VISIBLE
                     rotation = 0f
                     isEnabled = true
-
-                    setColorFilter(ContextCompat.getColor(context, R.color.material_orange_500))
 
                     isClickable = true
                     setOnClickListener {
