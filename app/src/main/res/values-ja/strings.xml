@@ -70,7 +70,7 @@
     <string name="settings_app_lock">アプリロック</string>
     <string name="settings_app_lock_type">アップロックの種類</string>
     <string name="settings_app_version_title">バージョン</string>
-    <string name="settings_lock_biomatrics">生体認識</string>
+    <string name="settings_lock_biometrics">生体認識</string>
     <string name="settings_lock_confirm">ロック確認のためもう一回入力してください。</string>
     <string name="settings_lock_enabled">有効</string>
     <string name="settings_lock_fingerprint">指紋</string>
@@ -83,4 +83,23 @@
     <string name="main_menu_sort">ソート</string>
     <string name="main_menu_sort_newest">投稿日時順</string>
     <string name="main_menu_sort_popular">人気順</string>
+    <string name="update_failed">アップデートに失敗しました</string>
+    <string name="update_failed_message">マニュアルインストールが必要です。APKファイルは</string>
+    <string name="ignore_update">無視</string>
+    <string name="lock_corrupted">ロックファイルが破損されています。Pupilを再再インストールしてください。</string>
+    <string name="update_no_permission">権限がないため自動アップデートを行えません。ホームページで直接ダウンロードしてください。</string>
+    <string name="settings_dark_mode_title">ダークモード</string>
+    <string name="settings_dark_mode_summary">夜にシコりたい方々へ</string>
+    <string name="gallery_details">ギャラリー情報</string>
+    <string name="gallery_artists">アーティスト</string>
+    <string name="gallery_characters">キャラクター</string>
+    <string name="gallery_groups">グループ</string>
+    <string name="gallery_language">言語</string>
+    <string name="gallery_series">シリーズ</string>
+    <string name="gallery_tags">タグ</string>
+    <string name="gallery_thumbnails">サムネイル</string>
+    <string name="gallery_related">おすすめ</string>
+    <string name="settings_nomedia_summary">イメージを隠す</string>
+    <string name="settings_nomedia_title">イメージをギャラリーから見えなくする</string>
+    <string name="reader_help">ヘルプ</string>
 </resources>

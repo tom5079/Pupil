@@ -13,8 +13,8 @@ android {
         applicationId "xyz.quaver.pupil"
         minSdkVersion 16
         targetSdkVersion 29
-        versionCode 21
-        versionName "3.0"
+        versionCode 27
+        versionName "3.2-beta2"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         multiDexEnabled true
         vectorDrawables.useSupportLibrary = true
@@ -25,11 +25,16 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
         buildTypes.each {
-            it.buildConfigField('boolean', 'PRERELEASE', 'false')
+            it.buildConfigField('boolean', 'PRERELEASE', 'true')
+            it.buildConfigField('boolean', 'CENSOR', 'false')
         }
     }
     kotlinOptions {
         freeCompilerArgs += '-Xuse-experimental=kotlin.Experimental'
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
     }
 }
 
@@ -44,15 +49,16 @@ dependencies {
     implementation "org.jetbrains.kotlinx:kotlinx-serialization-runtime:0.11.0"
     implementation 'androidx.appcompat:appcompat:1.0.2'
     implementation 'androidx.constraintlayout:constraintlayout:1.1.3'
-    implementation 'androidx.preference:preference:1.1.0-beta01'
+    implementation 'androidx.preference:preference:1.1.0-rc01'
     implementation 'androidx.constraintlayout:constraintlayout:1.1.3'
+    implementation 'androidx.gridlayout:gridlayout:1.0.0'
     implementation 'androidx.lifecycle:lifecycle-extensions:2.0.0'
     implementation 'androidx.lifecycle:lifecycle-viewmodel-ktx:2.0.0'
     implementation 'androidx.legacy:legacy-support-v4:1.0.0'
     implementation 'com.android.support:multidex:1.0.3'
-    implementation 'com.google.android.material:material:1.0.0'
-    implementation 'com.google.firebase:firebase-core:17.0.0'
-    implementation 'com.google.firebase:firebase-perf:18.0.1'
+    implementation 'com.google.android.material:material:1.1.0-alpha09'
+    implementation 'com.google.firebase:firebase-core:17.1.0'
+    implementation 'com.google.firebase:firebase-perf:19.0.0'
     implementation 'com.crashlytics.sdk.android:crashlytics:2.10.1'
     implementation 'com.github.arimorty:floatingsearchview:2.1.1'
     implementation 'com.github.clans:fab:1.6.4'
@@ -61,6 +67,7 @@ dependencies {
         transitive = false
     }
     implementation 'com.andrognito.patternlockview:patternlockview:1.0.0'
+    implementation 'com.jsibbold:zoomage:1.3.0'
     implementation "ru.noties.markwon:core:${markwonVersion}"
     kapt 'com.github.bumptech.glide:compiler:4.9.0'
     testImplementation 'junit:junit:4.12'

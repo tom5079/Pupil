@@ -18,21 +18,18 @@
 
 package xyz.quaver.pupil.adapters
 
-import android.app.AlertDialog
-import android.graphics.BitmapFactory
 import android.graphics.drawable.Drawable
 import android.util.SparseBooleanArray
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.ArrayAdapter
 import android.widget.LinearLayout
 import androidx.cardview.widget.CardView
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import androidx.vectordrawable.graphics.drawable.Animatable2Compat
 import androidx.vectordrawable.graphics.drawable.AnimatedVectorDrawableCompat
-import com.bumptech.glide.Glide
+import com.bumptech.glide.RequestManager
 import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.google.android.material.chip.Chip
 import kotlinx.android.synthetic.main.item_galleryblock.view.*
@@ -44,18 +41,20 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonConfiguration
 import xyz.quaver.hitomi.GalleryBlock
 import xyz.quaver.hitomi.Reader
+import xyz.quaver.pupil.BuildConfig
 import xyz.quaver.pupil.Pupil
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.types.Tag
 import xyz.quaver.pupil.util.Histories
 import xyz.quaver.pupil.util.getCachedGallery
+import xyz.quaver.pupil.util.wordCapitalize
 import java.io.File
 import java.util.*
 import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
 import kotlin.concurrent.schedule
 
-class GalleryBlockAdapter(private val galleries: List<Pair<GalleryBlock, Deferred<String>>>) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+class GalleryBlockAdapter(private val glide: RequestManager, private val galleries: List<Pair<GalleryBlock, Deferred<String>>>) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     enum class ViewType {
         NEXT,
@@ -66,7 +65,7 @@ class GalleryBlockAdapter(private val galleries: List<Pair<GalleryBlock, Deferre
     private lateinit var favorites: Histories
 
     inner class GalleryViewHolder(val view: CardView) : RecyclerView.ViewHolder(view) {
-        fun bind(holder: GalleryViewHolder, item: Pair<GalleryBlock, Deferred<String>>) {
+        fun bind(item: Pair<GalleryBlock, Deferred<String>>) {
             with(view) {
                 val resources = context.resources
                 val languages = resources.getStringArray(R.array.languages).map {
@@ -83,17 +82,28 @@ class GalleryBlockAdapter(private val galleries: List<Pair<GalleryBlock, Deferre
                 CoroutineScope(Dispatchers.Main).launch {
                     val cache = thumbnail.await()
 
-                    Glide.with(holder.view)
+                    glide
                         .load(cache)
                         .skipMemoryCache(true)
                         .diskCacheStrategy(DiskCacheStrategy.NONE)
                         .error(R.drawable.image_broken_variant)
+                        .apply {
+                            if (BuildConfig.CENSOR)
+                                override(5, 8)
+                        }
                         .into(galleryblock_thumbnail)
                 }
 
                 //Check cache
                 val readerCache = { File(getCachedGallery(context, galleryBlock.id), "reader.json") }
                 val imageCache = { File(getCachedGallery(context, galleryBlock.id), "images") }
+
+                try {
+                   Json(JsonConfiguration.Stable)
+                        .parse(Reader.serializer(), readerCache.invoke().readText())
+                } catch(e: Exception) {
+                    readerCache.invoke().delete()
+                }
 
                 if (readerCache.invoke().exists()) {
                     val reader = Json(JsonConfiguration.Stable)
@@ -146,8 +156,6 @@ class GalleryBlockAdapter(private val galleries: List<Pair<GalleryBlock, Deferre
                                         }
                                     } else
                                         view.galleryblock_progress_complete.visibility = View.INVISIBLE
-
-                                    null
                                 }
                             }
                         }
@@ -163,19 +171,6 @@ class GalleryBlockAdapter(private val galleries: List<Pair<GalleryBlock, Deferre
                         artists.isNotEmpty() -> View.VISIBLE
                         else -> View.GONE
                     }
-                    setOnClickListener {
-                        if (artists.size > 1) {
-                            AlertDialog.Builder(context).apply {
-                                setAdapter(ArrayAdapter(context, android.R.layout.select_dialog_item, artists)) { _, index ->
-                                    for (callback in onChipClickedHandler)
-                                        callback.invoke(Tag("artist", artists[index]))
-                                }
-                            }.show()
-                        } else {
-                            for(callback in onChipClickedHandler)
-                                callback.invoke(Tag("artist", artists.first()))
-                        }
-                    }
                 }
                 with(galleryblock_series) {
                     text =
@@ -186,31 +181,8 @@ class GalleryBlockAdapter(private val galleries: List<Pair<GalleryBlock, Deferre
                         series.isNotEmpty() -> View.VISIBLE
                         else -> View.GONE
                     }
-                    setOnClickListener {
-                        setOnClickListener {
-                            if (series.size > 1) {
-                                AlertDialog.Builder(context).apply {
-                                    setAdapter(ArrayAdapter(context, android.R.layout.select_dialog_item, series)) { _, index ->
-                                        for (callback in onChipClickedHandler)
-                                            callback.invoke(Tag("series", series[index]))
-                                    }
-                                }.show()
-                            } else {
-                                for(callback in onChipClickedHandler)
-                                    callback.invoke(Tag("series", series.first()))
-                            }
-                        }
-                    }
                 }
-                with(galleryblock_type) {
-                    text = resources.getString(R.string.galleryblock_type, galleryBlock.type).wordCapitalize()
-                    setOnClickListener {
-                        setOnClickListener {
-                            for(callback in onChipClickedHandler)
-                                callback.invoke(Tag("type", galleryBlock.type))
-                        }
-                    }
-                }
+                galleryblock_type.text = resources.getString(R.string.galleryblock_type, galleryBlock.type).wordCapitalize()
                 with(galleryblock_language) {
                     text =
                         resources.getString(R.string.galleryblock_language, languages[galleryBlock.language])
@@ -218,48 +190,37 @@ class GalleryBlockAdapter(private val galleries: List<Pair<GalleryBlock, Deferre
                         galleryBlock.language.isNotEmpty() -> View.VISIBLE
                         else -> View.GONE
                     }
-                    setOnClickListener {
-                        setOnClickListener {
-                            for(callback in onChipClickedHandler)
-                                callback.invoke(Tag("language", galleryBlock.language))
-                        }
-                    }
                 }
 
                 galleryblock_tag_group.removeAllViews()
                 galleryBlock.relatedTags.forEach {
-                    val tag = Tag.parse(it).let {  tag ->
-                        when {
-                            tag.area != null -> tag
-                            else -> Tag("tag", it)
+                    galleryblock_tag_group.addView(Chip(context).apply {
+                        val tag = Tag.parse(it).let {  tag ->
+                            when {
+                                tag.area != null -> tag
+                                else -> Tag("tag", it)
+                            }
                         }
-                    }
 
-                    val chip = LayoutInflater.from(context)
-                        .inflate(R.layout.tag_chip, this, false) as Chip
-
-                    val icon = when(tag.area) {
-                        "male" -> {
-                            chip.setChipBackgroundColorResource(R.color.material_blue_700)
-                            chip.setTextColor(ContextCompat.getColor(context, android.R.color.white))
-                            ContextCompat.getDrawable(context, R.drawable.ic_gender_male_white)
+                        chipIcon = when(tag.area) {
+                            "male" -> {
+                                setChipBackgroundColorResource(R.color.material_blue_700)
+                                setTextColor(ContextCompat.getColor(context, android.R.color.white))
+                                ContextCompat.getDrawable(context, R.drawable.ic_gender_male_white)
+                            }
+                            "female" -> {
+                                setChipBackgroundColorResource(R.color.material_pink_600)
+                                setTextColor(ContextCompat.getColor(context, android.R.color.white))
+                                ContextCompat.getDrawable(context, R.drawable.ic_gender_female_white)
+                            }
+                            else -> null
                         }
-                        "female" -> {
-                            chip.setChipBackgroundColorResource(R.color.material_pink_600)
-                            chip.setTextColor(ContextCompat.getColor(context, android.R.color.white))
-                            ContextCompat.getDrawable(context, R.drawable.ic_gender_female_white)
+                        text = tag.tag.wordCapitalize()
+                        setOnClickListener {
+                            for (callback in onChipClickedHandler)
+                                callback.invoke(tag)
                         }
-                        else -> null
-                    }
-
-                    chip.chipIcon = icon
-                    chip.text = tag.tag.wordCapitalize()
-                    chip.setOnClickListener {
-                        for (callback in onChipClickedHandler)
-                            callback.invoke(tag)
-                    }
-
-                    galleryblock_tag_group.addView(chip)
+                    })
                 }
 
                 galleryblock_id.text = galleryBlock.id.toString()
@@ -311,15 +272,6 @@ class GalleryBlockAdapter(private val galleries: List<Pair<GalleryBlock, Deferre
         }
     }
 
-    private fun String.wordCapitalize() : String {
-        val result = ArrayList<String>()
-
-        for (word in this.split(" "))
-            result.add(word.capitalize())
-
-        return result.joinToString(" ")
-    }
-
     private val refreshTasks = HashMap<GalleryViewHolder, TimerTask>()
     val completeFlag = SparseBooleanArray()
 
@@ -350,7 +302,7 @@ class GalleryBlockAdapter(private val galleries: List<Pair<GalleryBlock, Deferre
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
         if (holder is GalleryViewHolder)
-            holder.bind(holder, galleries[position-(if (showPrev) 1 else 0)])
+            holder.bind(galleries[position-(if (showPrev) 1 else 0)])
     }
 
     override fun onViewDetachedFromWindow(holder: RecyclerView.ViewHolder) {

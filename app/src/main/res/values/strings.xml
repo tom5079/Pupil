@@ -10,6 +10,7 @@
     <string name="github" translatable="false">https://github.com/tom5079/Pupil-issue/issues/new/choose</string>
     <string name="email" translatable="false">mailto:pupil.hentai@gmail.com</string>
     <string name="kakaotalk" translatable="false">https://open.kakao.com/o/gvNrncsb</string>
+    <string name="error_help" translatable="false">http://bit.ly/2KYYhto</string>
 
     <string name="main_settings" translatable="false">Settings</string>
     <string name="galleryblock_thumbnail_description" translatable="false">Thumbnail</string>
@@ -26,10 +27,17 @@
     <string name="https_block_alert_title">(Korean only)</string>
     <string name="https_block_alert">(Korean only)</string>
 
+    <string name="update_failed">Update failed</string>
+    <string name="update_failed_message">Please install manually. APK file is in the Downloads folder.</string>
+    <string name="update_no_permission">Cannot auto update because permission is denied. Please download manually from the webpage.</string>
+    <string name="ignore_update">Ignore</string>
+
     <string name="channel_download">Download</string>
     <string name="channel_download_description">Shows download status</string>
 
     <string name="unable_to_connect">Unable to connect to hitomi.la</string>
+    
+    <string name="lock_corrupted">Lock file corrupted! Please re-install Pupil</string>
 
     <string name="main_search">Search</string>
     <string name="main_no_result">No result</string>
@@ -71,6 +79,16 @@
     <string name="search_hint">Search galleries</string>
     <string name="search_hint_with_page">Search galleries</string>
 
+    <string name="gallery_details">Details</string>
+    <string name="gallery_thumbnails">Thumbnails</string>
+    <string name="gallery_related">Related Galleries</string>
+    <string name="gallery_artists">Artists</string>
+    <string name="gallery_groups">Groups</string>
+    <string name="gallery_language">Language</string>
+    <string name="gallery_series">Series</string>
+    <string name="gallery_characters">Characters</string>
+    <string name="gallery_tags">Tags</string>
+
     <string name="galleryblock_series">Series: %1$s</string>
     <string name="galleryblock_type">Type: %1$s</string>
     <string name="galleryblock_language">Language: %1$s</string>
@@ -83,6 +101,8 @@
     <string name="reader_notification_text">Downloading&#8230;</string>
     <string name="reader_notification_complete">Download complete</string>
     <string name="reader_notification_error">Download error</string>
+
+    <string name="reader_help">Help</string>
 
     <string name="settings_title">Settings</string>
     <string name="settings_app_version_title">App version</string>
@@ -105,12 +125,16 @@
     <string name="settings_use_hiyobi_summary">Load images from hiyobi.me to improve loading speed (if available)</string>
     <string name="settings_security_mode_title">Enable security mode</string>
     <string name="settings_security_mode_summary">Enable security mode to make the screen invisible on recent app window</string>
+    <string name="settings_dark_mode_title">Dark mode</string>
+    <string name="settings_dark_mode_summary">Protect yourself against light attacks!</string>
+    <string name="settings_nomedia_title">Hide image from gallery</string>
+    <string name="settings_nomedia_summary">Hides image from gallery</string>
 
     <string name="settings_lock_none">None</string>
     <string name="settings_lock_pattern">Pattern</string>
     <string name="settings_lock_pin" translatable="false">PIN</string>
     <string name="settings_lock_password">Password</string>
-    <string name="settings_lock_biomatrics">Biomatrics</string>
+    <string name="settings_lock_biometrics">Biometrics</string>
     <string name="settings_lock_fingerprint">Fingerprint</string>
     <string name="settings_lock_enabled">Enabled</string>
     <string name="settings_lock_confirm">Input same lock once more to confirm Lock</string>

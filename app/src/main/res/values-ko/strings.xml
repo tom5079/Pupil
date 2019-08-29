@@ -70,7 +70,7 @@
     <string name="settings_app_lock">앱 잠금</string>
     <string name="settings_app_lock_type">앱 잠금 종류</string>
     <string name="settings_app_version_title">앱 버전</string>
-    <string name="settings_lock_biomatrics">생체 인식</string>
+    <string name="settings_lock_biometrics">생체 인식</string>
     <string name="settings_lock_confirm">잠금 확인을 위해 한번 더 입력해주세요</string>
     <string name="settings_lock_enabled">사용 중</string>
     <string name="settings_lock_fingerprint">지문</string>
@@ -83,4 +83,23 @@
     <string name="main_menu_sort">정렬</string>
     <string name="main_menu_sort_popular">인기순</string>
     <string name="main_menu_sort_newest">시간순</string>
+    <string name="update_failed">"업데이트 "</string>
+    <string name="update_failed_message">수동 업데이트가 필요합니다. APK 파일은 다운로드 폴더에 있습니다.</string>
+    <string name="ignore_update">무시</string>
+    <string name="lock_corrupted">잠금 파일이 손상되었습니다! 앱을 재설치 해 주시기 바랍니다.</string>
+    <string name="update_no_permission">권한이 부여되어 있지 않아 자동 업데이트를 진행할 수 없습니다. 홈페이지에서 직접 다운로드 받으시기 바랍니다.</string>
+    <string name="settings_dark_mode_title">다크 모드</string>
+    <string name="settings_dark_mode_summary">딥 다크한 모오드</string>
+    <string name="gallery_details">갤러리 정보</string>
+    <string name="gallery_artists">작가</string>
+    <string name="gallery_characters">캐릭터</string>
+    <string name="gallery_groups">그룹</string>
+    <string name="gallery_language">언어</string>
+    <string name="gallery_series">시리즈</string>
+    <string name="gallery_tags">태그</string>
+    <string name="gallery_related">관련 갤러리</string>
+    <string name="gallery_thumbnails">미리보기</string>
+    <string name="settings_nomedia_summary">이미지 숨기기</string>
+    <string name="settings_nomedia_title">갤러리에서 이미지 검색이 되지 않도록 합니다</string>
+    <string name="reader_help">도움말</string>
 </resources>

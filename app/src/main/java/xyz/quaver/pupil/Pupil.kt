@@ -18,13 +18,10 @@
 
 package xyz.quaver.pupil
 
-import android.app.DownloadManager
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
-import android.content.BroadcastReceiver
 import android.content.Context
-import android.content.Intent
 import android.os.Build
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.content.ContextCompat
@@ -75,6 +72,11 @@ class Pupil : MultiDexApplication() {
 
             preference.edit().putBoolean("channel_created", true).apply()
         }
+
+        AppCompatDelegate.setDefaultNightMode(when (preference.getBoolean("dark_mode", false)) {
+            true -> AppCompatDelegate.MODE_NIGHT_YES
+            false -> AppCompatDelegate.MODE_NIGHT_NO
+        })
 
         super.onCreate()
     }
