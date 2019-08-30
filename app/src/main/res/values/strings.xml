@@ -71,6 +71,10 @@
     <string name="main_export_open_folder">Open Folder</string>
     <string name="main_export_error">Error occurred during export</string>
 
+    <string name="main_download">DOWNLOAD</string>
+    <string name="main_cancel_download">CANCEL</string>
+    <string name="main_delete">DELETE</string>
+
     <string name="update_title">Update available</string>
     <string name="update_download_started">Download started</string>
     <string name="update_notification_description">Downloading apk&#8230;</string>

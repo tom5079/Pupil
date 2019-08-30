@@ -99,7 +99,10 @@
     <string name="gallery_tags">タグ</string>
     <string name="gallery_thumbnails">サムネイル</string>
     <string name="gallery_related">おすすめ</string>
-    <string name="settings_nomedia_summary">イメージを隠す</string>
-    <string name="settings_nomedia_title">イメージをギャラリーから見えなくする</string>
+    <string name="settings_nomedia_summary">イメージをギャラリーから見えなくする</string>
+    <string name="settings_nomedia_title">イメージを隠す</string>
     <string name="reader_help">ヘルプ</string>
+    <string name="main_delete">削除</string>
+    <string name="main_download">ダウンロード</string>
+    <string name="main_cancel_download">キャンセル</string>
 </resources>

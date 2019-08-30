@@ -535,6 +535,52 @@ class MainActivity : AppCompatActivity() {
                         loadBlocks()
                     }
                 }
+                onDownloadClickedHandler = { position ->
+                    val galleryID = galleries[position].first.id
+
+                    if (!completeFlag.get(galleryID, false)) {
+                        val downloader = GalleryDownloader.get(galleryID)
+
+                        if (downloader == null)
+                            GalleryDownloader(context, galleryID, true).start()
+                        else {
+                            downloader.cancel()
+                            downloader.clearNotification()
+                        }
+                    }
+
+                    closeAllItems()
+                }
+
+                onDeleteClickedHandler = { position ->
+                    val galleryID = galleries[position].first.id
+
+                    CoroutineScope(Dispatchers.Default).launch {
+                        with(GalleryDownloader[galleryID]) {
+                            this?.cancelAndJoin()
+                            this?.clearNotification()
+                        }
+                        val cache = File(cacheDir, "imageCache/${galleryID}")
+                        val data = getCachedGallery(context, galleryID)
+                        cache.deleteRecursively()
+                        data.deleteRecursively()
+
+                        downloads.remove(galleryID)
+
+                        if (this@MainActivity.mode == Mode.DOWNLOAD) {
+                            runOnUiThread {
+                                cancelFetch()
+                                clearGalleries()
+                                fetchGalleries(query, sortMode)
+                                loadBlocks()
+                            }
+                        }
+
+                        completeFlag.put(galleryID, false)
+                    }
+
+                    closeAllItems()
+                }
             }
             ItemClickSupport.addTo(this)
                 .setOnItemClickListener { _, position, v ->

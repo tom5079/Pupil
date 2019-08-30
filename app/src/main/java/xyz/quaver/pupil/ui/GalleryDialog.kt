@@ -22,19 +22,14 @@ import android.app.Dialog
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
-import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
-import android.widget.ImageView
-import android.widget.LinearLayout
 import android.widget.LinearLayout.LayoutParams
 import androidx.core.content.ContextCompat
-import androidx.gridlayout.widget.GridLayout
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
-import com.bumptech.glide.RequestManager
 import com.google.android.material.chip.Chip
 import com.google.android.material.snackbar.Snackbar
 import kotlinx.android.synthetic.main.dialog_galleryblock.*
@@ -45,6 +40,7 @@ import xyz.quaver.hitomi.Gallery
 import xyz.quaver.hitomi.GalleryBlock
 import xyz.quaver.hitomi.getGallery
 import xyz.quaver.hitomi.getGalleryBlock
+import xyz.quaver.pupil.BuildConfig
 import xyz.quaver.pupil.Pupil
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.adapters.GalleryBlockAdapter
@@ -114,7 +110,10 @@ class GalleryDialog(context: Context, private val galleryID: Int) : Dialog(conte
 
                     Glide.with(context)
                         .load(gallery.thumbnails.firstOrNull())
-                        .into(gallery_thumbnail)
+                        .apply {
+                            if (BuildConfig.CENSOR)
+                                override(5, 8)
+                        }.into(gallery_thumbnail)
 
                     addDetails(gallery)
                     addThumbnails(gallery)
