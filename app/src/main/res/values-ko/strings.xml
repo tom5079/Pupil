@@ -99,7 +99,10 @@
     <string name="gallery_tags">태그</string>
     <string name="gallery_related">관련 갤러리</string>
     <string name="gallery_thumbnails">미리보기</string>
-    <string name="settings_nomedia_summary">이미지 숨기기</string>
-    <string name="settings_nomedia_title">갤러리에서 이미지 검색이 되지 않도록 합니다</string>
+    <string name="settings_nomedia_summary">갤러리에서 이미지 검색이 되지 않도록 합니다</string>
+    <string name="settings_nomedia_title">이미지 숨기기</string>
     <string name="reader_help">도움말</string>
+    <string name="main_delete">삭제</string>
+    <string name="main_download">다운로드</string>
+    <string name="main_cancel_download">취소</string>
 </resources>
