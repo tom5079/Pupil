@@ -20,7 +20,7 @@ or Build app yourself
 
 # Manual
 
-[Manual](https://tom5079.github.io/Pupil/2019/06/06/manual-kr.html) is available in only Korean. Consider using translator.
+[Manual](https://tom5079.github.io/Pupil/2019/06/06/manual-kr.html) is only available in Korean. Consider using translator.
 
 # Contribution
 
