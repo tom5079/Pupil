@@ -66,7 +66,7 @@
     <string name="main_open_gallery_by_id">ギャラリー番号で見る</string>
     <string name="main_open_gallery_by_id_error">エラーが発生しました</string>
     <string name="settings_storage">ストレージ</string>
-    <string name="main_drawer_grouop_contact_kakaotalk">カカオトーク</string>
+    <string name="main_drawer_grouop_contact_discord">ディスコード</string>
     <string name="settings_app_lock">アプリロック</string>
     <string name="settings_app_lock_type">アップロックの種類</string>
     <string name="settings_app_version_title">バージョン</string>

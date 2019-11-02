@@ -53,7 +53,7 @@
                 android:title="@string/main_drawer_group_contact_email"
                 android:icon="@drawable/ic_email"/>
             <item android:id="@+id/main_drawer_kakaotalk"
-                android:title="@string/main_drawer_grouop_contact_kakaotalk"
+                android:title="@string/main_drawer_grouop_contact_discord"
                 android:icon="@drawable/ic_message"/>
         </menu>
     </item>
