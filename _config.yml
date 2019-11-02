@@ -25,7 +25,7 @@ t:
       issue: "Having a problem?"
       or: "or…"
       email: "Send an E-mail"
-      kakaotalk: "Join Discord server"
+      discord: "Join Discord server"
   ko:
     header:
       description: "안드로이드 Hitomi.la 뷰어"
@@ -33,4 +33,4 @@ t:
       issue: "문제가 있으세요?"
       or: "또는…"
       email: "이메일 보내기"
-      kakaotalk: "디스코드"
+      discord: "디스코드"
