@@ -25,7 +25,7 @@ fun webpUrlFromUrl(url: String) = url.replace("/galleries/", "/webp/") + ".webp"
 @Serializable
 data class GalleryInfo(
     val width: Int,
-    val hash: String?,
+    val hash: String? = null,
     val haswebp: Int,
     val name: String,
     val height: Int
