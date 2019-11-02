@@ -29,8 +29,6 @@ import com.andrognito.patternlockview.utils.PatternLockUtils
 import kotlinx.android.synthetic.main.fragment_pattern_lock.*
 import kotlinx.android.synthetic.main.fragment_pattern_lock.view.*
 import xyz.quaver.pupil.R
-import xyz.quaver.pupil.util.hash
-import xyz.quaver.pupil.util.hashWithSalt
 
 class PatternLockFragment : Fragment(), PatternLockViewListener {
 

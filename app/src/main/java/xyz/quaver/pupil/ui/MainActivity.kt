@@ -371,7 +371,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun checkPermissions() {
-        if (this.hasPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE))
+        if (!hasPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE))
             ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE), 13489)
     }
 

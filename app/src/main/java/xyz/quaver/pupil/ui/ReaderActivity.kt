@@ -249,16 +249,16 @@ class ReaderActivity : AppCompatActivity() {
                 CoroutineScope(Dispatchers.Main).launch {
                     title = it.title
                     with(reader_download_progressbar) {
-                        max = it.readerItems.size
+                        max = it.galleryInfo.size
                         progress = 0
                     }
                     with(reader_progressbar) {
-                        max = it.readerItems.size
+                        max = it.galleryInfo.size
                         progress = 0
                     }
 
-                    gallerySize = it.readerItems.size
-                    menu?.findItem(R.id.reader_menu_page_indicator)?.title = "$currentPage/${it.readerItems.size}"
+                    gallerySize = it.galleryInfo.size
+                    menu?.findItem(R.id.reader_menu_page_indicator)?.title = "$currentPage/${it.galleryInfo.size}"
                 }
             }
             onProgressHandler = {

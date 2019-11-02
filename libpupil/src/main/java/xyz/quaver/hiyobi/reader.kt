@@ -18,17 +18,16 @@ package xyz.quaver.hiyobi
 
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonConfiguration
-import kotlinx.serialization.json.content
+import kotlinx.serialization.list
 import org.jsoup.Jsoup
+import xyz.quaver.hitomi.GalleryInfo
 import xyz.quaver.hitomi.Reader
-import xyz.quaver.hitomi.ReaderItem
+import xyz.quaver.hitomi.protocol
 import java.net.URL
 import javax.net.ssl.HttpsURLConnection
 
 const val hiyobi = "xn--9w3b15m8vo.asia"
 const val user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.131 Safari/537.36"
-
-class HiyobiReader(title: String, readerItems: List<ReaderItem>) : Reader(title, readerItems)
 
 var cookie: String = ""
     get() {
@@ -37,6 +36,12 @@ var cookie: String = ""
 
         return field
     }
+
+data class Images(
+    val path: String,
+    val no: Int,
+    val name: String
+)
 
 fun renewCookie() : String {
     val url = "https://$hiyobi/"
@@ -59,7 +64,8 @@ fun getReader(galleryID: Int) : Reader {
 
     val title = Jsoup.connect(reader).get().title()
 
-    val json = Json(JsonConfiguration.Stable).parseJson(
+    val galleryInfo = Json(JsonConfiguration.Stable).parse(
+        GalleryInfo.serializer().list,
         with(URL(url).openConnection() as HttpsURLConnection) {
             setRequestProperty("User-Agent", user_agent)
             setRequestProperty("Cookie", cookie)
@@ -70,8 +76,8 @@ fun getReader(galleryID: Int) : Reader {
         }
     )
 
-    return Reader(title, json.jsonArray.map {
-        val name = it.jsonObject["name"]!!.content
-        ReaderItem("https://$hiyobi/data/$galleryID/$name", null)
-    })
+    return Reader(title, galleryInfo)
 }
+
+fun createImgList(galleryID: Int, reader: Reader) =
+    reader.galleryInfo.map { Images("$protocol//$hiyobi/data/$galleryID/${it.name}", galleryID, it.name) }

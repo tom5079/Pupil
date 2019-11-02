@@ -18,12 +18,16 @@
 
 package xyz.quaver.hitomi
 
+import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class UnitTest {
     @Test
     fun test() {
-
+        assertEquals(
+            "6/2d/c26014fc6153ef717932d85f4d26c75195560fb2ce1da60b431ef376501642d6",
+            fullPathFromHash("c26014fc6153ef717932d85f4d26c75195560fb2ce1da60b431ef376501642d6")
+        )
     }
 
     @Test
@@ -63,7 +67,7 @@ class UnitTest {
 
     @Test
     fun test_getGallery() {
-        val gallery = getGallery(1405267)
+        val gallery = getGallery(1510566)
 
         print(gallery)
     }
@@ -77,6 +81,15 @@ class UnitTest {
 
     @Test
     fun test_hiyobi() {
+        xyz.quaver.hiyobi.getReader(1510567)
+    }
 
+    @Test
+    fun test_urlFromUrlFromHash() {
+        val url = urlFromUrlFromHash(1510702, GalleryInfo(
+            210, "56e9e1b8bb72194777ed93fee11b06070b905039dd11348b070bcf1793aaed7b", 1, "6.jpg", 300
+        ))
+
+        print(url)
     }
 }
