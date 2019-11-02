@@ -31,6 +31,9 @@ import androidx.vectordrawable.graphics.drawable.Animatable2Compat
 import androidx.vectordrawable.graphics.drawable.AnimatedVectorDrawableCompat
 import com.bumptech.glide.RequestManager
 import com.bumptech.glide.load.engine.DiskCacheStrategy
+import com.daimajia.swipe.SwipeLayout
+import com.daimajia.swipe.adapters.RecyclerSwipeAdapter
+import com.daimajia.swipe.interfaces.SwipeAdapterInterface
 import com.google.android.material.chip.Chip
 import kotlinx.android.synthetic.main.item_galleryblock.view.*
 import kotlinx.coroutines.CoroutineScope
@@ -45,6 +48,7 @@ import xyz.quaver.pupil.BuildConfig
 import xyz.quaver.pupil.Pupil
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.types.Tag
+import xyz.quaver.pupil.util.GalleryDownloader
 import xyz.quaver.pupil.util.Histories
 import xyz.quaver.pupil.util.getCachedGallery
 import xyz.quaver.pupil.util.wordCapitalize
@@ -54,7 +58,7 @@ import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
 import kotlin.concurrent.schedule
 
-class GalleryBlockAdapter(private val glide: RequestManager, private val galleries: List<Pair<GalleryBlock, Deferred<String>>>) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+class GalleryBlockAdapter(private val glide: RequestManager, private val galleries: List<Pair<GalleryBlock, Deferred<String>>>) : RecyclerSwipeAdapter<RecyclerView.ViewHolder>(), SwipeAdapterInterface {
 
     enum class ViewType {
         NEXT,
@@ -64,7 +68,7 @@ class GalleryBlockAdapter(private val glide: RequestManager, private val galleri
 
     private lateinit var favorites: Histories
 
-    inner class GalleryViewHolder(val view: CardView) : RecyclerView.ViewHolder(view) {
+    inner class GalleryViewHolder(val view: View) : RecyclerView.ViewHolder(view) {
         fun bind(item: Pair<GalleryBlock, Deferred<String>>) {
             with(view) {
                 val resources = context.resources
@@ -110,7 +114,7 @@ class GalleryBlockAdapter(private val glide: RequestManager, private val galleri
                         .parse(Reader.serializer(), readerCache.invoke().readText())
 
                     with(galleryblock_progressbar) {
-                        max = reader.readerItems.size
+                        max = reader.galleryInfo.size
                         progress = imageCache.invoke().list()?.size ?: 0
 
                         visibility = View.VISIBLE
@@ -135,7 +139,7 @@ class GalleryBlockAdapter(private val glide: RequestManager, private val galleri
                                     if (visibility == View.GONE) {
                                         val reader = Json(JsonConfiguration.Stable)
                                             .parse(Reader.serializer(), readerCache.invoke().readText())
-                                        max = reader.readerItems.size
+                                        max = reader.galleryInfo.size
                                         visibility = View.VISIBLE
                                     }
 
@@ -276,6 +280,8 @@ class GalleryBlockAdapter(private val glide: RequestManager, private val galleri
     val completeFlag = SparseBooleanArray()
 
     val onChipClickedHandler = ArrayList<((Tag) -> Unit)>()
+    var onDownloadClickedHandler: ((Int) -> Unit)? = null
+    var onDeleteClickedHandler: ((Int) -> Unit)? = null
 
     var showNext = false
     var showPrev = false
@@ -301,8 +307,47 @@ class GalleryBlockAdapter(private val glide: RequestManager, private val galleri
     }
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
-        if (holder is GalleryViewHolder)
-            holder.bind(galleries[position-(if (showPrev) 1 else 0)])
+        if (holder is GalleryViewHolder) {
+            val gallery = galleries[position-(if (showPrev) 1 else 0)]
+
+            holder.bind(gallery)
+
+            with(holder.view.galleryblock_primary) {
+                setOnClickListener {
+                    holder.view.performClick()
+                }
+                setOnLongClickListener {
+                    holder.view.performLongClick()
+                }
+            }
+
+            holder.view.galleryblock_download.setOnClickListener {
+                onDownloadClickedHandler?.invoke(position)
+            }
+
+            holder.view.galleryblock_delete.setOnClickListener {
+                onDeleteClickedHandler?.invoke(position)
+            }
+
+            mItemManger.bindView(holder.view, position)
+
+            holder.view.galleryblock_swipe_layout.addSwipeListener(object: SwipeLayout.SwipeListener {
+                override fun onStartOpen(layout: SwipeLayout?) {
+                    mItemManger.closeAllExcept(layout)
+
+                    holder.view.galleryblock_download.text = when(GalleryDownloader.get(gallery.first.id)) {
+                        null -> holder.view.context.getString(R.string.main_download)
+                        else -> holder.view.context.getString(R.string.main_cancel_download)
+                    }
+                }
+
+                override fun onClose(layout: SwipeLayout?) {}
+                override fun onHandRelease(layout: SwipeLayout?, xvel: Float, yvel: Float) {}
+                override fun onOpen(layout: SwipeLayout?) {}
+                override fun onStartClose(layout: SwipeLayout?) {}
+                override fun onUpdate(layout: SwipeLayout?, leftOffset: Int, topOffset: Int) {}
+            })
+        }
     }
 
     override fun onViewDetachedFromWindow(holder: RecyclerView.ViewHolder) {
@@ -328,4 +373,6 @@ class GalleryBlockAdapter(private val glide: RequestManager, private val galleri
             else -> ViewType.GALLERY
         }.ordinal
     }
+
+    override fun getSwipeLayoutResourceId(position: Int) = R.id.galleryblock_swipe_layout
 }

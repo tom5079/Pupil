@@ -18,7 +18,6 @@ package xyz.quaver.hitomi
 
 import kotlinx.serialization.Serializable
 import org.jsoup.Jsoup
-import sun.rmi.runtime.Log
 import java.net.URL
 import java.net.URLDecoder
 import java.nio.ByteBuffer
@@ -69,6 +68,7 @@ fun fetchNozomi(area: String? = null, tag: String = "index", language: String = 
 @Serializable
 data class GalleryBlock(
     val id: Int,
+    val galleryUrl: String,
     val thumbnails: List<String>,
     val title: String,
     val artists: List<String>,
@@ -82,6 +82,8 @@ fun getGalleryBlock(galleryID: Int) : GalleryBlock? {
 
     try {
         val doc = Jsoup.connect(url).get()
+
+        val galleryUrl = doc.selectFirst(".lillie").attr("href")
 
         val thumbnails = doc.select("img").map { protocol + it.attr("data-src") }
 
@@ -100,7 +102,7 @@ fun getGalleryBlock(galleryID: Int) : GalleryBlock? {
             href.slice(5 until href.indexOf("-all"))
         }
 
-        return GalleryBlock(galleryID, thumbnails, title, artists, series, type, language, relatedTags)
+        return GalleryBlock(galleryID, galleryUrl, thumbnails, title, artists, series, type, language, relatedTags)
     } catch (e: Exception) {
         return null
     }

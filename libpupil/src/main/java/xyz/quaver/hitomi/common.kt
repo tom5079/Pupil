@@ -16,11 +16,25 @@
 
 package xyz.quaver.hitomi
 
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonConfiguration
+import kotlinx.serialization.list
+import java.net.URL
+
 const val protocol = "https:"
+
+fun getGalleryInfo(galleryID: Int): List<GalleryInfo> {
+    return Json(JsonConfiguration.Stable).parse(
+        GalleryInfo.serializer().list,
+        Regex("""\[.+]""").find(
+            URL("$protocol//$domain/galleries/$galleryID.js").readText()
+        )?.value ?: "[]"
+    )
+}
 
 //common.js
 var adapose = false
-const val numberOfFrontends = 2
+const val numberOfFrontends = 3
 const val domain = "ltn.hitomi.la"
 const val galleryblockdir = "galleryblock"
 const val nozomiextension = ".nozomi"
@@ -37,20 +51,22 @@ fun subdomainFromGalleryID(g: Int) : String {
 fun subdomainFromURL(url: String, base: String? = null) : String {
     var retval = "a"
 
-    if (base != null)
+    if (!base.isNullOrEmpty())
         retval = base
 
-    val r = Regex("""/\d*(\d)/""")
-    val m = r.find(url)
+    val r = Regex("""/galleries/\d*(\d)/""")
+    var m = r.find(url)
+    var b = 10
 
-    m ?: return retval
+    if (m == null) {
+        b = 16
+        val r2 = Regex("""/images/[0-9a-f]/([0-9a-f]{2})/""")
+        m = r2.find(url)
+        if (m == null)
+            return retval
+    }
 
-    var g = m.groups[1]!!.value.toIntOrNull()
-
-    g ?: return retval
-
-    if (g == 1)
-        g = 0
+    val g = m.groupValues[1].toIntOrNull(b) ?: return retval
 
     retval = subdomainFromGalleryID(g) + retval
 
@@ -58,5 +74,22 @@ fun subdomainFromURL(url: String, base: String? = null) : String {
 }
 
 fun urlFromURL(url: String, base: String? = null) : String {
-    return url.replace(Regex("//..?\\.hitomi\\.la/"), "//${subdomainFromURL(url, base)}.hitomi.la/")
+    return url.replace(Regex("""//..?\.hitomi\.la/"""), "//${subdomainFromURL(url, base)}.hitomi.la/")
 }
+
+fun fullPathFromHash(hash: String?) : String? {
+    return when {
+        hash?.length ?: 0 < 3 -> hash
+        else -> hash!!.replace(Regex("^.*(..)(.)$"), "$2/$1/$hash")
+    }
+}
+
+fun urlFromHash(galleryID: Int, image: GalleryInfo, oldMethod: Boolean) : String {
+    return when {
+        oldMethod or image.hash.isNullOrEmpty() -> "$protocol//a.hitomi.la/galleries/$galleryID/${image.name}"
+        else -> "$protocol//a.hitomi.la/images/${fullPathFromHash(image.hash)}.${image.name.split('.').last()}"
+    }
+}
+
+fun urlFromUrlFromHash(galleryID: Int, image: GalleryInfo, oldMethod: Boolean = false) =
+    urlFromURL(urlFromHash(galleryID, image, oldMethod))

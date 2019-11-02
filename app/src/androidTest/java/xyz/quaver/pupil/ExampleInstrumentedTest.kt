@@ -26,11 +26,10 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.ActivityTestRule
 import org.junit.Assert.assertEquals
-import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import xyz.quaver.hitomi.fetchNozomi
 import xyz.quaver.hiyobi.cookie
+import xyz.quaver.hiyobi.createImgList
 import xyz.quaver.hiyobi.getReader
 import xyz.quaver.hiyobi.user_agent
 import xyz.quaver.pupil.ui.LockActivity
@@ -50,8 +49,6 @@ class ExampleInstrumentedTest {
         // Context of the app under test.
         val appContext = InstrumentationRegistry.getInstrumentation().targetContext
         assertEquals("xyz.quaver.pupil", appContext.packageName)
-
-        Log.d("Pupil", fetchNozomi().first.size.toString())
     }
 
     @Test
@@ -70,7 +67,7 @@ class ExampleInstrumentedTest {
 
         val data: ByteArray
 
-        with(URL(reader.readerItems[0].url).openConnection() as HttpsURLConnection) {
+        with(URL(createImgList(1426382, reader)[0].path).openConnection() as HttpsURLConnection) {
             setRequestProperty("User-Agent", user_agent)
             setRequestProperty("Cookie", cookie)
 
