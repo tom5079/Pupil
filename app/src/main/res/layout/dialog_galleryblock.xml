@@ -40,7 +40,7 @@
                 android:padding="8dp">
 
                 <ImageView
-                    android:id="@+id/gallery_thumbnail"
+                    android:id="@+id/gallery_cover"
                     android:layout_width="150dp"
                     android:layout_height="wrap_content"
                     android:adjustViewBounds="true"
@@ -55,7 +55,7 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     app:layout_constraintTop_toTopOf="parent"
-                    app:layout_constraintLeft_toRightOf="@id/gallery_thumbnail"
+                    app:layout_constraintLeft_toRightOf="@id/gallery_cover"
                     app:layout_constraintRight_toRightOf="parent"
                     android:layout_marginLeft="8dp"
                     android:layout_marginStart="8dp"/>
@@ -66,7 +66,7 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     app:layout_constraintTop_toBottomOf="@id/gallery_title"
-                    app:layout_constraintLeft_toRightOf="@id/gallery_thumbnail"
+                    app:layout_constraintLeft_toRightOf="@id/gallery_cover"
                     app:layout_constraintRight_toRightOf="parent"
                     android:layout_marginLeft="8dp"
                     android:layout_marginStart="8dp"/>
@@ -83,7 +83,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     app:layout_constraintBottom_toBottomOf="parent"
-                    app:layout_constraintLeft_toRightOf="@id/gallery_thumbnail"
+                    app:layout_constraintLeft_toRightOf="@id/gallery_cover"
                     android:layout_marginLeft="8dp"
                     android:layout_marginStart="8dp"/>
 

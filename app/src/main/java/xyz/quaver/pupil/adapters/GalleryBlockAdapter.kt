@@ -114,7 +114,7 @@ class GalleryBlockAdapter(private val glide: RequestManager, private val galleri
                         .parse(Reader.serializer(), readerCache.invoke().readText())
 
                     with(galleryblock_progressbar) {
-                        max = reader.readerItems.size
+                        max = reader.galleryInfo.size
                         progress = imageCache.invoke().list()?.size ?: 0
 
                         visibility = View.VISIBLE
@@ -139,7 +139,7 @@ class GalleryBlockAdapter(private val glide: RequestManager, private val galleri
                                     if (visibility == View.GONE) {
                                         val reader = Json(JsonConfiguration.Stable)
                                             .parse(Reader.serializer(), readerCache.invoke().readText())
-                                        max = reader.readerItems.size
+                                        max = reader.galleryInfo.size
                                         visibility = View.VISIBLE
                                     }
 

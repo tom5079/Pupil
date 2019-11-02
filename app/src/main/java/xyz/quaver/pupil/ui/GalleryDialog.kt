@@ -109,11 +109,11 @@ class GalleryDialog(context: Context, private val galleryID: Int) : Dialog(conte
                     }
 
                     Glide.with(context)
-                        .load(gallery.thumbnails.firstOrNull())
+                        .load(gallery.cover)
                         .apply {
                             if (BuildConfig.CENSOR)
                                 override(5, 8)
-                        }.into(gallery_thumbnail)
+                        }.into(gallery_cover)
 
                     addDetails(gallery)
                     addThumbnails(gallery)
