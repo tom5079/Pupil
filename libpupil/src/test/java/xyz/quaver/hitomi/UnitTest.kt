@@ -20,6 +20,7 @@ package xyz.quaver.hitomi
 
 import org.junit.Assert.assertEquals
 import org.junit.Test
+import xyz.quaver.availableInHiyobi
 
 class UnitTest {
     @Test
@@ -91,5 +92,12 @@ class UnitTest {
         ))
 
         print(url)
+    }
+
+    @Test
+    fun test_availableInHiyobi() {
+        val result = availableInHiyobi(1272781)
+
+        print(result)
     }
 }
