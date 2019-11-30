@@ -576,6 +576,17 @@ class MainActivity : AppCompatActivity() {
                             }
                         }
 
+                        histories.remove(galleryID)
+
+                        if (this@MainActivity.mode == Mode.HISTORY) {
+                            runOnUiThread {
+                                cancelFetch()
+                                clearGalleries()
+                                fetchGalleries(query, sortMode)
+                                loadBlocks()
+                            }
+                        }
+
                         completeFlag.put(galleryID, false)
                     }
 
@@ -1165,7 +1176,7 @@ class MainActivity : AppCompatActivity() {
                                         }
                                     } ?: return@async null
 
-                                val thumbnail = async {
+                                val thumbnail = async(Dispatchers.IO) {
                                     val ext = galleryBlock.thumbnails[0].split('.').last()
                                     File(getCachedGallery(this@MainActivity, galleryBlock.id), "thumbnail.$ext").apply {
                                         if (!exists())

@@ -20,22 +20,19 @@
 
 package xyz.quaver.pupil
 
-import org.junit.Test
-
 /**
  * Example local unit test, which will execute on the development machine (host).
  *
  * See [testing documentation](http://d.android.com/tools/testing).
  */
 
+import org.junit.Test
+
 class ExampleUnitTest {
 
     @Test
     fun test() {
-        val current = "0.1"
-        val latest = "0.2"
 
-        print(current < latest)
     }
 
 }
