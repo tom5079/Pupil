@@ -1176,7 +1176,7 @@ class MainActivity : AppCompatActivity() {
                                         }
                                     } ?: return@async null
 
-                                val thumbnail = async(Dispatchers.IO) {
+                                val thumbnail = async {
                                     val ext = galleryBlock.thumbnails[0].split('.').last()
                                     File(getCachedGallery(this@MainActivity, galleryBlock.id), "thumbnail.$ext").apply {
                                         if (!exists())
