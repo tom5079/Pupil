@@ -73,6 +73,7 @@
             app:key="nomedia"
             app:title="@string/settings_nomedia_title"
             app:summary="@string/settings_nomedia_title"/>
+
     </PreferenceCategory>
 
 </androidx.preference.PreferenceScreen>
