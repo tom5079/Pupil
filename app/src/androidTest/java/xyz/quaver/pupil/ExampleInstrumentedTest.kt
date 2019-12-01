@@ -33,6 +33,7 @@ import xyz.quaver.hiyobi.createImgList
 import xyz.quaver.hiyobi.getReader
 import xyz.quaver.hiyobi.user_agent
 import xyz.quaver.pupil.ui.LockActivity
+import xyz.quaver.pupil.util.getDownloadDirectory
 import java.net.URL
 import javax.net.ssl.HttpsURLConnection
 
@@ -48,6 +49,7 @@ class ExampleInstrumentedTest {
     fun useAppContext() {
         // Context of the app under test.
         val appContext = InstrumentationRegistry.getInstrumentation().targetContext
+        Log.i("PUPILD", getDownloadDirectory(appContext).absolutePath ?: "")
         assertEquals("xyz.quaver.pupil", appContext.packageName)
     }
 
@@ -57,8 +59,6 @@ class ExampleInstrumentedTest {
         val appContext = InstrumentationRegistry.getInstrumentation().targetContext
 
         activityTestRule.launchActivity(Intent())
-
-        while(true);
     }
 
     @Test
