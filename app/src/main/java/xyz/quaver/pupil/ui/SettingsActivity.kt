@@ -32,10 +32,16 @@ import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
+import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
 import androidx.preference.PreferenceManager
+import com.google.android.material.snackbar.Snackbar
 import kotlinx.android.synthetic.main.dialog_default_query.view.*
+import kotlinx.serialization.ImplicitReflectionSerializer
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.parseList
 import xyz.quaver.pupil.Pupil
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.types.Tags
@@ -43,10 +49,13 @@ import xyz.quaver.pupil.util.Lock
 import xyz.quaver.pupil.util.LockManager
 import xyz.quaver.pupil.util.getDownloadDirectory
 import java.io.File
+import java.nio.charset.Charset
+import java.util.*
 
 class SettingsActivity : AppCompatActivity() {
 
     val REQUEST_LOCK = 38238
+    val REQUEST_RESTORE = 16546
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -154,7 +163,7 @@ class SettingsActivity : AppCompatActivity() {
             with(findPreference<Preference>("delete_downloads")) {
                 this!!
 
-                val dir = getDownloadDirectory(context)!!
+                val dir = getDownloadDirectory(context)
 
                 summary = getDirSize(dir)
 
@@ -278,7 +287,7 @@ class SettingsActivity : AppCompatActivity() {
                                 s ?: return
 
                                 if (s.any { it.isUpperCase() })
-                                    s.replace(0, s.length, s.toString().toLowerCase())
+                                    s.replace(0, s.length, s.toString().toLowerCase(Locale.getDefault()))
                             }
                         })
                     }
@@ -352,6 +361,55 @@ class SettingsActivity : AppCompatActivity() {
                     true
                 }
             }
+
+            with(findPreference<Preference>("backup")) {
+                this!!
+
+                onPreferenceClickListener = Preference.OnPreferenceClickListener {
+                    File(ContextCompat.getDataDir(context), "favorites.json").copyTo(
+                        File(getDownloadDirectory(context), "favorites.json"),
+                        true
+                    )
+
+                    Snackbar.make(this@SettingsFragment.listView, R.string.settings_backup_snackbar, Snackbar.LENGTH_LONG)
+                        .setAction(R.string.settings_backup_checkout) {
+
+                            //Open folder that contains copied favorite file
+                            val intent = Intent(Intent.ACTION_VIEW).apply {
+                                val uri = FileProvider.getUriForFile(context,
+                                    "xyz.quaver.pupil.fileprovider",
+                                    getDownloadDirectory(context)
+                                )
+
+                                context.grantUriPermission(context.packageName, uri,
+                                    Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+
+                                setDataAndType(uri, "resource/folder")
+                            }
+
+                            startActivity(Intent.createChooser(intent , "Open folder"))
+
+                        }.show()
+
+                    true
+                }
+            }
+
+            with(findPreference<Preference>("restore")) {
+                this!!
+
+                onPreferenceClickListener = Preference.OnPreferenceClickListener {
+                    val intent = Intent(Intent.ACTION_GET_CONTENT).apply {
+                        addCategory(Intent.CATEGORY_OPENABLE)
+                        type = "*/*"
+                    }
+
+                    activity?.startActivityForResult(intent, (activity as SettingsActivity).REQUEST_RESTORE)
+
+                    true
+                }
+            }
         }
     }
 
@@ -415,6 +473,7 @@ class SettingsActivity : AppCompatActivity() {
         return true
     }
 
+    @UseExperimental(ImplicitReflectionSerializer::class)
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         when(requestCode) {
             REQUEST_LOCK -> {
@@ -424,6 +483,33 @@ class SettingsActivity : AppCompatActivity() {
                         .replace(R.id.settings, LockFragment())
                         .addToBackStack("Lock")
                         .commitAllowingStateLoss()
+                }
+            }
+            REQUEST_RESTORE -> {
+                if (resultCode == Activity.RESULT_OK) {
+                    val uri = data?.data ?: return
+
+                    try {
+                        val json = contentResolver.openInputStream(uri).use { inputStream ->
+                            inputStream!!
+
+                            inputStream.readBytes().toString(Charset.defaultCharset())
+                        }
+
+                        (application as Pupil).favorites.addAll(Json.parseList<Int>(json).also {
+                            Snackbar.make(
+                                window.decorView,
+                                getString(R.string.settings_restore_successful, it.size),
+                                Snackbar.LENGTH_LONG
+                            ).show()
+                        })
+                    } catch (e: Exception) {
+                        Snackbar.make(
+                            window.decorView,
+                            R.string.settings_restore_failed,
+                            Snackbar.LENGTH_LONG
+                        ).show()
+                    }
                 }
             }
             else -> super.onActivityResult(requestCode, resultCode, data)

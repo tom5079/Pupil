@@ -33,9 +33,9 @@ fun getCachedGallery(context: Context, galleryID: Int): File {
 }
 
 @Suppress("DEPRECATION")
-fun getDownloadDirectory(context: Context): File? {
+fun getDownloadDirectory(context: Context): File {
     return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)
-        context.getExternalFilesDir("Pupil")
+        context.getExternalFilesDir("Pupil")!!
     else
         File(Environment.getExternalStorageDirectory(), "Pupil")
 }
