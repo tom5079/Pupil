@@ -33,7 +33,6 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.content.ContextCompat
-import androidx.core.content.FileProvider
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
 import androidx.preference.PreferenceManager
@@ -372,25 +371,7 @@ class SettingsActivity : AppCompatActivity() {
                     )
 
                     Snackbar.make(this@SettingsFragment.listView, R.string.settings_backup_snackbar, Snackbar.LENGTH_LONG)
-                        .setAction(R.string.settings_backup_checkout) {
-
-                            //Open folder that contains copied favorite file
-                            val intent = Intent(Intent.ACTION_VIEW).apply {
-                                val uri = FileProvider.getUriForFile(context,
-                                    "xyz.quaver.pupil.fileprovider",
-                                    getDownloadDirectory(context)
-                                )
-
-                                context.grantUriPermission(context.packageName, uri,
-                                    Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-
-                                setDataAndType(uri, "resource/folder")
-                            }
-
-                            startActivity(Intent.createChooser(intent , "Open folder"))
-
-                        }.show()
+                        .show()
 
                     true
                 }
