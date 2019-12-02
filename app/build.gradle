@@ -26,7 +26,7 @@ android {
         }
         buildTypes.each {
             it.buildConfigField('boolean', 'PRERELEASE', 'false')
-            it.buildConfigField('boolean', 'CENSOR', 'true')
+            it.buildConfigField('boolean', 'CENSOR', 'false')
         }
     }
     kotlinOptions {
