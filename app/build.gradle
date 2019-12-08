@@ -14,7 +14,7 @@ android {
         minSdkVersion 16
         targetSdkVersion 29
         versionCode 31
-        versionName "4.2"
+        versionName "4.2-beta1"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         multiDexEnabled true
         vectorDrawables.useSupportLibrary = true
@@ -26,7 +26,7 @@ android {
         }
         buildTypes.each {
             it.buildConfigField('boolean', 'PRERELEASE', 'false')
-            it.buildConfigField('boolean', 'CENSOR', 'true')
+            it.buildConfigField('boolean', 'CENSOR', 'false')
         }
     }
     kotlinOptions {
