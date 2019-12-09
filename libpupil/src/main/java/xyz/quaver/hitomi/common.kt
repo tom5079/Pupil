@@ -79,7 +79,7 @@ fun urlFromURL(url: String, base: String? = null) : String {
 
 fun fullPathFromHash(hash: String?) : String? {
     return when {
-        hash?.length ?: 0 < 3 -> hash
+        (hash?.length ?: 0) < 3 -> hash
         else -> hash!!.replace(Regex("^.*(..)(.)$"), "$2/$1/$hash")
     }
 }
