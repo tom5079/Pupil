@@ -32,7 +32,7 @@ data class GalleryInfo(
 )
 
 @Serializable
-class Reader(val code:Code, val title: String, val galleryInfo: List<GalleryInfo>) {
+data class Reader(val code: Code, val title: String, val galleryInfo: List<GalleryInfo>) {
     enum class Code {
         HITOMI,
         HIYOBI,
