@@ -51,7 +51,7 @@ fun subdomainFromGalleryID(g: Int) : String {
 fun subdomainFromURL(url: String, base: String? = null) : String {
     var retval = "a"
 
-    if (!base.isNullOrEmpty())
+    if (!base.isNullOrBlank())
         retval = base
 
     val r = Regex("""/galleries/\d*(\d)/""")
@@ -60,7 +60,7 @@ fun subdomainFromURL(url: String, base: String? = null) : String {
 
     if (m == null) {
         b = 16
-        val r2 = Regex("""/images/[0-9a-f]/([0-9a-f]{2})/""")
+        val r2 = Regex("""/[0-9a-f]/([0-9a-f]{2})/""")
         m = r2.find(url)
         if (m == null)
             return retval
@@ -84,12 +84,15 @@ fun fullPathFromHash(hash: String?) : String? {
     }
 }
 
-fun urlFromHash(galleryID: Int, image: GalleryInfo, oldMethod: Boolean) : String {
+fun urlFromHash(galleryID: Int, image: GalleryInfo, webp: String? = null) : String {
+    val ext = webp ?: image.name.split('.').last()
     return when {
-        oldMethod or image.hash.isNullOrEmpty() -> "$protocol//a.hitomi.la/galleries/$galleryID/${image.name}"
-        else -> "$protocol//a.hitomi.la/images/${fullPathFromHash(image.hash)}.${image.name.split('.').last()}"
+        image.hash.isNullOrBlank() ->
+            "$protocol//a.hitomi.la/galleries/$galleryID/${image.name}"
+        else ->
+            "$protocol//a.hitomi.la/${webp?:"images"}/${fullPathFromHash(image.hash)}.$ext"
     }
 }
 
-fun urlFromUrlFromHash(galleryID: Int, image: GalleryInfo, oldMethod: Boolean = false) =
-    urlFromURL(urlFromHash(galleryID, image, oldMethod))
+fun urlFromUrlFromHash(galleryID: Int, image: GalleryInfo, webp: String? = null) =
+    urlFromURL(urlFromHash(galleryID, image, webp))
