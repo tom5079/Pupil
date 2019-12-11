@@ -87,9 +87,9 @@ class UnitTest {
 
     @Test
     fun test_urlFromUrlFromHash() {
-        val url = urlFromUrlFromHash(1510702, GalleryInfo(
-            210, "56e9e1b8bb72194777ed93fee11b06070b905039dd11348b070bcf1793aaed7b", 1, "6.jpg", 300
-        ))
+        val url = urlFromUrlFromHash(1531795, GalleryInfo(
+            212, "719d46a7556be0d0021c5105878507129b5b3308b02cf67f18901b69dbb3b5ef", 1, "00.jpg", 300
+        ), "webp")
 
         print(url)
     }
