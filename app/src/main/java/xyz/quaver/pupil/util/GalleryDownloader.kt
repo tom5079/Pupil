@@ -187,15 +187,11 @@ class GalleryDownloader(
                     async(Dispatchers.IO) {
                         val url = when(useHiyobi) {
                             true -> createImgList(galleryID, reader)[index].path
-                            false -> when (galleryInfo.haswebp) {
-                                1 -> webpUrlFromUrl(
-                                    urlFromUrlFromHash(
-                                        galleryID,
-                                        galleryInfo,
-                                        true
-                                    )
-                                )
-                                else -> urlFromUrlFromHash(galleryID, galleryInfo)
+                            false -> when {
+                                (!galleryInfo.hash.isNullOrBlank()) and (galleryInfo.haswebp == 1) ->
+                                    urlFromUrlFromHash(galleryID, galleryInfo, "webp")
+                                else ->
+                                    urlFromUrlFromHash(galleryID, galleryInfo)
                             }
                         }
 
