@@ -18,8 +18,13 @@
 
 package xyz.quaver.pupil.util
 
+import android.content.Context
+import kotlinx.serialization.ImplicitReflectionSerializer
 import kotlinx.serialization.json.*
+import xyz.quaver.availableInHiyobi
+import xyz.quaver.hitomi.Reader
 import xyz.quaver.pupil.BuildConfig
+import java.io.File
 import java.net.URL
 
 fun getReleases(url: String) : JsonArray {
@@ -61,4 +66,48 @@ fun getApkUrl(releases: JsonObject) : Pair<String?, String?>? {
         else
             Pair(it.jsonObject["browser_download_url"]?.content, it.jsonObject["name"]?.content)
     }
+}
+
+fun getOldReaderGalleries(context: Context) : List<File> {
+    val oldGallery = mutableListOf<File>()
+
+    listOf(
+        getDownloadDirectory(context),
+        File(context.cacheDir, "imageCache")
+    ).forEach { root ->
+        root.listFiles()?.forEach { gallery ->
+            File(gallery, "reader.json").let { readerFile ->
+                if (!readerFile.exists())
+                    return@let
+
+                Json(JsonConfiguration.Stable).parseJson(readerFile.readText()).jsonObject.let { reader ->
+                    if (!reader.contains("code"))
+                        oldGallery.add(gallery)
+                }
+            }
+        }
+    }
+
+    return oldGallery
+}
+
+@UseExperimental(ImplicitReflectionSerializer::class)
+fun updateOldReaderGalleries(context: Context) {
+
+    val json = Json(JsonConfiguration.Stable)
+
+   getOldReaderGalleries(context).forEach { gallery ->
+       val reader = json.parseJson(File(gallery, "reader.json").readText())
+           .jsonObject.toMutableMap()
+
+       reader["code"] = when {
+           (File(gallery, "images").list()?.
+               all { !it.endsWith("webp") } ?: return@forEach) &&
+                   availableInHiyobi(gallery.name.toInt()) -> json.toJson(Reader.Code.HIYOBI)
+           else -> json.toJson(Reader.Code.HITOMI)
+       }
+
+       File(gallery, "reader.json").writeText(JsonObject(reader).toString())
+   }
+
 }
