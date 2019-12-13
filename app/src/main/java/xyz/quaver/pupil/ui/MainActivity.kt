@@ -576,6 +576,17 @@ class MainActivity : AppCompatActivity() {
                             }
                         }
 
+                        histories.remove(galleryID)
+
+                        if (this@MainActivity.mode == Mode.HISTORY) {
+                            runOnUiThread {
+                                cancelFetch()
+                                clearGalleries()
+                                fetchGalleries(query, sortMode)
+                                loadBlocks()
+                            }
+                        }
+
                         completeFlag.put(galleryID, false)
                     }
 

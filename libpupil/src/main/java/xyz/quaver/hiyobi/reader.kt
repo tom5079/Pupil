@@ -26,7 +26,7 @@ import xyz.quaver.hitomi.protocol
 import java.net.URL
 import javax.net.ssl.HttpsURLConnection
 
-const val hiyobi = "xn--9w3b15m8vo.asia"
+const val hiyobi = "hiyobi.me"
 const val user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.131 Safari/537.36"
 
 var cookie: String = ""
@@ -76,7 +76,7 @@ fun getReader(galleryID: Int) : Reader {
         }
     )
 
-    return Reader(title, galleryInfo)
+    return Reader(Reader.Code.HIYOBI, title, galleryInfo)
 }
 
 fun createImgList(galleryID: Int, reader: Reader) =

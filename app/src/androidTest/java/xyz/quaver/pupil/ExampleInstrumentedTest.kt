@@ -25,6 +25,10 @@ import android.util.Log
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.ActivityTestRule
+import kotlinx.serialization.ImplicitReflectionSerializer
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonConfiguration
+import kotlinx.serialization.json.JsonObject
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -33,6 +37,9 @@ import xyz.quaver.hiyobi.createImgList
 import xyz.quaver.hiyobi.getReader
 import xyz.quaver.hiyobi.user_agent
 import xyz.quaver.pupil.ui.LockActivity
+import xyz.quaver.pupil.util.getDownloadDirectory
+import xyz.quaver.pupil.util.updateOldReaderGalleries
+import java.io.File
 import java.net.URL
 import javax.net.ssl.HttpsURLConnection
 
@@ -48,6 +55,7 @@ class ExampleInstrumentedTest {
     fun useAppContext() {
         // Context of the app under test.
         val appContext = InstrumentationRegistry.getInstrumentation().targetContext
+        Log.i("PUPILD", getDownloadDirectory(appContext).absolutePath ?: "")
         assertEquals("xyz.quaver.pupil", appContext.packageName)
     }
 
@@ -57,13 +65,11 @@ class ExampleInstrumentedTest {
         val appContext = InstrumentationRegistry.getInstrumentation().targetContext
 
         activityTestRule.launchActivity(Intent())
-
-        while(true);
     }
 
     @Test
     fun test_doSearch() {
-        val reader = getReader(1426382)
+        val reader = getReader( 1426382)
 
         val data: ByteArray
 
@@ -75,5 +81,39 @@ class ExampleInstrumentedTest {
         }
 
         Log.d("Pupil", data.size.toString())
+    }
+
+    @UseExperimental(ImplicitReflectionSerializer::class)
+    @Test
+    fun test_deleteCodeFromReader() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+
+        val json = Json(JsonConfiguration.Stable)
+
+        listOf(
+            getDownloadDirectory(context),
+            File(context.cacheDir, "imageCache")
+        ).forEach { root ->
+            root.listFiles()?.forEach gallery@{ gallery ->
+                val reader = json.parseJson(File(gallery, "reader.json").apply {
+                    if (!exists())
+                        return@gallery
+                }.readText())
+                    .jsonObject.toMutableMap()
+
+                Log.d("PUPILD", gallery.name)
+
+                reader.remove("code")
+
+                File(gallery, "reader.json").writeText(JsonObject(reader).toString())
+            }
+        }
+    }
+
+    @Test
+    fun test_updateOldReader() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+
+        updateOldReaderGalleries(context)
     }
 }

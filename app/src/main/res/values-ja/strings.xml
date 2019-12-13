@@ -104,5 +104,10 @@
     <string name="reader_help">ヘルプ</string>
     <string name="main_delete">削除</string>
     <string name="main_download">ダウンロード</string>
-    <string name="main_cancel_download">キャンセル</string>
+    <string name="settings_backup_title">お気に入りバックアップ</string>
+    <string name="settings_restore_title">お気に入り復元</string>
+    <string name="settings_backup_snackbar">バックアップファイルを作成しました</string>
+    <string name="settings_backup_checkout">確認</string>
+    <string name="settings_restore_failed">復元に失敗しました</string>
+    <string name="settings_restore_successful">%1$d項目を復元しました</string>
 </resources>

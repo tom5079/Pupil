@@ -72,7 +72,6 @@
     <string name="main_export_error">Error occurred during export</string>
 
     <string name="main_download">DOWNLOAD</string>
-    <string name="main_cancel_download">CANCEL</string>
     <string name="main_delete">DELETE</string>
 
     <string name="update_title">Update available</string>
@@ -133,6 +132,12 @@
     <string name="settings_dark_mode_summary">Protect yourself against light attacks!</string>
     <string name="settings_nomedia_title">Hide image from gallery</string>
     <string name="settings_nomedia_summary">Hides image from gallery</string>
+    <string name="settings_backup_title">Backup favorites</string>
+    <string name="settings_backup_snackbar">Backup file created</string>
+    <string name="settings_backup_checkout">Check out</string>
+    <string name="settings_restore_title">Restore favorites</string>
+    <string name="settings_restore_failed">Restore failed</string>
+    <string name="settings_restore_successful">%1$d entries restored</string>
 
     <string name="settings_lock_none">None</string>
     <string name="settings_lock_pattern">Pattern</string>

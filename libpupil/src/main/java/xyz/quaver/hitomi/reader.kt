@@ -26,13 +26,19 @@ fun webpUrlFromUrl(url: String) = url.replace("/galleries/", "/webp/") + ".webp"
 data class GalleryInfo(
     val width: Int,
     val hash: String? = null,
-    val haswebp: Int,
+    val haswebp: Int = 0,
     val name: String,
     val height: Int
 )
 
 @Serializable
-open class Reader(val title: String, val galleryInfo: List<GalleryInfo>)
+data class Reader(val code: Code, val title: String, val galleryInfo: List<GalleryInfo>) {
+    enum class Code {
+        HITOMI,
+        HIYOBI,
+        SORALA
+    }
+}
 
 //Set header `Referer` to reader url to avoid 403 error
 fun getReader(galleryID: Int) : Reader {
@@ -40,5 +46,5 @@ fun getReader(galleryID: Int) : Reader {
 
     val doc = Jsoup.connect(readerUrl).get()
 
-   return Reader(doc.title(), getGalleryInfo(galleryID))
+   return Reader(Reader.Code.HITOMI, doc.title(), getGalleryInfo(galleryID))
 }

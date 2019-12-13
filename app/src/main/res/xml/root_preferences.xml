@@ -73,6 +73,15 @@
             app:key="nomedia"
             app:title="@string/settings_nomedia_title"
             app:summary="@string/settings_nomedia_title"/>
+
+        <Preference
+            app:key="backup"
+            app:title="@string/settings_backup_title"/>
+
+        <Preference
+            app:key="restore"
+            app:title="@string/settings_restore_title"/>
+
     </PreferenceCategory>
 
 </androidx.preference.PreferenceScreen>
