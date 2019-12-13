@@ -31,7 +31,6 @@ import com.crashlytics.android.Crashlytics
 import kotlinx.coroutines.*
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonConfiguration
-import xyz.quaver.availableInHiyobi
 import xyz.quaver.hitomi.Reader
 import xyz.quaver.hitomi.getReader
 import xyz.quaver.hitomi.getReferer
@@ -124,7 +123,7 @@ class GalleryDownloader(
                     val cached = json.parse(serializer, cache.readText())
 
                     if (cached.galleryInfo.isNotEmpty()) {
-                        useHiyobi = availableInHiyobi(galleryID)
+                        useHiyobi = cached.code == Reader.Code.HIYOBI
 
                         onReaderLoadedHandler?.invoke(cached)
 
