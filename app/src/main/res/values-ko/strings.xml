@@ -104,7 +104,6 @@
     <string name="reader_help">도움말</string>
     <string name="main_delete">삭제</string>
     <string name="main_download">다운로드</string>
-    <string name="main_cancel_download">취소</string>
     <string name="settings_backup_title">즐겨찾기 백업</string>
     <string name="settings_restore_title">즐겨찾기 복원</string>
     <string name="settings_backup_snackbar">백업 파일을 생성하였습니다</string>
