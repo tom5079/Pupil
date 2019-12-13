@@ -98,7 +98,10 @@ fun updateOldReaderGalleries(context: Context) {
     val json = Json(JsonConfiguration.Stable)
 
    getOldReaderGalleries(context).forEach { gallery ->
-       val reader = json.parseJson(File(gallery, "reader.json").readText())
+       val reader = json.parseJson(File(gallery, "reader.json").apply {
+           if (!exists())
+               return@forEach
+       }.readText())
            .jsonObject.toMutableMap()
 
        val codeSerializer = EnumSerializer(Reader.Code::class)
