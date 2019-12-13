@@ -19,7 +19,8 @@
 package xyz.quaver.pupil.util
 
 import android.content.Context
-import kotlinx.serialization.ImplicitReflectionSerializer
+import kotlinx.serialization.InternalSerializationApi
+import kotlinx.serialization.internal.EnumSerializer
 import kotlinx.serialization.json.*
 import xyz.quaver.availableInHiyobi
 import xyz.quaver.hitomi.Reader
@@ -91,7 +92,7 @@ fun getOldReaderGalleries(context: Context) : List<File> {
     return oldGallery
 }
 
-@UseExperimental(ImplicitReflectionSerializer::class)
+@UseExperimental(InternalSerializationApi::class)
 fun updateOldReaderGalleries(context: Context) {
 
     val json = Json(JsonConfiguration.Stable)
@@ -100,11 +101,13 @@ fun updateOldReaderGalleries(context: Context) {
        val reader = json.parseJson(File(gallery, "reader.json").readText())
            .jsonObject.toMutableMap()
 
+       val codeSerializer = EnumSerializer(Reader.Code::class)
+
        reader["code"] = when {
            (File(gallery, "images").list()?.
                all { !it.endsWith("webp") } ?: return@forEach) &&
-                   availableInHiyobi(gallery.name.toInt()) -> json.toJson(Reader.Code.HIYOBI)
-           else -> json.toJson(Reader.Code.HITOMI)
+                   availableInHiyobi(gallery.name.toInt()) -> json.toJson(codeSerializer, Reader.Code.HIYOBI)
+           else -> json.toJson(codeSerializer, Reader.Code.HITOMI)
        }
 
        File(gallery, "reader.json").writeText(JsonObject(reader).toString())
