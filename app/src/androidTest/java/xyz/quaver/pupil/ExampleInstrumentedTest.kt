@@ -38,6 +38,7 @@ import xyz.quaver.hiyobi.getReader
 import xyz.quaver.hiyobi.user_agent
 import xyz.quaver.pupil.ui.LockActivity
 import xyz.quaver.pupil.util.getDownloadDirectory
+import xyz.quaver.pupil.util.updateOldReaderGalleries
 import java.io.File
 import java.net.URL
 import javax.net.ssl.HttpsURLConnection
@@ -107,5 +108,12 @@ class ExampleInstrumentedTest {
                 File(gallery, "reader.json").writeText(JsonObject(reader).toString())
             }
         }
+    }
+
+    @Test
+    fun test_updateOldReader() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+
+        updateOldReaderGalleries(context)
     }
 }
