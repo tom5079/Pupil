@@ -76,7 +76,7 @@ fun getReader(galleryID: Int) : Reader {
         }
     )
 
-    return Reader(title, galleryInfo)
+    return Reader(Reader.Code.HIYOBI, title, galleryInfo)
 }
 
 fun createImgList(galleryID: Int, reader: Reader) =
