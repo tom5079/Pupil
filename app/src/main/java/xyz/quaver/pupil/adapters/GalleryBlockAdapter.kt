@@ -95,6 +95,7 @@ class GalleryBlockAdapter(private val glide: RequestManager, private val galleri
                             if (BuildConfig.CENSOR)
                                 override(5, 8)
                         }
+                        .fitCenter()
                         .into(galleryblock_thumbnail)
                 }
 
@@ -337,7 +338,7 @@ class GalleryBlockAdapter(private val glide: RequestManager, private val galleri
 
                     holder.view.galleryblock_download.text = when(GalleryDownloader.get(gallery.first.id)) {
                         null -> holder.view.context.getString(R.string.main_download)
-                        else -> holder.view.context.getString(R.string.main_cancel_download)
+                        else -> holder.view.context.getString(android.R.string.cancel)
                     }
                 }
 

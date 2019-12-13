@@ -30,7 +30,11 @@ import androidx.preference.PreferenceManager
 import com.google.android.gms.common.GooglePlayServicesNotAvailableException
 import com.google.android.gms.common.GooglePlayServicesRepairableException
 import com.google.android.gms.security.ProviderInstaller
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import xyz.quaver.pupil.util.Histories
+import xyz.quaver.pupil.util.updateOldReaderGalleries
 import java.io.File
 
 class Pupil : MultiDexApplication() {
@@ -77,6 +81,10 @@ class Pupil : MultiDexApplication() {
             true -> AppCompatDelegate.MODE_NIGHT_YES
             false -> AppCompatDelegate.MODE_NIGHT_NO
         })
+
+        CoroutineScope(Dispatchers.IO).launch {
+            updateOldReaderGalleries(this@Pupil)
+        }
 
         super.onCreate()
     }

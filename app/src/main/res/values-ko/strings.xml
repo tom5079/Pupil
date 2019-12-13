@@ -66,7 +66,7 @@
     <string name="main_open_gallery_by_id">갤러리 번호로 열기</string>
     <string name="main_open_gallery_by_id_error">갤러리를 찾지 못했습니다</string>
     <string name="settings_storage">저장 공간</string>
-    <string name="main_drawer_grouop_contact_discord">디스코드햐</string>
+    <string name="main_drawer_grouop_contact_discord">디스코드</string>
     <string name="settings_app_lock">앱 잠금</string>
     <string name="settings_app_lock_type">앱 잠금 종류</string>
     <string name="settings_app_version_title">앱 버전</string>
@@ -104,5 +104,10 @@
     <string name="reader_help">도움말</string>
     <string name="main_delete">삭제</string>
     <string name="main_download">다운로드</string>
-    <string name="main_cancel_download">취소</string>
+    <string name="settings_backup_title">즐겨찾기 백업</string>
+    <string name="settings_restore_title">즐겨찾기 복원</string>
+    <string name="settings_backup_snackbar">백업 파일을 생성하였습니다</string>
+    <string name="settings_backup_checkout">확인</string>
+    <string name="settings_restore_failed">복원에 실패했습니다</string>
+    <string name="settings_restore_successful">%1$d개 항목을 복원했습니다</string>
 </resources>

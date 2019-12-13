@@ -59,6 +59,7 @@ class ReaderAdapter(private val glide: RequestManager,
                 if (BuildConfig.CENSOR)
                     override(5, 8)
             }
+            .fitCenter()
             .into(holder.view)
     }
 
