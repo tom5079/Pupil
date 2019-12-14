@@ -22,6 +22,4 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:minHeight="100dp"
-    android:paddingBottom="8dp"
-    android:scaleType="fitCenter"
-    android:adjustViewBounds="true"/>
+    android:paddingBottom="8dp"/>

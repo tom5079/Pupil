@@ -39,7 +39,6 @@ class ThumbnailAdapter(private val glide: RequestManager, private val thumbnails
                 if (BuildConfig.CENSOR)
                     override(5, 8)
             }
-            .fitCenter()
             .into(holder.view)
     }
 
