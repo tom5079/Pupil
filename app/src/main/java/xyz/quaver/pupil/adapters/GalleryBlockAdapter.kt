@@ -95,7 +95,6 @@ class GalleryBlockAdapter(private val glide: RequestManager, private val galleri
                             if (BuildConfig.CENSOR)
                                 override(5, 8)
                         }
-                        .fitCenter()
                         .into(galleryblock_thumbnail)
                 }
 
