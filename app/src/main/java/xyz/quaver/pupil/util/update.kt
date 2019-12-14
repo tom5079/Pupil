@@ -81,9 +81,14 @@ fun getOldReaderGalleries(context: Context) : List<File> {
                 if (!readerFile.exists())
                     return@let
 
-                Json(JsonConfiguration.Stable).parseJson(readerFile.readText()).jsonObject.let { reader ->
-                    if (!reader.contains("code"))
-                        oldGallery.add(gallery)
+                try {
+                    Json(JsonConfiguration.Stable).parseJson(readerFile.readText())
+                        .jsonObject.let { reader ->
+                        if (!reader.contains("code"))
+                            oldGallery.add(gallery)
+                    }
+                } catch (e: Exception) {
+                    // do nothing
                 }
             }
         }
