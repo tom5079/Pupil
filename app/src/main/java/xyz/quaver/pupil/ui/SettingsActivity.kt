@@ -18,9 +18,12 @@
 
 package xyz.quaver.pupil.ui
 
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Intent
+import android.content.res.Resources
 import android.os.Bundle
+import android.os.Environment
 import android.text.Editable
 import android.text.TextWatcher
 import android.view.LayoutInflater
@@ -36,6 +39,7 @@ import androidx.core.content.ContextCompat
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
 import androidx.preference.PreferenceManager
+import com.google.android.gms.common.api.ResolvingResultCallbacks
 import com.google.android.material.snackbar.Snackbar
 import kotlinx.android.synthetic.main.dialog_default_query.view.*
 import kotlinx.serialization.ImplicitReflectionSerializer
@@ -397,7 +401,7 @@ class SettingsActivity : AppCompatActivity() {
                 this!!
 
                 onPreferenceClickListener = Preference.OnPreferenceClickListener {
-                    val intent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).apply { }
+                    val intent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE)
 
                     activity?.startActivityForResult(intent, (activity as SettingsActivity).REQUEST_DIRECTORY)
 
@@ -509,20 +513,9 @@ class SettingsActivity : AppCompatActivity() {
             REQUEST_DIRECTORY -> {
             if (resultCode == Activity.RESULT_OK) {
                 val uri = data?.data ?: return
-
-                try {
-                    Snackbar.make(
-                        window.decorView,
-                        "$uri",
-                        Snackbar.LENGTH_LONG
-                    ).show()
-                } catch (e: Exception) {
-                    Snackbar.make(
-                        window.decorView,
-                        R.string.settings_directory_error,
-                        Snackbar.LENGTH_LONG
-                    ).show()
-                }
+                val takeFlags: Int = intent.flags and (Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+                contentResolver.takePersistableUriPermission(uri, takeFlags)
+                //file_paths.xml에 uri를 넣어야함
             }
         }
             else -> super.onActivityResult(requestCode, resultCode, data)
