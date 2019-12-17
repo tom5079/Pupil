@@ -155,5 +155,7 @@
     <string name="default_query_dialog_filter_BL">Filter BL</string>
     <string name="default_query_dialog_filter_guro">Filter Guro</string>
     <string name="default_query_dialog_language_selector_none">Any</string>
+    <string name="settings_set_directory">set default directory</string>
+    <string name="settings_directory_error" translatable="false">directory error</string>
 
 </resources>

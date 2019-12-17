@@ -110,4 +110,5 @@
     <string name="settings_backup_checkout">확인</string>
     <string name="settings_restore_failed">복원에 실패했습니다</string>
     <string name="settings_restore_successful">%1$d개 항목을 복원했습니다</string>
+    <string name="settings_set_directory">기본 폴더 위치 변경</string>
 </resources>

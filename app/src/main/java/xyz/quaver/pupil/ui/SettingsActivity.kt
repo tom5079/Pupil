@@ -55,6 +55,7 @@ class SettingsActivity : AppCompatActivity() {
 
     val REQUEST_LOCK = 38238
     val REQUEST_RESTORE = 16546
+    val REQUEST_DIRECTORY = 12345
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -391,6 +392,18 @@ class SettingsActivity : AppCompatActivity() {
                     true
                 }
             }
+
+            with(findPreference<Preference>("set_directory")) {
+                this!!
+
+                onPreferenceClickListener = Preference.OnPreferenceClickListener {
+                    val intent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).apply { }
+
+                    activity?.startActivityForResult(intent, (activity as SettingsActivity).REQUEST_DIRECTORY)
+
+                    true
+                }
+            }
         }
     }
 
@@ -493,6 +506,25 @@ class SettingsActivity : AppCompatActivity() {
                     }
                 }
             }
+            REQUEST_DIRECTORY -> {
+            if (resultCode == Activity.RESULT_OK) {
+                val uri = data?.data ?: return
+
+                try {
+                    Snackbar.make(
+                        window.decorView,
+                        "$uri",
+                        Snackbar.LENGTH_LONG
+                    ).show()
+                } catch (e: Exception) {
+                    Snackbar.make(
+                        window.decorView,
+                        R.string.settings_directory_error,
+                        Snackbar.LENGTH_LONG
+                    ).show()
+                }
+            }
+        }
             else -> super.onActivityResult(requestCode, resultCode, data)
         }
     }
