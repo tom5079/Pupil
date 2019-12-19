@@ -404,18 +404,11 @@ class SettingsActivity : AppCompatActivity() {
                 }
             }
 
-            with(findPreference<Preference>("set_directory")) {
+            with(findPreference<Preference>("download_directory")) {
                 this!!
 
                 onPreferenceClickListener = Preference.OnPreferenceClickListener {
-                    val intent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).apply { }
-                    /*
-                    var mStorageManager = getSystemService(Context.STORAGE_SERVICE) as StorageManager
-                    var mStorageVolumes = mStorageManager.storageVolumes
 
-                    val primaryVolume = mStorageManager.primaryStorageVolume
-                    val intent = primaryVolume.createOpenDocumentTreeIntent()
-                    */
                     activity?.startActivityForResult(intent, (activity as SettingsActivity).REQUEST_DIRECTORY)
 
                     true
@@ -526,11 +519,6 @@ class SettingsActivity : AppCompatActivity() {
             REQUEST_DIRECTORY -> {
             if (resultCode == Activity.RESULT_OK) {
                 val uri = data?.data ?: return
-                Log.d("test", "resultCode:$resultCode")
-                val takeFlags = Intent.FLAG_GRANT_READ_URI_PERMISSION or
-                        Intent.FLAG_GRANT_WRITE_URI_PERMISSION
-                contentResolver.takePersistableUriPermission(uri, takeFlags)
-                Log.d("test", "granted uri: ${uri.path}")
                 val pref = getSharedPreferences("directory", Context.MODE_PRIVATE)
                 val editor = pref.edit()
                 editor.putString("directory","$uri").commit()

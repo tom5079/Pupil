@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.preference.PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.preference.PreferenceScreen
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <Preference
@@ -28,13 +28,13 @@
         app:title="@string/settings_storage">
 
         <Preference
-            app:key="set_directory"
+            app:key="download_directory"
             app:title="@string/settings_set_directory" />
 
         <Preference
-            android:id="@+id/preference"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            app:id="@+id/preference"
+            app:layout_width="wrap_content"
+            app:layout_height="wrap_content"
             app:key="delete_cache"
             app:title="@string/settings_clear_cache" />
         <Preference
