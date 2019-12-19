@@ -114,7 +114,8 @@ fun updateOldReaderGalleries(context: Context) {
        reader["code"] = when {
            (File(gallery, "images").list()?.
                all { !it.endsWith("webp") } ?: return@forEach) &&
-                   availableInHiyobi(gallery.name.toInt()) -> json.toJson(codeSerializer, Reader.Code.HIYOBI)
+                   availableInHiyobi(gallery.name.toIntOrNull() ?: return@forEach)
+                -> json.toJson(codeSerializer, Reader.Code.HIYOBI)
            else -> json.toJson(codeSerializer, Reader.Code.HITOMI)
        }
 
