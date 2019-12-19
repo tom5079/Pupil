@@ -20,12 +20,15 @@ package xyz.quaver.pupil.ui
 
 import android.annotation.SuppressLint
 import android.app.Activity
+import android.content.Context
 import android.content.Intent
 import android.content.res.Resources
 import android.os.Bundle
 import android.os.Environment
+import android.os.storage.StorageManager
 import android.text.Editable
 import android.text.TextWatcher
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.MenuItem
 import android.view.WindowManager
@@ -36,6 +39,9 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.content.ContextCompat
+import androidx.core.content.ContextCompat.getSystemService
+import androidx.core.content.FileProvider
+import androidx.documentfile.provider.DocumentFile
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
 import androidx.preference.PreferenceManager
@@ -74,6 +80,7 @@ class SettingsActivity : AppCompatActivity() {
             .replace(R.id.settings, SettingsFragment())
             .commit()
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
+
     }
 
     override fun onResume() {
@@ -401,8 +408,14 @@ class SettingsActivity : AppCompatActivity() {
                 this!!
 
                 onPreferenceClickListener = Preference.OnPreferenceClickListener {
-                    val intent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE)
+                    val intent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).apply { }
+                    /*
+                    var mStorageManager = getSystemService(Context.STORAGE_SERVICE) as StorageManager
+                    var mStorageVolumes = mStorageManager.storageVolumes
 
+                    val primaryVolume = mStorageManager.primaryStorageVolume
+                    val intent = primaryVolume.createOpenDocumentTreeIntent()
+                    */
                     activity?.startActivityForResult(intent, (activity as SettingsActivity).REQUEST_DIRECTORY)
 
                     true
@@ -513,9 +526,14 @@ class SettingsActivity : AppCompatActivity() {
             REQUEST_DIRECTORY -> {
             if (resultCode == Activity.RESULT_OK) {
                 val uri = data?.data ?: return
-                val takeFlags: Int = intent.flags and (Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+                Log.d("test", "resultCode:$resultCode")
+                val takeFlags = Intent.FLAG_GRANT_READ_URI_PERMISSION or
+                        Intent.FLAG_GRANT_WRITE_URI_PERMISSION
                 contentResolver.takePersistableUriPermission(uri, takeFlags)
-                //file_paths.xml에 uri를 넣어야함
+                Log.d("test", "granted uri: ${uri.path}")
+                val pref = getSharedPreferences("directory", Context.MODE_PRIVATE)
+                val editor = pref.edit()
+                editor.putString("directory","$uri").commit()
             }
         }
             else -> super.onActivityResult(requestCode, resultCode, data)

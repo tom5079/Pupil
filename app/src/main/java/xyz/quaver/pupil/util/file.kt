@@ -19,8 +19,13 @@
 package xyz.quaver.pupil.util
 
 import android.content.Context
+import android.content.SharedPreferences
+import android.net.Uri
 import android.os.Build
 import android.os.Environment
+import android.util.Log
+import androidx.documentfile.provider.DocumentFile
+import androidx.preference.PreferenceManager
 import java.io.File
 
 fun getCachedGallery(context: Context, galleryID: Int): File {
@@ -33,9 +38,13 @@ fun getCachedGallery(context: Context, galleryID: Int): File {
 }
 
 @Suppress("DEPRECATION")
-fun getDownloadDirectory(context: Context): File {
+fun getDownloadDirectory(context: Context): File {/*
     return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)
-        context.getExternalFilesDir("Pupil")!!
+        context.getExternalFilesDir(".Pupil")!!
     else
-        File(Environment.getExternalStorageDirectory(), "Pupil")
+        File(Environment.getExternalStorageDirectory(), ".Pupil")*/
+    val temp = context.getSharedPreferences("directory", Context.MODE_PRIVATE)?.getString("directory","")
+    val uri = Uri.parse(temp)
+    val path =
+    return File("$temp/.Pupil")
 }
