@@ -20,16 +20,21 @@ package xyz.quaver.pupil.util
 
 import android.content.Context
 import android.content.pm.PackageManager
+import android.os.Build
 import androidx.core.content.ContextCompat
+import java.util.*
+import kotlin.collections.ArrayList
 
+//Android Q+ uses scoped storage thus not requiring permission
 fun Context.hasPermission(permission: String) =
-    ContextCompat.checkSelfPermission(this, permission) == PackageManager.PERMISSION_GRANTED
+    Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q || ContextCompat.checkSelfPermission(this, permission) == PackageManager.PERMISSION_GRANTED
 
+@UseExperimental(ExperimentalStdlibApi::class)
 fun String.wordCapitalize() : String {
     val result = ArrayList<String>()
 
     for (word in this.split(" "))
-        result.add(word.capitalize())
+        result.add(word.capitalize(Locale.getDefault()))
 
     return result.joinToString(" ")
 }
