@@ -14,7 +14,7 @@ android {
         minSdkVersion 16
         targetSdkVersion 29
         versionCode 31
-        versionName "4.2-beta2-hotfix1"
+        versionName "4.2-beta2-hotfix2"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         multiDexEnabled true
         vectorDrawables.useSupportLibrary = true
@@ -55,12 +55,12 @@ dependencies {
     implementation 'androidx.lifecycle:lifecycle-extensions:2.1.0'
     implementation 'androidx.lifecycle:lifecycle-viewmodel-ktx:2.1.0'
     implementation 'androidx.legacy:legacy-support-v4:1.0.0'
-    implementation "androidx.biometric:biometric:1.0.0"
+    implementation "androidx.biometric:biometric:1.0.1"
     implementation 'com.android.support:multidex:1.0.3'
     implementation "com.daimajia.swipelayout:library:1.2.0@aar"
-    implementation 'com.google.android.material:material:1.2.0-alpha02'
+    implementation 'com.google.android.material:material:1.2.0-alpha03'
     implementation 'com.google.firebase:firebase-core:17.2.1'
-    implementation 'com.google.firebase:firebase-perf:19.0.3'
+    implementation 'com.google.firebase:firebase-perf:19.0.4'
     implementation 'com.crashlytics.sdk.android:crashlytics:2.10.1'
     implementation 'com.github.arimorty:floatingsearchview:2.1.1'
     implementation 'com.github.clans:fab:1.6.4'
