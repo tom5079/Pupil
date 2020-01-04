@@ -20,7 +20,7 @@
         <Preference
             app:key="default_query"
             app:title="@string/settings_default_query"
-            app:useSimpleSummaryProvider="true"/>
+            app:useSimpleSummaryPrKovider="true"/>
 
     </PreferenceCategory>
 
@@ -38,6 +38,10 @@
         <Preference
             app:title="@string/settings_clear_history"
             app:key="clear_history"/>
+
+        <Preference
+            app:title="@string/settings_dl_location"
+            app:key="dl_location"/>
 
     </PreferenceCategory>
 
