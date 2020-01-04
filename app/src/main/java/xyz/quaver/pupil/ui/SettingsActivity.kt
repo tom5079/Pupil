@@ -208,6 +208,17 @@ class SettingsActivity : AppCompatActivity() {
                 }
             }
 
+            with(findPreference<Preference>("dl_location")) {
+                this!!
+
+                summary = getDownloadDirectory(context).absolutePath
+
+                onPreferenceClickListener = Preference.OnPreferenceClickListener {
+
+                    true
+                }
+            }
+
             with(findPreference<Preference>("default_query")) {
                 this!!
 
