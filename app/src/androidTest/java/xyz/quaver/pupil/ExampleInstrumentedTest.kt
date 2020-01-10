@@ -20,8 +20,8 @@
 
 package xyz.quaver.pupil
 
-import android.content.Intent
 import android.util.Log
+import androidx.core.content.ContextCompat
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.ActivityTestRule
@@ -64,7 +64,9 @@ class ExampleInstrumentedTest {
         val activityTestRule = ActivityTestRule(LockActivity::class.java)
         val appContext = InstrumentationRegistry.getInstrumentation().targetContext
 
-        activityTestRule.launchActivity(Intent())
+        ContextCompat.getExternalFilesDirs(appContext, null).forEachIndexed { index, file ->
+            Log.i("PUPILD", "$index: ${file?.absolutePath}")
+        }
     }
 
     @Test

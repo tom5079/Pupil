@@ -44,8 +44,10 @@ import kotlinx.serialization.parseList
 import xyz.quaver.pupil.Pupil
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.types.Tags
+import xyz.quaver.pupil.ui.dialog.DownloadLocationDialog
 import xyz.quaver.pupil.util.Lock
 import xyz.quaver.pupil.util.LockManager
+import xyz.quaver.pupil.util.byteToString
 import xyz.quaver.pupil.util.getDownloadDirectory
 import java.io.File
 import java.nio.charset.Charset
@@ -85,14 +87,6 @@ class SettingsActivity : AppCompatActivity() {
 
     class SettingsFragment : PreferenceFragmentCompat() {
 
-        private val suffix = listOf(
-            "B",
-            "kB",
-            "MB",
-            "GB",
-            "TB" //really?
-        )
-
         override fun onResume() {
             super.onResume()
 
@@ -112,15 +106,9 @@ class SettingsActivity : AppCompatActivity() {
         }
 
         private fun getDirSize(dir: File) : String {
-            var size = dir.walk().map { it.length() }.sum()
-            var suffixIndex = 0
+            val size = dir.walk().map { it.length() }.sum()
 
-            while (size >= 1024) {
-                size /= 1024
-                suffixIndex++
-            }
-
-            return getString(R.string.settings_clear_summary, size, suffix[suffixIndex])
+            return getString(R.string.settings_clear_summary, byteToString(size))
         }
 
         override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
@@ -214,6 +202,14 @@ class SettingsActivity : AppCompatActivity() {
                 summary = getDownloadDirectory(context).absolutePath
 
                 onPreferenceClickListener = Preference.OnPreferenceClickListener {
+                    DownloadLocationDialog(context).apply {
+                        onDownloadLocationChangedListener = { value ->
+                            PreferenceManager.getDefaultSharedPreferences(context).edit()
+                                .putInt(key, value)
+                                .apply()
+                            summary = getDownloadDirectory(context).absolutePath
+                        }
+                    }.show()
 
                     true
                 }

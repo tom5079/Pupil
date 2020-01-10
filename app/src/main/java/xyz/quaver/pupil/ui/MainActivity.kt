@@ -72,6 +72,7 @@ import xyz.quaver.pupil.adapters.GalleryBlockAdapter
 import xyz.quaver.pupil.types.Tag
 import xyz.quaver.pupil.types.TagSuggestion
 import xyz.quaver.pupil.types.Tags
+import xyz.quaver.pupil.ui.dialog.GalleryDialog
 import xyz.quaver.pupil.util.*
 import java.io.File
 import java.io.FileOutputStream
@@ -613,7 +614,10 @@ class MainActivity : AppCompatActivity() {
 
                     val galleryID = galleries[position].first.id
 
-                    GalleryDialog(this@MainActivity, galleryID).apply {
+                    GalleryDialog(
+                        this@MainActivity,
+                        galleryID
+                    ).apply {
                         onChipClickedHandler.add {
                             runOnUiThread {
                                 query = it.toQuery()

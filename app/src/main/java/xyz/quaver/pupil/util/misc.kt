@@ -24,6 +24,7 @@ import android.os.Build
 import androidx.core.content.ContextCompat
 import java.util.*
 import kotlin.collections.ArrayList
+import kotlin.math.round
 
 //Android Q+ uses scoped storage thus not requiring permission
 fun Context.hasPermission(permission: String) =
@@ -37,4 +38,33 @@ fun String.wordCapitalize() : String {
         result.add(word.capitalize(Locale.getDefault()))
 
     return result.joinToString(" ")
+}
+
+
+//https://discuss.kotlinlang.org/t/how-do-you-round-a-number-to-n-decimal-places/8843(fvasco)
+fun Double.round(decimals: Int): Double {
+    var multiplier = 1.0
+    repeat(decimals) { multiplier *= 10 }
+    return round(this * multiplier) / multiplier
+}
+
+fun byteToString(byte: Long, precision : Int = 1) : String {
+
+    val suffix = listOf(
+        "B",
+        "kB",
+        "MB",
+        "GB",
+        "TB" //really?
+    )
+    var size = byte.toDouble()
+    var suffixIndex = 0
+
+    while (size >= 1024) {
+        size /= 1024
+        suffixIndex++
+    }
+
+    return "${size.round(precision)} ${suffix[suffixIndex]}"
+
 }
