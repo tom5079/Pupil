@@ -1,6 +1,6 @@
 /*
  *     Pupil, Hitomi.la viewer for Android
- *     Copyright (C) 2019  tom5079
+ *     Copyright (C) 2020  tom5079
  *
  *     This program is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
@@ -16,7 +16,7 @@
  *     along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package xyz.quaver.pupil.ui
+package xyz.quaver.pupil.ui.dialog
 
 import android.app.Dialog
 import android.content.Context
@@ -46,6 +46,7 @@ import xyz.quaver.pupil.R
 import xyz.quaver.pupil.adapters.GalleryBlockAdapter
 import xyz.quaver.pupil.adapters.ThumbnailAdapter
 import xyz.quaver.pupil.types.Tag
+import xyz.quaver.pupil.ui.ReaderActivity
 import xyz.quaver.pupil.util.ItemClickSupport
 import xyz.quaver.pupil.util.wordCapitalize
 
@@ -256,7 +257,10 @@ class GalleryDialog(context: Context, private val galleryID: Int) : Dialog(conte
                         (context.applicationContext as Pupil).histories.add(galleries[position].first.id)
                     }
                     .setOnItemLongClickListener { _, position, _ ->
-                        GalleryDialog(context, galleries[position].first.id).apply {
+                        GalleryDialog(
+                            context,
+                            galleries[position].first.id
+                        ).apply {
                             onChipClickedHandler.add { tag ->
                                 this@GalleryDialog.onChipClickedHandler.forEach { it.invoke(tag) }
                             }

@@ -9,7 +9,7 @@
     <string name="search_hint_with_page">ギャラリー検索</string>
     <string name="settings_clear_cache">キャッシュクリア</string>
     <string name="settings_clear_cache_alert_message">キャッシュをクリアするとイメージのロード速度に影響を与えます。実行しますか？</string>
-    <string name="settings_clear_summary">サイズ: %1$d%2$s</string>
+    <string name="settings_clear_summary">サイズ: %s</string>
     <string name="settings_default_query">デフォルトキーワード</string>
     <string name="settings_galleries_per_page">一回にロードするギャラリー数</string>
     <string name="settings_search_title">検索設定</string>
@@ -111,4 +111,7 @@
     <string name="settings_restore_failed">復元に失敗しました</string>
     <string name="settings_restore_successful">%1$d項目を復元しました</string>
     <string name="settings_dl_location">ダウンロード場所</string>
+    <string name="settings_dl_location_internal">内部ストレージ</string>
+    <string name="settings_dl_location_removable">外部SDカード</string>
+    <string name="settings_dl_location_available">%s 使用可能</string>
 </resources>

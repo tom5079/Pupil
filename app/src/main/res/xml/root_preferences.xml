@@ -20,7 +20,7 @@
         <Preference
             app:key="default_query"
             app:title="@string/settings_default_query"
-            app:useSimpleSummaryPrKovider="true"/>
+            app:useSimpleSummaryProvider="true"/>
 
     </PreferenceCategory>
 
