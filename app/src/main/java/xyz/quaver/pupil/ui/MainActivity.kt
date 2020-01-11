@@ -18,7 +18,6 @@
 
 package xyz.quaver.pupil.ui
 
-import android.Manifest
 import android.app.Activity
 import android.app.DownloadManager
 import android.content.BroadcastReceiver
@@ -28,7 +27,6 @@ import android.content.IntentFilter
 import android.graphics.drawable.Animatable
 import android.net.Uri
 import android.os.Bundle
-import android.os.Environment
 import android.text.*
 import android.text.style.AlignmentSpan
 import android.view.KeyEvent
@@ -42,7 +40,6 @@ import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.cardview.widget.CardView
-import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.res.ResourcesCompat
 import androidx.core.view.GravityCompat
@@ -143,8 +140,6 @@ class MainActivity : AppCompatActivity() {
 
         if (lockManager.isNotEmpty())
             startActivityForResult(Intent(this, LockActivity::class.java), REQUEST_LOCK)
-
-        checkPermissions()
 
         val preference = PreferenceManager.getDefaultSharedPreferences(this)
 
@@ -319,20 +314,10 @@ class MainActivity : AppCompatActivity() {
                 val msg = extractReleaseNote(update, Locale.getDefault().language)
                 setMessage(Markwon.create(context).toMarkdown(msg))
                 setPositiveButton(android.R.string.yes) { _, _ ->
-                    if (!this@MainActivity.hasPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
-                        AlertDialog.Builder(this@MainActivity).apply {
-                            setTitle(R.string.warning)
-                            setMessage(R.string.update_no_permission)
-                            setPositiveButton(android.R.string.ok) { _, _ -> }
-                        }.show()
-
-                        return@setPositiveButton
-                    }
-
                     val request = DownloadManager.Request(Uri.parse(url)).apply {
                         setDescription(getString(R.string.update_notification_description))
                         setTitle(getString(R.string.app_name))
-                        setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, fileName)
+                        setDestinationInExternalFilesDir(context, null, "")
                     }
 
                     val manager = getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
@@ -369,11 +354,6 @@ class MainActivity : AppCompatActivity() {
                 dialog.show()
             }
         }
-    }
-
-    private fun checkPermissions() {
-        if (!hasPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE))
-            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE), 13489)
     }
 
     private fun initView() {
