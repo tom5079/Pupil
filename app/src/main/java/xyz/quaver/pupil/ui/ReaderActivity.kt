@@ -36,6 +36,7 @@ import androidx.vectordrawable.graphics.drawable.AnimatedVectorDrawableCompat
 import com.bumptech.glide.Glide
 import com.crashlytics.android.Crashlytics
 import com.google.android.material.snackbar.Snackbar
+import io.fabric.sdk.android.Fabric
 import kotlinx.android.synthetic.main.activity_reader.*
 import kotlinx.android.synthetic.main.activity_reader.view.*
 import kotlinx.android.synthetic.main.dialog_numberpicker.view.*
@@ -95,7 +96,8 @@ class ReaderActivity : AppCompatActivity() {
 
         handleIntent(intent)
 
-        Crashlytics.setInt("GalleryID", galleryID)
+        if (Fabric.isInitialized())
+            Crashlytics.setInt("GalleryID", galleryID)
 
         if (galleryID == 0) {
             onBackPressed()
