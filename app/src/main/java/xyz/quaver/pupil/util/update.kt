@@ -93,9 +93,9 @@ fun checkUpdate(context: AppCompatActivity, force: Boolean = false) {
     fun extractReleaseNote(update: JsonObject, locale: Locale) : String {
         val markdown = update["body"]!!.content
 
-        val target = when(locale) {
-            Locale.KOREAN -> "한국어"
-            Locale.JAPANESE -> "日本語"
+        val target = when(locale.language) {
+            "ko" -> "한국어"
+            "ja" -> "日本語"
             else -> "English"
         }
 
