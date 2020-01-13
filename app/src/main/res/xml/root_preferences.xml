@@ -6,6 +6,10 @@
         app:title="@string/settings_app_version_title"
         app:key="app_version"/>
 
+    <SwitchPreference
+        app:title="@string/settings_beta"
+        app:key="beta"/>
+
     <PreferenceCategory
         app:title="@string/settings_search_title">
 

@@ -69,7 +69,7 @@
     <string name="main_drawer_grouop_contact_discord">ディスコード</string>
     <string name="settings_app_lock">アプリロック</string>
     <string name="settings_app_lock_type">アップロックの種類</string>
-    <string name="settings_app_version_title">バージョン</string>
+    <string name="settings_app_version_title">バージョン(アップデート確認)</string>
     <string name="settings_lock_biometrics">生体認識</string>
     <string name="settings_lock_confirm">ロック確認のためもう一回入力してください。</string>
     <string name="settings_lock_enabled">有効</string>
@@ -116,4 +116,6 @@
     <string name="settings_dl_location_available">%s 使用可能</string>
     <string name="update_download_completed">ダウンロードが完了しました</string>
     <string name="update_download_completed_description">ここをクリックしてアップデートを行えます</string>
+    <string name="settings_beta">ベータチャンネルでアップデートを受信</string>
+    <string name="settings_app_version_description">v%s</string>
 </resources>

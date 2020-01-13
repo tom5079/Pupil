@@ -54,18 +54,17 @@ fun getReleases(url: String) : JsonArray {
     }
 }
 
-fun checkUpdate(url: String) : JsonObject? {
+fun checkUpdate(context: Context, url: String) : JsonObject? {
     val releases = getReleases(url)
 
     if (releases.isEmpty())
         return null
 
     return releases.firstOrNull {
-        if (BuildConfig.PRERELEASE) {
+        if (PreferenceManager.getDefaultSharedPreferences(context).getBoolean("beta", false))
             true
-        } else {
+        else
             it.jsonObject["prerelease"]?.boolean == false
-        }
     }?.let {
         if (it.jsonObject["tag_name"]?.content == BuildConfig.VERSION_NAME)
             null
@@ -82,13 +81,13 @@ fun getApkUrl(releases: JsonObject) : String? {
     }
 }
 
-val UPDATE_NOTIFICATION_ID = 384823
-fun checkUpdate(context: AppCompatActivity) {
+const val UPDATE_NOTIFICATION_ID = 384823
+fun checkUpdate(context: AppCompatActivity, force: Boolean = false) {
 
     val preferences = PreferenceManager.getDefaultSharedPreferences(context)
     val ignoreUpdateUntil = preferences.getLong("ignore_update_until", 0)
 
-    if (ignoreUpdateUntil > System.currentTimeMillis())
+    if (!force && ignoreUpdateUntil > System.currentTimeMillis())
         return
 
     fun extractReleaseNote(update: JsonObject, locale: Locale) : String {
@@ -135,7 +134,7 @@ fun checkUpdate(context: AppCompatActivity) {
 
     CoroutineScope(Dispatchers.Default).launch {
         val update =
-            checkUpdate(context.getString(R.string.release_url)) ?: return@launch
+            checkUpdate(context, context.getString(R.string.release_url)) ?: return@launch
 
         val url = getApkUrl(update) ?: return@launch
 
@@ -185,10 +184,11 @@ fun checkUpdate(context: AppCompatActivity) {
                         notificationManager.notify(UPDATE_NOTIFICATION_ID, builder.build())
                 }
             }
-            setNegativeButton(R.string.ignore_update) { _, _ ->
-                preferences.edit()
-                    .putLong("ignore_update_until", System.currentTimeMillis() + 604800000)
-                    .apply()
+            setNegativeButton(if (force) android.R.string.no else R.string.ignore_update) { _, _ ->
+                if (!force)
+                    preferences.edit()
+                        .putLong("ignore_update_until", System.currentTimeMillis() + 604800000)
+                        .apply()
             }
         }
 
