@@ -5,9 +5,12 @@ apply plugin: 'kotlin-android-extensions'
 apply plugin: 'kotlinx-serialization'
 
 if (file("google-services.json").exists()) {
+    logger.lifecycle("Firebase Enabled")
     apply plugin: 'com.google.gms.google-services'
     apply plugin: 'io.fabric'
     apply plugin: 'com.google.firebase.firebase-perf'
+} else {
+    logger.lifecycle("Firebase Disabled")
 }
 
 android {
@@ -16,8 +19,8 @@ android {
         applicationId "xyz.quaver.pupil"
         minSdkVersion 16
         targetSdkVersion 29
-        versionCode 31
-        versionName "4.2"
+        versionCode 32
+        versionName "4.3"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         multiDexEnabled true
         vectorDrawables.useSupportLibrary = true
