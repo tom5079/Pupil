@@ -18,17 +18,11 @@
 
 package xyz.quaver.pupil.ui
 
-import android.Manifest
 import android.app.Activity
-import android.app.DownloadManager
-import android.content.BroadcastReceiver
-import android.content.Context
 import android.content.Intent
-import android.content.IntentFilter
 import android.graphics.drawable.Animatable
 import android.net.Uri
 import android.os.Bundle
-import android.os.Environment
 import android.text.*
 import android.text.style.AlignmentSpan
 import android.view.KeyEvent
@@ -42,7 +36,6 @@ import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.cardview.widget.CardView
-import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.res.ResourcesCompat
 import androidx.core.view.GravityCompat
@@ -60,11 +53,8 @@ import kotlinx.coroutines.*
 import kotlinx.serialization.ImplicitReflectionSerializer
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonConfiguration
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.content
 import kotlinx.serialization.list
 import kotlinx.serialization.stringify
-import ru.noties.markwon.Markwon
 import xyz.quaver.hitomi.*
 import xyz.quaver.pupil.Pupil
 import xyz.quaver.pupil.R
@@ -72,6 +62,7 @@ import xyz.quaver.pupil.adapters.GalleryBlockAdapter
 import xyz.quaver.pupil.types.Tag
 import xyz.quaver.pupil.types.TagSuggestion
 import xyz.quaver.pupil.types.Tags
+import xyz.quaver.pupil.ui.dialog.GalleryDialog
 import xyz.quaver.pupil.util.*
 import java.io.File
 import java.io.FileOutputStream
@@ -143,8 +134,6 @@ class MainActivity : AppCompatActivity() {
         if (lockManager.isNotEmpty())
             startActivityForResult(Intent(this, LockActivity::class.java), REQUEST_LOCK)
 
-        checkPermissions()
-
         val preference = PreferenceManager.getDefaultSharedPreferences(this)
 
         if (Locale.getDefault().language == "ko") {
@@ -167,7 +156,7 @@ class MainActivity : AppCompatActivity() {
 
         setContentView(R.layout.activity_main)
 
-        checkUpdate()
+        checkUpdate(this)
 
         initView()
     }
@@ -254,125 +243,6 @@ class MainActivity : AppCompatActivity() {
                     finish()
             }
         }
-    }
-
-    private fun checkUpdate() {
-
-        val preferences = PreferenceManager.getDefaultSharedPreferences(this)
-        val ignoreUpdateUntil = preferences.getLong("ignore_update_until", 0)
-
-        if (ignoreUpdateUntil > System.currentTimeMillis())
-            return
-
-        fun extractReleaseNote(update: JsonObject, locale: String) : String {
-            val markdown = update["body"]!!.content
-
-            val target = when(locale) {
-                "ko" -> "한국어"
-                "ja" -> "日本語"
-                else -> "English"
-            }
-
-            val releaseNote = Regex("^# Release Note.+$")
-            val language = Regex("^## $target$")
-            val end = Regex("^#.+$")
-
-            var releaseNoteFlag = false
-            var languageFlag = false
-
-            val result = StringBuilder()
-
-            for(line in markdown.lines()) {
-                if (releaseNote.matches(line)) {
-                    releaseNoteFlag = true
-                    continue
-                }
-
-                if (releaseNoteFlag) {
-                    if (language.matches(line)) {
-                        languageFlag = true
-                        continue
-                    }
-                }
-
-                if (languageFlag) {
-                    if (end.matches(line))
-                        break
-
-                    result.append(line+"\n")
-                }
-            }
-
-            return getString(R.string.update_release_note, update["tag_name"]?.content, result.toString())
-        }
-
-        CoroutineScope(Dispatchers.Default).launch {
-            val update =
-                checkUpdate(getString(R.string.release_url)) ?: return@launch
-
-            val (url, fileName) = getApkUrl(update) ?: return@launch
-            fileName ?: return@launch
-
-            val dialog = AlertDialog.Builder(this@MainActivity).apply {
-                setTitle(R.string.update_title)
-                val msg = extractReleaseNote(update, Locale.getDefault().language)
-                setMessage(Markwon.create(context).toMarkdown(msg))
-                setPositiveButton(android.R.string.yes) { _, _ ->
-                    if (!this@MainActivity.hasPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
-                        AlertDialog.Builder(this@MainActivity).apply {
-                            setTitle(R.string.warning)
-                            setMessage(R.string.update_no_permission)
-                            setPositiveButton(android.R.string.ok) { _, _ -> }
-                        }.show()
-
-                        return@setPositiveButton
-                    }
-
-                    val request = DownloadManager.Request(Uri.parse(url)).apply {
-                        setDescription(getString(R.string.update_notification_description))
-                        setTitle(getString(R.string.app_name))
-                        setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, fileName)
-                    }
-
-                    val manager = getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
-                    val id = manager.enqueue(request)
-
-                    registerReceiver(object: BroadcastReceiver() {
-                        override fun onReceive(context: Context?, intent: Intent?) {
-                            try {
-                                val install = Intent(Intent.ACTION_VIEW).apply {
-                                    flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_GRANT_READ_URI_PERMISSION
-                                    setDataAndType(manager.getUriForDownloadedFile(id), manager.getMimeTypeForDownloadedFile(id))
-                                }
-
-                                startActivity(install)
-                                unregisterReceiver(this)
-                            } catch (e: Exception) {
-                                AlertDialog.Builder(this@MainActivity).apply {
-                                    setTitle(R.string.update_failed)
-                                    setMessage(R.string.update_failed_message)
-                                    setPositiveButton(android.R.string.ok) { _, _ -> }
-                                }.show()
-                            }
-                        }
-                    }, IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE))
-                }
-                setNegativeButton(R.string.ignore_update) { _, _ ->
-                    preferences.edit()
-                        .putLong("ignore_update_until", System.currentTimeMillis() + 604800000)
-                        .apply()
-                }
-            }
-
-            launch(Dispatchers.Main) {
-                dialog.show()
-            }
-        }
-    }
-
-    private fun checkPermissions() {
-        if (!hasPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE))
-            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE), 13489)
     }
 
     private fun initView() {
@@ -613,7 +483,10 @@ class MainActivity : AppCompatActivity() {
 
                     val galleryID = galleries[position].first.id
 
-                    GalleryDialog(this@MainActivity, galleryID).apply {
+                    GalleryDialog(
+                        this@MainActivity,
+                        galleryID
+                    ).apply {
                         onChipClickedHandler.add {
                             runOnUiThread {
                                 query = it.toQuery()

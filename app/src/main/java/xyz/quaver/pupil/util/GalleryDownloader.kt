@@ -163,8 +163,6 @@ class GalleryDownloader(
         }
     }
 
-    private fun webpUrlFromUrl(url: String) = url.replace("/galleries/", "/webp/") + ".webp"
-
     fun start() {
         downloadJob = CoroutineScope(Dispatchers.Default).launch {
             val reader = reader!!.await() ?: return@launch
