@@ -9,7 +9,7 @@
     <string name="search_hint_with_page">ギャラリー検索</string>
     <string name="settings_clear_cache">キャッシュクリア</string>
     <string name="settings_clear_cache_alert_message">キャッシュをクリアするとイメージのロード速度に影響を与えます。実行しますか？</string>
-    <string name="settings_clear_summary">サイズ: %1$d%2$s</string>
+    <string name="settings_clear_summary">サイズ: %s</string>
     <string name="settings_default_query">デフォルトキーワード</string>
     <string name="settings_galleries_per_page">一回にロードするギャラリー数</string>
     <string name="settings_search_title">検索設定</string>
@@ -69,7 +69,7 @@
     <string name="main_drawer_grouop_contact_discord">ディスコード</string>
     <string name="settings_app_lock">アプリロック</string>
     <string name="settings_app_lock_type">アップロックの種類</string>
-    <string name="settings_app_version_title">バージョン</string>
+    <string name="settings_app_version_title">バージョン(アップデート確認)</string>
     <string name="settings_lock_biometrics">生体認識</string>
     <string name="settings_lock_confirm">ロック確認のためもう一回入力してください。</string>
     <string name="settings_lock_enabled">有効</string>
@@ -110,4 +110,12 @@
     <string name="settings_backup_checkout">確認</string>
     <string name="settings_restore_failed">復元に失敗しました</string>
     <string name="settings_restore_successful">%1$d項目を復元しました</string>
+    <string name="settings_dl_location">ダウンロード場所</string>
+    <string name="settings_dl_location_internal">内部ストレージ</string>
+    <string name="settings_dl_location_removable">外部SDカード</string>
+    <string name="settings_dl_location_available">%s 使用可能</string>
+    <string name="update_download_completed">ダウンロードが完了しました</string>
+    <string name="update_download_completed_description">ここをクリックしてアップデートを行えます</string>
+    <string name="settings_beta">ベータチャンネルでアップデートを受信</string>
+    <string name="settings_app_version_description">v%s</string>
 </resources>
