@@ -76,7 +76,9 @@
 
     <string name="update_title">Update available</string>
     <string name="update_download_started">Download started</string>
-    <string name="update_notification_description">Downloading apk&#8230;</string>
+    <string name="update_download_completed">Download Completed</string>
+    <string name="update_download_completed_description">Click here to update</string>
+    <string name="update_notification_description">Downloading update&#8230;</string>
     <string name="update_release_note"># Release Note(v%1$s)\n%2$s</string>
 
     <string name="search_hint">Search galleries</string>
@@ -96,6 +98,8 @@
     <string name="galleryblock_type">Type: %1$s</string>
     <string name="galleryblock_language">Language: %1$s</string>
 
+    <!-- READER -->
+
     <string name="reader_loading">Loading</string>
     <string name="reader_go_to_page">Go to page</string>
     <string name="reader_fab_fullscreen">Fullscreen</string>
@@ -107,22 +111,38 @@
 
     <string name="reader_help">Help</string>
 
+    <!-- SETTINGS -->
+
     <string name="settings_title">Settings</string>
+
     <string name="settings_app_version_title">App version</string>
     <string name="settings_search_title">Search Settings</string>
     <string name="settings_galleries_per_page">Galleries per page</string>
     <string name="settings_default_query">Default query</string>
+
+    <!-- SETTINGS/STORAGE -->
+
     <string name="settings_storage">Storage</string>
     <string name="settings_clear_cache">Clear cache</string>
     <string name="settings_clear_cache_alert_message">Deleting cache can affect image loading speed. Do you want to continue?</string>
-    <string name="settings_clear_summary">Currently using %1$d%2$s</string>
+    <string name="settings_clear_summary">Currently using %s</string>
     <string name="settings_clear_downloads">Clear downloads</string>
     <string name="settings_clear_downloads_alert_message">Delete all downloaded galleries.\nDo you want to continue?</string>
     <string name="settings_clear_history">Clear history</string>
     <string name="settings_clear_history_alert_message">Do you want to clear histories?</string>
     <string name="settings_clear_history_summary">%1$d histories saved</string>
+    <string name="settings_dl_location">Download directory</string>
+    <string name="settings_dl_location_removable">Removable Storage</string>
+    <string name="settings_dl_location_internal">Internal Storage</string>
+    <string name="settings_dl_location_available">%s available</string>
+
+    <!-- SETTINGS/APP LOCK -->
+
     <string name="settings_app_lock">App lock</string>
     <string name="settings_app_lock_type">App lock type</string>
+
+    <!-- SETTINGS/MISCELLANEOUS -->
+
     <string name="settings_miscellaneous_title">Miscellaneous</string>
     <string name="settings_use_hiyobi_title">Use hiyobi.me</string>
     <string name="settings_use_hiyobi_summary">Load images from hiyobi.me to improve loading speed (if available)</string>
@@ -139,6 +159,8 @@
     <string name="settings_restore_failed">Restore failed</string>
     <string name="settings_restore_successful">%1$d entries restored</string>
 
+    <!-- SETTINGS/APP LOCK ACTIVITY -->
+
     <string name="settings_lock_none">None</string>
     <string name="settings_lock_pattern">Pattern</string>
     <string name="settings_lock_pin" translatable="false">PIN</string>
@@ -149,6 +171,8 @@
     <string name="settings_lock_confirm">Input same lock once more to confirm Lock</string>
     <string name="settings_lock_remove_message">Do you want to remove lock?</string>
     <string name="settings_lock_wrong_confirm">Lock is different from last one. Please try again.</string>
+
+    <!-- SETTINGS/DEFAULT QUERY DIALOG -->
 
     <string name="default_query_dialog_title">Set default query</string>
     <string name="default_query_dialog_language">Language: </string>

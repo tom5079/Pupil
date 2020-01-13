@@ -62,19 +62,15 @@ class Pupil : MultiDexApplication() {
             e.printStackTrace()
         }
 
-        if (!preference.getBoolean("channel_created", false)) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-                val channel = NotificationChannel("download", getString(R.string.channel_download), NotificationManager.IMPORTANCE_LOW).apply {
-                    description = getString(R.string.channel_download_description)
-                    enableLights(false)
-                    enableVibration(false)
-                    lockscreenVisibility = Notification.VISIBILITY_SECRET
-                }
-                manager.createNotificationChannel(channel)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            val channel = NotificationChannel("download", getString(R.string.channel_download), NotificationManager.IMPORTANCE_LOW).apply {
+                description = getString(R.string.channel_download_description)
+                enableLights(false)
+                enableVibration(false)
+                lockscreenVisibility = Notification.VISIBILITY_SECRET
             }
-
-            preference.edit().putBoolean("channel_created", true).apply()
+            manager.createNotificationChannel(channel)
         }
 
         AppCompatDelegate.setDefaultNightMode(when (preference.getBoolean("dark_mode", false)) {
