@@ -49,8 +49,7 @@ fun byteToString(byte: Long, precision : Int = 1) : String {
         "GB",
         "TB" //really?
     )
-    var size = byte.toDouble()
-    var suffixIndex = 0
+    var size = byte.toDouble(); var suffixIndex = 0
 
     while (size >= 1024) {
         size /= 1024
