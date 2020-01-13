@@ -49,17 +49,21 @@ class ReaderAdapter(private val glide: RequestManager,
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         holder.view as ImageView
 
+        if (isFullScreen)
+            holder.view.layoutParams.height = RecyclerView.LayoutParams.MATCH_PARENT
+        else
+            holder.view.layoutParams.height = RecyclerView.LayoutParams.WRAP_CONTENT
+
         glide
             .load(File(getCachedGallery(holder.view.context, galleryID), images[position]))
-            .dontTransform()
             .diskCacheStrategy(DiskCacheStrategy.NONE)
             .skipMemoryCache(true)
             .error(R.drawable.image_broken_variant)
+            .dontTransform()
             .apply {
                 if (BuildConfig.CENSOR)
                     override(5, 8)
             }
-            .fitCenter()
             .into(holder.view)
     }
 

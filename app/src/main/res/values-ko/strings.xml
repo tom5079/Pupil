@@ -8,7 +8,7 @@
     <string name="settings_default_query">기본 검색어</string>
     <string name="settings_clear_cache">캐시 정리하기</string>
     <string name="settings_clear_cache_alert_message">캐시를 정리하면 이미지 로딩속도가 느려질 수 있습니다. 계속하시겠습니까?</string>
-    <string name="settings_clear_summary">사용량: %1$d%2$s</string>
+    <string name="settings_clear_summary">사용량: %s</string>
     <string name="settings_galleries_per_page">한 번에 로드할 갤러리 수</string>
     <string name="settings_search_title">검색 설정</string>
     <string name="settings_title">설정</string>
@@ -69,7 +69,7 @@
     <string name="main_drawer_grouop_contact_discord">디스코드</string>
     <string name="settings_app_lock">앱 잠금</string>
     <string name="settings_app_lock_type">앱 잠금 종류</string>
-    <string name="settings_app_version_title">앱 버전</string>
+    <string name="settings_app_version_title">앱 버전(업데이트 확인)</string>
     <string name="settings_lock_biometrics">생체 인식</string>
     <string name="settings_lock_confirm">잠금 확인을 위해 한번 더 입력해주세요</string>
     <string name="settings_lock_enabled">사용 중</string>
@@ -110,4 +110,12 @@
     <string name="settings_backup_checkout">확인</string>
     <string name="settings_restore_failed">복원에 실패했습니다</string>
     <string name="settings_restore_successful">%1$d개 항목을 복원했습니다</string>
+    <string name="settings_dl_location">다운로드 위치</string>
+    <string name="settings_dl_location_internal">내부 저장공간</string>
+    <string name="settings_dl_location_removable">외부 SD카드</string>
+    <string name="settings_dl_location_available">%s 사용 가능</string>
+    <string name="update_download_completed">다운로드가 완료되었습니다</string>
+    <string name="update_download_completed_description">여기를 클릭해서 업데이트를 진행할 수 있습니다</string>
+    <string name="settings_beta">베타 채널에서 업데이트</string>
+    <string name="settings_app_version_description">v%s</string>
 </resources>

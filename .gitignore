@@ -16,4 +16,4 @@
 /gh-pages
 
 #Private files
-/app/google-services.json
+**/google-services.json
