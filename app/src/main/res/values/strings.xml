@@ -115,7 +115,12 @@
 
     <string name="settings_title">Settings</string>
 
-    <string name="settings_app_version_title">App version</string>
+    <string name="settings_app_version_title">App version(Click to check update)</string>
+    <string name="settings_app_version_description">v%s</string>
+    <string name="settings_beta">Update from beta channel</string>
+
+    <!-- SEARCH -->
+
     <string name="settings_search_title">Search Settings</string>
     <string name="settings_galleries_per_page">Galleries per page</string>
     <string name="settings_default_query">Default query</string>

@@ -28,7 +28,6 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
         buildTypes.each {
-            it.buildConfigField('boolean', 'PRERELEASE', 'false')
             it.buildConfigField('boolean', 'CENSOR', 'false')
         }
     }
@@ -39,7 +38,7 @@ android {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
-    buildToolsVersion = '29.0.1'
+    buildToolsVersion = '29.0.2'
 }
 
 dependencies {
