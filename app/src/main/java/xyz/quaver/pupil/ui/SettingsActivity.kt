@@ -45,10 +45,7 @@ import xyz.quaver.pupil.Pupil
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.types.Tags
 import xyz.quaver.pupil.ui.dialog.DownloadLocationDialog
-import xyz.quaver.pupil.util.Lock
-import xyz.quaver.pupil.util.LockManager
-import xyz.quaver.pupil.util.byteToString
-import xyz.quaver.pupil.util.getDownloadDirectory
+import xyz.quaver.pupil.util.*
 import java.io.File
 import java.nio.charset.Charset
 import java.util.*
@@ -120,7 +117,13 @@ class SettingsActivity : AppCompatActivity() {
                 val manager = context.packageManager
                 val info = manager.getPackageInfo(context.packageName, 0)
 
-                summary = info.versionName
+                summary = context.getString(R.string.settings_app_version_description, info.versionName)
+
+                setOnPreferenceClickListener {
+                    checkUpdate(activity as SettingsActivity, true)
+
+                    true
+                }
             }
 
             with(findPreference<Preference>("delete_cache")) {
