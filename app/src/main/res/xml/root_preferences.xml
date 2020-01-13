@@ -6,7 +6,7 @@
         app:title="@string/settings_app_version_title"
         app:key="app_version"/>
 
-    <SwitchPreference
+    <SwitchPreferenceCompat
         app:title="@string/settings_beta"
         app:key="beta"/>
 
@@ -61,23 +61,23 @@
     <PreferenceCategory
         app:title="@string/settings_miscellaneous_title">
 
-        <SwitchPreference
+        <SwitchPreferenceCompat
             app:key="use_hiyobi"
             app:title="@string/settings_use_hiyobi_title"
             app:summary="@string/settings_use_hiyobi_summary"/>
 
-        <SwitchPreference
+        <SwitchPreferenceCompat
             app:key="security_mode"
             app:title="@string/settings_security_mode_title"
             app:summary="@string/settings_security_mode_summary"
             app:defaultValue="true"/>
 
-        <SwitchPreference
+        <SwitchPreferenceCompat
             app:key="dark_mode"
             app:title="@string/settings_dark_mode_title"
             app:summary="@string/settings_dark_mode_summary"/>
 
-        <SwitchPreference
+        <SwitchPreferenceCompat
             app:key="nomedia"
             app:title="@string/settings_nomedia_title"
             app:summary="@string/settings_nomedia_title"/>
