@@ -114,4 +114,6 @@
     <string name="settings_dl_location_internal">内部ストレージ</string>
     <string name="settings_dl_location_removable">外部SDカード</string>
     <string name="settings_dl_location_available">%s 使用可能</string>
+    <string name="update_download_completed">ダウンロードが完了しました</string>
+    <string name="update_download_completed_description">ここをクリックしてアップデートを行えます</string>
 </resources>
