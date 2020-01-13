@@ -76,7 +76,9 @@
 
     <string name="update_title">Update available</string>
     <string name="update_download_started">Download started</string>
-    <string name="update_notification_description">Downloading apk&#8230;</string>
+    <string name="update_download_completed">Download Completed</string>
+    <string name="update_download_completed_description">Click here to update</string>
+    <string name="update_notification_description">Downloading update&#8230;</string>
     <string name="update_release_note"># Release Note(v%1$s)\n%2$s</string>
 
     <string name="search_hint">Search galleries</string>

@@ -22,6 +22,7 @@ import android.content.Context
 import androidx.core.content.ContextCompat
 import androidx.preference.PreferenceManager
 import java.io.File
+import java.net.URL
 
 fun getCachedGallery(context: Context, galleryID: Int): File {
     return File(getDownloadDirectory(context), galleryID.toString()).let {
@@ -36,4 +37,28 @@ fun getDownloadDirectory(context: Context): File {
     val dlLocation = PreferenceManager.getDefaultSharedPreferences(context).getInt("dl_location", 0)
 
     return ContextCompat.getExternalFilesDirs(context, null)[dlLocation]
+}
+
+fun URL.download(to: File, onDownloadProgress: ((Long, Long) -> Unit)? = null) {
+    to.outputStream().use { out ->
+
+        with(openConnection()) {
+            val fileSize = contentLength.toLong()
+
+            getInputStream().use {
+
+                var bytesCopied: Long = 0
+                val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+                var bytes = it.read(buffer)
+                while (bytes >= 0) {
+                    out.write(buffer, 0, bytes)
+                    bytesCopied += bytes
+                    onDownloadProgress?.invoke(bytesCopied, fileSize)
+                    bytes = it.read(buffer)
+                }
+
+            }
+        }
+
+    }
 }
