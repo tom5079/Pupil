@@ -68,8 +68,8 @@ fun getGallery(galleryID: Int) : Gallery {
         href.slice(5 until href.indexOf('-'))
     }
 
-    val thumbnails = getGalleryInfo(galleryID).map {
-        "$protocol//tn.hitomi.la/smalltn/$galleryID/${it.name}.jpg"
+    val thumbnails = getGalleryInfo(galleryID).map { galleryInfo ->
+        urlFromUrlFromHash(galleryID, galleryInfo, "smalltn", "jpg", "tn")
     }
 
     return Gallery(related, langList, cover, title, artists, groups, type, language, series, characters, tags, thumbnails)
