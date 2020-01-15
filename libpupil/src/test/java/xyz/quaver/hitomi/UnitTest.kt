@@ -68,7 +68,7 @@ class UnitTest {
 
     @Test
     fun test_getGallery() {
-        val gallery = getGallery(1510566)
+        val gallery = getGallery(1552751)
 
         print(gallery)
     }

@@ -54,17 +54,9 @@ fun subdomainFromURL(url: String, base: String? = null) : String {
     if (!base.isNullOrBlank())
         retval = base
 
-    val r = Regex("""/galleries/\d*(\d)/""")
-    var m = r.find(url)
-    var b = 10
-
-    if (m == null) {
-        b = 16
-        val r2 = Regex("""/[0-9a-f]/([0-9a-f]{2})/""")
-        m = r2.find(url)
-        if (m == null)
-            return retval
-    }
+    val b = 16
+    val r = Regex("""/[0-9a-f]/([0-9a-f]{2})/""")
+    val m = r.find(url) ?: return retval
 
     val g = m.groupValues[1].toIntOrNull(b) ?: return retval
 
@@ -84,15 +76,12 @@ fun fullPathFromHash(hash: String?) : String? {
     }
 }
 
-fun urlFromHash(galleryID: Int, image: GalleryInfo, webp: String? = null) : String {
-    val ext = webp ?: image.name.split('.').last()
-    return when {
-        image.hash.isNullOrBlank() ->
-            "$protocol//a.hitomi.la/galleries/$galleryID/${image.name}"
-        else ->
-            "$protocol//a.hitomi.la/${webp?:"images"}/${fullPathFromHash(image.hash)}.$ext"
-    }
+@Suppress("NAME_SHADOWING", "UNUSED_PARAMETER")
+fun urlFromHash(galleryID: Int, image: GalleryInfo, dir: String? = null, ext: String? = null) : String {
+    val ext = ext ?: dir ?: image.name.split('.').last()
+    val dir = dir ?: "images"
+    return "$protocol//a.hitomi.la/$dir/${fullPathFromHash(image.hash)}.$ext"
 }
 
-fun urlFromUrlFromHash(galleryID: Int, image: GalleryInfo, webp: String? = null) =
-    urlFromURL(urlFromHash(galleryID, image, webp))
+fun urlFromUrlFromHash(galleryID: Int, image: GalleryInfo, dir: String? = null, ext: String? = null, base: String? = null) =
+    urlFromURL(urlFromHash(galleryID, image, dir, ext), base)
