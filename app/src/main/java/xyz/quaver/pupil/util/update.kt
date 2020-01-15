@@ -151,12 +151,25 @@ fun checkUpdate(context: AppCompatActivity, force: Boolean = false) {
                     priority = NotificationCompat.PRIORITY_LOW
                 }
 
-                CoroutineScope(Dispatchers.IO).launch {
+                CoroutineScope(Dispatchers.IO).launch io@{
                     val target = File(getDownloadDirectory(context), "Pupil.apk")
 
-                    URL(url).download(target) { progress, fileSize ->
-                        builder.setProgress(fileSize.toInt(), progress.toInt(), false)
+                    try {
+                        URL(url).download(target) { progress, fileSize ->
+                            builder.setProgress(fileSize.toInt(), progress.toInt(), false)
+                            notificationManager.notify(UPDATE_NOTIFICATION_ID, builder.build())
+                        }
+                    } catch (e: Exception) {
+                        builder.apply {
+                            setContentText(context.getString(R.string.update_failed))
+                            setMessage(context.getString(R.string.update_failed_message))
+                            setSmallIcon(android.R.drawable.stat_sys_download_done)
+                        }
+
+                        notificationManager.cancel(UPDATE_NOTIFICATION_ID)
                         notificationManager.notify(UPDATE_NOTIFICATION_ID, builder.build())
+
+                        return@io
                     }
 
                     val install = Intent(Intent.ACTION_VIEW).apply {

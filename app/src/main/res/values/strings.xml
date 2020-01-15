@@ -28,7 +28,7 @@
     <string name="https_block_alert">(Korean only)</string>
 
     <string name="update_failed">Update failed</string>
-    <string name="update_failed_message">Please install manually. APK file is in the Downloads folder.</string>
+    <string name="update_failed_message">Please install manually by visiting github release page :{ (or try again!)</string>
     <string name="update_no_permission">Cannot auto update because permission is denied. Please download manually from the webpage.</string>
     <string name="ignore_update">Ignore</string>
 
