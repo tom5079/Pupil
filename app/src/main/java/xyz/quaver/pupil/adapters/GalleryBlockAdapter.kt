@@ -220,6 +220,7 @@ class GalleryBlockAdapter(private val glide: RequestManager, private val galleri
                             else -> null
                         }
                         text = tag.tag.wordCapitalize()
+                        setEnsureMinTouchTargetSize(false)
                         setOnClickListener {
                             for (callback in onChipClickedHandler)
                                 callback.invoke(tag)
