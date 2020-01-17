@@ -84,7 +84,7 @@ class GalleryDownloader(
             onNotifyChangedHandler?.invoke(value)
         }
 
-    private val reader: Deferred<Reader?>?
+    val reader: Deferred<Reader?>?
     private var downloadJob: Job? = null
 
     private lateinit var notificationBuilder: NotificationCompat.Builder
