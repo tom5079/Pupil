@@ -17,9 +17,21 @@
   ~     along with this program.  If not, see <http://www.gnu.org/licenses/>.
   -->
 
-<com.github.chrisbanes.photoview.PhotoView xmlns:android="http://schemas.android.com/apk/res/android"
-    android:contentDescription="@string/reader_imageview_description"
+
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:minHeight="100dp"
-    android:paddingBottom="8dp"/>
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <com.github.chrisbanes.photoview.PhotoView
+        android:id="@+id/image"
+        android:contentDescription="@string/reader_imageview_description"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        android:paddingBottom="8dp"/>
+
+</androidx.constraintlayout.widget.ConstraintLayout>
