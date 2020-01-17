@@ -21,12 +21,16 @@ package xyz.quaver.pupil.adapters
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.ImageView
+import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.RequestManager
 import com.bumptech.glide.load.engine.DiskCacheStrategy
+import kotlinx.android.synthetic.main.item_reader.view.*
+import kotlinx.coroutines.runBlocking
+import xyz.quaver.hitomi.Reader
 import xyz.quaver.pupil.BuildConfig
 import xyz.quaver.pupil.R
+import xyz.quaver.pupil.util.GalleryDownloader
 import xyz.quaver.pupil.util.getCachedGallery
 import java.io.File
 
@@ -47,24 +51,39 @@ class ReaderAdapter(private val glide: RequestManager,
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        holder.view as ImageView
+        holder.view as ConstraintLayout
 
         if (isFullScreen)
             holder.view.layoutParams.height = RecyclerView.LayoutParams.MATCH_PARENT
         else
             holder.view.layoutParams.height = RecyclerView.LayoutParams.WRAP_CONTENT
 
+        var reader: Reader? = null
+        with (GalleryDownloader[galleryID]?.reader) {
+            if (this?.isCompleted == true)
+                runBlocking {
+                    reader = await()
+                }
+        }
+
         glide
             .load(File(getCachedGallery(holder.view.context, galleryID), images[position]))
             .diskCacheStrategy(DiskCacheStrategy.NONE)
             .skipMemoryCache(true)
             .error(R.drawable.image_broken_variant)
-            .dontTransform()
             .apply {
                 if (BuildConfig.CENSOR)
                     override(5, 8)
+                else {
+                    val galleryInfo = reader?.galleryInfo?.get(position)
+
+                    if (galleryInfo != null) {
+                        (holder.view.image.layoutParams as ConstraintLayout.LayoutParams)
+                            .dimensionRatio = "${galleryInfo.width}:${galleryInfo.height}"
+                    }
+                }
             }
-            .into(holder.view)
+            .into(holder.view.image)
     }
 
     override fun getItemCount() = images.size
