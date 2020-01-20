@@ -21,36 +21,19 @@ package xyz.quaver.pupil.ui
 import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
-import android.text.Editable
-import android.text.TextWatcher
-import android.view.LayoutInflater
 import android.view.MenuItem
 import android.view.WindowManager
-import android.widget.ArrayAdapter
-import android.widget.LinearLayout
-import android.widget.TextView
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.app.AppCompatDelegate
-import androidx.core.content.ContextCompat
-import androidx.preference.Preference
-import androidx.preference.PreferenceFragmentCompat
 import androidx.preference.PreferenceManager
 import com.google.android.material.snackbar.Snackbar
-import kotlinx.android.synthetic.main.dialog_default_query.view.*
 import kotlinx.serialization.ImplicitReflectionSerializer
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.parseList
 import xyz.quaver.pupil.Pupil
 import xyz.quaver.pupil.R
-import xyz.quaver.pupil.types.Tags
-import xyz.quaver.pupil.ui.dialog.DownloadLocationDialog
 import xyz.quaver.pupil.ui.fragment.LockFragment
 import xyz.quaver.pupil.ui.fragment.SettingsFragment
-import xyz.quaver.pupil.util.*
-import java.io.File
 import java.nio.charset.Charset
-import java.util.*
 
 class SettingsActivity : AppCompatActivity() {
 

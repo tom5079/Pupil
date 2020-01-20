@@ -21,13 +21,12 @@ package xyz.quaver.pupil.util
 import android.annotation.SuppressLint
 import java.util.*
 import kotlin.collections.ArrayList
-import kotlin.math.round
 
-@SuppressLint("DefaultLocale")
 @UseExperimental(ExperimentalStdlibApi::class)
 fun String.wordCapitalize() : String {
     val result = ArrayList<String>()
 
+    @SuppressLint("DefaultLocale")
     for (word in this.split(" "))
         result.add(word.capitalize(Locale.US))
 
