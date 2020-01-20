@@ -18,10 +18,12 @@
 
 package xyz.quaver.pupil.util
 
+import android.annotation.SuppressLint
 import java.util.*
 import kotlin.collections.ArrayList
 import kotlin.math.round
 
+@SuppressLint("DefaultLocale")
 @UseExperimental(ExperimentalStdlibApi::class)
 fun String.wordCapitalize() : String {
     val result = ArrayList<String>()
@@ -30,14 +32,6 @@ fun String.wordCapitalize() : String {
         result.add(word.capitalize(Locale.US))
 
     return result.joinToString(" ")
-}
-
-
-//https://discuss.kotlinlang.org/t/how-do-you-round-a-number-to-n-decimal-places/8843(fvasco)
-fun Double.round(decimals: Int): Double {
-    var multiplier = 1.0
-    repeat(decimals) { multiplier *= 10 }
-    return round(this * multiplier) / multiplier
 }
 
 fun byteToString(byte: Long, precision : Int = 1) : String {
@@ -56,6 +50,6 @@ fun byteToString(byte: Long, precision : Int = 1) : String {
         suffixIndex++
     }
 
-    return "${size.round(precision)} ${suffix[suffixIndex]}"
+    return "%.${precision}f ${suffix[suffixIndex]}".format(size)
 
 }
