@@ -29,6 +29,7 @@ import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.View
 import android.view.WindowManager
+import android.view.inputmethod.EditorInfo
 import android.widget.EditText
 import android.widget.ImageView
 import android.widget.LinearLayout
@@ -729,6 +730,7 @@ class MainActivity : AppCompatActivity() {
                     s.replace(0, s.length, s.toString().toLowerCase(Locale.getDefault()))
             }
         })
+        searchInputView.imeOptions = EditorInfo.IME_FLAG_NO_EXTRACT_UI
 
         with(main_searchview as FloatingSearchView) {
             val favoritesFile = File(ContextCompat.getDataDir(context), "favorites_tags.json")
