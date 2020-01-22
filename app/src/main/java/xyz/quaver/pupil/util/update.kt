@@ -21,6 +21,7 @@ package xyz.quaver.pupil.util
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.webkit.MimeTypeMap
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -178,7 +179,11 @@ fun checkUpdate(context: AppCompatActivity, force: Boolean = false) {
                             context,
                             context.applicationContext.packageName + ".fileprovider",
                             target
-                        ), MimeTypeMap.getSingleton().getExtensionFromMimeType(".apk"))
+                        ), MimeTypeMap.getSingleton().getMimeTypeFromExtension("apk"))
+
+                        if (resolveActivity(context.packageManager) == null)
+                            setDataAndType(Uri.fromFile(target),
+                                MimeTypeMap.getSingleton().getMimeTypeFromExtension("apk"))
                     }
 
                     builder.apply {
