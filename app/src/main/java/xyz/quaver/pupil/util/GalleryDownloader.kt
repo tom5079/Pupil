@@ -166,6 +166,8 @@ class GalleryDownloader(
     fun start() {
         downloadJob = CoroutineScope(Dispatchers.Default).launch {
             val reader = reader!!.await() ?: return@launch
+            val lowQuality = PreferenceManager.getDefaultSharedPreferences(this@GalleryDownloader)
+                .getBoolean("low_quality", false)
 
             notificationBuilder.setContentTitle(reader.title)
 
@@ -177,15 +179,15 @@ class GalleryDownloader(
                 .setProgress(reader.galleryInfo.size, 0, false)
                 .setContentText("0/${reader.galleryInfo.size}")
 
-            reader.galleryInfo.chunked(4).forEachIndexed { chunkIndex, chunked ->
-                chunked.mapIndexed { i, galleryInfo ->
+            reader.galleryInfo.chunked(4).forEachIndexed { chunkIndex, chunk ->
+                chunk.mapIndexed { i, galleryInfo ->
                     val index = chunkIndex*4+i
 
                     async(Dispatchers.IO) {
                         val url = when(useHiyobi) {
-                            true -> createImgList(galleryID, reader)[index].path
+                            true -> createImgList(galleryID, reader, lowQuality)[index].path
                             false -> when {
-                                (!galleryInfo.hash.isNullOrBlank()) and (galleryInfo.haswebp == 1) ->
+                                (!galleryInfo.hash.isNullOrBlank()) && (galleryInfo.haswebp == 1) && lowQuality ->
                                     urlFromUrlFromHash(galleryID, galleryInfo, "webp")
                                 else ->
                                     urlFromUrlFromHash(galleryID, galleryInfo)
