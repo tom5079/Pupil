@@ -3,12 +3,12 @@
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <Preference
-        app:title="@string/settings_app_version_title"
-        app:key="app_version"/>
+        app:key="app_version"
+        app:title="@string/settings_app_version_title"/>
 
     <SwitchPreferenceCompat
-        app:title="@string/settings_beta"
-        app:key="beta"/>
+        app:key="beta"
+        app:title="@string/settings_beta"/>
 
     <PreferenceCategory
         app:title="@string/settings_search_title">
@@ -32,20 +32,25 @@
         app:title="@string/settings_storage">
 
         <Preference
-            app:title="@string/settings_clear_cache"
-            app:key="delete_cache"/>
+            app:key="delete_cache"
+            app:title="@string/settings_clear_cache"/>
 
         <Preference
-            app:title="@string/settings_clear_downloads"
-            app:key="delete_downloads"/>
+            app:key="delete_downloads"
+            app:title="@string/settings_clear_downloads"/>
 
         <Preference
-            app:title="@string/settings_clear_history"
-            app:key="clear_history"/>
+            app:key="clear_history"
+            app:title="@string/settings_clear_history"/>
 
         <Preference
-            app:title="@string/settings_dl_location"
-            app:key="dl_location"/>
+            app:key="dl_location"
+            app:title="@string/settings_dl_location"/>
+
+        <SwitchPreferenceCompat
+            app:key="dl_low_quality"
+            app:title="@string/settings_low_quality"
+            app:summary="@string/settings_low_quality_summary"/>
 
     </PreferenceCategory>
 
@@ -53,8 +58,8 @@
         app:title="@string/settings_app_lock">
 
         <Preference
-            app:title="@string/settings_app_lock_type"
-            app:key="app_lock"/>
+            app:key="app_lock"
+            app:title="@string/settings_app_lock_type"/>
 
     </PreferenceCategory>
 

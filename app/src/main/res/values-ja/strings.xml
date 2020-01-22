@@ -118,4 +118,6 @@
     <string name="update_download_completed_description">ここをクリックしてアップデートを行えます</string>
     <string name="settings_beta">ベータチャンネルでアップデートを受信</string>
     <string name="settings_app_version_description">v%s</string>
+    <string name="settings_low_quality">低解像度イメージ</string>
+    <string name="settings_low_quality_summary">ロード速度とデータ使用料を改善するため低解像度イメージをロード</string>
 </resources>
