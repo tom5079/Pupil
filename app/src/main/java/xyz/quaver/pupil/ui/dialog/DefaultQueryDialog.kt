@@ -19,7 +19,6 @@
 package xyz.quaver.pupil.ui.dialog
 
 import android.annotation.SuppressLint
-import android.app.AlertDialog
 import android.content.Context
 import android.os.Bundle
 import android.text.Editable
@@ -27,6 +26,7 @@ import android.text.TextWatcher
 import android.view.LayoutInflater
 import android.view.View
 import android.widget.ArrayAdapter
+import androidx.appcompat.app.AlertDialog
 import androidx.preference.PreferenceManager
 import kotlinx.android.synthetic.main.dialog_default_query.view.*
 import xyz.quaver.pupil.R

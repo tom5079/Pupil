@@ -137,6 +137,8 @@ class SettingsFragment :
                         onPositiveButtonClickListener = { newTags ->
                             sharedPreferences.edit().putString("default_query", newTags.toString()).apply()
                             summary = newTags.toString()
+                            dismiss()   //This sucks
+                            // TODO: make dialog dissmiss itself :P
                         }
                     }.show()
                 }
