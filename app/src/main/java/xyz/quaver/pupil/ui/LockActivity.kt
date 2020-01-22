@@ -27,6 +27,7 @@ import com.google.android.material.snackbar.Snackbar
 import kotlinx.android.synthetic.main.activity_lock.*
 import kotlinx.android.synthetic.main.fragment_pattern_lock.*
 import xyz.quaver.pupil.R
+import xyz.quaver.pupil.ui.fragment.PatternLockFragment
 import xyz.quaver.pupil.util.Lock
 import xyz.quaver.pupil.util.LockManager
 

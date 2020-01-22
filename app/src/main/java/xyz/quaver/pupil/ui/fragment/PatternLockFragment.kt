@@ -16,7 +16,7 @@
  *     along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package xyz.quaver.pupil.ui
+package xyz.quaver.pupil.ui.fragment
 
 import android.os.Bundle
 import android.view.LayoutInflater
