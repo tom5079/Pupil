@@ -73,13 +73,18 @@ class Pupil : MultiDexApplication() {
             manager.createNotificationChannel(channel)
         }
 
+        AppCompatDelegate.setCompatVectorFromResourcesEnabled(true)
         AppCompatDelegate.setDefaultNightMode(when (preference.getBoolean("dark_mode", false)) {
             true -> AppCompatDelegate.MODE_NIGHT_YES
             false -> AppCompatDelegate.MODE_NIGHT_NO
         })
 
         CoroutineScope(Dispatchers.IO).launch {
-            updateOldReaderGalleries(this@Pupil)
+            try {
+                updateOldReaderGalleries(this@Pupil)
+            } catch (e: Exception) {
+                // do nothing
+            }
         }
 
         super.onCreate()

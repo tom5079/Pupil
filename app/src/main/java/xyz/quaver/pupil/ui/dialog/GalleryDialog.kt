@@ -32,7 +32,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.google.android.material.chip.Chip
 import com.google.android.material.snackbar.Snackbar
-import kotlinx.android.synthetic.main.dialog_galleryblock.*
+import kotlinx.android.synthetic.main.dialog_gallery.*
 import kotlinx.android.synthetic.main.gallery_details.view.*
 import kotlinx.android.synthetic.main.item_gallery_details.view.*
 import kotlinx.coroutines.*
@@ -64,7 +64,7 @@ class GalleryDialog(context: Context, private val galleryID: Int) : Dialog(conte
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.dialog_galleryblock)
+        setContentView(R.layout.dialog_gallery)
 
         window?.attributes.apply {
             this ?: return@apply
@@ -182,6 +182,8 @@ class GalleryDialog(context: Context, private val galleryID: Int) : Dialog(conte
                                     "language" -> languages[tag.tag]
                                     else -> tag.tag.wordCapitalize()
                                 }
+
+                                setEnsureMinTouchTargetSize(false)
 
                                 setOnClickListener {
                                     onChipClickedHandler.forEach { handler ->
