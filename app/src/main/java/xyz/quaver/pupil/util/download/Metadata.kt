@@ -1,6 +1,6 @@
 /*
  *     Pupil, Hitomi.la viewer for Android
- *     Copyright (C) 2019  tom5079
+ *     Copyright (C) 2020  tom5079
  *
  *     This program is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
@@ -16,30 +16,15 @@
  *     along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-@file:Suppress("UNUSED_VARIABLE", "IncorrectScope")
+package xyz.quaver.pupil.util.download
 
-package xyz.quaver.pupil
+import kotlinx.serialization.Serializable
+import xyz.quaver.hitomi.GalleryBlock
+import xyz.quaver.hitomi.Reader
 
-/**
- * Example local unit test, which will execute on the development machine (host).
- *
- * See [testing documentation](http://d.android.com/tools/testing).
- */
-
-import org.junit.Test
-import xyz.quaver.pupil.util.download
-import java.io.File
-import java.net.URL
-
-class ExampleUnitTest {
-
-    @Test
-    fun test() {
-        URL("https://github.com/tom5079/Pupil/releases/download/4.2-beta2-hotfix2/Pupil-v4.2-beta2-hotfix2.apk").download(
-            File(System.getenv("USERPROFILE"), "Pupil.apk")
-        ) { downloaded, fileSize ->
-            println("%.1f%%".format(downloaded*100.0/fileSize))
-        }
-    }
-
-}
+@Serializable
+data class Metadata(
+    var thumbnail: String? = null,
+    var galleryBlock: GalleryBlock? = null,
+    var reader: MutableList<Reader>? = null
+)

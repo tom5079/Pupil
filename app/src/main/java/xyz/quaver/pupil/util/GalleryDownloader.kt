@@ -1,6 +1,6 @@
 /*
  *     Pupil, Hitomi.la viewer for Android
- *     Copyright (C) 2019  tom5079
+ *     Copyright (C) 2020  tom5079
  *
  *     This program is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
@@ -65,7 +65,10 @@ class GalleryDownloader(
                 notificationManager.notify(galleryID, notificationBuilder.build())
 
                 if (reader?.isActive == false && downloadJob?.isActive != true) {
-                    val data = File(getDownloadDirectory(this), galleryID.toString())
+                    val data = File(
+                        getDownloadDirectory(
+                            this
+                        ), galleryID.toString())
                     val cache = File(cacheDir, "imageCache/$galleryID")
 
                     if (File(cache, "images").exists() && !data.exists()) {
@@ -111,7 +114,11 @@ class GalleryDownloader(
                 val serializer = Reader.serializer()
 
                 //Check cache
-                val cache = File(getCachedGallery(this@GalleryDownloader, galleryID), "reader.json")
+                val cache = File(
+                    getCachedGallery(
+                        this@GalleryDownloader,
+                        galleryID
+                    ), "reader.json")
 
                 try {
                     json.parse(serializer, cache.readText())
@@ -197,7 +204,11 @@ class GalleryDownloader(
                         val name = "$index".padStart(4, '0')
                         val ext = url.split('.').last()
 
-                        val cache = File(getCachedGallery(this@GalleryDownloader, galleryID), "images/$name.$ext")
+                        val cache = File(
+                            getCachedGallery(
+                                this@GalleryDownloader,
+                                galleryID
+                            ), "images/$name.$ext")
 
                         if (!cache.exists())
                             try {
@@ -255,7 +266,10 @@ class GalleryDownloader(
                 if (download) {
                     File(cacheDir, "imageCache/${galleryID}").let {
                         if (it.exists()) {
-                            val target = File(getDownloadDirectory(this@GalleryDownloader), galleryID.toString())
+                            val target = File(
+                                getDownloadDirectory(
+                                    this@GalleryDownloader
+                                ), galleryID.toString())
 
                             if (!target.exists())
                                 target.mkdirs()

@@ -40,6 +40,8 @@ class ReaderAdapter(private val glide: RequestManager,
 
     var isFullScreen = false
 
+    var onItemClickListener : ((Int) -> (Unit))? = null
+
     class ViewHolder(val view: View) : RecyclerView.ViewHolder(view)
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -60,10 +62,14 @@ class ReaderAdapter(private val glide: RequestManager,
 
         var reader: Reader? = null
         with (GalleryDownloader[galleryID]?.reader) {
-            if (this?.isCompleted == true)
+            if (reader == null && this?.isCompleted == true)
                 runBlocking {
                     reader = await()
                 }
+        }
+
+        holder.view.image.setOnPhotoTapListener { _, _, _ ->
+            onItemClickListener?.invoke(position)
         }
 
         glide
