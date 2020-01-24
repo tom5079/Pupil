@@ -151,8 +151,7 @@
     <!-- SETTINGS/MISCELLANEOUS -->
 
     <string name="settings_miscellaneous_title">Miscellaneous</string>
-    <string name="settings_use_hiyobi_title">Use hiyobi.me</string>
-    <string name="settings_use_hiyobi_summary">Load images from hiyobi.me to improve loading speed (if available)</string>
+    <string name="settings_mirror_summary">Load images from mirrors</string>
     <string name="settings_security_mode_title">Enable security mode</string>
     <string name="settings_security_mode_summary">Enable security mode to make the screen invisible on recent app window</string>
     <string name="settings_dark_mode_title">Dark mode</string>
@@ -186,5 +185,6 @@
     <string name="default_query_dialog_filter_BL">Filter BL</string>
     <string name="default_query_dialog_filter_guro">Filter Guro</string>
     <string name="default_query_dialog_language_selector_none">Any</string>
+    <string name="settings_mirror_title">Mirrors</string>
 
 </resources>

@@ -21,6 +21,7 @@ package xyz.quaver.pupil.ui.dialog
 import android.annotation.SuppressLint
 import android.app.Dialog
 import android.content.Context
+import android.os.Bundle
 import android.widget.LinearLayout
 import android.widget.RadioButton
 import androidx.appcompat.app.AlertDialog
@@ -37,7 +38,7 @@ class DownloadLocationDialog(context: Context) : AlertDialog(context) {
     private val buttons = mutableListOf<RadioButton>()
     var onDownloadLocationChangedListener : ((Int) -> (Unit))? = null
 
-    init {
+    override fun onCreate(savedInstanceState: Bundle?) {
         val view = layoutInflater.inflate(R.layout.dialog_dl_location, null) as LinearLayout
 
         ContextCompat.getExternalFilesDirs(context, null).forEachIndexed { index, dir ->
@@ -73,6 +74,8 @@ class DownloadLocationDialog(context: Context) : AlertDialog(context) {
         setButton(Dialog.BUTTON_POSITIVE, context.getText(android.R.string.ok)) { _, _ ->
             dismiss()
         }
+
+        super.onCreate(savedInstanceState)
     }
 
 }

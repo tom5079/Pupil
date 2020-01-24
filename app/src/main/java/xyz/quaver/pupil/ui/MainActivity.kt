@@ -413,7 +413,11 @@ class MainActivity : AppCompatActivity() {
                         val downloader = GalleryDownloader.get(galleryID)
 
                         if (downloader == null)
-                            GalleryDownloader(context, galleryID, true).start()
+                            GalleryDownloader(
+                                context,
+                                galleryID,
+                                true
+                            ).start()
                         else {
                             downloader.cancel()
                             downloader.clearNotification()

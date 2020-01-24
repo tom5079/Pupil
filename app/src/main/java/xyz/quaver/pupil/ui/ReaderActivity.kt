@@ -48,7 +48,6 @@ import xyz.quaver.pupil.R
 import xyz.quaver.pupil.adapters.ReaderAdapter
 import xyz.quaver.pupil.util.GalleryDownloader
 import xyz.quaver.pupil.util.Histories
-import xyz.quaver.pupil.util.ItemClickSupport
 
 class ReaderActivity : AppCompatActivity() {
 
@@ -333,7 +332,19 @@ class ReaderActivity : AppCompatActivity() {
 
     private fun initView() {
         with(reader_recyclerview) {
-            adapter = ReaderAdapter(Glide.with(this@ReaderActivity), galleryID, images)
+            adapter = ReaderAdapter(Glide.with(this@ReaderActivity), galleryID, images).apply {
+                onItemClickListener = {
+                    if (isScroll) {
+                        isScroll = false
+                        isFullscreen = true
+
+                        scrollMode(false)
+                        fullscreen(true)
+                    } else {
+                        (reader_recyclerview.layoutManager as LinearLayoutManager?)?.scrollToPosition(currentPage) //Moves to next page because currentPage is 1-based indexing
+                    }
+                }
+            }
 
             addOnScrollListener(object: RecyclerView.OnScrollListener() {
                 override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
@@ -353,19 +364,6 @@ class ReaderActivity : AppCompatActivity() {
                     this@ReaderActivity.reader_progressbar.progress = currentPage
                 }
             })
-
-            ItemClickSupport.addTo(this)
-                .setOnItemClickListener { _, _, _ ->
-                    if (isScroll) {
-                        isScroll = false
-                        isFullscreen = true
-
-                        scrollMode(false)
-                        fullscreen(true)
-                    } else {
-                        (reader_recyclerview.layoutManager as LinearLayoutManager?)?.scrollToPosition(currentPage) //Moves to next page because currentPage is 1-based indexing
-                    }
-                }
         }
 
         with(reader_fab_download) {

@@ -18,7 +18,6 @@
     <string name="main_no_result">결과 없음</string>
     <string name="main_search">검색</string>
     <string name="settings_miscellaneous_title">기타</string>
-    <string name="settings_use_hiyobi_title">hiyobi.me 사용</string>
     <string name="settings_clear_history">기록 삭제</string>
     <string name="settings_clear_history_alert_message">기록을 삭제하시겠습니까?</string>
     <string name="settings_clear_history_summary">기록 %1$d개 저장됨</string>
@@ -61,7 +60,6 @@
     <string name="main_export_error">내보내기 오류가 발생했습니다</string>
     <string name="settings_clear_downloads">다운로드 삭제</string>
     <string name="settings_clear_downloads_alert_message">다운로드 된 만화를 모두 삭제합니다.\n계속하시겠습니까?</string>
-    <string name="settings_use_hiyobi_summary">속도 향상을 위해 가능하면 hiyobi.me에서 이미지 로드</string>
     <string name="main_drawer_favorite">즐겨찾기</string>
     <string name="main_open_gallery_by_id">갤러리 번호로 열기</string>
     <string name="main_open_gallery_by_id_error">갤러리를 찾지 못했습니다</string>
@@ -120,4 +118,6 @@
     <string name="settings_app_version_description">v%s</string>
     <string name="settings_low_quality">저해상도 이미지</string>
     <string name="settings_low_quality_summary">로드 속도와 데이터 사용량을 줄이기 위해 저해상도 이미지를 로드</string>
+    <string name="settings_mirror_summary">미러 서버에서 이미지 로드</string>
+    <string name="settings_mirror_title">미러 설정</string>
 </resources>
