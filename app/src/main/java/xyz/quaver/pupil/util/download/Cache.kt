@@ -20,6 +20,7 @@ package xyz.quaver.pupil.util.download
 
 import android.content.Context
 import android.content.ContextWrapper
+import android.util.SparseArray
 import androidx.core.content.ContextCompat
 import androidx.preference.PreferenceManager
 import kotlinx.coroutines.*
@@ -116,11 +117,9 @@ class Cache(context: Context) : ContextWrapper(context) {
                 { xyz.quaver.hiyobi.getReader(galleryID) }
             ).map {
                 CoroutineScope(Dispatchers.IO).async {
-                    try {
+                    kotlin.runCatching {
                         it.invoke()
-                    } catch (e: Exception) {
-                        null
-                    }
+                    }.getOrNull()
                 }
             }.awaitAll().filterNotNull()
         } else {
@@ -140,8 +139,23 @@ class Cache(context: Context) : ContextWrapper(context) {
         }
     }
 
-    suspend fun getImage(galleryID: Int): File? {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    fun getImages(galleryID: Int): SparseArray<File>? {
+        val regex = Regex("[0-9]+")
+        val gallery = getCachedGallery(galleryID) ?: return null
+
+        return SparseArray<File>().apply {
+            gallery.listFiles { file ->
+                file.nameWithoutExtension.matches(regex)
+            }?.forEach {
+                append(it.nameWithoutExtension.toInt(), it)
+            }
+        }
+    }
+
+    fun putImage(galleryID: Int, index: Int, data: ByteArray) {
+        val cache = getCachedGallery(galleryID) ?: File(cacheDir, "imageCache/$galleryID")
+
+        File(cache, index.toString()).writeBytes(data)
     }
 
 }

@@ -20,18 +20,27 @@ package xyz.quaver.pupil.util.download
 
 import android.content.Context
 import android.content.ContextWrapper
+import android.content.SharedPreferences
 import androidx.preference.PreferenceManager
-import kotlinx.coroutines.*
+import com.crashlytics.android.Crashlytics
+import io.fabric.sdk.android.Fabric
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
-import okhttp3.OkHttpClient
-import okhttp3.ResponseBody
+import kotlinx.coroutines.launch
+import okhttp3.*
 import okio.*
-import java.util.concurrent.Executors
+import xyz.quaver.hitomi.Reader
+import xyz.quaver.hitomi.urlFromUrlFromHash
+import xyz.quaver.hiyobi.createImgList
+import java.io.FileInputStream
+import java.io.IOException
 
 @UseExperimental(ExperimentalCoroutinesApi::class)
-class DownloadWorker(context: Context) : ContextWrapper(context) {
+class DownloadWorker private constructor(context: Context) : ContextWrapper(context) {
 
-    val preferences = PreferenceManager.getDefaultSharedPreferences(context)
+    val preferences : SharedPreferences = PreferenceManager.getDefaultSharedPreferences(this)
 
     //region ProgressListener
     interface ProgressListener {
@@ -72,15 +81,28 @@ class DownloadWorker(context: Context) : ContextWrapper(context) {
     }
     //endregion
 
-    val queue = Channel<Int>()
-    val progress = mutableMapOf<String, Double>()
-    val worker = Executors.newCachedThreadPool().asCoroutineDispatcher()
+    //region Singleton
+    companion object {
 
-    val progressListener = object: ProgressListener {
-        override fun update(tag: Any?, bytesRead: Long, contentLength: Long, done: Boolean) {
+        @Volatile private var instance: DownloadWorker? = null
 
-        }
+        fun getInstance(context: Context) =
+            instance ?: synchronized(this) {
+                instance ?: DownloadWorker(context).also { instance = it }
+            }
     }
+    //endregion
+
+    val queue = Channel<Int>()
+    /* VALUE
+    *  0 <= value < 100 -> Download in progress
+    *  Float.POSITIVE_INFINITY -> Download completed
+    *  Float.NaN -> Exception
+    */
+    val progress = mutableMapOf<String, Float>()
+    val result = mutableMapOf<String, ByteArray>()
+    val exception = mutableMapOf<String, Throwable>()
+
     val client = OkHttpClient.Builder()
         .addNetworkInterceptor { chain ->
             val request = chain.request()
@@ -97,21 +119,65 @@ class DownloadWorker(context: Context) : ContextWrapper(context) {
                 .build()
         }.build()
 
-    init {
-        val maxThread = preferences.getInt("max_thread", 4)
 
+    val progressListener = object: ProgressListener {
+        override fun update(tag: Any?, bytesRead: Long, contentLength: Long, done: Boolean) {
+            if (tag !is String)
+                return
+
+            if (progress[tag] != Float.POSITIVE_INFINITY)
+                progress[tag] = bytesRead / contentLength.toFloat()
+        }
+    }
+    init {
         CoroutineScope(Dispatchers.Unconfined).launch {
             while (!(queue.isEmpty && queue.isClosedForReceive)) {
                 val lowQuality = preferences.getBoolean("low_quality", false)
                 val galleryID = queue.receive()
 
-                launch(Dispatchers.IO) {
-                    val reader = Cache(context).getReader(galleryID) ?: return@launch
+                launch(Dispatchers.IO) io@{
+                    val reader = Cache(context).getReader(galleryID) ?: return@io
+                    val cache = Cache(context).getImages(galleryID)
 
                     reader.galleryInfo.forEachIndexed { index, galleryInfo ->
-                        when(reader.code) {
-
+                        val tag = "$galleryID-$index"
+                        val url = when(reader.code) {
+                            Reader.Code.HITOMI ->
+                                urlFromUrlFromHash(galleryID, galleryInfo, if (lowQuality) "webp" else null)
+                            Reader.Code.HIYOBI ->
+                                createImgList(galleryID, reader, lowQuality)[index].path
+                            else -> ""  //Shouldn't be called anyways
                         }
+
+                        //Cache exists :P
+                        cache?.get(index)?.let {
+                            result[tag] = FileInputStream(it).readBytes()
+                            progress[tag] = Float.POSITIVE_INFINITY
+
+                            return@io
+                        }
+
+                        val request = Request.Builder()
+                            .url(url)
+                            .tag(tag)
+                            .build()
+
+                        client.newCall(request).enqueue(object: Callback {
+                            override fun onFailure(call: Call, e: IOException) {
+                                if (Fabric.isInitialized())
+                                    Crashlytics.logException(e)
+
+                                progress[tag] = Float.NaN
+                                exception[tag] = e
+                            }
+
+                            override fun onResponse(call: Call, response: Response) {
+                                response.use {
+                                    result[tag] = (it.body?: return).bytes()
+                                    progress[tag] = Float.POSITIVE_INFINITY
+                                }
+                            }
+                        })
                     }
                 }
             }
