@@ -24,7 +24,18 @@ import xyz.quaver.hitomi.Reader
 
 @Serializable
 data class Metadata(
-    var thumbnail: String? = null,
-    var galleryBlock: GalleryBlock? = null,
-    var reader: MutableList<Reader>? = null
-)
+    val thumbnail: String? = null,
+    val galleryBlock: GalleryBlock? = null,
+    val readers: List<Reader>? = null
+) {
+    constructor(
+        metadata: Metadata?,
+        thumbnail: String? = null,
+        galleryBlock: GalleryBlock? = null,
+        readers: List<Reader>? = null
+    ) : this(
+        thumbnail ?: metadata?.thumbnail,
+        galleryBlock ?: metadata?.galleryBlock,
+        readers ?: metadata?.readers
+    )
+}
