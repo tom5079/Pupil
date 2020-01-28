@@ -173,7 +173,9 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
 
                             override fun onResponse(call: Call, response: Response) {
                                 response.use {
-                                    result[tag] = (it.body?: return).bytes()
+                                    val res = it.body!!.bytes()
+                                    result[tag] = res
+                                    Cache(context).putImage(galleryID, index, res)
                                     progress[tag] = Float.POSITIVE_INFINITY
                                 }
                             }
