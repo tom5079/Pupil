@@ -21,6 +21,8 @@ package xyz.quaver.pupil.util.download
 import android.content.Context
 import android.content.ContextWrapper
 import androidx.core.content.ContextCompat
+import androidx.preference.PreferenceManager
+import kotlinx.coroutines.*
 import kotlinx.serialization.ImplicitReflectionSerializer
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.parse
@@ -30,6 +32,8 @@ import xyz.quaver.hitomi.Reader
 import java.io.File
 
 class Cache(context: Context) : ContextWrapper(context) {
+
+    private val preference = PreferenceManager.getDefaultSharedPreferences(this)
 
     // Search in this order
     // Download -> Cache
@@ -81,62 +85,63 @@ class Cache(context: Context) : ContextWrapper(context) {
         }
     }
 
-    fun getGalleryBlock(galleryID: Int): GalleryBlock {
-        var meta = Cache(this).getCachedMetadata(galleryID)
+    suspend fun getGalleryBlock(galleryID: Int): GalleryBlock? {
+        val metadata = Cache(this).getCachedMetadata(galleryID)
 
-        if (meta == null) {
-            meta = Metadata(galleryBlock = xyz.quaver.hitomi.getGalleryBlock(galleryID))
+        val galleryBlock = if (metadata?.galleryBlock == null)
+           withContext(Dispatchers.IO) {
+               try {
+                   xyz.quaver.hitomi.getGalleryBlock(galleryID)
+               } catch (e: Exception) {
+                   null
+               }
+            }
+        else
+            metadata.galleryBlock
 
-            Cache(this).setCachedMetadata(
-                galleryID,
-                meta
-            )
-        } else if (meta.galleryBlock == null)
-            Cache(this).setCachedMetadata(
-                galleryID,
-                meta.apply {
-                    galleryBlock = xyz.quaver.hitomi.getGalleryBlock(galleryID)
-                }
-            )
+        setCachedMetadata(
+            galleryID,
+            Metadata(metadata, galleryBlock = galleryBlock)
+        )
 
-        return meta.galleryBlock!!
+        return galleryBlock
     }
 
-    fun getReaders(galleryID: Int): List<Reader> {
-        var meta = getCachedMetadata(galleryID)
+    suspend fun getReader(galleryID: Int): Reader? {
+        val metadata = getCachedMetadata(galleryID)
 
-        if (meta == null) {
-            meta = Metadata(reader = mutableListOf(xyz.quaver.hitomi.getReader(galleryID)))
-
-            setCachedMetadata(
-                galleryID,
-                meta
-            )
-        } else if (meta.reader == null)
-            setCachedMetadata(
-                galleryID,
-                meta.apply {
-                    reader = mutableListOf(xyz.quaver.hitomi.getReader(galleryID))
+        val readers = if (metadata?.readers == null) {
+             listOf(
+                { xyz.quaver.hitomi.getReader(galleryID) },
+                { xyz.quaver.hiyobi.getReader(galleryID) }
+            ).map {
+                CoroutineScope(Dispatchers.IO).async {
+                    try {
+                        it.invoke()
+                    } catch (e: Exception) {
+                        null
+                    }
                 }
-            )
-        else if (!meta.reader!!.any { it.code == Reader.Code.HITOMI })
+            }.awaitAll().filterNotNull()
+        } else {
+            metadata.readers
+        }
+
+        if (readers.isNotEmpty())
             setCachedMetadata(
                 galleryID,
-                meta.apply {
-                    reader!!.add(xyz.quaver.hitomi.getReader(galleryID))
-                }
+                Metadata(metadata, readers = readers)
             )
 
-        return meta.reader!!
+        val mirrors = preference.getString("mirrors", "")!!.split('>')
+
+        return readers.firstOrNull {
+            mirrors.contains(it.code.name)
+        }
     }
 
-    fun getImage(galleryID: Int, index: Int): File {
-        val cache = getCachedGallery(galleryID)
-
-        if (cache == null)
-            ;//TODO: initiate image download
-
-        return File(cache, "%04d".format(index))
+    suspend fun getImage(galleryID: Int): File? {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
 }
