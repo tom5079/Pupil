@@ -19,7 +19,6 @@
 package xyz.quaver.pupil.adapters
 
 import android.graphics.drawable.Drawable
-import android.util.Log
 import android.util.SparseBooleanArray
 import android.view.LayoutInflater
 import android.view.View
@@ -129,8 +128,6 @@ class GalleryBlockAdapter(private val glide: RequestManager, private val galleri
                         post {
                             with(view.galleryblock_progressbar) {
                                 progress = imageCache.invoke().list()?.size ?: 0
-
-                                Log.i("PUPILD", progress.toString())
 
                                 if (!readerCache.invoke().exists()) {
                                     visibility = View.GONE
