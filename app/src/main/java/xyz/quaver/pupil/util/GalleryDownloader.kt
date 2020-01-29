@@ -49,6 +49,7 @@ import javax.net.ssl.HttpsURLConnection
 import kotlin.collections.ArrayList
 import kotlin.concurrent.schedule
 
+@Deprecated("Use DownloadWorker instead")
 class GalleryDownloader(
     base: Context,
     private val galleryID: Int,
