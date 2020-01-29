@@ -82,7 +82,9 @@ class UnitTest {
 
     @Test
     fun test_hiyobi() {
-        xyz.quaver.hiyobi.getReader(1510567)
+        val reader = xyz.quaver.hiyobi.getReader(10000062)
+
+        print(reader)
     }
 
     @Test
