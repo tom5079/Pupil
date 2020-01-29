@@ -21,28 +21,39 @@ package xyz.quaver.pupil.util.download
 import android.content.Context
 import android.content.ContextWrapper
 import android.content.SharedPreferences
+import android.util.SparseArray
 import androidx.preference.PreferenceManager
 import com.crashlytics.android.Crashlytics
 import io.fabric.sdk.android.Fabric
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 import okhttp3.*
 import okio.*
 import xyz.quaver.hitomi.Reader
+import xyz.quaver.hitomi.getReferer
 import xyz.quaver.hitomi.urlFromUrlFromHash
+import xyz.quaver.hiyobi.cookie
 import xyz.quaver.hiyobi.createImgList
-import java.io.FileInputStream
+import xyz.quaver.hiyobi.user_agent
 import java.io.IOException
+import java.util.concurrent.Executors
+import java.util.concurrent.LinkedBlockingQueue
 
 @UseExperimental(ExperimentalCoroutinesApi::class)
 class DownloadWorker private constructor(context: Context) : ContextWrapper(context) {
 
-    val preferences : SharedPreferences = PreferenceManager.getDefaultSharedPreferences(this)
+    private val preferences : SharedPreferences = PreferenceManager.getDefaultSharedPreferences(this)
 
     //region ProgressListener
+    @Suppress("UNCHECKED_CAST")
+    private val progressListener = object: ProgressListener {
+        override fun update(tag: Any?, bytesRead: Long, contentLength: Long, done: Boolean) {
+            val (galleryID, index) = (tag as? Pair<Int, Int>) ?: return
+
+            if (!done && progress[galleryID]!![index] != Float.POSITIVE_INFINITY)
+                progress[galleryID]!![index] = bytesRead * 100F / contentLength
+        }
+    }
+
     interface ProgressListener {
         fun update(tag: Any?, bytesRead : Long, contentLength: Long, done: Boolean)
     }
@@ -52,7 +63,7 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
         val responseBody: ResponseBody,
         val progressListener : ProgressListener
     ) : ResponseBody() {
-        var bufferedSource : BufferedSource? = null
+        private var bufferedSource : BufferedSource? = null
 
         override fun contentLength() = responseBody.contentLength()
         override fun contentType() = responseBody.contentType()
@@ -93,23 +104,46 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
     }
     //endregion
 
-    val queue = Channel<Int>()
-    /* VALUE
+    val queue = LinkedBlockingQueue<Int>()
+
+    /*
+    * KEY
+    *  primary galleryID
+    *  secondary index
+    * PRIMARY VALUE
+    *  MutableList -> Download in progress
+    *  null -> Loading / Gallery doesn't exist
+    * SECONDARY VALUE
     *  0 <= value < 100 -> Download in progress
     *  Float.POSITIVE_INFINITY -> Download completed
     *  Float.NaN -> Exception
     */
-    val progress = mutableMapOf<String, Float>()
-    val result = mutableMapOf<String, ByteArray>()
-    val exception = mutableMapOf<String, Throwable>()
+    val progress = SparseArray<MutableList<Float>?>()
+    /*
+    * KEY
+    *  primary galleryID
+    *  secondary index
+    * PRIMARY VALUE
+    *  MutableList -> Download in progress / Loading
+    *  null -> Gallery doesn't exist
+    * SECONDARY VALUE
+    *  Throwable -> Exception
+    *  null -> Download in progress / Loading
+    */
+    val exception = SparseArray<MutableList<Throwable?>?>()
 
-    val client = OkHttpClient.Builder()
-        .addNetworkInterceptor { chain ->
+    private val loop = loop()
+    private val worker = SparseArray<Job?>()
+    @Volatile var nRunners = 0
+
+    private val client = OkHttpClient.Builder()
+        .addInterceptor { chain ->
             val request = chain.request()
             var response = chain.proceed(request)
 
             var retry = preferences.getInt("retry", 3)
             while (!response.isSuccessful && retry > 0) {
+                response.close()
                 response = chain.proceed(request)
                 retry--
             }
@@ -117,72 +151,121 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
             response.newBuilder()
                 .body(ProgressResponseBody(request.tag(), response.body!!, progressListener))
                 .build()
-        }.build()
-
-
-    val progressListener = object: ProgressListener {
-        override fun update(tag: Any?, bytesRead: Long, contentLength: Long, done: Boolean) {
-            if (tag !is String)
-                return
-
-            if (progress[tag] != Float.POSITIVE_INFINITY)
-                progress[tag] = bytesRead / contentLength.toFloat()
         }
+        .dispatcher(Dispatcher(Executors.newSingleThreadExecutor()))
+        .build()
+
+    fun stop() {
+        loop.cancel()
+        for (i in 0..worker.size())
+            worker[worker.keyAt(i)]?.cancel()
+
+        client.dispatcher.cancelAll()
     }
-    init {
-        CoroutineScope(Dispatchers.Unconfined).launch {
-            while (!(queue.isEmpty && queue.isClosedForReceive)) {
-                val lowQuality = preferences.getBoolean("low_quality", false)
-                val galleryID = queue.receive()
 
-                launch(Dispatchers.IO) io@{
-                    val reader = Cache(context).getReader(galleryID) ?: return@io
-                    val cache = Cache(context).getImages(galleryID)
+    fun cancel(galleryID: Int) {
+        worker[galleryID]?.cancel()
 
-                    reader.galleryInfo.forEachIndexed { index, galleryInfo ->
-                        val tag = "$galleryID-$index"
-                        val url = when(reader.code) {
-                            Reader.Code.HITOMI ->
-                                urlFromUrlFromHash(galleryID, galleryInfo, if (lowQuality) "webp" else null)
-                            Reader.Code.HIYOBI ->
-                                createImgList(galleryID, reader, lowQuality)[index].path
-                            else -> ""  //Shouldn't be called anyways
-                        }
+        client.dispatcher.queuedCalls()
+            .filter { it.request().tag(Pair::class.java)?.first == galleryID }
+            .forEach {
+                it.cancel()
+            }
+    }
 
-                        //Cache exists :P
-                        cache?.get(index)?.let {
-                            result[tag] = FileInputStream(it).readBytes()
-                            progress[tag] = Float.POSITIVE_INFINITY
+    private fun queueDownload(galleryID: Int, reader: Reader, index: Int, callback: Callback) {
+        val cache = Cache(this@DownloadWorker).getImages(galleryID)
+        val lowQuality = preferences.getBoolean("low_quality", false)
 
-                            return@io
-                        }
+        //Cache exists :P
+        cache?.get(index)?.let {
+            progress[galleryID]!![index] = Float.POSITIVE_INFINITY
 
-                        val request = Request.Builder()
-                            .url(url)
-                            .tag(tag)
-                            .build()
+            return
+        }
 
-                        client.newCall(request).enqueue(object: Callback {
-                            override fun onFailure(call: Call, e: IOException) {
-                                if (Fabric.isInitialized())
-                                    Crashlytics.logException(e)
-
-                                progress[tag] = Float.NaN
-                                exception[tag] = e
-                            }
-
-                            override fun onResponse(call: Call, response: Response) {
-                                response.use {
-                                    val res = it.body!!.bytes()
-                                    result[tag] = res
-                                    Cache(context).putImage(galleryID, index, res)
-                                    progress[tag] = Float.POSITIVE_INFINITY
-                                }
-                            }
-                        })
-                    }
+        val request = Request.Builder().apply {
+            when (reader.code) {
+                Reader.Code.HITOMI -> {
+                    url(
+                        urlFromUrlFromHash(
+                            galleryID,
+                            reader.galleryInfo[index],
+                            if (lowQuality) "webp" else null
+                        )
+                    )
+                    addHeader("Referer", getReferer(galleryID))
+                }
+                Reader.Code.HIYOBI -> {
+                    url(createImgList(galleryID, reader, lowQuality)[index].path)
+                    addHeader("User-Agent", user_agent)
+                    addHeader("Cookie", cookie)
+                }
+                else -> {
+                    //shouldn't be called anyway
                 }
             }
+            tag(galleryID to index)
+        }.build()
+
+        client.newCall(request).enqueue(callback)
+    }
+
+    private fun download(galleryID: Int) = CoroutineScope(Dispatchers.IO).launch {
+        val reader = Cache(this@DownloadWorker).getReader(galleryID)
+
+        //gallery doesn't exist
+        if (reader == null) {
+            progress.put(galleryID, null)
+            exception.put(galleryID, null)
+            nRunners--
+            return@launch
+        }
+
+        progress.put(galleryID, reader.galleryInfo.map { 0F }.toMutableList())
+        exception.put(galleryID, reader.galleryInfo.map { null }.toMutableList())
+
+        for (i in reader.galleryInfo.indices) {
+            val callback = object : Callback {
+                override fun onFailure(call: Call, e: IOException) {
+                    if (Fabric.isInitialized())
+                        Crashlytics.logException(e)
+
+                    progress[galleryID]!![i] = Float.NaN
+                    exception[galleryID]!![i] = e
+
+                    if (progress[galleryID]!!.all { !it.isFinite() })
+                        nRunners--
+                }
+
+                override fun onResponse(call: Call, response: Response) {
+                    response.use {
+                        val res = it.body!!.bytes()
+                        val ext =
+                            call.request().url.encodedPath.split('.').last()
+
+                        Cache(this@DownloadWorker).putImage(galleryID, "$i.$ext", res)
+                        progress[galleryID]!![i] = Float.POSITIVE_INFINITY
+                    }
+
+                    if (progress[galleryID]!!.all { !it.isFinite() })
+                        nRunners--
+                }
+            }
+
+            queueDownload(galleryID, reader, i, callback)
+        }
+    }
+
+    private fun loop() = CoroutineScope(Dispatchers.Default).launch {
+        while (true) {
+            if (queue.isEmpty() || nRunners > preferences.getInt("max_download", 4))
+                continue
+
+            val galleryID = queue.poll() ?: continue
+
+            worker.put(galleryID, download(galleryID))
+            nRunners++
         }
     }
 

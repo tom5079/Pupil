@@ -20,6 +20,7 @@ package xyz.quaver.pupil.util.download
 
 import android.content.Context
 import android.content.ContextWrapper
+import android.util.Base64
 import android.util.SparseArray
 import androidx.core.content.ContextCompat
 import androidx.preference.PreferenceManager
@@ -30,7 +31,10 @@ import kotlinx.serialization.parse
 import kotlinx.serialization.stringify
 import xyz.quaver.hitomi.GalleryBlock
 import xyz.quaver.hitomi.Reader
+import xyz.quaver.pupil.util.getDownloadDirectory
+import xyz.quaver.pupil.util.isParentOf
 import java.io.File
+import java.net.URL
 
 class Cache(context: Context) : ContextWrapper(context) {
 
@@ -86,6 +90,29 @@ class Cache(context: Context) : ContextWrapper(context) {
         }
     }
 
+    suspend fun getThumbnail(galleryID: Int): String? {
+        val metadata = Cache(this).getCachedMetadata(galleryID)
+
+        val thumbnail = if (metadata?.thumbnail == null)
+            withContext(Dispatchers.IO) {
+                val thumbnails = getGalleryBlock(galleryID)?.thumbnails
+                try {
+                    Base64.encodeToString(URL(thumbnails?.firstOrNull()).readBytes(), Base64.DEFAULT)
+                } catch (e: Exception) {
+                    null
+                }
+            }
+        else
+            metadata.thumbnail
+
+        setCachedMetadata(
+            galleryID,
+            Metadata(Cache(this).getCachedMetadata(galleryID), thumbnail = thumbnail)
+        )
+
+        return thumbnail
+    }
+
     suspend fun getGalleryBlock(galleryID: Int): GalleryBlock? {
         val metadata = Cache(this).getCachedMetadata(galleryID)
 
@@ -102,7 +129,7 @@ class Cache(context: Context) : ContextWrapper(context) {
 
         setCachedMetadata(
             galleryID,
-            Metadata(metadata, galleryBlock = galleryBlock)
+            Metadata(Cache(this).getCachedMetadata(galleryID), galleryBlock = galleryBlock)
         )
 
         return galleryBlock
@@ -129,7 +156,7 @@ class Cache(context: Context) : ContextWrapper(context) {
         if (readers.isNotEmpty())
             setCachedMetadata(
                 galleryID,
-                Metadata(metadata, readers = readers)
+                Metadata(Cache(this).getCachedMetadata(galleryID), readers = readers)
             )
 
         val mirrors = preference.getString("mirrors", "")!!.split('>')
@@ -140,22 +167,44 @@ class Cache(context: Context) : ContextWrapper(context) {
     }
 
     fun getImages(galleryID: Int): SparseArray<File>? {
-        val regex = Regex("[0-9]+")
         val gallery = getCachedGallery(galleryID) ?: return null
 
         return SparseArray<File>().apply {
             gallery.listFiles { file ->
-                file.nameWithoutExtension.matches(regex)
+                file.nameWithoutExtension.toIntOrNull() != null
             }?.forEach {
                 append(it.nameWithoutExtension.toInt(), it)
             }
         }
     }
 
-    fun putImage(galleryID: Int, index: Int, data: ByteArray) {
+    fun putImage(galleryID: Int, name: String, data: ByteArray) {
         val cache = getCachedGallery(galleryID) ?: File(cacheDir, "imageCache/$galleryID")
 
-        File(cache, index.toString()).writeBytes(data)
+        with(File(cache, name)) {
+
+            if (!parentFile!!.exists())
+                parentFile!!.mkdirs()
+
+            if (!exists())
+                createNewFile()
+
+            if (nameWithoutExtension.toIntOrNull() != null)
+                writeBytes(data)
+            else
+                IllegalArgumentException("File name is not a number")
+        }
+    }
+
+    fun moveToDownload(galleryID: Int) {
+        val cache = getCachedGallery(galleryID) ?: File(cacheDir, "imageCache/$galleryID")
+
+        val download = getDownloadDirectory(this)
+
+        if (!download.isParentOf(cache)) {
+            cache.copyRecursively(download)
+            cache.deleteRecursively()
+        }
     }
 
 }

@@ -37,6 +37,7 @@ import xyz.quaver.hiyobi.createImgList
 import xyz.quaver.hiyobi.getReader
 import xyz.quaver.hiyobi.user_agent
 import xyz.quaver.pupil.ui.LockActivity
+import xyz.quaver.pupil.util.download.DownloadWorker
 import xyz.quaver.pupil.util.getDownloadDirectory
 import xyz.quaver.pupil.util.updateOldReaderGalleries
 import java.io.File
@@ -117,5 +118,25 @@ class ExampleInstrumentedTest {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
 
         updateOldReaderGalleries(context)
+    }
+
+    @Test
+    fun test_downloadWorker() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+
+        val galleryID = 515515
+
+        val worker = DownloadWorker.getInstance(context)
+
+        worker.queue.add(galleryID)
+
+        while(worker.progress.indexOfKey(galleryID) < 0 || worker.progress[galleryID] != null) {
+            Log.i("PUPILD", worker.progress[galleryID]?.joinToString(" ") ?: "null")
+
+            if (worker.progress[galleryID]?.all { !it.isFinite() } == true)
+                break
+        }
+
+        Log.i("PUPILD", "DONE!!")
     }
 }

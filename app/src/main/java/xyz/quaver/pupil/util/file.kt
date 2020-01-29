@@ -63,3 +63,5 @@ fun URL.download(to: File, onDownloadProgress: ((Long, Long) -> Unit)? = null) {
 
     }
 }
+
+fun File.isParentOf(file: File) = file.absolutePath.startsWith(this.absolutePath)
