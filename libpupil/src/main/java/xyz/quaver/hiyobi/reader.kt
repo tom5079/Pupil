@@ -17,7 +17,6 @@
 package xyz.quaver.hiyobi
 
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonConfiguration
 import kotlinx.serialization.list
 import org.jsoup.Jsoup
 import xyz.quaver.hitomi.GalleryInfo
@@ -64,7 +63,8 @@ fun getReader(galleryID: Int) : Reader {
 
     val title = Jsoup.connect(reader).get().title()
 
-    val galleryInfo = Json(JsonConfiguration.Stable).parse(
+    @Suppress("EXPERIMENTAL_API_USAGE")
+    val galleryInfo = Json.parse(
         GalleryInfo.serializer().list,
         with(URL(url).openConnection() as HttpsURLConnection) {
             setRequestProperty("User-Agent", user_agent)
