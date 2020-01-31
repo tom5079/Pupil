@@ -17,20 +17,19 @@
 package xyz.quaver.hitomi
 
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonConfiguration
 import kotlinx.serialization.list
 import java.net.URL
 
 const val protocol = "https:"
 
-fun getGalleryInfo(galleryID: Int): List<GalleryInfo> {
-    return Json(JsonConfiguration.Stable).parse(
+@Suppress("EXPERIMENTAL_API_USAGE")
+fun getGalleryInfo(galleryID: Int) =
+    Json.nonstrict.parse(
         GalleryInfo.serializer().list,
         Regex("""\[.+]""").find(
             URL("$protocol//$domain/galleries/$galleryID.js").readText()
         )?.value ?: "[]"
     )
-}
 
 //common.js
 var adapose = false
