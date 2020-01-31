@@ -29,6 +29,7 @@ import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.View
 import android.view.WindowManager
+import android.view.inputmethod.EditorInfo
 import android.widget.EditText
 import android.widget.ImageView
 import android.widget.LinearLayout
@@ -46,7 +47,6 @@ import com.arlib.floatingsearchview.suggestions.model.SearchSuggestion
 import com.arlib.floatingsearchview.util.view.SearchInputView
 import com.bumptech.glide.Glide
 import com.google.android.material.appbar.AppBarLayout
-import com.google.android.material.snackbar.Snackbar
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.activity_main_content.*
 import kotlinx.coroutines.*
@@ -365,21 +365,14 @@ class MainActivity : AppCompatActivity() {
                     setTitle(R.string.main_open_gallery_by_id)
 
                     setPositiveButton(android.R.string.ok) { _, _ ->
-                        CoroutineScope(Dispatchers.Default).launch {
-                            try {
-                                val intent = Intent(this@MainActivity, ReaderActivity::class.java)
-                                val gallery =
-                                    getGalleryBlock(editText.text.toString().toInt()) ?: throw Exception()
-                                intent.putExtra("galleryID", gallery.id)
-
-                                startActivity(intent)
-
-                                histories.add(gallery.id)
-                            } catch (e: Exception) {
-                                Snackbar.make(main_layout,
-                                    R.string.main_open_gallery_by_id_error, Snackbar.LENGTH_LONG).show()
+                            val galleryID = editText.text.toString().toInt()
+                            val intent = Intent(this@MainActivity, ReaderActivity::class.java).apply {
+                                putExtra("galleryID", galleryID)
                             }
-                        }
+
+                            startActivity(intent)
+
+                            histories.add(galleryID)
                     }
                 }.show()
             }
@@ -729,6 +722,7 @@ class MainActivity : AppCompatActivity() {
                     s.replace(0, s.length, s.toString().toLowerCase(Locale.getDefault()))
             }
         })
+        searchInputView.imeOptions = EditorInfo.IME_FLAG_NO_EXTRACT_UI
 
         with(main_searchview as FloatingSearchView) {
             val favoritesFile = File(ContextCompat.getDataDir(context), "favorites_tags.json")

@@ -20,7 +20,6 @@ import kotlinx.serialization.Serializable
 import org.jsoup.Jsoup
 
 fun getReferer(galleryID: Int) = "https://hitomi.la/reader/$galleryID.html"
-fun webpUrlFromUrl(url: String) = url.replace("/galleries/", "/webp/") + ".webp"
 
 @Serializable
 data class GalleryInfo(
