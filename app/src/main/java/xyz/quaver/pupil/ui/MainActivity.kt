@@ -45,7 +45,6 @@ import androidx.vectordrawable.graphics.drawable.AnimatedVectorDrawableCompat
 import com.arlib.floatingsearchview.FloatingSearchView
 import com.arlib.floatingsearchview.suggestions.model.SearchSuggestion
 import com.arlib.floatingsearchview.util.view.SearchInputView
-import com.bumptech.glide.Glide
 import com.google.android.material.appbar.AppBarLayout
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.activity_main_content.*
@@ -64,11 +63,10 @@ import xyz.quaver.pupil.types.TagSuggestion
 import xyz.quaver.pupil.types.Tags
 import xyz.quaver.pupil.ui.dialog.GalleryDialog
 import xyz.quaver.pupil.util.*
+import xyz.quaver.pupil.util.download.Cache
+import xyz.quaver.pupil.util.download.DownloadWorker
 import java.io.File
-import java.io.FileOutputStream
-import java.net.URL
 import java.util.*
-import javax.net.ssl.HttpsURLConnection
 import kotlin.collections.ArrayList
 import kotlin.math.abs
 import kotlin.math.ceil
@@ -89,7 +87,7 @@ class MainActivity : AppCompatActivity() {
         POPULAR
     }
 
-    private val galleries = ArrayList<Pair<GalleryBlock, Deferred<String>>>()
+    private val galleries = ArrayList<GalleryBlock>()
 
     private var query = ""
     set(value) {
@@ -386,7 +384,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun setupRecyclerView() {
         with(main_recyclerview) {
-            adapter = GalleryBlockAdapter(Glide.with(this@MainActivity), galleries).apply {
+            adapter = GalleryBlockAdapter(this@MainActivity, galleries).apply {
                 onChipClickedHandler.add {
                     runOnUiThread {
                         query = it.toQuery()
@@ -399,20 +397,18 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
                 onDownloadClickedHandler = { position ->
-                    val galleryID = galleries[position].first.id
+                    val galleryID = galleries[position].id
 
                     if (!completeFlag.get(galleryID, false)) {
-                        val downloader = GalleryDownloader.get(galleryID)
+                        val worker = DownloadWorker.getInstance(context)
 
-                        if (downloader == null)
-                            GalleryDownloader(
-                                context,
-                                galleryID,
-                                true
-                            ).start()
+                        if (worker.progress.indexOfKey(galleryID) >= 0)     //download in progress
+                            worker.cancel(galleryID)
                         else {
-                            downloader.cancel()
-                            downloader.clearNotification()
+                            Cache(context).moveToDownload(galleryID)
+
+                            if (!worker.queue.contains(galleryID))
+                                worker.queue.add(galleryID)
                         }
                     }
 
@@ -420,39 +416,28 @@ class MainActivity : AppCompatActivity() {
                 }
 
                 onDeleteClickedHandler = { position ->
-                    val galleryID = galleries[position].first.id
+                    val galleryID = galleries[position].id
 
                     CoroutineScope(Dispatchers.Default).launch {
-                        with(GalleryDownloader[galleryID]) {
-                            this?.cancelAndJoin()
-                            this?.clearNotification()
+                        DownloadWorker.getInstance(context).cancel(galleryID)
+
+                        var cache = Cache(context).getCachedGallery(galleryID)
+
+                        while (cache != null) {
+                            cache.deleteRecursively()
+                            cache = Cache(context).getCachedGallery(galleryID)
                         }
-                        val cache = File(cacheDir, "imageCache/${galleryID}")
-                        val data = getCachedGallery(context, galleryID)
-                        cache.deleteRecursively()
-                        data.deleteRecursively()
 
                         downloads.remove(galleryID)
-
-                        if (this@MainActivity.mode == Mode.DOWNLOAD) {
-                            runOnUiThread {
-                                cancelFetch()
-                                clearGalleries()
-                                fetchGalleries(query, sortMode)
-                                loadBlocks()
-                            }
-                        }
-
                         histories.remove(galleryID)
 
-                        if (this@MainActivity.mode == Mode.HISTORY) {
+                        if (this@MainActivity.mode != Mode.SEARCH)
                             runOnUiThread {
                                 cancelFetch()
                                 clearGalleries()
                                 fetchGalleries(query, sortMode)
                                 loadBlocks()
                             }
-                        }
 
                         completeFlag.put(galleryID, false)
                     }
@@ -466,7 +451,7 @@ class MainActivity : AppCompatActivity() {
                         return@setOnItemClickListener
 
                     val intent = Intent(this@MainActivity, ReaderActivity::class.java)
-                    val gallery = galleries[position].first
+                    val gallery = galleries[position]
                     intent.putExtra("galleryID", gallery.id)
 
                     //TODO: Maybe sprinkling some transitions will be nice :D
@@ -478,7 +463,7 @@ class MainActivity : AppCompatActivity() {
                     if (v !is CardView)
                         return@setOnItemLongClickListener true
 
-                    val galleryID = galleries[position].first.id
+                    val galleryID = galleries[position].id
 
                     GalleryDialog(
                         this@MainActivity,
@@ -1030,41 +1015,21 @@ class MainActivity : AppCompatActivity() {
                                 val json = Json(JsonConfiguration.Stable)
                                 val serializer = GalleryBlock.serializer()
 
-                                val galleryBlock =
-                                    File(getCachedGallery(this@MainActivity, galleryID), "galleryBlock.json").let { cache ->
-                                        when {
-                                            cache.exists() -> json.parse(serializer, cache.readText())
-                                            else -> {
-                                                getGalleryBlock(galleryID).apply {
-                                                    this ?: return@apply
+                                File(getCachedGallery(this@MainActivity, galleryID), "galleryBlock.json").let { cache ->
+                                    when {
+                                        cache.exists() -> json.parse(serializer, cache.readText())
+                                        else -> {
+                                            getGalleryBlock(galleryID).apply {
+                                                this ?: return@apply
 
-                                                    if (cache.parentFile?.exists() == false)
-                                                        cache.parentFile!!.mkdirs()
+                                                if (cache.parentFile?.exists() == false)
+                                                    cache.parentFile!!.mkdirs()
 
-                                                    cache.writeText(json.stringify(serializer, this))
-                                                }
+                                                cache.writeText(json.stringify(serializer, this))
                                             }
                                         }
-                                    } ?: return@async null
-
-                                val thumbnail = async {
-                                    val ext = galleryBlock.thumbnails[0].split('.').last()
-                                    File(getCachedGallery(this@MainActivity, galleryBlock.id), "thumbnail.$ext").apply {
-                                        if (!exists())
-                                            try {
-                                                with(URL(galleryBlock.thumbnails[0]).openConnection() as HttpsURLConnection) {
-                                                    if (this@apply.parentFile?.exists() == false)
-                                                        this@apply.parentFile!!.mkdirs()
-
-                                                    inputStream.copyTo(FileOutputStream(this@apply))
-                                                }
-                                            } catch (e: Exception) {
-                                                delete()
-                                            }
-                                    }.absolutePath
-                                }
-
-                                Pair(galleryBlock, thumbnail)
+                                    }
+                                } ?: return@async null
                             } catch (e: Exception) {
                                 null
                             }

@@ -49,8 +49,8 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
         override fun update(tag: Any?, bytesRead: Long, contentLength: Long, done: Boolean) {
             val (galleryID, index) = (tag as? Pair<Int, Int>) ?: return
 
-            if (!done && progress[galleryID]!![index] != Float.POSITIVE_INFINITY)
-                progress[galleryID]!![index] = bytesRead * 100F / contentLength
+            if (!done && progress[galleryID]?.get(index)?.isFinite() == true)
+                progress[galleryID]?.set(index, bytesRead * 100F / contentLength)
         }
     }
 
@@ -156,14 +156,20 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
         .build()
 
     fun stop() {
+        queue.clear()
+
         loop.cancel()
         for (i in 0..worker.size())
             worker[worker.keyAt(i)]?.cancel()
 
         client.dispatcher.cancelAll()
+
+        progress.clear()
+        exception.clear()
     }
 
     fun cancel(galleryID: Int) {
+        queue.remove(galleryID)
         worker[galleryID]?.cancel()
 
         client.dispatcher.queuedCalls()
@@ -171,6 +177,13 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
             .forEach {
                 it.cancel()
             }
+
+        if (progress.indexOfKey(galleryID) >= 0) {
+            progress.remove(galleryID)
+            exception.remove(galleryID)
+
+            nRunners--
+        }
     }
 
     private fun queueDownload(galleryID: Int, reader: Reader, index: Int, callback: Callback) {
@@ -179,7 +192,7 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
 
         //Cache exists :P
         cache?.get(index)?.let {
-            progress[galleryID]!![index] = Float.POSITIVE_INFINITY
+            progress[galleryID]?.set(index, Float.POSITIVE_INFINITY)
 
             return
         }
@@ -231,11 +244,15 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
                     if (Fabric.isInitialized())
                         Crashlytics.logException(e)
 
-                    progress[galleryID]!![i] = Float.NaN
-                    exception[galleryID]!![i] = e
+                    progress[galleryID]?.set(i, Float.NaN)
+                    exception[galleryID]?.set(i, e)
 
-                    if (progress[galleryID]!!.all { !it.isFinite() })
+                    if (progress[galleryID]?.all { !it.isFinite() } == true) {
+                        progress.remove(galleryID)
+                        exception.remove(galleryID)
+
                         nRunners--
+                    }
                 }
 
                 override fun onResponse(call: Call, response: Response) {
@@ -245,11 +262,15 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
                             call.request().url.encodedPath.split('.').last()
 
                         Cache(this@DownloadWorker).putImage(galleryID, "$i.$ext", res)
-                        progress[galleryID]!![i] = Float.POSITIVE_INFINITY
+                        progress[galleryID]?.set(i, Float.POSITIVE_INFINITY)
                     }
 
-                    if (progress[galleryID]!!.all { !it.isFinite() })
+                    if (progress[galleryID]?.all { !it.isFinite() } == true) {
+                        progress.remove(galleryID)
+                        exception.remove(galleryID)
+
                         nRunners--
+                    }
                 }
             }
 

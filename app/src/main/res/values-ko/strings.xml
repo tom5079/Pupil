@@ -62,7 +62,7 @@
     <string name="settings_clear_downloads_alert_message">다운로드 된 만화를 모두 삭제합니다.\n계속하시겠습니까?</string>
     <string name="main_drawer_favorite">즐겨찾기</string>
     <string name="main_open_gallery_by_id">갤러리 번호로 열기</string>
-    <string name="main_open_gallery_by_id_error">갤러리를 찾지 못했습니다</string>
+    <string name="reader_failed_to_find_gallery">갤러리를 찾지 못했습니다</string>
     <string name="settings_storage">저장 공간</string>
     <string name="main_drawer_grouop_contact_discord">디스코드</string>
     <string name="settings_app_lock">앱 잠금</string>

@@ -25,6 +25,7 @@ import androidx.core.content.ContextCompat
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.ActivityTestRule
+import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.ImplicitReflectionSerializer
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonConfiguration
@@ -37,6 +38,7 @@ import xyz.quaver.hiyobi.createImgList
 import xyz.quaver.hiyobi.getReader
 import xyz.quaver.hiyobi.user_agent
 import xyz.quaver.pupil.ui.LockActivity
+import xyz.quaver.pupil.util.download.Cache
 import xyz.quaver.pupil.util.download.DownloadWorker
 import xyz.quaver.pupil.util.getDownloadDirectory
 import xyz.quaver.pupil.util.updateOldReaderGalleries
@@ -138,5 +140,18 @@ class ExampleInstrumentedTest {
         }
 
         Log.i("PUPILD", "DONE!!")
+    }
+
+    @Test
+    fun test_getReaderOrNull() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+
+        val galleryID = 1561552
+
+        runBlocking {
+            Log.i("PUPILD", Cache(context).getReader(galleryID)?.title ?: "null")
+        }
+
+        Log.i("PUPILD", Cache(context).getReaderOrNull(galleryID)?.title ?: "null")
     }
 }

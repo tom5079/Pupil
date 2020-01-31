@@ -35,7 +35,10 @@ import com.google.android.material.snackbar.Snackbar
 import kotlinx.android.synthetic.main.dialog_gallery.*
 import kotlinx.android.synthetic.main.gallery_details.view.*
 import kotlinx.android.synthetic.main.item_gallery_details.view.*
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.launch
 import xyz.quaver.hitomi.Gallery
 import xyz.quaver.hitomi.GalleryBlock
 import xyz.quaver.hitomi.getGallery
@@ -221,9 +224,9 @@ class GalleryDialog(context: Context, private val galleryID: Int) : Dialog(conte
 
     private fun addRelated(gallery: Gallery) {
         val inflater = LayoutInflater.from(context)
-        val galleries = ArrayList<Pair<GalleryBlock, Deferred<String>>>()
+        val galleries = ArrayList<GalleryBlock>()
 
-        val adapter = GalleryBlockAdapter(glide, galleries).apply {
+        val adapter = GalleryBlockAdapter(context, galleries).apply {
             onChipClickedHandler.add { tag ->
                 this@GalleryDialog.onChipClickedHandler.forEach { handler ->
                     handler.invoke(tag)
@@ -238,7 +241,7 @@ class GalleryDialog(context: Context, private val galleryID: Int) : Dialog(conte
                 }.let {
                     val galleryBlock = it.await() ?: return@let
 
-                    galleries.add(Pair(galleryBlock, GlobalScope.async { galleryBlock.thumbnails.first() }))
+                    galleries.add(galleryBlock)
                     adapter.notifyItemInserted(i)
                 }
             }
@@ -254,14 +257,14 @@ class GalleryDialog(context: Context, private val galleryID: Int) : Dialog(conte
                 ItemClickSupport.addTo(this)
                     .setOnItemClickListener { _, position, _ ->
                         context.startActivity(Intent(context, ReaderActivity::class.java).apply {
-                            putExtra("galleryID", galleries[position].first.id)
+                            putExtra("galleryID", galleries[position].id)
                         })
-                        (context.applicationContext as Pupil).histories.add(galleries[position].first.id)
+                        (context.applicationContext as Pupil).histories.add(galleries[position].id)
                     }
                     .setOnItemLongClickListener { _, position, _ ->
                         GalleryDialog(
                             context,
-                            galleries[position].first.id
+                            galleries[position].id
                         ).apply {
                             onChipClickedHandler.add { tag ->
                                 this@GalleryDialog.onChipClickedHandler.forEach { it.invoke(tag) }
