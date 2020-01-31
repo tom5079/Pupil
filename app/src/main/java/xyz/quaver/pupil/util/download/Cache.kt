@@ -78,16 +78,14 @@ class Cache(context: Context) : ContextWrapper(context) {
 
     @UseExperimental(ImplicitReflectionSerializer::class)
     fun setCachedMetadata(galleryID: Int, metadata: Metadata) {
-        val file = File(getCachedGallery(galleryID), ".metadata")
+        val file = File(getCachedGallery(galleryID) ?: File(cacheDir, "imageCache/$galleryID"), ".metadata")
 
-        if (!file.exists())
-            return
+        if (file.parentFile?.exists() != true)
+            file.parentFile?.mkdirs()
 
-        try {
-            file.writeText(Json.stringify(metadata))
-        } catch (e: Exception) {
+        file.createNewFile()
 
-        }
+        file.writeText(Json.stringify(metadata))
     }
 
     suspend fun getThumbnail(galleryID: Int): String? {
@@ -135,6 +133,16 @@ class Cache(context: Context) : ContextWrapper(context) {
         return galleryBlock
     }
 
+    fun getReaderOrNull(galleryID: Int): Reader? {
+        val metadata = getCachedMetadata(galleryID)
+
+        val mirrors = preference.getString("mirrors", "")!!.split('>')
+
+        return metadata?.readers?.firstOrNull {
+            mirrors.contains(it.code.name)
+        }
+    }
+
     suspend fun getReader(galleryID: Int): Reader? {
         val metadata = getCachedMetadata(galleryID)
 
@@ -173,7 +181,7 @@ class Cache(context: Context) : ContextWrapper(context) {
             gallery.listFiles { file ->
                 file.nameWithoutExtension.toIntOrNull() != null
             }?.forEach {
-                append(it.nameWithoutExtension.toInt(), it)
+                put(it.nameWithoutExtension.toInt(), it)
             }
         }
     }
@@ -197,14 +205,17 @@ class Cache(context: Context) : ContextWrapper(context) {
     }
 
     fun moveToDownload(galleryID: Int) {
-        val cache = getCachedGallery(galleryID) ?: File(cacheDir, "imageCache/$galleryID")
+        val cache = getCachedGallery(galleryID)
 
-        val download = getDownloadDirectory(this)
+        if (cache != null) {
+            val download = getDownloadDirectory(this)
 
-        if (!download.isParentOf(cache)) {
-            cache.copyRecursively(download)
-            cache.deleteRecursively()
-        }
+            if (!download.isParentOf(cache)) {
+                cache.copyRecursively(download, true)
+                cache.deleteRecursively()
+            }
+        } else
+            File(getDownloadDirectory(this), galleryID.toString()).mkdirs()
     }
 
 }

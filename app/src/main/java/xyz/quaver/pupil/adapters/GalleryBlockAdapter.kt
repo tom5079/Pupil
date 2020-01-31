@@ -18,7 +18,9 @@
 
 package xyz.quaver.pupil.adapters
 
+import android.content.Context
 import android.graphics.drawable.Drawable
+import android.util.Base64
 import android.util.SparseBooleanArray
 import android.view.LayoutInflater
 import android.view.View
@@ -29,7 +31,7 @@ import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import androidx.vectordrawable.graphics.drawable.Animatable2Compat
 import androidx.vectordrawable.graphics.drawable.AnimatedVectorDrawableCompat
-import com.bumptech.glide.RequestManager
+import com.bumptech.glide.Glide
 import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.daimajia.swipe.SwipeLayout
 import com.daimajia.swipe.adapters.RecyclerSwipeAdapter
@@ -37,28 +39,22 @@ import com.daimajia.swipe.interfaces.SwipeAdapterInterface
 import com.google.android.material.chip.Chip
 import kotlinx.android.synthetic.main.item_galleryblock.view.*
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonConfiguration
 import xyz.quaver.hitomi.GalleryBlock
-import xyz.quaver.hitomi.Reader
 import xyz.quaver.pupil.BuildConfig
 import xyz.quaver.pupil.Pupil
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.types.Tag
-import xyz.quaver.pupil.util.GalleryDownloader
 import xyz.quaver.pupil.util.Histories
-import xyz.quaver.pupil.util.getCachedGallery
+import xyz.quaver.pupil.util.download.Cache
+import xyz.quaver.pupil.util.download.DownloadWorker
 import xyz.quaver.pupil.util.wordCapitalize
-import java.io.File
 import java.util.*
 import kotlin.collections.ArrayList
-import kotlin.collections.HashMap
 import kotlin.concurrent.schedule
 
-class GalleryBlockAdapter(private val glide: RequestManager, private val galleries: List<Pair<GalleryBlock, Deferred<String>>>) : RecyclerSwipeAdapter<RecyclerView.ViewHolder>(), SwipeAdapterInterface {
+class GalleryBlockAdapter(context: Context, private val galleries: List<GalleryBlock>) : RecyclerSwipeAdapter<RecyclerView.ViewHolder>(), SwipeAdapterInterface {
 
     enum class ViewType {
         NEXT,
@@ -66,10 +62,13 @@ class GalleryBlockAdapter(private val glide: RequestManager, private val galleri
         PREV
     }
 
+    private val glide = Glide.with(context)
     private lateinit var favorites: Histories
 
     inner class GalleryViewHolder(val view: View) : RecyclerView.ViewHolder(view) {
-        fun bind(item: Pair<GalleryBlock, Deferred<String>>) {
+        var timerTask: TimerTask? = null
+
+        fun bind(galleryBlock: GalleryBlock) {
             with(view) {
                 val resources = context.resources
                 val languages = resources.getStringArray(R.array.languages).map {
@@ -78,16 +77,14 @@ class GalleryBlockAdapter(private val glide: RequestManager, private val galleri
                     }
                 }.toMap()
 
-                val (galleryBlock: GalleryBlock, thumbnail: Deferred<String>) = item
-
                 val artists = galleryBlock.artists
                 val series = galleryBlock.series
 
                 CoroutineScope(Dispatchers.Main).launch {
-                    val cache = thumbnail.await()
+                    val thumbnail = Base64.decode(Cache(context).getThumbnail(galleryBlock.id), Base64.DEFAULT)
 
                     glide
-                        .load(cache)
+                        .load(thumbnail)
                         .skipMemoryCache(true)
                         .diskCacheStrategy(DiskCacheStrategy.NONE)
                         .error(R.drawable.image_broken_variant)
@@ -99,74 +96,66 @@ class GalleryBlockAdapter(private val glide: RequestManager, private val galleri
                 }
 
                 //Check cache
-                val readerCache = { File(getCachedGallery(context, galleryBlock.id), "reader.json") }
-                val imageCache = { File(getCachedGallery(context, galleryBlock.id), "images") }
+                val cache = Cache(context).getCachedGallery(galleryBlock.id)
+                val reader = Cache(context).getReaderOrNull(galleryBlock.id)
 
-                try {
-                   Json(JsonConfiguration.Stable)
-                        .parse(Reader.serializer(), readerCache.invoke().readText())
-                } catch(e: Exception) {
-                    readerCache.invoke().delete()
-                }
-
-                if (readerCache.invoke().exists()) {
-                    val reader = Json(JsonConfiguration.Stable)
-                        .parse(Reader.serializer(), readerCache.invoke().readText())
+                if (cache != null && reader != null) {
+                    val count = cache.listFiles { file ->
+                        file.nameWithoutExtension.toIntOrNull() != null
+                    }?.size ?: 0
 
                     with(galleryblock_progressbar) {
                         max = reader.galleryInfo.size
-                        progress = imageCache.invoke().list()?.size ?: 0
+                        progress = count
 
                         visibility = View.VISIBLE
                     }
-                } else {
+                } else
                     galleryblock_progressbar.visibility = View.GONE
-                }
 
-                if (refreshTasks[this@GalleryViewHolder] == null) {
-                    val refresh = Timer(false).schedule(0, 1000) {
-                        post {
+                if (timerTask == null)
+                    timerTask = Timer().schedule(0, 1000) {
+                        CoroutineScope(Dispatchers.Main).launch {
+                            val _cache = Cache(context).getCachedGallery(galleryBlock.id)
+                            val _reader = Cache(context).getReaderOrNull(galleryBlock.id)
+
+                            if (_reader == null) {
+                                view.galleryblock_progressbar.visibility = View.GONE
+                                view.galleryblock_progress_complete.visibility = View.GONE
+                                return@launch
+                            }
+
                             with(view.galleryblock_progressbar) {
-                                progress = imageCache.invoke().list()?.size ?: 0
 
-                                if (!readerCache.invoke().exists()) {
-                                    visibility = View.GONE
-                                    max = 0
-                                    progress = 0
+                                progress = _cache?.listFiles { file ->
+                                    file.nameWithoutExtension.toIntOrNull() != null
+                                }?.size ?: 0
 
-                                    view.galleryblock_progress_complete.visibility = View.INVISIBLE
-                                } else {
-                                    if (visibility == View.GONE) {
-                                        val reader = Json(JsonConfiguration.Stable)
-                                            .parse(Reader.serializer(), readerCache.invoke().readText())
-                                        max = reader.galleryInfo.size
-                                        visibility = View.VISIBLE
-                                    }
-
-                                    if (progress == max) {
-                                        if (completeFlag.get(galleryBlock.id, false)) {
-                                            with(view.galleryblock_progress_complete) {
-                                                setImageResource(R.drawable.ic_progressbar)
-                                                visibility = View.VISIBLE
-                                            }
-                                        } else {
-                                            with(view.galleryblock_progress_complete) {
-                                                setImageDrawable(AnimatedVectorDrawableCompat.create(context, R.drawable.ic_progressbar_complete).apply {
-                                                    this?.start()
-                                                })
-                                                visibility = View.VISIBLE
-                                            }
-                                            completeFlag.put(galleryBlock.id, true)
-                                        }
-                                    } else
-                                        view.galleryblock_progress_complete.visibility = View.INVISIBLE
+                                if (visibility == View.GONE) {
+                                    visibility = View.VISIBLE
+                                    max = _reader.galleryInfo.size
                                 }
+
+                                if (progress == max) {
+                                    if (completeFlag.get(galleryBlock.id, false)) {
+                                        with(view.galleryblock_progress_complete) {
+                                            setImageResource(R.drawable.ic_progressbar)
+                                            visibility = View.VISIBLE
+                                        }
+                                    } else {
+                                        with(view.galleryblock_progress_complete) {
+                                            setImageDrawable(AnimatedVectorDrawableCompat.create(context, R.drawable.ic_progressbar_complete).apply {
+                                                this?.start()
+                                            })
+                                            visibility = View.VISIBLE
+                                        }
+                                        completeFlag.put(galleryBlock.id, true)
+                                    }
+                                } else
+                                    view.galleryblock_progress_complete.visibility = View.INVISIBLE
                             }
                         }
                     }
-
-                    refreshTasks[this@GalleryViewHolder] = refresh
-                }
 
                 galleryblock_title.text = galleryBlock.title
                 with(galleryblock_artist) {
@@ -277,7 +266,6 @@ class GalleryBlockAdapter(private val glide: RequestManager, private val galleri
         }
     }
 
-    private val refreshTasks = HashMap<GalleryViewHolder, TimerTask>()
     val completeFlag = SparseBooleanArray()
 
     val onChipClickedHandler = ArrayList<((Tag) -> Unit)>()
@@ -336,10 +324,11 @@ class GalleryBlockAdapter(private val glide: RequestManager, private val galleri
                 override fun onStartOpen(layout: SwipeLayout?) {
                     mItemManger.closeAllExcept(layout)
 
-                    holder.view.galleryblock_download.text = when(GalleryDownloader.get(gallery.first.id)) {
-                        null -> holder.view.context.getString(R.string.main_download)
-                        else -> holder.view.context.getString(android.R.string.cancel)
-                    }
+                    holder.view.galleryblock_download.text =
+                        if (DownloadWorker.getInstance(holder.view.context).progress.indexOfKey(gallery.id) < 0)
+                            holder.view.context.getString(R.string.main_download)
+                        else
+                            holder.view.context.getString(android.R.string.cancel)
                 }
 
                 override fun onClose(layout: SwipeLayout?) {}
@@ -354,12 +343,8 @@ class GalleryBlockAdapter(private val glide: RequestManager, private val galleri
     override fun onViewDetachedFromWindow(holder: RecyclerView.ViewHolder) {
         super.onViewDetachedFromWindow(holder)
 
-        if (holder is GalleryViewHolder) {
-            val task = refreshTasks[holder] ?: return
-
-            task.cancel()
-            refreshTasks.remove(holder)
-        }
+        if (holder is GalleryViewHolder)
+            holder.timerTask?.cancel()
     }
 
     override fun getItemCount() =
