@@ -22,7 +22,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    tools:context=".ui.PatternLockFragment">
+    tools:context=".ui.fragment.PatternLockFragment">
 
     <com.andrognito.patternlockview.PatternLockView
         android:id="@+id/lock_pattern_view"

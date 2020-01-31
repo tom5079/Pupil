@@ -17,7 +17,6 @@
 package xyz.quaver.hiyobi
 
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonConfiguration
 import kotlinx.serialization.list
 import org.jsoup.Jsoup
 import xyz.quaver.hitomi.GalleryInfo
@@ -64,7 +63,8 @@ fun getReader(galleryID: Int) : Reader {
 
     val title = Jsoup.connect(reader).get().title()
 
-    val galleryInfo = Json(JsonConfiguration.Stable).parse(
+    @Suppress("EXPERIMENTAL_API_USAGE")
+    val galleryInfo = Json.parse(
         GalleryInfo.serializer().list,
         with(URL(url).openConnection() as HttpsURLConnection) {
             setRequestProperty("User-Agent", user_agent)
@@ -79,5 +79,11 @@ fun getReader(galleryID: Int) : Reader {
     return Reader(Reader.Code.HIYOBI, title, galleryInfo)
 }
 
-fun createImgList(galleryID: Int, reader: Reader) =
-    reader.galleryInfo.map { Images("$protocol//$hiyobi/data/$galleryID/${it.name}", galleryID, it.name) }
+fun createImgList(galleryID: Int, reader: Reader, lowQuality: Boolean = false) =
+    if (lowQuality)
+        reader.galleryInfo.map {
+            val name = it.name.replace(Regex("/.[^/.]+$"), "") + ".jpg"
+            Images("$protocol//$hiyobi/data/$galleryID/$name.jpg", galleryID, it.name)
+        }
+    else
+        reader.galleryInfo.map { Images("$protocol//$hiyobi/data/$galleryID/${it.name}", galleryID, it.name) }

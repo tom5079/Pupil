@@ -84,7 +84,7 @@
     <string name="main_menu_sort_newest">投稿日時順</string>
     <string name="main_menu_sort_popular">人気順</string>
     <string name="update_failed">アップデートに失敗しました</string>
-    <string name="update_failed_message">マニュアルインストールが必要です。APKファイルは</string>
+    <string name="update_failed_message">アップデート中エラーが発生しました</string>
     <string name="ignore_update">無視</string>
     <string name="lock_corrupted">ロックファイルが破損されています。Pupilを再再インストールしてください。</string>
     <string name="update_no_permission">権限がないため自動アップデートを行えません。ホームページで直接ダウンロードしてください。</string>
@@ -118,4 +118,6 @@
     <string name="update_download_completed_description">ここをクリックしてアップデートを行えます</string>
     <string name="settings_beta">ベータチャンネルでアップデートを受信</string>
     <string name="settings_app_version_description">v%s</string>
+    <string name="settings_low_quality">低解像度イメージ</string>
+    <string name="settings_low_quality_summary">ロード速度とデータ使用料を改善するため低解像度イメージをロード</string>
 </resources>

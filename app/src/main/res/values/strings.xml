@@ -28,7 +28,7 @@
     <string name="https_block_alert">(Korean only)</string>
 
     <string name="update_failed">Update failed</string>
-    <string name="update_failed_message">Please install manually. APK file is in the Downloads folder.</string>
+    <string name="update_failed_message">Please install manually by visiting github release page :{ (or try again!)</string>
     <string name="update_no_permission">Cannot auto update because permission is denied. Please download manually from the webpage.</string>
     <string name="ignore_update">Ignore</string>
 
@@ -140,6 +140,8 @@
     <string name="settings_dl_location_removable">Removable Storage</string>
     <string name="settings_dl_location_internal">Internal Storage</string>
     <string name="settings_dl_location_available">%s available</string>
+    <string name="settings_low_quality">Low quality images</string>
+    <string name="settings_low_quality_summary">Load low quality images to improve load speed and data usage</string>
 
     <!-- SETTINGS/APP LOCK -->
 

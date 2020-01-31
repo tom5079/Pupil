@@ -21,6 +21,7 @@ package xyz.quaver.pupil.util
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.webkit.MimeTypeMap
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -93,9 +94,9 @@ fun checkUpdate(context: AppCompatActivity, force: Boolean = false) {
     fun extractReleaseNote(update: JsonObject, locale: Locale) : String {
         val markdown = update["body"]!!.content
 
-        val target = when(locale) {
-            Locale.KOREAN -> "한국어"
-            Locale.JAPANESE -> "日本語"
+        val target = when(locale.language) {
+            "ko" -> "한국어"
+            "ja" -> "日本語"
             else -> "English"
         }
 
@@ -151,12 +152,25 @@ fun checkUpdate(context: AppCompatActivity, force: Boolean = false) {
                     priority = NotificationCompat.PRIORITY_LOW
                 }
 
-                CoroutineScope(Dispatchers.IO).launch {
+                CoroutineScope(Dispatchers.IO).launch io@{
                     val target = File(getDownloadDirectory(context), "Pupil.apk")
 
-                    URL(url).download(target) { progress, fileSize ->
-                        builder.setProgress(fileSize.toInt(), progress.toInt(), false)
+                    try {
+                        URL(url).download(target) { progress, fileSize ->
+                            builder.setProgress(fileSize.toInt(), progress.toInt(), false)
+                            notificationManager.notify(UPDATE_NOTIFICATION_ID, builder.build())
+                        }
+                    } catch (e: Exception) {
+                        builder.apply {
+                            setContentText(context.getString(R.string.update_failed))
+                            setMessage(context.getString(R.string.update_failed_message))
+                            setSmallIcon(android.R.drawable.stat_sys_download_done)
+                        }
+
+                        notificationManager.cancel(UPDATE_NOTIFICATION_ID)
                         notificationManager.notify(UPDATE_NOTIFICATION_ID, builder.build())
+
+                        return@io
                     }
 
                     val install = Intent(Intent.ACTION_VIEW).apply {
@@ -165,7 +179,11 @@ fun checkUpdate(context: AppCompatActivity, force: Boolean = false) {
                             context,
                             context.applicationContext.packageName + ".fileprovider",
                             target
-                        ), MimeTypeMap.getSingleton().getExtensionFromMimeType(".apk"))
+                        ), MimeTypeMap.getSingleton().getMimeTypeFromExtension("apk"))
+
+                        if (resolveActivity(context.packageManager) == null)
+                            setDataAndType(Uri.fromFile(target),
+                                MimeTypeMap.getSingleton().getMimeTypeFromExtension("apk"))
                     }
 
                     builder.apply {

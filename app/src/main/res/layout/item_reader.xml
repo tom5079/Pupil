@@ -17,7 +17,7 @@
   ~     along with this program.  If not, see <http://www.gnu.org/licenses/>.
   -->
 
-<ImageView xmlns:android="http://schemas.android.com/apk/res/android"
+<com.github.chrisbanes.photoview.PhotoView xmlns:android="http://schemas.android.com/apk/res/android"
     android:contentDescription="@string/reader_imageview_description"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
