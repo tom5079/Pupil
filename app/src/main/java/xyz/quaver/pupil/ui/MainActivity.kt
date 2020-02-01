@@ -406,6 +406,7 @@ class MainActivity : AppCompatActivity() {
                             worker.cancel(galleryID)
                         else {
                             Cache(context).moveToDownload(galleryID)
+                            Cache(context).setDownloading(galleryID, true)
 
                             if (!worker.queue.contains(galleryID))
                                 worker.queue.add(galleryID)

@@ -70,7 +70,7 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
 
         override fun source(): BufferedSource {
             if (bufferedSource == null)
-                bufferedSource = source(responseBody.source()).buffer()
+                bufferedSource = Okio.buffer(source(responseBody.source()))
 
             return bufferedSource!!
         }
@@ -143,13 +143,12 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
 
             var retry = preferences.getInt("retry", 3)
             while (!response.isSuccessful && retry > 0) {
-                response.close()
                 response = chain.proceed(request)
                 retry--
             }
 
             response.newBuilder()
-                .body(ProgressResponseBody(request.tag(), response.body!!, progressListener))
+                .body(ProgressResponseBody(request.tag(), response.body(), progressListener))
                 .build()
         }
         .dispatcher(Dispatcher(Executors.newSingleThreadExecutor()))
@@ -159,21 +158,31 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
         queue.clear()
 
         loop.cancel()
-        for (i in 0..worker.size())
-            worker[worker.keyAt(i)]?.cancel()
+        for (i in 0..worker.size()) {
+            val galleryID = worker.keyAt(i)
 
-        client.dispatcher.cancelAll()
+            Cache(this@DownloadWorker).setDownloading(galleryID, false)
+            worker[galleryID]?.cancel()
+        }
+
+        client.dispatcher().cancelAll()
 
         progress.clear()
         exception.clear()
+
+        nRunners = 0
+
     }
 
     fun cancel(galleryID: Int) {
         queue.remove(galleryID)
         worker[galleryID]?.cancel()
 
-        client.dispatcher.queuedCalls()
-            .filter { it.request().tag(Pair::class.java)?.first == galleryID }
+        client.dispatcher().queuedCalls()
+            .filter {
+                @Suppress("UNCHECKED_CAST")
+                (it.request().tag() as? Pair<Int, Int>)?.first == galleryID
+            }
             .forEach {
                 it.cancel()
             }
@@ -182,6 +191,7 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
             progress.remove(galleryID)
             exception.remove(galleryID)
 
+            Cache(this@DownloadWorker).setDownloading(galleryID, false)
             nRunners--
         }
     }
@@ -231,6 +241,8 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
         if (reader == null) {
             progress.put(galleryID, null)
             exception.put(galleryID, null)
+
+            Cache(this@DownloadWorker).setDownloading(galleryID, false)
             nRunners--
             return@launch
         }
@@ -251,15 +263,16 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
                         progress.remove(galleryID)
                         exception.remove(galleryID)
 
+                        Cache(this@DownloadWorker).setDownloading(galleryID, false)
                         nRunners--
                     }
                 }
 
                 override fun onResponse(call: Call, response: Response) {
-                    response.use {
-                        val res = it.body!!.bytes()
+                    response.body().use {
+                        val res = it.bytes()
                         val ext =
-                            call.request().url.encodedPath.split('.').last()
+                            call.request().url().encodedPath().split('.').last()
 
                         Cache(this@DownloadWorker).putImage(galleryID, "$i.$ext", res)
                         progress[galleryID]?.set(i, Float.POSITIVE_INFINITY)
@@ -269,6 +282,7 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
                         progress.remove(galleryID)
                         exception.remove(galleryID)
 
+                        Cache(this@DownloadWorker).setDownloading(galleryID, false)
                         nRunners--
                     }
                 }

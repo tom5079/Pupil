@@ -21,6 +21,7 @@ package xyz.quaver.pupil.util.download
 import android.content.Context
 import android.content.ContextWrapper
 import android.util.Base64
+import android.util.Log
 import android.util.SparseArray
 import androidx.core.content.ContextCompat
 import androidx.preference.PreferenceManager
@@ -216,6 +217,13 @@ class Cache(context: Context) : ContextWrapper(context) {
             }
         } else
             File(getDownloadDirectory(this), galleryID.toString()).mkdirs()
+    }
+
+    fun isDownloading(galleryID: Int) = getCachedMetadata(galleryID)?.isDownloading == true
+
+    fun setDownloading(galleryID: Int, isDownloading: Boolean) {
+        Log.i("PUPILD", "$galleryID $isDownloading")
+        setCachedMetadata(galleryID, Metadata(getCachedMetadata(galleryID), isDownloading = isDownloading))
     }
 
 }
