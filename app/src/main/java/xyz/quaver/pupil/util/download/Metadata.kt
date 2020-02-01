@@ -26,16 +26,19 @@ import xyz.quaver.hitomi.Reader
 data class Metadata(
     val thumbnail: String? = null,
     val galleryBlock: GalleryBlock? = null,
-    val readers: List<Reader>? = null
+    val readers: List<Reader>? = null,
+    val isDownloading: Boolean? = null
 ) {
     constructor(
         metadata: Metadata?,
         thumbnail: String? = null,
         galleryBlock: GalleryBlock? = null,
-        readers: List<Reader>? = null
+        readers: List<Reader>? = null,
+        isDownloading: Boolean? = null
     ) : this(
         thumbnail ?: metadata?.thumbnail,
         galleryBlock ?: metadata?.galleryBlock,
-        readers ?: metadata?.readers
+        readers ?: metadata?.readers,
+        isDownloading ?: metadata?.isDownloading
     )
 }

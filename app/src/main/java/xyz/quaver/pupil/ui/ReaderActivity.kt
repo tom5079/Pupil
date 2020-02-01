@@ -38,6 +38,9 @@ import io.fabric.sdk.android.Fabric
 import kotlinx.android.synthetic.main.activity_reader.*
 import kotlinx.android.synthetic.main.activity_reader.view.*
 import kotlinx.android.synthetic.main.dialog_numberpicker.view.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.serialization.ImplicitReflectionSerializer
 import xyz.quaver.hitomi.Reader
 import xyz.quaver.pupil.Pupil
@@ -46,8 +49,6 @@ import xyz.quaver.pupil.adapters.ReaderAdapter
 import xyz.quaver.pupil.util.Histories
 import xyz.quaver.pupil.util.download.Cache
 import xyz.quaver.pupil.util.download.DownloadWorker
-import xyz.quaver.pupil.util.getDownloadDirectory
-import xyz.quaver.pupil.util.isParentOf
 import java.util.*
 import kotlin.concurrent.schedule
 
@@ -199,8 +200,8 @@ class ReaderActivity : AppCompatActivity() {
 
         timer.cancel()
 
-        if (!getDownloadDirectory(this).isParentOf(Cache(this).getCachedGallery(galleryID)))
-            DownloadWorker.getInstance(this).cancel(galleryID)
+        if (!Cache(this).isDownloading(galleryID))
+            DownloadWorker.getInstance(this@ReaderActivity).cancel(galleryID)
     }
 
     override fun onBackPressed() {
@@ -253,7 +254,7 @@ class ReaderActivity : AppCompatActivity() {
 
             runOnUiThread {
                 reader_download_progressbar.max = reader_recyclerview.adapter?.itemCount ?: 0
-                reader_download_progressbar.progress = worker.progress[galleryID]!!.count { !it.isFinite() }
+                reader_download_progressbar.progress = worker.progress[galleryID]?.count { !it.isFinite() } ?: 0
                 reader_progressbar.max = reader_recyclerview.adapter?.itemCount ?: 0
 
                 if (title == getString(R.string.reader_loading)) {
@@ -272,7 +273,7 @@ class ReaderActivity : AppCompatActivity() {
                     }
                 }
 
-                if (worker.progress[galleryID]!!.all { !it.isFinite() }) {   //Download finished
+                if (worker.progress[galleryID]?.all { !it.isFinite() } == true) {   //Download finished
                     reader_download_progressbar.visibility = View.GONE
 
                     animateDownloadFAB(false)
@@ -318,12 +319,21 @@ class ReaderActivity : AppCompatActivity() {
         }
 
         with(reader_fab_download) {
-            animateDownloadFAB(getDownloadDirectory(context).isParentOf(Cache(context).getCachedGallery(galleryID))) //If download in progress, animate button
+            animateDownloadFAB(Cache(context).isDownloading(galleryID)) //If download in progress, animate button
 
             setOnClickListener {
-                Cache(context).moveToDownload(galleryID)
+                if (Cache(context).isDownloading(galleryID)) {
+                   Cache(context).setDownloading(galleryID, false)
 
-                animateDownloadFAB(true)
+                    animateDownloadFAB(false)
+                } else {
+                    CoroutineScope(Dispatchers.IO).launch {
+                        Cache(context).moveToDownload(galleryID)
+                    }
+
+                    Cache(context).setDownloading(galleryID, true)
+                    animateDownloadFAB(true)
+                }
             }
         }
 
@@ -379,7 +389,7 @@ class ReaderActivity : AppCompatActivity() {
                                 setImageResource(R.drawable.ic_download)
                                 labelText = getString(R.string.reader_fab_download)
                             }
-                        else                                                            // Or continue animating
+                        else                                                            // Or continue animate
                             post {
                                 icon.start()
                                 labelText = getString(R.string.reader_fab_download_cancel)
@@ -389,8 +399,10 @@ class ReaderActivity : AppCompatActivity() {
 
                 setImageDrawable(icon)
                 icon?.start()
-            } else
+            } else {
                 setImageResource(R.drawable.ic_download)
+                labelText = getString(R.string.reader_fab_download)
+            }
         }
     }
 }
