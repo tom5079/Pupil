@@ -47,6 +47,7 @@ class ReaderAdapter(private val context: Context,
 
     var reader: Reader? = null
     private val glide = Glide.with(context)
+    val timer = Timer()
 
     var onItemClickListener : ((Int) -> (Unit))? = null
 
@@ -81,51 +82,56 @@ class ReaderAdapter(private val context: Context,
             onItemClickListener?.invoke(position)
         }
 
+        holder.view.container.setOnClickListener {
+            onItemClickListener?.invoke(position)
+        }
+
         (holder.view.container.layoutParams as ConstraintLayout.LayoutParams)
             .dimensionRatio = "${reader!!.galleryInfo[position].width}:${reader!!.galleryInfo[position].height}"
 
-        holder.view.reader_item_progressbar.progress = DownloadWorker.getInstance(context).progress[galleryID]?.get(position)?.roundToInt() ?: 0
         holder.view.reader_index.text = (position+1).toString()
 
-        val progress = DownloadWorker.getInstance(context).progress[galleryID]?.get(position)
-        if (progress?.isFinite() == false) {
-            when {
-                progress.isInfinite() -> {
-                    var image = Cache(context).getImages(galleryID)
-
-                    while (image?.get(position) == null)
-                        image = Cache(context).getImages(galleryID)
-
-                    glide
-                        .load(image[position])
-                        .diskCacheStrategy(DiskCacheStrategy.NONE)
-                        .skipMemoryCache(true)
-                        .error(R.drawable.image_broken_variant)
-                        .apply {
-                            if (BuildConfig.CENSOR)
-                                override(5, 8)
-                        }
-                        .into(holder.view.image)
+        val images = Cache(context).getImages(galleryID)
+        if (images?.get(position) != null) {
+            glide
+                .load(images[position])
+                .diskCacheStrategy(DiskCacheStrategy.NONE)
+                .skipMemoryCache(true)
+                .error(R.drawable.image_broken_variant)
+                .apply {
+                    if (BuildConfig.CENSOR)
+                        override(5, 8)
                 }
-                progress.isNaN() -> {
-                    glide
-                        .load(R.drawable.image_broken_variant)
-                        .into(holder.view.image)
-                    Snackbar
-                        .make(
-                            holder.view,
-                            DownloadWorker.getInstance(context).exception[galleryID]!![position]?.message
-                                ?: context.getText(R.string.default_error_msg),
-                            Snackbar.LENGTH_INDEFINITE
-                        )
-                        .show()
-                }
+                .into(holder.view.image)
+        } else {
+            val progress = DownloadWorker.getInstance(context).progress[galleryID]?.get(position)
+
+            if (progress?.isNaN() == true) {
+                glide
+                    .load(R.drawable.image_broken_variant)
+                    .into(holder.view.image)
+                Snackbar
+                    .make(
+                        holder.view,
+                        DownloadWorker.getInstance(context).exception[galleryID]!![position]?.message
+                            ?: context.getText(R.string.default_error_msg),
+                        Snackbar.LENGTH_INDEFINITE
+                    )
+                    .show()
+
+                return
             }
 
-        } else {
+            holder.view.reader_item_progressbar.progress =
+                if (progress?.isInfinite() == true)
+                    100
+                else
+                    progress?.roundToInt() ?: 0
+
             holder.view.image.setImageDrawable(null)
 
-            Timer().schedule(1000) {
+
+            timer.schedule(1000) {
                 CoroutineScope(Dispatchers.Main).launch {
                     notifyItemChanged(position)
                 }

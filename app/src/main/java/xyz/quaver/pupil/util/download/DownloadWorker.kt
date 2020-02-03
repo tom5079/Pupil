@@ -18,10 +18,15 @@
 
 package xyz.quaver.pupil.util.download
 
+import android.app.PendingIntent
 import android.content.Context
 import android.content.ContextWrapper
+import android.content.Intent
 import android.content.SharedPreferences
 import android.util.SparseArray
+import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
+import androidx.core.app.TaskStackBuilder
 import androidx.preference.PreferenceManager
 import com.crashlytics.android.Crashlytics
 import io.fabric.sdk.android.Fabric
@@ -34,6 +39,8 @@ import xyz.quaver.hitomi.urlFromUrlFromHash
 import xyz.quaver.hiyobi.cookie
 import xyz.quaver.hiyobi.createImgList
 import xyz.quaver.hiyobi.user_agent
+import xyz.quaver.pupil.R
+import xyz.quaver.pupil.ui.ReaderActivity
 import java.io.IOException
 import java.util.concurrent.Executors
 import java.util.concurrent.LinkedBlockingQueue
@@ -66,7 +73,7 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
         private var bufferedSource : BufferedSource? = null
 
         override fun contentLength() = responseBody.contentLength()
-        override fun contentType() = responseBody.contentType()
+        override fun contentType() = responseBody.contentType() ?: null
 
         override fun source(): BufferedSource {
             if (bufferedSource == null)
@@ -104,6 +111,8 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
     }
     //endregion
 
+    val notificationManager = NotificationManagerCompat.from(context)
+
     val queue = LinkedBlockingQueue<Int>()
 
     /*
@@ -131,6 +140,7 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
     *  null -> Download in progress / Loading
     */
     val exception = SparseArray<MutableList<Throwable?>?>()
+    val notification = SparseArray<NotificationCompat.Builder>()
 
     private val loop = loop()
     private val worker = SparseArray<Job?>()
@@ -169,6 +179,8 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
 
         progress.clear()
         exception.clear()
+        notification.clear()
+        notificationManager.cancelAll()
 
         nRunners = 0
 
@@ -187,14 +199,18 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
                 it.cancel()
             }
 
-        if (progress.indexOfKey(galleryID) >= 0) {
-            progress.remove(galleryID)
-            exception.remove(galleryID)
+        progress.remove(galleryID)
+        exception.remove(galleryID)
+        notification.remove(galleryID)
+        notificationManager.cancel(galleryID)
 
+        if (progress.indexOfKey(galleryID) >= 0) {
             Cache(this@DownloadWorker).setDownloading(galleryID, false)
             nRunners--
         }
     }
+
+    fun isCompleted(galleryID: Int) = progress[galleryID]?.all { !it.isFinite() } == true
 
     private fun queueDownload(galleryID: Int, reader: Reader, index: Int, callback: Callback) {
         val cache = Cache(this@DownloadWorker).getImages(galleryID)
@@ -203,6 +219,18 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
         //Cache exists :P
         cache?.get(index)?.let {
             progress[galleryID]?.set(index, Float.POSITIVE_INFINITY)
+
+            notify(galleryID)
+
+            if (isCompleted(galleryID)) {
+                with(Cache(this@DownloadWorker)) {
+                    if (isDownloading(galleryID)) {
+                        moveToDownload(galleryID)
+                        setDownloading(galleryID, false)
+                    }
+                }
+                nRunners--
+            }
 
             return
         }
@@ -250,6 +278,9 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
         progress.put(galleryID, reader.galleryInfo.map { 0F }.toMutableList())
         exception.put(galleryID, reader.galleryInfo.map { null }.toMutableList())
 
+        notification[galleryID].setContentTitle(reader.title)
+        notify(galleryID)
+
         for (i in reader.galleryInfo.indices) {
             val callback = object : Callback {
                 override fun onFailure(call: Call, e: IOException) {
@@ -259,11 +290,14 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
                     progress[galleryID]?.set(i, Float.NaN)
                     exception[galleryID]?.set(i, e)
 
-                    if (progress[galleryID]?.all { !it.isFinite() } == true) {
-                        progress.remove(galleryID)
-                        exception.remove(galleryID)
+                    notify(galleryID)
 
-                        Cache(this@DownloadWorker).setDownloading(galleryID, false)
+                    if (isCompleted(galleryID)) {
+                        val cache = Cache(this@DownloadWorker)
+                        if (cache.isDownloading(galleryID)) {
+                            cache.moveToDownload(galleryID)
+                            cache.setDownloading(galleryID, false)
+                        }
                         nRunners--
                     }
                 }
@@ -278,11 +312,14 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
                         progress[galleryID]?.set(i, Float.POSITIVE_INFINITY)
                     }
 
-                    if (progress[galleryID]?.all { !it.isFinite() } == true) {
-                        progress.remove(galleryID)
-                        exception.remove(galleryID)
+                    notify(galleryID)
 
-                        Cache(this@DownloadWorker).setDownloading(galleryID, false)
+                    if (isCompleted(galleryID)) {
+                        val cache = Cache(this@DownloadWorker)
+                        if (cache.isDownloading(galleryID)) {
+                            cache.moveToDownload(galleryID)
+                            cache.setDownloading(galleryID, false)
+                        }
                         nRunners--
                     }
                 }
@@ -292,6 +329,43 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
         }
     }
 
+    private fun notify(galleryID: Int) {
+        val max = progress[galleryID]?.size ?: 0
+        val progress = progress[galleryID]?.count { !it.isFinite() } ?: 0
+
+        if (isCompleted(galleryID))
+            notification[galleryID]
+                .setContentText(getString(R.string.reader_notification_complete))
+                .setProgress(0, 0, false)
+        else
+            notification[galleryID]
+                .setProgress(max, progress, false)
+                .setContentText("$progress/$max")
+
+        if (Cache(this).isDownloading(galleryID))
+            notificationManager.notify(galleryID, notification[galleryID].build())
+        else
+            notificationManager.cancel(galleryID)
+    }
+
+    private fun initNotification(galleryID: Int) {
+        val intent = Intent(this, ReaderActivity::class.java).apply {
+            putExtra("galleryID", galleryID)
+        }
+        val pendingIntent = TaskStackBuilder.create(this).run {
+            addNextIntentWithParentStack(intent)
+            getPendingIntent(0, PendingIntent.FLAG_UPDATE_CURRENT)
+        }
+
+        notification.put(galleryID, NotificationCompat.Builder(this, "download").apply {
+            setContentTitle(getString(R.string.reader_loading))
+            setContentText(getString(R.string.reader_notification_text))
+            setSmallIcon(android.R.drawable.stat_sys_download)                                  // had to use this because old android doesn't support VectorDrawable on Notification :P
+            setContentIntent(pendingIntent)
+            setProgress(0, 0, true)
+        })
+    }
+
     private fun loop() = CoroutineScope(Dispatchers.Default).launch {
         while (true) {
             if (queue.isEmpty() || nRunners > preferences.getInt("max_download", 4))
@@ -299,6 +373,12 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
 
             val galleryID = queue.poll() ?: continue
 
+            if (progress.indexOfKey(galleryID) >= 0)    // Gallery already downloading!
+                continue
+
+            initNotification(galleryID)
+            if (Cache(this@DownloadWorker).isDownloading(galleryID))
+                notificationManager.notify(galleryID, notification[galleryID].build())
             worker.put(galleryID, download(galleryID))
             nRunners++
         }
