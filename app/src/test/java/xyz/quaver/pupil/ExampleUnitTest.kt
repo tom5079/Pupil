@@ -16,7 +16,7 @@
  *     along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-@file:Suppress("UNUSED_VARIABLE")
+@file:Suppress("UNUSED_VARIABLE", "IncorrectScope")
 
 package xyz.quaver.pupil
 
@@ -26,20 +26,16 @@ package xyz.quaver.pupil
  * See [testing documentation](http://d.android.com/tools/testing).
  */
 
+import android.util.SparseArray
 import org.junit.Test
-import xyz.quaver.pupil.util.download
-import java.io.File
-import java.net.URL
 
 class ExampleUnitTest {
 
     @Test
     fun test() {
-        URL("https://github.om/tom5079/Pupil/releases/download/4.2-beta2-hotfix2/Pupil-v4.2-beta2-hotfix2.apk").download(
-            File(System.getenv("USERPROFILE"), "Pupil.apk")
-        ) { downloaded, fileSize ->
-            println("%.1f%%".format(downloaded*100.0/fileSize))
-        }
+        val arr = SparseArray<Float>()
+
+        print(arr.indexOfKey(34))
     }
 
 }

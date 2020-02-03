@@ -49,6 +49,7 @@ fun URL.download(to: File, onDownloadProgress: ((Long, Long) -> Unit)? = null) {
 
                 var bytesCopied: Long = 0
                 val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+
                 var bytes = it.read(buffer)
                 while (bytes >= 0) {
                     out.write(buffer, 0, bytes)
@@ -62,3 +63,5 @@ fun URL.download(to: File, onDownloadProgress: ((Long, Long) -> Unit)? = null) {
 
     }
 }
+
+fun File.isParentOf(file: File?) = file?.absolutePath?.startsWith(this.absolutePath) ?: false

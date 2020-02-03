@@ -34,6 +34,7 @@ import xyz.quaver.pupil.ui.LockActivity
 import xyz.quaver.pupil.ui.SettingsActivity
 import xyz.quaver.pupil.ui.dialog.DefaultQueryDialog
 import xyz.quaver.pupil.ui.dialog.DownloadLocationDialog
+import xyz.quaver.pupil.ui.dialog.MirrorDialog
 import xyz.quaver.pupil.util.*
 import java.io.File
 
@@ -137,14 +138,16 @@ class SettingsFragment :
                         onPositiveButtonClickListener = { newTags ->
                             sharedPreferences.edit().putString("default_query", newTags.toString()).apply()
                             summary = newTags.toString()
-                            dismiss()   //This sucks
-                            // TODO: make dialog dissmiss itself :P
                         }
                     }.show()
                 }
                 "app_lock" -> {
                     val intent = Intent(context, LockActivity::class.java)
                     activity?.startActivityForResult(intent, (activity as SettingsActivity).REQUEST_LOCK)
+                }
+                "mirrors" -> {
+                    MirrorDialog(context)
+                        .show()
                 }
                 "backup" -> {
                     File(ContextCompat.getDataDir(context), "favorites.json").copyTo(
@@ -257,6 +260,9 @@ class SettingsFragment :
                                     }
                                 }
 
+                            onPreferenceClickListener = this@SettingsFragment
+                        }
+                        "mirrors" -> {
                             onPreferenceClickListener = this@SettingsFragment
                         }
                         "dark_mode" -> {
