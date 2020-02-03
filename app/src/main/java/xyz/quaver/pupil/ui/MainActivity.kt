@@ -110,7 +110,6 @@ class MainActivity : AppCompatActivity() {
     private var currentPage = 0
 
     private lateinit var histories: Histories
-    private lateinit var downloads: Histories
     private lateinit var favorites: Histories
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -148,7 +147,6 @@ class MainActivity : AppCompatActivity() {
 
         with(application as Pupil) {
             this@MainActivity.histories = histories
-            this@MainActivity.downloads = downloads
             this@MainActivity.favorites = favorites
         }
 
@@ -172,6 +170,12 @@ class MainActivity : AppCompatActivity() {
             }
             else -> super.onBackPressed()
         }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+
+        (main_recyclerview.adapter as GalleryBlockAdapter).timer.cancel()
     }
 
     override fun onResume() {
@@ -405,7 +409,6 @@ class MainActivity : AppCompatActivity() {
                         if (worker.progress.indexOfKey(galleryID) >= 0)     //download in progress
                             worker.cancel(galleryID)
                         else {
-                            Cache(context).moveToDownload(galleryID)
                             Cache(context).setDownloading(galleryID, true)
 
                             if (!worker.queue.contains(galleryID))
@@ -429,7 +432,6 @@ class MainActivity : AppCompatActivity() {
                             cache = Cache(context).getCachedGallery(galleryID)
                         }
 
-                        downloads.remove(galleryID)
                         histories.remove(galleryID)
 
                         if (this@MainActivity.mode != Mode.SEARCH)
@@ -963,8 +965,14 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
                 Mode.DOWNLOAD -> {
+                    val downloads = getDownloadDirectory(this@MainActivity).listFiles { file ->
+                        file.isDirectory and (file.name.toIntOrNull() != null) and File(file, ".metadata").exists()
+                    }?.map {
+                        it.name.toInt()
+                    }?: listOf()
+
                     when {
-                        query.isEmpty() -> downloads.toList().apply {
+                        query.isEmpty() -> downloads.apply {
                             totalItems = size
                         }
                         else -> {

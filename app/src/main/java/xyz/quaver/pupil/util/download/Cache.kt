@@ -21,8 +21,6 @@ package xyz.quaver.pupil.util.download
 import android.content.Context
 import android.content.ContextWrapper
 import android.util.Base64
-import android.util.Log
-import android.util.SparseArray
 import androidx.core.content.ContextCompat
 import androidx.preference.PreferenceManager
 import kotlinx.coroutines.*
@@ -175,15 +173,13 @@ class Cache(context: Context) : ContextWrapper(context) {
         }
     }
 
-    fun getImages(galleryID: Int): SparseArray<File>? {
+    fun getImages(galleryID: Int): List<File?>? {
         val gallery = getCachedGallery(galleryID) ?: return null
+        val reader = getReaderOrNull(galleryID) ?: return null
+        val images = gallery.listFiles() ?: return null
 
-        return SparseArray<File>().apply {
-            gallery.listFiles { file ->
-                file.nameWithoutExtension.toIntOrNull() != null
-            }?.forEach {
-                put(it.nameWithoutExtension.toInt(), it)
-            }
+        return reader.galleryInfo.indices.map { index ->
+            images.firstOrNull { file -> file.nameWithoutExtension.toIntOrNull() == index }
         }
     }
 
@@ -209,7 +205,7 @@ class Cache(context: Context) : ContextWrapper(context) {
         val cache = getCachedGallery(galleryID)
 
         if (cache != null) {
-            val download = getDownloadDirectory(this)
+            val download = File(getDownloadDirectory(this), galleryID.toString())
 
             if (!download.isParentOf(cache)) {
                 cache.copyRecursively(download, true)
@@ -222,7 +218,6 @@ class Cache(context: Context) : ContextWrapper(context) {
     fun isDownloading(galleryID: Int) = getCachedMetadata(galleryID)?.isDownloading == true
 
     fun setDownloading(galleryID: Int, isDownloading: Boolean) {
-        Log.i("PUPILD", "$galleryID $isDownloading")
         setCachedMetadata(galleryID, Metadata(getCachedMetadata(galleryID), isDownloading = isDownloading))
     }
 

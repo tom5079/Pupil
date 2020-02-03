@@ -38,9 +38,6 @@ import io.fabric.sdk.android.Fabric
 import kotlinx.android.synthetic.main.activity_reader.*
 import kotlinx.android.synthetic.main.activity_reader.view.*
 import kotlinx.android.synthetic.main.dialog_numberpicker.view.*
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import kotlinx.serialization.ImplicitReflectionSerializer
 import xyz.quaver.hitomi.Reader
 import xyz.quaver.pupil.Pupil
@@ -199,6 +196,7 @@ class ReaderActivity : AppCompatActivity() {
         super.onDestroy()
 
         timer.cancel()
+        (reader_recyclerview.adapter as ReaderAdapter).timer.cancel()
 
         if (!Cache(this).isDownloading(galleryID))
             DownloadWorker.getInstance(this@ReaderActivity).cancel(galleryID)
@@ -327,10 +325,6 @@ class ReaderActivity : AppCompatActivity() {
 
                     animateDownloadFAB(false)
                 } else {
-                    CoroutineScope(Dispatchers.IO).launch {
-                        Cache(context).moveToDownload(galleryID)
-                    }
-
                     Cache(context).setDownloading(galleryID, true)
                     animateDownloadFAB(true)
                 }

@@ -51,7 +51,6 @@ class Pupil : MultiDexApplication() {
         val preference = PreferenceManager.getDefaultSharedPreferences(this)
 
         histories = Histories(File(ContextCompat.getDataDir(this), "histories.json"))
-        downloads = Histories(File(ContextCompat.getDataDir(this), "downloads.json"))
         favorites = Histories(File(ContextCompat.getDataDir(this), "favorites.json"))
 
         try {
@@ -64,7 +63,7 @@ class Pupil : MultiDexApplication() {
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            val channel = NotificationChannel("download", getString(R.string.channel_download), NotificationManager.IMPORTANCE_LOW).apply {
+            val channel = NotificationChannel("download", getString(R.string.channel_download), NotificationManager.IMPORTANCE_MIN).apply {
                 description = getString(R.string.channel_download_description)
                 enableLights(false)
                 enableVibration(false)

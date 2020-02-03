@@ -21,6 +21,7 @@ package xyz.quaver.pupil.adapters
 import android.content.Context
 import android.graphics.drawable.Drawable
 import android.util.Base64
+import android.util.Log
 import android.util.SparseBooleanArray
 import android.view.LayoutInflater
 import android.view.View
@@ -29,6 +30,7 @@ import android.widget.LinearLayout
 import androidx.cardview.widget.CardView
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
+import androidx.swiperefreshlayout.widget.CircularProgressDrawable
 import androidx.vectordrawable.graphics.drawable.Animatable2Compat
 import androidx.vectordrawable.graphics.drawable.AnimatedVectorDrawableCompat
 import com.bumptech.glide.Glide
@@ -65,8 +67,53 @@ class GalleryBlockAdapter(context: Context, private val galleries: List<GalleryB
     private val glide = Glide.with(context)
     private lateinit var favorites: Histories
 
+    val timer = Timer()
+
     inner class GalleryViewHolder(val view: View) : RecyclerView.ViewHolder(view) {
         var timerTask: TimerTask? = null
+
+        fun updateProgress(context: Context, galleryID: Int) = CoroutineScope(Dispatchers.Main).launch {
+            val cache = Cache(context).getCachedGallery(galleryID)
+            val reader = Cache(context).getReaderOrNull(galleryID)
+
+            Log.i("PUPILD", "$galleryID ${if (reader == null) null else "%d/%d".format(Cache(context).getImages(galleryID)?.count { it != null }, reader.galleryInfo.size)}")
+
+            if (reader == null) {
+                view.galleryblock_progressbar.visibility = View.GONE
+                view.galleryblock_progress_complete.visibility = View.GONE
+                return@launch
+            }
+
+            with(view.galleryblock_progressbar) {
+
+                progress = cache?.listFiles { file ->
+                    file.nameWithoutExtension.toIntOrNull() != null
+                }?.size ?: 0
+
+                if (visibility == View.GONE) {
+                    visibility = View.VISIBLE
+                    max = reader.galleryInfo.size
+                }
+
+                if (progress == max) {
+                    if (completeFlag.get(galleryID, false)) {
+                        with(view.galleryblock_progress_complete) {
+                            setImageResource(R.drawable.ic_progressbar)
+                            visibility = View.VISIBLE
+                        }
+                    } else {
+                        with(view.galleryblock_progress_complete) {
+                            setImageDrawable(AnimatedVectorDrawableCompat.create(context, R.drawable.ic_progressbar_complete).apply {
+                                this?.start()
+                            })
+                            visibility = View.VISIBLE
+                        }
+                        completeFlag.put(galleryID, true)
+                    }
+                } else
+                    view.galleryblock_progress_complete.visibility = View.INVISIBLE
+            }
+        }
 
         fun bind(galleryBlock: GalleryBlock) {
             with(view) {
@@ -79,6 +126,10 @@ class GalleryBlockAdapter(context: Context, private val galleries: List<GalleryB
 
                 val artists = galleryBlock.artists
                 val series = galleryBlock.series
+
+                galleryblock_thumbnail.setImageDrawable(CircularProgressDrawable(context).also {
+                    it.start()
+                })
 
                 CoroutineScope(Dispatchers.Main).launch {
                     val thumbnail = Base64.decode(Cache(context).getThumbnail(galleryBlock.id), Base64.DEFAULT)
@@ -114,47 +165,8 @@ class GalleryBlockAdapter(context: Context, private val galleries: List<GalleryB
                     galleryblock_progressbar.visibility = View.GONE
 
                 if (timerTask == null)
-                    timerTask = Timer().schedule(0, 1000) {
-                        CoroutineScope(Dispatchers.Main).launch {
-                            val _cache = Cache(context).getCachedGallery(galleryBlock.id)
-                            val _reader = Cache(context).getReaderOrNull(galleryBlock.id)
-
-                            if (_reader == null) {
-                                view.galleryblock_progressbar.visibility = View.GONE
-                                view.galleryblock_progress_complete.visibility = View.GONE
-                                return@launch
-                            }
-
-                            with(view.galleryblock_progressbar) {
-
-                                progress = _cache?.listFiles { file ->
-                                    file.nameWithoutExtension.toIntOrNull() != null
-                                }?.size ?: 0
-
-                                if (visibility == View.GONE) {
-                                    visibility = View.VISIBLE
-                                    max = _reader.galleryInfo.size
-                                }
-
-                                if (progress == max) {
-                                    if (completeFlag.get(galleryBlock.id, false)) {
-                                        with(view.galleryblock_progress_complete) {
-                                            setImageResource(R.drawable.ic_progressbar)
-                                            visibility = View.VISIBLE
-                                        }
-                                    } else {
-                                        with(view.galleryblock_progress_complete) {
-                                            setImageDrawable(AnimatedVectorDrawableCompat.create(context, R.drawable.ic_progressbar_complete).apply {
-                                                this?.start()
-                                            })
-                                            visibility = View.VISIBLE
-                                        }
-                                        completeFlag.put(galleryBlock.id, true)
-                                    }
-                                } else
-                                    view.galleryblock_progress_complete.visibility = View.INVISIBLE
-                            }
-                        }
+                    timerTask = timer.schedule(0, 1000) {
+                        updateProgress(context, galleryBlock.id)
                     }
 
                 galleryblock_title.text = galleryBlock.title
@@ -343,8 +355,10 @@ class GalleryBlockAdapter(context: Context, private val galleries: List<GalleryB
     override fun onViewDetachedFromWindow(holder: RecyclerView.ViewHolder) {
         super.onViewDetachedFromWindow(holder)
 
-        if (holder is GalleryViewHolder)
+        if (holder is GalleryViewHolder) {
             holder.timerTask?.cancel()
+            holder.timerTask = null
+        }
     }
 
     override fun getItemCount() =
