@@ -21,40 +21,37 @@ package xyz.quaver.pupil.ui
 import android.content.Intent
 import android.graphics.drawable.Animatable
 import android.graphics.drawable.Drawable
-import android.net.Uri
 import android.os.Bundle
 import android.view.*
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.PagerSnapHelper
 import androidx.recyclerview.widget.RecyclerView
 import androidx.vectordrawable.graphics.drawable.Animatable2Compat
 import androidx.vectordrawable.graphics.drawable.AnimatedVectorDrawableCompat
-import com.bumptech.glide.Glide
 import com.crashlytics.android.Crashlytics
 import com.google.android.material.snackbar.Snackbar
 import io.fabric.sdk.android.Fabric
 import kotlinx.android.synthetic.main.activity_reader.*
 import kotlinx.android.synthetic.main.activity_reader.view.*
 import kotlinx.android.synthetic.main.dialog_numberpicker.view.*
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import kotlinx.serialization.ImplicitReflectionSerializer
+import xyz.quaver.hitomi.Reader
 import xyz.quaver.pupil.Pupil
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.adapters.ReaderAdapter
-import xyz.quaver.pupil.util.GalleryDownloader
 import xyz.quaver.pupil.util.Histories
-import xyz.quaver.pupil.util.ItemClickSupport
+import xyz.quaver.pupil.util.download.Cache
+import xyz.quaver.pupil.util.download.DownloadWorker
+import java.util.*
+import kotlin.concurrent.schedule
 
 class ReaderActivity : AppCompatActivity() {
 
     private var galleryID = 0
-    private val images = ArrayList<String>()
-    private var gallerySize = 0
     private var currentPage = 0
 
     private var isScroll = true
@@ -70,7 +67,7 @@ class ReaderActivity : AppCompatActivity() {
         }
     }
 
-    private lateinit var downloader: GalleryDownloader
+    private val timer = Timer()
 
     private val snapHelper = PagerSnapHelper()
 
@@ -102,12 +99,8 @@ class ReaderActivity : AppCompatActivity() {
             return
         }
 
-        initDownloader()
-
         initView()
-
-        if (!downloader.download)
-            downloader.start()
+        initDownloader()
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -169,7 +162,7 @@ class ReaderActivity : AppCompatActivity() {
                 val view = LayoutInflater.from(this).inflate(R.layout.dialog_numberpicker, findViewById(android.R.id.content), false)
                 with(view.dialog_number_picker) {
                     minValue=1
-                    maxValue=gallerySize
+                    maxValue=reader_recyclerview.adapter?.itemCount ?: 0
                     value=currentPage
                 }
                 val dialog = AlertDialog.Builder(this).apply {
@@ -202,8 +195,11 @@ class ReaderActivity : AppCompatActivity() {
     override fun onDestroy() {
         super.onDestroy()
 
-        if (::downloader.isInitialized && !downloader.download)
-            downloader.cancel()
+        timer.cancel()
+        (reader_recyclerview.adapter as ReaderAdapter).timer.cancel()
+
+        if (!Cache(this).isDownloading(galleryID))
+            DownloadWorker.getInstance(this@ReaderActivity).cancel(galleryID)
     }
 
     override fun onBackPressed() {
@@ -239,101 +235,66 @@ class ReaderActivity : AppCompatActivity() {
     }
 
     private fun initDownloader() {
-        var d: GalleryDownloader? = GalleryDownloader.get(galleryID)
-
-        if (d == null)
-            d = GalleryDownloader(this, galleryID)
-
-        downloader = d.apply {
-            onReaderLoadedHandler = {
-                CoroutineScope(Dispatchers.Main).launch {
-                    title = it.title
-                    with(reader_download_progressbar) {
-                        max = it.galleryInfo.size
-                        progress = 0
-                    }
-                    with(reader_progressbar) {
-                        max = it.galleryInfo.size
-                        progress = 0
-                    }
-
-                    gallerySize = it.galleryInfo.size
-                    menu?.findItem(R.id.reader_menu_page_indicator)?.title = "$currentPage/${it.galleryInfo.size}"
-                }
-            }
-            onProgressHandler = {
-                CoroutineScope(Dispatchers.Main).launch {
-                    reader_download_progressbar.progress = it
-                    menu?.findItem(R.id.reader_menu_use_hiyobi)?.isVisible = downloader.useHiyobi
-                }
-            }
-            onDownloadedHandler = {
-                val item = it.toList()
-                CoroutineScope(Dispatchers.Main).launch {
-                    if (images.isEmpty()) {
-                        images.addAll(item)
-                        reader_recyclerview.adapter?.notifyDataSetChanged()
-                    } else {
-                        images.add(item.last())
-                        reader_recyclerview.adapter?.notifyItemInserted(images.size-1)
-                    }
-                }
-            }
-            onErrorHandler = {
-                Snackbar
-                    .make(reader_layout, it.message ?: it.javaClass.name, Snackbar.LENGTH_INDEFINITE)
-                    .setAction(R.string.reader_help) {
-                        startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(getString(R.string.error_help))))
-                    }
-                    .show()
-                downloader.download = false
-            }
-            onCompleteHandler = {
-                CoroutineScope(Dispatchers.Main).launch {
-                    reader_download_progressbar.visibility = View.GONE
-                }
-            }
-            onNotifyChangedHandler = { notify ->
-                val fab = reader_fab_download
-
-                runOnUiThread {
-                    if (notify) {
-                        val icon = AnimatedVectorDrawableCompat.create(this, R.drawable.ic_downloading)
-                        icon?.registerAnimationCallback(object: Animatable2Compat.AnimationCallback() {
-                            override fun onAnimationEnd(drawable: Drawable?) {
-                                if (downloader.download)
-                                    fab.post {
-                                        icon.start()
-                                        fab.labelText = getString(R.string.reader_fab_download_cancel)
-                                    }
-                                else
-                                    fab.post {
-                                        fab.setImageResource(R.drawable.ic_download)
-                                        fab.labelText = getString(R.string.reader_fab_download)
-                                    }
-                            }
-                        })
-
-                        fab.setImageDrawable(icon)
-                        icon?.start()
-                    } else {
-                        runOnUiThread {
-                            fab.setImageResource(R.drawable.ic_download)
-                        }
-                    }
-                }
-            }
+        val worker = DownloadWorker.getInstance(this).apply {
+            queue.add(galleryID)
         }
 
-        if (downloader.download) {
-            downloader.invokeOnReaderLoaded()
-            downloader.invokeOnNotifyChanged()
+        timer.schedule(0, 1000) {
+            if (worker.progress.indexOfKey(galleryID) < 0)  //loading
+                return@schedule
+
+            if (worker.progress[galleryID] == null) {      //Gallery not found
+                timer.cancel()
+                Snackbar
+                    .make(reader_layout, R.string.reader_failed_to_find_gallery, Snackbar.LENGTH_INDEFINITE)
+                    .show()
+            }
+
+            runOnUiThread {
+                reader_download_progressbar.max = reader_recyclerview.adapter?.itemCount ?: 0
+                reader_download_progressbar.progress = worker.progress[galleryID]?.count { !it.isFinite() } ?: 0
+                reader_progressbar.max = reader_recyclerview.adapter?.itemCount ?: 0
+
+                if (title == getString(R.string.reader_loading)) {
+                    val reader = (reader_recyclerview.adapter as ReaderAdapter).reader
+
+                    if (reader != null) {
+                        title = reader.title
+                        menu?.findItem(R.id.reader_menu_page_indicator)?.title = "$currentPage/${reader.galleryInfo.size}"
+
+                        menu?.findItem(R.id.reader_type)?.icon = ContextCompat.getDrawable(this@ReaderActivity,
+                            when (reader.code) {
+                                Reader.Code.HITOMI -> R.drawable.hitomi
+                                Reader.Code.HIYOBI -> R.drawable.ic_hiyobi
+                                else -> android.R.color.transparent
+                            })
+                    }
+                }
+
+                if (worker.progress[galleryID]?.all { !it.isFinite() } == true) {   //Download finished
+                    reader_download_progressbar.visibility = View.GONE
+
+                    animateDownloadFAB(false)
+                }
+            }
         }
     }
 
     private fun initView() {
         with(reader_recyclerview) {
-            adapter = ReaderAdapter(Glide.with(this@ReaderActivity), galleryID, images)
+            adapter = ReaderAdapter(this@ReaderActivity, galleryID).apply {
+                onItemClickListener = {
+                    if (isScroll) {
+                        isScroll = false
+                        isFullscreen = true
+
+                        scrollMode(false)
+                        fullscreen(true)
+                    } else {
+                        (reader_recyclerview.layoutManager as LinearLayoutManager?)?.scrollToPosition(currentPage) //Moves to next page because currentPage is 1-based indexing
+                    }
+                }
+            }
 
             addOnScrollListener(object: RecyclerView.OnScrollListener() {
                 override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
@@ -349,32 +310,24 @@ class ReaderActivity : AppCompatActivity() {
                     if (layoutManager.findFirstVisibleItemPosition() == -1)
                         return
                     currentPage = layoutManager.findFirstVisibleItemPosition()+1
-                    menu?.findItem(R.id.reader_menu_page_indicator)?.title = "$currentPage/$gallerySize"
+                    menu?.findItem(R.id.reader_menu_page_indicator)?.title = "$currentPage/${recyclerView.adapter!!.itemCount}"
                     this@ReaderActivity.reader_progressbar.progress = currentPage
                 }
             })
-
-            ItemClickSupport.addTo(this)
-                .setOnItemClickListener { _, _, _ ->
-                    if (isScroll) {
-                        isScroll = false
-                        isFullscreen = true
-
-                        scrollMode(false)
-                        fullscreen(true)
-                    } else {
-                        (reader_recyclerview.layoutManager as LinearLayoutManager?)?.scrollToPosition(currentPage) //Moves to next page because currentPage is 1-based indexing
-                    }
-                }
         }
 
         with(reader_fab_download) {
-            setImageResource(R.drawable.ic_download)
-            setOnClickListener {
-                downloader.download = !downloader.download
+            animateDownloadFAB(Cache(context).isDownloading(galleryID)) //If download in progress, animate button
 
-                if (!downloader.download)
-                    downloader.clearNotification()
+            setOnClickListener {
+                if (Cache(context).isDownloading(galleryID)) {
+                   Cache(context).setDownloading(galleryID, false)
+
+                    animateDownloadFAB(false)
+                } else {
+                    Cache(context).setDownloading(galleryID, true)
+                    animateDownloadFAB(true)
+                }
             }
         }
 
@@ -415,5 +368,35 @@ class ReaderActivity : AppCompatActivity() {
         }
 
         (reader_recyclerview.layoutManager as LinearLayoutManager).scrollToPositionWithOffset(currentPage-1, 0)
+    }
+
+    private fun animateDownloadFAB(animate: Boolean) {
+        with(reader_fab_download) {
+            if (animate) {
+                val icon = AnimatedVectorDrawableCompat.create(context, R.drawable.ic_downloading)
+
+                icon?.registerAnimationCallback(object : Animatable2Compat.AnimationCallback() {
+                    override fun onAnimationEnd(drawable: Drawable?) {
+                        val worker = DownloadWorker.getInstance(context)
+                        if (worker.progress[galleryID]?.all { !it.isFinite() } == true) // If download is finished, stop animating
+                            post {
+                                setImageResource(R.drawable.ic_download)
+                                labelText = getString(R.string.reader_fab_download)
+                            }
+                        else                                                            // Or continue animate
+                            post {
+                                icon.start()
+                                labelText = getString(R.string.reader_fab_download_cancel)
+                            }
+                    }
+                })
+
+                setImageDrawable(icon)
+                icon?.start()
+            } else {
+                setImageResource(R.drawable.ic_download)
+                labelText = getString(R.string.reader_fab_download)
+            }
+        }
     }
 }

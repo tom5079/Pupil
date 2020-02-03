@@ -18,23 +18,47 @@
 
 package xyz.quaver.pupil.adapters
 
+import android.content.Context
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.ImageView
+import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.recyclerview.widget.RecyclerView
-import com.bumptech.glide.RequestManager
+import com.bumptech.glide.Glide
 import com.bumptech.glide.load.engine.DiskCacheStrategy
+import com.google.android.material.snackbar.Snackbar
+import kotlinx.android.synthetic.main.item_reader.view.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import xyz.quaver.hitomi.Reader
 import xyz.quaver.pupil.BuildConfig
 import xyz.quaver.pupil.R
-import xyz.quaver.pupil.util.getCachedGallery
-import java.io.File
+import xyz.quaver.pupil.util.download.Cache
+import xyz.quaver.pupil.util.download.DownloadWorker
+import java.util.*
+import kotlin.concurrent.schedule
+import kotlin.math.roundToInt
 
-class ReaderAdapter(private val glide: RequestManager,
-                    private val galleryID: Int,
-                    private val images: List<String>) : RecyclerView.Adapter<ReaderAdapter.ViewHolder>() {
+class ReaderAdapter(private val context: Context,
+                    private val galleryID: Int) : RecyclerView.Adapter<ReaderAdapter.ViewHolder>() {
 
     var isFullScreen = false
+
+    var reader: Reader? = null
+    private val glide = Glide.with(context)
+    val timer = Timer()
+
+    var onItemClickListener : ((Int) -> (Unit))? = null
+
+    init {
+        CoroutineScope(Dispatchers.IO).launch {
+            reader = Cache(context).getReader(galleryID)
+            launch(Dispatchers.Main) {
+                notifyDataSetChanged()
+            }
+        }
+    }
 
     class ViewHolder(val view: View) : RecyclerView.ViewHolder(view)
 
@@ -47,26 +71,74 @@ class ReaderAdapter(private val glide: RequestManager,
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        holder.view as ImageView
+        holder.view as ConstraintLayout
 
         if (isFullScreen)
             holder.view.layoutParams.height = RecyclerView.LayoutParams.MATCH_PARENT
         else
             holder.view.layoutParams.height = RecyclerView.LayoutParams.WRAP_CONTENT
 
-        glide
-            .load(File(getCachedGallery(holder.view.context, galleryID), images[position]))
-            .diskCacheStrategy(DiskCacheStrategy.NONE)
-            .skipMemoryCache(true)
-            .error(R.drawable.image_broken_variant)
-            .dontTransform()
-            .apply {
-                if (BuildConfig.CENSOR)
-                    override(5, 8)
+        holder.view.image.setOnPhotoTapListener { _, _, _ ->
+            onItemClickListener?.invoke(position)
+        }
+
+        holder.view.container.setOnClickListener {
+            onItemClickListener?.invoke(position)
+        }
+
+        (holder.view.container.layoutParams as ConstraintLayout.LayoutParams)
+            .dimensionRatio = "${reader!!.galleryInfo[position].width}:${reader!!.galleryInfo[position].height}"
+
+        holder.view.reader_index.text = (position+1).toString()
+
+        val images = Cache(context).getImages(galleryID)
+        if (images?.get(position) != null) {
+            glide
+                .load(images[position])
+                .diskCacheStrategy(DiskCacheStrategy.NONE)
+                .skipMemoryCache(true)
+                .error(R.drawable.image_broken_variant)
+                .apply {
+                    if (BuildConfig.CENSOR)
+                        override(5, 8)
+                }
+                .into(holder.view.image)
+        } else {
+            val progress = DownloadWorker.getInstance(context).progress[galleryID]?.get(position)
+
+            if (progress?.isNaN() == true) {
+                glide
+                    .load(R.drawable.image_broken_variant)
+                    .into(holder.view.image)
+                Snackbar
+                    .make(
+                        holder.view,
+                        DownloadWorker.getInstance(context).exception[galleryID]!![position]?.message
+                            ?: context.getText(R.string.default_error_msg),
+                        Snackbar.LENGTH_INDEFINITE
+                    )
+                    .show()
+
+                return
             }
-            .into(holder.view)
+
+            holder.view.reader_item_progressbar.progress =
+                if (progress?.isInfinite() == true)
+                    100
+                else
+                    progress?.roundToInt() ?: 0
+
+            holder.view.image.setImageDrawable(null)
+
+
+            timer.schedule(1000) {
+                CoroutineScope(Dispatchers.Main).launch {
+                    notifyItemChanged(position)
+                }
+            }
+        }
     }
 
-    override fun getItemCount() = images.size
+    override fun getItemCount() = reader?.galleryInfo?.size ?: 0
 
 }

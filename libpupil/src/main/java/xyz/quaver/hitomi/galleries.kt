@@ -16,9 +16,11 @@
 
 package xyz.quaver.hitomi
 
+import kotlinx.serialization.Serializable
 import org.jsoup.Jsoup
 import java.net.URLDecoder
 
+@Serializable
 data class Gallery(
     val related: List<Int>,
     val langList: List<Pair<String, String>>,

@@ -60,7 +60,7 @@
     <string name="main_jump_title">Jump to page</string>
     <string name="main_jump_message">Current page: %1$d\nMaximum page: %2$d</string>
     <string name="main_open_gallery_by_id">Open Gallery by ID</string>
-    <string name="main_open_gallery_by_id_error">Failed to open gallery</string>
+    <string name="reader_failed_to_find_gallery">Failed to open gallery</string>
 
     <string name="main_move">Move to page %1$d</string>
 
@@ -151,8 +151,7 @@
     <!-- SETTINGS/MISCELLANEOUS -->
 
     <string name="settings_miscellaneous_title">Miscellaneous</string>
-    <string name="settings_use_hiyobi_title">Use hiyobi.me</string>
-    <string name="settings_use_hiyobi_summary">Load images from hiyobi.me to improve loading speed (if available)</string>
+    <string name="settings_mirror_summary">Load images from mirrors</string>
     <string name="settings_security_mode_title">Enable security mode</string>
     <string name="settings_security_mode_summary">Enable security mode to make the screen invisible on recent app window</string>
     <string name="settings_dark_mode_title">Dark mode</string>
@@ -186,5 +185,6 @@
     <string name="default_query_dialog_filter_BL">Filter BL</string>
     <string name="default_query_dialog_filter_guro">Filter Guro</string>
     <string name="default_query_dialog_language_selector_none">Any</string>
+    <string name="settings_mirror_title">Mirrors</string>
 
 </resources>
