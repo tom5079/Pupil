@@ -2,6 +2,8 @@
 <html lang="{{ site.lang | default: " en-US " }}">
 
 <head>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+    <script src="https://kit.fontawesome.com/695c47bd28.js" crossorigin="anonymous"></script>
 
     {% if site.google_analytics %}
     <script async src="https://www.googletagmanager.com/gtag/js?id={{ site.google_analytics }}"></script>
@@ -46,16 +48,33 @@
         })();
     </script>
 
+    <script type='text/javascript' src='/Pupil/assets/js/pupil.js'></script>
+    <script>
+        Promise.resolve()
+            .then(getLatestRelease)
+            .then(result => {
+                let url = result["assets"][0]["browser_download_url"];
+
+                $("#download-btn").attr("href", url)
+            })
+            .catch(err => {
+                console.log(err)
+            })
+    </script>
+
 </head>
 
 <body>
     <header class="page-header" role="banner">
         <a href="https://tom5079.github.io/Pupil" style="text-decoration:none; color:inherit;"><h1 class="project-name">{{ page.title | default: site.title | default: site.github.repository_name }}</h1></a>
         <h2 class="project-tagline">{{ site.t[page.lang].header.description }}</h2>
-        <a href="{{ site.github.latest_url }}" class="btn">{{ site.t[page.lang].header.download }}</a>
-        <a href="{{ site.github.issue_url }}" target="_blank" class="btn">{{ site.t[page.lang].header.issue }}</a> {{ site.t[page.lang].header.or }}
-        <a href="mailto:pupil.hentai@gmail.com" class="btn">{{ site.t[page.lang].header.email }}</a>
-        <a href="{{ site.discord_url }}" class="btn">{{ site.t[page.lang].header.discord }}</a>
+        <a id="download-btn" class="btn">{{ site.t[page.lang].header.download }}</a>
+        <p/>
+        <div class="wrap">
+            <a href="{{ site.github_url }}"><i class="fab fa-github"></i></a>
+            <a href="mailto:pupil.hentai@gmail.com"><i class="fas fa-envelope"></i></a>
+            <a href="{{ site.discord_url }}"><i class="fab fa-discord"></i></a>
+        </div>
     </header>
 
     <main id="content" class="main-content" role="main">

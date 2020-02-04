@@ -10,6 +10,21 @@ img + br + em {
 }
 
 .center {
-    display: block;
-    margin: auto;
+  display: block;
+  margin: auto;
+}
+
+.wrap {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.wrap > * {
+  margin: 0 1rem;
+}
+
+.fab, .fas {
+  font-size: 32px;
+  color: white;
 }
