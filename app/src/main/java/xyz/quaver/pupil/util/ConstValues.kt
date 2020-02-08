@@ -1,6 +1,6 @@
 /*
  *     Pupil, Hitomi.la viewer for Android
- *     Copyright (C) 2019  tom5079
+ *     Copyright (C) 2020  tom5079
  *
  *     This program is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
@@ -16,26 +16,9 @@
  *     along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-@file:Suppress("UNUSED_VARIABLE", "IncorrectScope")
+package xyz.quaver.pupil.util
 
-package xyz.quaver.pupil
-
-/**
- * Example local unit test, which will execute on the development machine (host).
- *
- * See [testing documentation](http://d.android.com/tools/testing).
- */
-
-import android.util.SparseArray
-import org.junit.Test
-
-class ExampleUnitTest {
-
-    @Test
-    fun test() {
-        val arr = SparseArray<Float>()
-
-        print(arr.indexOfKey(34))
-    }
-
-}
+const val REQUEST_LOCK = 38238
+const val REQUEST_RESTORE = 16546
+const val REQUEST_DOWNLOAD_FOLDER = 3874
+const val REQUEST_DOWNLOAD_FOLDER_OLD = 3425

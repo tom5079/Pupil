@@ -19,28 +19,37 @@
 package xyz.quaver.pupil.ui.dialog
 
 import android.annotation.SuppressLint
+import android.app.Activity
 import android.app.Dialog
-import android.content.Context
+import android.content.Intent
+import android.net.Uri
+import android.os.Build
+import android.os.Bundle
 import android.widget.LinearLayout
 import android.widget.RadioButton
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
 import androidx.preference.PreferenceManager
 import kotlinx.android.synthetic.main.item_dl_location.view.*
+import net.rdrei.android.dirchooser.DirectoryChooserActivity
+import net.rdrei.android.dirchooser.DirectoryChooserConfig
 import xyz.quaver.pupil.R
+import xyz.quaver.pupil.util.REQUEST_DOWNLOAD_FOLDER
+import xyz.quaver.pupil.util.REQUEST_DOWNLOAD_FOLDER_OLD
 import xyz.quaver.pupil.util.byteToString
 
 @SuppressLint("InflateParams")
-class DownloadLocationDialog(context: Context) : AlertDialog(context) {
+class DownloadLocationDialog(val activity: Activity) : AlertDialog(activity) {
 
     private val preference = PreferenceManager.getDefaultSharedPreferences(context)
-    private val buttons = mutableListOf<RadioButton>()
-    var onDownloadLocationChangedListener : ((Int) -> (Unit))? = null
+    private val buttons = mutableListOf<Pair<RadioButton, Uri?>>()
 
-    init {
+    override fun onCreate(savedInstanceState: Bundle?) {
         val view = layoutInflater.inflate(R.layout.dialog_dl_location, null) as LinearLayout
 
-        ContextCompat.getExternalFilesDirs(context, null).forEachIndexed { index, dir ->
+        val externalFilesDirs = ContextCompat.getExternalFilesDirs(context, null)
+
+        externalFilesDirs.forEachIndexed { index, dir ->
 
             dir ?: return@forEachIndexed
 
@@ -54,17 +63,58 @@ class DownloadLocationDialog(context: Context) : AlertDialog(context) {
                     byteToString(dir.freeSpace)
                 )
                 setOnClickListener {
-                    buttons.forEach { button ->
-                        button.isChecked = false
+                    buttons.forEach { pair ->
+                        pair.first.isChecked = false
                     }
                     button.performClick()
-                    onDownloadLocationChangedListener?.invoke(index)
+                    preference.edit().putString("dl_location", Uri.fromFile(dir).toString()).apply()
                 }
-                buttons.add(button)
+                buttons.add(button to Uri.fromFile(dir))
             })
         }
 
-        buttons[preference.getInt("dl_location", 0)].isChecked = true
+        view.addView(layoutInflater.inflate(R.layout.item_dl_location, view, false).apply {
+            location_type.text = context.getString(R.string.settings_dl_location_custom)
+            setOnClickListener {
+                buttons.forEach { pair ->
+                    pair.first.isChecked = false
+                }
+                button.performClick()
+
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                    val intent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).apply {
+                        putExtra("android.content.extra.SHOW_ADVANCED", true)
+                    }
+
+                    activity.startActivityForResult(intent, REQUEST_DOWNLOAD_FOLDER)
+
+                    dismiss()
+                } else {    // Can't use SAF on old Androids!
+                    val config = DirectoryChooserConfig.builder()
+                        .newDirectoryName("Pupil")
+                        .allowNewDirectoryNameModification(true)
+                        .build()
+
+                    val intent = Intent(context, DirectoryChooserActivity::class.java).apply {
+                        putExtra(DirectoryChooserActivity.EXTRA_CONFIG, config)
+                    }
+
+                    activity.startActivityForResult(intent, REQUEST_DOWNLOAD_FOLDER_OLD)
+                    dismiss()
+                }
+            }
+            buttons.add(button to null)
+        })
+
+        val pref = Uri.parse(preference.getString("dl_location", null))
+        val index = externalFilesDirs.indexOfFirst {
+            Uri.fromFile(it).toString() == pref.toString()
+        }
+
+        if (index < 0)
+            buttons.last().first.isChecked = true
+        else
+            buttons[index].first.isChecked = true
 
         setTitle(R.string.settings_dl_location)
 
@@ -73,6 +123,8 @@ class DownloadLocationDialog(context: Context) : AlertDialog(context) {
         setButton(Dialog.BUTTON_POSITIVE, context.getText(android.R.string.ok)) { _, _ ->
             dismiss()
         }
+
+        super.onCreate(savedInstanceState)
     }
 
 }
