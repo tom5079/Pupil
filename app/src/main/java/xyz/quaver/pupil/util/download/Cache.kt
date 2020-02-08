@@ -108,13 +108,16 @@ class Cache(context: Context) : ContextWrapper(context) {
         val metadata = Cache(this).getCachedMetadata(galleryID)
 
         val galleryBlock = if (metadata?.galleryBlock == null)
-           withContext(Dispatchers.IO) {
-               try {
-                   xyz.quaver.hitomi.getGalleryBlock(galleryID)
-               } catch (e: Exception) {
-                   null
+           listOf(
+               { xyz.quaver.hitomi.getGalleryBlock(galleryID) },
+               { xyz.quaver.hiyobi.getGalleryBlock(galleryID) }
+           ).map {
+               CoroutineScope(Dispatchers.IO).async {
+                   kotlin.runCatching {
+                       it.invoke()
+                   }.getOrNull()
                }
-            }
+           }.awaitAll().filterNotNull()
         else
             metadata.galleryBlock
 
@@ -123,7 +126,11 @@ class Cache(context: Context) : ContextWrapper(context) {
             Metadata(Cache(this).getCachedMetadata(galleryID), galleryBlock = galleryBlock)
         )
 
-        return galleryBlock
+        val mirrors = preference.getString("mirrors", "")!!.split('>')
+
+        return galleryBlock.firstOrNull {
+            mirrors.contains(it.code.name)
+        } ?: galleryBlock.firstOrNull()
     }
 
     fun getReaderOrNull(galleryID: Int): Reader? {
