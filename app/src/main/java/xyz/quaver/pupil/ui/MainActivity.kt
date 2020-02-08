@@ -128,6 +128,7 @@ class MainActivity : AppCompatActivity() {
                     finish()
                 }
             }.show()
+
             return
         }
 
