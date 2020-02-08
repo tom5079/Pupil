@@ -54,7 +54,10 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonConfiguration
 import kotlinx.serialization.list
 import kotlinx.serialization.stringify
-import xyz.quaver.hitomi.*
+import xyz.quaver.hitomi.GalleryBlock
+import xyz.quaver.hitomi.doSearch
+import xyz.quaver.hitomi.getGalleryIDsFromNozomi
+import xyz.quaver.hitomi.getSuggestionsForQuery
 import xyz.quaver.pupil.Pupil
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.adapters.GalleryBlockAdapter
@@ -965,10 +968,10 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
                 Mode.DOWNLOAD -> {
-                    val downloads = getDownloadDirectory(this@MainActivity).listFiles { file ->
-                        file.isDirectory and (file.name.toIntOrNull() != null) and File(file, ".metadata").exists()
+                    val downloads = getDownloadDirectory(this@MainActivity)?.listFiles()?.filter { file ->
+                        file.isDirectory && (file.name!!.toIntOrNull() != null) && file.findFile(".metadata") != null
                     }?.map {
-                        it.name.toInt()
+                        it.name!!.toInt()
                     }?: listOf()
 
                     when {
@@ -1020,28 +1023,7 @@ class MainActivity : AppCompatActivity() {
                 for (chunk in chunks)
                     chunk.map { galleryID ->
                         async {
-                            try {
-                                val json = Json(JsonConfiguration.Stable)
-                                val serializer = GalleryBlock.serializer()
-
-                                File(getCachedGallery(this@MainActivity, galleryID), "galleryBlock.json").let { cache ->
-                                    when {
-                                        cache.exists() -> json.parse(serializer, cache.readText())
-                                        else -> {
-                                            getGalleryBlock(galleryID).apply {
-                                                this ?: return@apply
-
-                                                if (cache.parentFile?.exists() == false)
-                                                    cache.parentFile!!.mkdirs()
-
-                                                cache.writeText(json.stringify(serializer, this))
-                                            }
-                                        }
-                                    }
-                                } ?: return@async null
-                            } catch (e: Exception) {
-                                null
-                            }
+                            Cache(this@MainActivity).getGalleryBlock(galleryID)
                         }
                     }.forEach {
                         val galleryBlock = it.await()

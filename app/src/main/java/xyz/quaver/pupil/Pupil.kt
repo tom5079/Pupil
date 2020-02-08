@@ -22,6 +22,7 @@ import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
+import android.net.Uri
 import android.os.Build
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.content.ContextCompat
@@ -30,17 +31,12 @@ import androidx.preference.PreferenceManager
 import com.google.android.gms.common.GooglePlayServicesNotAvailableException
 import com.google.android.gms.common.GooglePlayServicesRepairableException
 import com.google.android.gms.security.ProviderInstaller
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import xyz.quaver.pupil.util.Histories
-import xyz.quaver.pupil.util.updateOldReaderGalleries
 import java.io.File
 
 class Pupil : MultiDexApplication() {
 
     lateinit var histories: Histories
-    lateinit var downloads: Histories
     lateinit var favorites: Histories
 
     init {
@@ -52,6 +48,13 @@ class Pupil : MultiDexApplication() {
 
         histories = Histories(File(ContextCompat.getDataDir(this), "histories.json"))
         favorites = Histories(File(ContextCompat.getDataDir(this), "favorites.json"))
+
+        val download = preference.getString("dl_location", null)
+
+        if (download == null) {
+            val default = ContextCompat.getExternalFilesDirs(this, null)[0]
+            preference.edit().putString("dl_location", Uri.fromFile(default).toString()).apply()
+        }
 
         try {
             ProviderInstaller.installIfNeeded(this)
@@ -77,14 +80,6 @@ class Pupil : MultiDexApplication() {
             true -> AppCompatDelegate.MODE_NIGHT_YES
             false -> AppCompatDelegate.MODE_NIGHT_NO
         })
-
-        CoroutineScope(Dispatchers.IO).launch {
-            try {
-                updateOldReaderGalleries(this@Pupil)
-            } catch (e: Exception) {
-                // do nothing
-            }
-        }
 
         super.onCreate()
     }

@@ -20,25 +20,32 @@ package xyz.quaver.pupil.ui
 
 import android.app.Activity
 import android.content.Intent
+import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.view.MenuItem
 import android.view.WindowManager
 import androidx.appcompat.app.AppCompatActivity
+import androidx.documentfile.provider.DocumentFile
 import androidx.preference.PreferenceManager
 import com.google.android.material.snackbar.Snackbar
+import kotlinx.android.synthetic.main.settings_activity.*
 import kotlinx.serialization.ImplicitReflectionSerializer
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.parseList
+import net.rdrei.android.dirchooser.DirectoryChooserActivity
 import xyz.quaver.pupil.Pupil
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.ui.fragment.LockFragment
 import xyz.quaver.pupil.ui.fragment.SettingsFragment
+import xyz.quaver.pupil.util.REQUEST_DOWNLOAD_FOLDER
+import xyz.quaver.pupil.util.REQUEST_DOWNLOAD_FOLDER_OLD
+import xyz.quaver.pupil.util.REQUEST_LOCK
+import xyz.quaver.pupil.util.REQUEST_RESTORE
+import java.io.File
 import java.nio.charset.Charset
 
 class SettingsActivity : AppCompatActivity() {
-
-    val REQUEST_LOCK = 38238
-    val REQUEST_RESTORE = 16546
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -112,6 +119,35 @@ class SettingsActivity : AppCompatActivity() {
                             Snackbar.LENGTH_LONG
                         ).show()
                     }
+                }
+            }
+            REQUEST_DOWNLOAD_FOLDER -> {
+                if (resultCode == Activity.RESULT_OK) {
+                    data?.data?.also { uri ->
+                        val takeFlags: Int = intent.flags and (Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT)
+                            contentResolver.takePersistableUriPermission(uri, takeFlags)
+
+                        if (DocumentFile.fromTreeUri(this, uri)?.canWrite() == false)
+                            Snackbar.make(settings, R.string.settings_dl_location_not_writable, Snackbar.LENGTH_LONG).show()
+                        else
+                            PreferenceManager.getDefaultSharedPreferences(this).edit()
+                                .putString("dl_location", uri.toString())
+                                .apply()
+                    }
+                }
+            }
+            REQUEST_DOWNLOAD_FOLDER_OLD -> {
+                if (resultCode == DirectoryChooserActivity.RESULT_CODE_DIR_SELECTED) {
+                    val directory = data?.getStringExtra(DirectoryChooserActivity.RESULT_SELECTED_DIR)!!
+
+                    if (!File(directory).canWrite())
+                        Snackbar.make(settings, R.string.settings_dl_location_not_writable, Snackbar.LENGTH_LONG).show()
+                    else
+                        PreferenceManager.getDefaultSharedPreferences(this).edit()
+                            .putString("dl_location", Uri.fromFile(File(directory)).toString())
+                            .apply()
                 }
             }
             else -> super.onActivityResult(requestCode, resultCode, data)

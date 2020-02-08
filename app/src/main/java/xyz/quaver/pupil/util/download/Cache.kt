@@ -21,7 +21,7 @@ package xyz.quaver.pupil.util.download
 import android.content.Context
 import android.content.ContextWrapper
 import android.util.Base64
-import androidx.core.content.ContextCompat
+import androidx.documentfile.provider.DocumentFile
 import androidx.preference.PreferenceManager
 import kotlinx.coroutines.*
 import kotlinx.serialization.ImplicitReflectionSerializer
@@ -30,8 +30,7 @@ import kotlinx.serialization.parse
 import kotlinx.serialization.stringify
 import xyz.quaver.hitomi.GalleryBlock
 import xyz.quaver.hitomi.Reader
-import xyz.quaver.pupil.util.getDownloadDirectory
-import xyz.quaver.pupil.util.isParentOf
+import xyz.quaver.pupil.util.*
 import java.io.File
 import java.net.URL
 
@@ -41,17 +40,13 @@ class Cache(context: Context) : ContextWrapper(context) {
 
     // Search in this order
     // Download -> Cache
-    fun getCachedGallery(galleryID: Int) : File? {
-        var file : File
+    fun getCachedGallery(galleryID: Int) : DocumentFile? {
+        var file = getDownloadDirectory(this)?.findFile(galleryID.toString())
 
-        ContextCompat.getExternalFilesDirs(this, null).forEach {
-            file = File(it, galleryID.toString())
+        if (file?.exists() == true)
+            return file
 
-            if (file.exists())
-                return file
-        }
-
-        file = File(cacheDir, "imageCache/$galleryID")
+        file = DocumentFile.fromFile(File(cacheDir, "imageCache/$galleryID"))
 
         return if (file.exists())
              file
@@ -61,13 +56,13 @@ class Cache(context: Context) : ContextWrapper(context) {
 
     @UseExperimental(ImplicitReflectionSerializer::class)
     fun getCachedMetadata(galleryID: Int) : Metadata? {
-        val file = File(getCachedGallery(galleryID) ?: return null, ".metadata")
+        val file = (getCachedGallery(galleryID) ?: return null).findFile(".metadata")
 
-        if (!file.exists())
+        if (file?.exists() != true)
             return null
 
         return try {
-            Json.parse(file.readText())
+            Json.parse(file.readText(this))
         } catch (e: Exception) {
             //File corrupted
             file.delete()
@@ -77,14 +72,13 @@ class Cache(context: Context) : ContextWrapper(context) {
 
     @UseExperimental(ImplicitReflectionSerializer::class)
     fun setCachedMetadata(galleryID: Int, metadata: Metadata) {
-        val file = File(getCachedGallery(galleryID) ?: File(cacheDir, "imageCache/$galleryID"), ".metadata")
+        val file = getCachedGallery(galleryID)?.findFile(".metadata") ?:
+        DocumentFile.fromFile(File(cacheDir, "imageCache/$galleryID").also {
+            if (!it.exists())
+                it.mkdirs()
+        }).createFile("null", ".metadata") ?: return
 
-        if (file.parentFile?.exists() != true)
-            file.parentFile?.mkdirs()
-
-        file.createNewFile()
-
-        file.writeText(Json.stringify(metadata))
+        file.writeText(this, Json.stringify(metadata))
     }
 
     suspend fun getThumbnail(galleryID: Int): String? {
@@ -139,7 +133,7 @@ class Cache(context: Context) : ContextWrapper(context) {
 
         return metadata?.readers?.firstOrNull {
             mirrors.contains(it.code.name)
-        }
+        } ?: metadata?.readers?.firstOrNull()
     }
 
     suspend fun getReader(galleryID: Int): Reader? {
@@ -170,49 +164,44 @@ class Cache(context: Context) : ContextWrapper(context) {
 
         return readers.firstOrNull {
             mirrors.contains(it.code.name)
-        }
+        } ?: readers.firstOrNull()
     }
 
-    fun getImages(galleryID: Int): List<File?>? {
+    fun getImages(galleryID: Int): List<DocumentFile?>? {
         val gallery = getCachedGallery(galleryID) ?: return null
         val reader = getReaderOrNull(galleryID) ?: return null
-        val images = gallery.listFiles() ?: return null
+        val images = gallery.listFiles()
 
         return reader.galleryInfo.indices.map { index ->
-            images.firstOrNull { file -> file.nameWithoutExtension.toIntOrNull() == index }
+            images.firstOrNull { file -> file.name?.startsWith(index.toString()) == true }
         }
     }
 
     fun putImage(galleryID: Int, name: String, data: ByteArray) {
-        val cache = getCachedGallery(galleryID) ?: File(cacheDir, "imageCache/$galleryID")
+        val cache = getCachedGallery(galleryID) ?:
+        DocumentFile.fromFile(File(cacheDir, "imageCache/$galleryID").also {
+            if (!it.exists())
+                it.mkdirs()
+        }) ?: return
 
-        with(File(cache, name)) {
+        if (!Regex("""^[0-9]+.+$""").matches(name))
+            throw IllegalArgumentException("File name is not a number")
 
-            if (!parentFile!!.exists())
-                parentFile!!.mkdirs()
-
-            if (!exists())
-                createNewFile()
-
-            if (nameWithoutExtension.toIntOrNull() != null)
-                writeBytes(data)
-            else
-                IllegalArgumentException("File name is not a number")
-        }
+        cache.createFile("null", name)?.writeBytes(this, data)
     }
 
     fun moveToDownload(galleryID: Int) {
         val cache = getCachedGallery(galleryID)
 
         if (cache != null) {
-            val download = File(getDownloadDirectory(this), galleryID.toString())
+            val download = getDownloadDirectory(this)!!
 
             if (!download.isParentOf(cache)) {
-                cache.copyRecursively(download, true)
+                cache.copyRecursively(this, download)
                 cache.deleteRecursively()
             }
         } else
-            File(getDownloadDirectory(this), galleryID.toString()).mkdirs()
+            getDownloadDirectory(this)?.createDirectory(galleryID.toString())
     }
 
     fun isDownloading(galleryID: Int) = getCachedMetadata(galleryID)?.isDownloading == true
