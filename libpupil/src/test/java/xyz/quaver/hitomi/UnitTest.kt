@@ -102,4 +102,11 @@ class UnitTest {
 
         print(result)
     }
+
+    @Test
+    fun test_hiyobi_galleryBlock() {
+        val galleryBlock = xyz.quaver.hiyobi.getGalleryBlock(10000027)
+
+        print(galleryBlock)
+    }
 }

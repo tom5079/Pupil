@@ -19,10 +19,12 @@
 package xyz.quaver.pupil.ui.fragment
 
 import android.content.Intent
+import android.content.SharedPreferences
 import android.os.Bundle
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.content.ContextCompat
+import androidx.documentfile.provider.DocumentFile
 import androidx.preference.Preference
 import androidx.preference.PreferenceCategory
 import androidx.preference.PreferenceFragmentCompat
@@ -34,6 +36,7 @@ import xyz.quaver.pupil.ui.LockActivity
 import xyz.quaver.pupil.ui.SettingsActivity
 import xyz.quaver.pupil.ui.dialog.DefaultQueryDialog
 import xyz.quaver.pupil.ui.dialog.DownloadLocationDialog
+import xyz.quaver.pupil.ui.dialog.MirrorDialog
 import xyz.quaver.pupil.util.*
 import java.io.File
 
@@ -41,7 +44,14 @@ import java.io.File
 class SettingsFragment :
     PreferenceFragmentCompat(),
     Preference.OnPreferenceClickListener,
-    Preference.OnPreferenceChangeListener {
+    Preference.OnPreferenceChangeListener,
+    SharedPreferences.OnSharedPreferenceChangeListener {
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        PreferenceManager.getDefaultSharedPreferences(context).registerOnSharedPreferenceChangeListener(this)
+    }
 
     override fun onResume() {
         super.onResume()
@@ -61,7 +71,7 @@ class SettingsFragment :
         }
     }
 
-    private fun getDirSize(dir: File) : String {
+    private fun getDirSize(dir: DocumentFile) : String {
         val size = dir.walk().map { it.length() }.sum()
 
         return getString(R.string.settings_clear_summary, byteToString(size))
@@ -76,7 +86,7 @@ class SettingsFragment :
                     checkUpdate(activity as SettingsActivity, true)
                 }
                 "delete_cache" -> {
-                    val dir = File(context.cacheDir, "imageCache")
+                    val dir = DocumentFile.fromFile(File(context.cacheDir, "imageCache"))
 
                     AlertDialog.Builder(context).apply {
                         setTitle(R.string.warning)
@@ -91,7 +101,7 @@ class SettingsFragment :
                     }.show()
                 }
                 "delete_downloads" -> {
-                    val dir = getDownloadDirectory(context)
+                    val dir = getDownloadDirectory(context)!!
 
                     AlertDialog.Builder(context).apply {
                         setTitle(R.string.warning)
@@ -99,10 +109,6 @@ class SettingsFragment :
                         setPositiveButton(android.R.string.yes) { _, _ ->
                             if (dir.exists())
                                 dir.deleteRecursively()
-
-                            val downloads = (activity!!.application as Pupil).downloads
-
-                            downloads.clear()
 
                             summary = getDirSize(dir)
                         }
@@ -123,33 +129,28 @@ class SettingsFragment :
                     }.show()
                 }
                 "dl_location" -> {
-                    DownloadLocationDialog(context).apply {
-                        onDownloadLocationChangedListener = { value ->
-                            PreferenceManager.getDefaultSharedPreferences(context).edit()
-                                .putInt(key, value)
-                                .apply()
-                            summary = getDownloadDirectory(context).absolutePath
-                        }
-                    }.show()
+                    DownloadLocationDialog(activity!!).show()
                 }
                 "default_query" -> {
                     DefaultQueryDialog(context).apply {
                         onPositiveButtonClickListener = { newTags ->
                             sharedPreferences.edit().putString("default_query", newTags.toString()).apply()
                             summary = newTags.toString()
-                            dismiss()   //This sucks
-                            // TODO: make dialog dissmiss itself :P
                         }
                     }.show()
                 }
                 "app_lock" -> {
                     val intent = Intent(context, LockActivity::class.java)
-                    activity?.startActivityForResult(intent, (activity as SettingsActivity).REQUEST_LOCK)
+                    activity?.startActivityForResult(intent, REQUEST_LOCK)
+                }
+                "mirrors" -> {
+                    MirrorDialog(context)
+                        .show()
                 }
                 "backup" -> {
                     File(ContextCompat.getDataDir(context), "favorites.json").copyTo(
-                        File(getDownloadDirectory(context), "favorites.json"),
-                        true
+                        context,
+                        getDownloadDirectory(context)?.createFile("null", "favorites.json")!!
                     )
 
                     Snackbar.make(this@SettingsFragment.listView, R.string.settings_backup_snackbar, Snackbar.LENGTH_LONG)
@@ -161,7 +162,7 @@ class SettingsFragment :
                         type = "*/*"
                     }
 
-                    activity?.startActivityForResult(intent, (activity as SettingsActivity).REQUEST_RESTORE)
+                    activity?.startActivityForResult(intent, REQUEST_RESTORE)
                 }
                 else -> return false
             }
@@ -186,6 +187,15 @@ class SettingsFragment :
         }
 
         return true
+    }
+
+    override fun onSharedPreferenceChanged(sharedPreferences: SharedPreferences?, key: String?) {
+        when (key) {
+            "dl_location" -> {
+                findPreference<Preference>(key)?.summary =
+                    FileUtils.getPath(context, getDownloadDirectory(context!!)?.uri)
+            }
+        }
     }
 
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
@@ -214,13 +224,13 @@ class SettingsFragment :
                             onPreferenceClickListener = this@SettingsFragment
                         }
                         "delete_cache" -> {
-                            val dir = File(context.cacheDir, "imageCache")
+                            val dir = DocumentFile.fromFile(File(context.cacheDir, "imageCache"))
                             summary = getDirSize(dir)
 
                             onPreferenceClickListener = this@SettingsFragment
                         }
                         "delete_downloads" -> {
-                            val dir = getDownloadDirectory(context)
+                            val dir = getDownloadDirectory(context)!!
                             summary = getDirSize(dir)
 
                             onPreferenceClickListener = this@SettingsFragment
@@ -232,7 +242,7 @@ class SettingsFragment :
                             onPreferenceClickListener = this@SettingsFragment
                         }
                         "dl_location" -> {
-                            summary = getDownloadDirectory(context).absolutePath
+                            summary = FileUtils.getPath(context, getDownloadDirectory(context)?.uri)
 
                             onPreferenceClickListener = this@SettingsFragment
                         }
@@ -257,6 +267,9 @@ class SettingsFragment :
                                     }
                                 }
 
+                            onPreferenceClickListener = this@SettingsFragment
+                        }
+                        "mirrors" -> {
                             onPreferenceClickListener = this@SettingsFragment
                         }
                         "dark_mode" -> {

@@ -18,7 +18,7 @@
     <string name="update_title">新しいアップデートがあります</string>
     <string name="warning">注意</string>
     <string name="settings_miscellaneous_title">その他</string>
-    <string name="settings_use_hiyobi_title">hiyobi.meからロード</string>
+    <string name="settings_mirror_title">ミラーサーバー</string>
     <string name="settings_clear_history">履歴を削除</string>
     <string name="settings_clear_history_alert_message">履歴を削除しますか？</string>
     <string name="settings_clear_history_summary">履歴数: %1$d</string>
@@ -61,10 +61,10 @@
     <string name="main_export_error">エクスポートエラーが発生しました</string>
     <string name="settings_clear_downloads">ダウンロード削除</string>
     <string name="settings_clear_downloads_alert_message">ダウンロードしたギャラリーを全て削除します。\n実行しますか？</string>
-    <string name="settings_use_hiyobi_summary">ロード速度を向上させるため可能であればhiyobi.meからイメージロード</string>
+    <string name="settings_mirror_summary">ミラーサーバからイメージをロード</string>
     <string name="main_drawer_favorite">お気に入り</string>
     <string name="main_open_gallery_by_id">ギャラリー番号で見る</string>
-    <string name="main_open_gallery_by_id_error">エラーが発生しました</string>
+    <string name="reader_failed_to_find_gallery">エラーが発生しました</string>
     <string name="settings_storage">ストレージ</string>
     <string name="main_drawer_grouop_contact_discord">ディスコード</string>
     <string name="settings_app_lock">アプリロック</string>
@@ -120,4 +120,6 @@
     <string name="settings_app_version_description">v%s</string>
     <string name="settings_low_quality">低解像度イメージ</string>
     <string name="settings_low_quality_summary">ロード速度とデータ使用料を改善するため低解像度イメージをロード</string>
+    <string name="settings_dl_location_custom">手動で設定</string>
+    <string name="settings_dl_location_not_writable">このフォルダにアクセスできません。他のフォルダを選択してください。</string>
 </resources>

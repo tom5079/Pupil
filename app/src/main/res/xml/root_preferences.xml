@@ -66,10 +66,10 @@
     <PreferenceCategory
         app:title="@string/settings_miscellaneous_title">
 
-        <SwitchPreferenceCompat
-            app:key="use_hiyobi"
-            app:title="@string/settings_use_hiyobi_title"
-            app:summary="@string/settings_use_hiyobi_summary"/>
+        <Preference
+            app:key="mirrors"
+            app:title="@string/settings_mirror_title"
+            app:summary="@string/settings_mirror_summary"/>
 
         <SwitchPreferenceCompat
             app:key="security_mode"

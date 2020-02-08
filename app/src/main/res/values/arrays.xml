@@ -57,4 +57,9 @@
         <item>japanese|日本語</item>
     </string-array>
 
+    <string-array name="mirrors">
+        <item>HITOMI|hitomi.la</item>
+        <item>HIYOBI|hiyobi.me</item>
+    </string-array>
+
 </resources>

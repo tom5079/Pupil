@@ -36,7 +36,7 @@
         android:layout_height="match_parent"
         android:layout_weight="1"
         app:srcCompat="@drawable/ic_navigate_next_black_24dp"
-        android:tint="@color/colorAccent"
+        app:tint="@color/colorAccent"
         android:rotation="180"/>
 
     <TextView
