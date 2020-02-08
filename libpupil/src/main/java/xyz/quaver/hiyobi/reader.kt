@@ -19,6 +19,7 @@ package xyz.quaver.hiyobi
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.list
 import org.jsoup.Jsoup
+import xyz.quaver.Code
 import xyz.quaver.hitomi.GalleryInfo
 import xyz.quaver.hitomi.Reader
 import xyz.quaver.hitomi.protocol
@@ -76,7 +77,7 @@ fun getReader(galleryID: Int) : Reader {
         }
     )
 
-    return Reader(Reader.Code.HIYOBI, title, galleryInfo)
+    return Reader(Code.HIYOBI, title, galleryInfo)
 }
 
 fun createImgList(galleryID: Int, reader: Reader, lowQuality: Boolean = false) =

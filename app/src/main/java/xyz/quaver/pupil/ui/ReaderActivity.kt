@@ -39,7 +39,7 @@ import kotlinx.android.synthetic.main.activity_reader.*
 import kotlinx.android.synthetic.main.activity_reader.view.*
 import kotlinx.android.synthetic.main.dialog_numberpicker.view.*
 import kotlinx.serialization.ImplicitReflectionSerializer
-import xyz.quaver.hitomi.Reader
+import xyz.quaver.Code
 import xyz.quaver.pupil.Pupil
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.adapters.ReaderAdapter
@@ -264,8 +264,8 @@ class ReaderActivity : AppCompatActivity() {
 
                         menu?.findItem(R.id.reader_type)?.icon = ContextCompat.getDrawable(this@ReaderActivity,
                             when (reader.code) {
-                                Reader.Code.HITOMI -> R.drawable.hitomi
-                                Reader.Code.HIYOBI -> R.drawable.ic_hiyobi
+                                Code.HITOMI -> R.drawable.hitomi
+                                Code.HIYOBI -> R.drawable.ic_hiyobi
                                 else -> android.R.color.transparent
                             })
                     }

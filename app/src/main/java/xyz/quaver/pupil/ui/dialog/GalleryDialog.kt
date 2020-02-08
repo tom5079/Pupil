@@ -42,7 +42,6 @@ import kotlinx.coroutines.launch
 import xyz.quaver.hitomi.Gallery
 import xyz.quaver.hitomi.GalleryBlock
 import xyz.quaver.hitomi.getGallery
-import xyz.quaver.hitomi.getGalleryBlock
 import xyz.quaver.pupil.BuildConfig
 import xyz.quaver.pupil.Pupil
 import xyz.quaver.pupil.R
@@ -51,6 +50,7 @@ import xyz.quaver.pupil.adapters.ThumbnailAdapter
 import xyz.quaver.pupil.types.Tag
 import xyz.quaver.pupil.ui.ReaderActivity
 import xyz.quaver.pupil.util.ItemClickSupport
+import xyz.quaver.pupil.util.download.Cache
 import xyz.quaver.pupil.util.wordCapitalize
 
 class GalleryDialog(context: Context, private val galleryID: Int) : Dialog(context) {
@@ -237,7 +237,7 @@ class GalleryDialog(context: Context, private val galleryID: Int) : Dialog(conte
         CoroutineScope(Dispatchers.Main).launch {
             gallery.related.forEachIndexed { i, galleryID ->
                 async(Dispatchers.IO) {
-                    getGalleryBlock(galleryID)
+                    Cache(context).getGalleryBlock(galleryID)
                 }.let {
                     val galleryBlock = it.await() ?: return@let
 

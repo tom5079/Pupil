@@ -33,6 +33,7 @@ import io.fabric.sdk.android.Fabric
 import kotlinx.coroutines.*
 import okhttp3.*
 import okio.*
+import xyz.quaver.Code
 import xyz.quaver.hitomi.Reader
 import xyz.quaver.hitomi.getReferer
 import xyz.quaver.hitomi.urlFromUrlFromHash
@@ -237,7 +238,7 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
 
         val request = Request.Builder().apply {
             when (reader.code) {
-                Reader.Code.HITOMI -> {
+                Code.HITOMI -> {
                     url(
                         urlFromUrlFromHash(
                             galleryID,
@@ -247,7 +248,7 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
                     )
                     addHeader("Referer", getReferer(galleryID))
                 }
-                Reader.Code.HIYOBI -> {
+                Code.HIYOBI -> {
                     url(createImgList(galleryID, reader, lowQuality)[index].path)
                     addHeader("User-Agent", user_agent)
                     addHeader("Cookie", cookie)
