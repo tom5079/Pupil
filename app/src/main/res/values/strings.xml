@@ -140,6 +140,8 @@
     <string name="settings_dl_location_removable">Removable Storage</string>
     <string name="settings_dl_location_internal">Internal Storage</string>
     <string name="settings_dl_location_available">%s available</string>
+    <string name="settings_dl_location_custom">Custom Location</string>
+    <string name="settings_dl_location_not_writable">This folder is not writable. Please select another folder.</string>
     <string name="settings_low_quality">Low quality images</string>
     <string name="settings_low_quality_summary">Load low quality images to improve load speed and data usage</string>
 

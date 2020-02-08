@@ -21,27 +21,20 @@ package xyz.quaver.pupil.util
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
 import android.webkit.MimeTypeMap
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
-import androidx.core.content.FileProvider
 import androidx.lifecycle.Lifecycle
 import androidx.preference.PreferenceManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.serialization.InternalSerializationApi
-import kotlinx.serialization.internal.EnumSerializer
 import kotlinx.serialization.json.*
 import ru.noties.markwon.Markwon
-import xyz.quaver.availableInHiyobi
-import xyz.quaver.hitomi.Reader
 import xyz.quaver.pupil.BuildConfig
 import xyz.quaver.pupil.R
-import java.io.File
 import java.net.URL
 import java.util.*
 
@@ -153,10 +146,10 @@ fun checkUpdate(context: AppCompatActivity, force: Boolean = false) {
                 }
 
                 CoroutineScope(Dispatchers.IO).launch io@{
-                    val target = File(getDownloadDirectory(context), "Pupil.apk")
+                    val target = getDownloadDirectory(context)?.createFile("null", "Pupil.apk")!!
 
                     try {
-                        URL(url).download(target) { progress, fileSize ->
+                        URL(url).download(context, target) { progress, fileSize ->
                             builder.setProgress(fileSize.toInt(), progress.toInt(), false)
                             notificationManager.notify(UPDATE_NOTIFICATION_ID, builder.build())
                         }
@@ -175,15 +168,7 @@ fun checkUpdate(context: AppCompatActivity, force: Boolean = false) {
 
                     val install = Intent(Intent.ACTION_VIEW).apply {
                         flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_GRANT_READ_URI_PERMISSION
-                        setDataAndType(FileProvider.getUriForFile(
-                            context,
-                            context.applicationContext.packageName + ".fileprovider",
-                            target
-                        ), MimeTypeMap.getSingleton().getMimeTypeFromExtension("apk"))
-
-                        if (resolveActivity(context.packageManager) == null)
-                            setDataAndType(Uri.fromFile(target),
-                                MimeTypeMap.getSingleton().getMimeTypeFromExtension("apk"))
+                        setDataAndType(target.uri, MimeTypeMap.getSingleton().getMimeTypeFromExtension("apk"))
                     }
 
                     builder.apply {
@@ -214,59 +199,4 @@ fun checkUpdate(context: AppCompatActivity, force: Boolean = false) {
             dialog.show()
         }
     }
-}
-
-fun getOldReaderGalleries(context: Context) : List<File> {
-    val oldGallery = mutableListOf<File>()
-
-    listOf(
-        getDownloadDirectory(context),
-        File(context.cacheDir, "imageCache")
-    ).forEach { root ->
-        root.listFiles()?.forEach { gallery ->
-            File(gallery, "reader.json").let { readerFile ->
-                if (!readerFile.exists())
-                    return@let
-
-                try {
-                    Json(JsonConfiguration.Stable).parseJson(readerFile.readText())
-                        .jsonObject.let { reader ->
-                        if (!reader.contains("code"))
-                            oldGallery.add(gallery)
-                    }
-                } catch (e: Exception) {
-                    // do nothing
-                }
-            }
-        }
-    }
-
-    return oldGallery
-}
-
-@UseExperimental(InternalSerializationApi::class)
-fun updateOldReaderGalleries(context: Context) {
-
-    val json = Json(JsonConfiguration.Stable)
-
-   getOldReaderGalleries(context).forEach { gallery ->
-       val reader = json.parseJson(File(gallery, "reader.json").apply {
-           if (!exists())
-               return@forEach
-       }.readText())
-           .jsonObject.toMutableMap()
-
-       val codeSerializer = EnumSerializer(Reader.Code::class)
-
-       reader["code"] = when {
-           (File(gallery, "images").list()?.
-               all { !it.endsWith("webp") } ?: return@forEach) &&
-                   availableInHiyobi(gallery.name.toIntOrNull() ?: return@forEach)
-                -> json.toJson(codeSerializer, Reader.Code.HIYOBI)
-           else -> json.toJson(codeSerializer, Reader.Code.HITOMI)
-       }
-
-       File(gallery, "reader.json").writeText(JsonObject(reader).toString())
-   }
-
 }

@@ -120,4 +120,6 @@
     <string name="settings_app_version_description">v%s</string>
     <string name="settings_low_quality">低解像度イメージ</string>
     <string name="settings_low_quality_summary">ロード速度とデータ使用料を改善するため低解像度イメージをロード</string>
+    <string name="settings_dl_location_custom">手動で設定</string>
+    <string name="settings_dl_location_not_writable">このフォルダにアクセスできません。他のフォルダを選択してください。</string>
 </resources>

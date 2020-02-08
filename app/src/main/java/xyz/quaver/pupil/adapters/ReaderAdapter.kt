@@ -92,9 +92,10 @@ class ReaderAdapter(private val context: Context,
         holder.view.reader_index.text = (position+1).toString()
 
         val images = Cache(context).getImages(galleryID)
+
         if (images?.get(position) != null) {
             glide
-                .load(images[position])
+                .load(images[position]?.uri)
                 .diskCacheStrategy(DiskCacheStrategy.NONE)
                 .skipMemoryCache(true)
                 .error(R.drawable.image_broken_variant)

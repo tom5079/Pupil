@@ -21,7 +21,6 @@ package xyz.quaver.pupil.adapters
 import android.content.Context
 import android.graphics.drawable.Drawable
 import android.util.Base64
-import android.util.Log
 import android.util.SparseBooleanArray
 import android.view.LayoutInflater
 import android.view.View
@@ -76,8 +75,6 @@ class GalleryBlockAdapter(context: Context, private val galleries: List<GalleryB
             val cache = Cache(context).getCachedGallery(galleryID)
             val reader = Cache(context).getReaderOrNull(galleryID)
 
-            Log.i("PUPILD", "$galleryID ${if (reader == null) null else "%d/%d".format(Cache(context).getImages(galleryID)?.count { it != null }, reader.galleryInfo.size)}")
-
             if (reader == null) {
                 view.galleryblock_progressbar.visibility = View.GONE
                 view.galleryblock_progress_complete.visibility = View.GONE
@@ -86,9 +83,9 @@ class GalleryBlockAdapter(context: Context, private val galleries: List<GalleryB
 
             with(view.galleryblock_progressbar) {
 
-                progress = cache?.listFiles { file ->
-                    file.nameWithoutExtension.toIntOrNull() != null
-                }?.size ?: 0
+                progress = cache?.listFiles()?.count { file ->
+                    Regex("^[0-9]+.+\$").matches(file.name!!)
+                } ?: 0
 
                 if (visibility == View.GONE) {
                     visibility = View.VISIBLE
@@ -151,9 +148,9 @@ class GalleryBlockAdapter(context: Context, private val galleries: List<GalleryB
                 val reader = Cache(context).getReaderOrNull(galleryBlock.id)
 
                 if (cache != null && reader != null) {
-                    val count = cache.listFiles { file ->
-                        file.nameWithoutExtension.toIntOrNull() != null
-                    }?.size ?: 0
+                    val count = cache.listFiles().count {
+                        Regex("^[0-9]+.+\$").matches(it.name!!)
+                    }
 
                     with(galleryblock_progressbar) {
                         max = reader.galleryInfo.size

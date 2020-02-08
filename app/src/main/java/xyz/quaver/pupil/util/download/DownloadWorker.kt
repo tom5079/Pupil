@@ -335,14 +335,14 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
 
         if (isCompleted(galleryID))
             notification[galleryID]
-                .setContentText(getString(R.string.reader_notification_complete))
-                .setProgress(0, 0, false)
+                ?.setContentText(getString(R.string.reader_notification_complete))
+                ?.setProgress(0, 0, false)
         else
             notification[galleryID]
-                .setProgress(max, progress, false)
-                .setContentText("$progress/$max")
+                ?.setProgress(max, progress, false)
+                ?.setContentText("$progress/$max")
 
-        if (Cache(this).isDownloading(galleryID))
+        if (Cache(this).isDownloading(galleryID) && notification[galleryID] != null)
             notificationManager.notify(galleryID, notification[galleryID].build())
         else
             notificationManager.cancel(galleryID)
