@@ -279,6 +279,9 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
         progress.put(galleryID, reader.galleryInfo.map { 0F }.toMutableList())
         exception.put(galleryID, reader.galleryInfo.map { null }.toMutableList())
 
+        if (notification[galleryID] == null)
+            initNotification(galleryID)
+
         notification[galleryID].setContentTitle(reader.title)
         notify(galleryID)
 

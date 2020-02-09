@@ -168,7 +168,7 @@ fun checkUpdate(context: AppCompatActivity, force: Boolean = false) {
 
                     val install = Intent(Intent.ACTION_VIEW).apply {
                         flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_GRANT_READ_URI_PERMISSION
-                        setDataAndType(target.uri, MimeTypeMap.getSingleton().getMimeTypeFromExtension("apk"))
+                        setDataAndType(convertUpdateUri(context, target.uri), MimeTypeMap.getSingleton().getMimeTypeFromExtension("apk"))
                     }
 
                     builder.apply {

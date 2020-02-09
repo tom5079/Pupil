@@ -49,7 +49,11 @@ class Pupil : MultiDexApplication() {
         histories = Histories(File(ContextCompat.getDataDir(this), "histories.json"))
         favorites = Histories(File(ContextCompat.getDataDir(this), "favorites.json"))
 
-        val download = preference.getString("dl_location", null)
+        val download = try {
+            preference.getString("dl_location", null)
+        } catch (e: Exception) {
+            preference.edit().remove("dl_location").apply()
+        }
 
         if (download == null) {
             val default = ContextCompat.getExternalFilesDirs(this, null)[0]

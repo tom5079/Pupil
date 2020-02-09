@@ -129,7 +129,12 @@ class GalleryBlockAdapter(context: Context, private val galleries: List<GalleryB
                 })
 
                 CoroutineScope(Dispatchers.Main).launch {
-                    val thumbnail = Base64.decode(Cache(context).getThumbnail(galleryBlock.id), Base64.DEFAULT)
+                    val thumbnail = Cache(context).getThumbnail(galleryBlock.id).let {
+                        if (it != null)
+                            Base64.decode(it, Base64.DEFAULT)
+                        else
+                            null
+                    }
 
                     glide
                         .load(thumbnail)
