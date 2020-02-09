@@ -17,6 +17,7 @@
   ~     along with this program.  If not, see <http://www.gnu.org/licenses/>.
   -->
 
-<paths xmlns:android="http://schemas.android.com/apk/res/android">
+<paths>
     <external-path name="external" path="/"/>
+    <external-files-path name="files" path="/"/>
 </paths>

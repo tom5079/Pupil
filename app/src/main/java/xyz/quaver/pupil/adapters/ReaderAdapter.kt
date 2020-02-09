@@ -26,7 +26,8 @@ import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.engine.DiskCacheStrategy
-import com.google.android.material.snackbar.Snackbar
+import com.crashlytics.android.Crashlytics
+import io.fabric.sdk.android.Fabric
 import kotlinx.android.synthetic.main.item_reader.view.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -108,17 +109,13 @@ class ReaderAdapter(private val context: Context,
             val progress = DownloadWorker.getInstance(context).progress[galleryID]?.get(position)
 
             if (progress?.isNaN() == true) {
+
+                if (Fabric.isInitialized())
+                    Crashlytics.logException(DownloadWorker.getInstance(context).exception[galleryID]?.get(position))
+
                 glide
                     .load(R.drawable.image_broken_variant)
                     .into(holder.view.image)
-                Snackbar
-                    .make(
-                        holder.view,
-                        DownloadWorker.getInstance(context).exception[galleryID]!![position]?.message
-                            ?: context.getText(R.string.default_error_msg),
-                        Snackbar.LENGTH_INDEFINITE
-                    )
-                    .show()
 
                 return
             }

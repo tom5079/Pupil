@@ -162,7 +162,7 @@ class ReaderActivity : AppCompatActivity() {
                 val view = LayoutInflater.from(this).inflate(R.layout.dialog_numberpicker, findViewById(android.R.id.content), false)
                 with(view.dialog_number_picker) {
                     minValue=1
-                    maxValue=reader_recyclerview.adapter?.itemCount ?: 0
+                    maxValue=reader_recyclerview?.adapter?.itemCount ?: 0
                     value=currentPage
                 }
                 val dialog = AlertDialog.Builder(this).apply {
@@ -196,7 +196,7 @@ class ReaderActivity : AppCompatActivity() {
         super.onDestroy()
 
         timer.cancel()
-        (reader_recyclerview.adapter as ReaderAdapter).timer.cancel()
+        (reader_recyclerview?.adapter as? ReaderAdapter)?.timer?.cancel()
 
         if (!Cache(this).isDownloading(galleryID))
             DownloadWorker.getInstance(this@ReaderActivity).cancel(galleryID)

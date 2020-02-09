@@ -25,20 +25,20 @@ import xyz.quaver.hitomi.Reader
 @Serializable
 data class Metadata(
     val thumbnail: String? = null,
-    val galleryBlock: List<GalleryBlock>? = null,
-    val readers: List<Reader>? = null,
+    val galleryBlock: GalleryBlock? = null,
+    val reader: Reader? = null,
     val isDownloading: Boolean? = null
 ) {
     constructor(
         metadata: Metadata?,
         thumbnail: String? = null,
-        galleryBlock: List<GalleryBlock>? = null,
-        readers: List<Reader>? = null,
+        galleryBlock: GalleryBlock? = null,
+        readers: Reader? = null,
         isDownloading: Boolean? = null
     ) : this(
         thumbnail ?: metadata?.thumbnail,
         galleryBlock ?: metadata?.galleryBlock,
-        readers ?: metadata?.readers,
+        readers ?: metadata?.reader,
         isDownloading ?: metadata?.isDownloading
     )
 }

@@ -20,6 +20,7 @@ package xyz.quaver.pupil.util
 
 import android.content.Context
 import android.net.Uri
+import androidx.core.content.FileProvider
 import androidx.documentfile.provider.DocumentFile
 import androidx.preference.PreferenceManager
 import java.io.File
@@ -33,7 +34,10 @@ fun getCachedGallery(context: Context, galleryID: Int) =
 
 fun getDownloadDirectory(context: Context) : DocumentFile? {
     val uri = PreferenceManager.getDefaultSharedPreferences(context).getString("dl_location", null).let {
-        Uri.parse(it)
+        if (it != null)
+            Uri.parse(it)
+        else
+            return null
     }
 
     return if (uri.toString().startsWith("file"))
@@ -41,6 +45,12 @@ fun getDownloadDirectory(context: Context) : DocumentFile? {
     else
         DocumentFile.fromTreeUri(context, uri)
 }
+
+fun convertUpdateUri(context: Context, uri: Uri) : Uri =
+    if (uri.toString().startsWith("file"))
+        FileProvider.getUriForFile(context, context.applicationContext.packageName + ".provider", File(uri.path!!.substringAfter("file:///")))
+    else
+        uri
 
 fun URL.download(context: Context, to: DocumentFile, onDownloadProgress: ((Long, Long) -> Unit)? = null) {
     context.contentResolver.openOutputStream(to.uri).use { out ->

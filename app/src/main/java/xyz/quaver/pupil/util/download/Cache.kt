@@ -23,11 +23,15 @@ import android.content.ContextWrapper
 import android.util.Base64
 import androidx.documentfile.provider.DocumentFile
 import androidx.preference.PreferenceManager
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.ImplicitReflectionSerializer
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.parse
 import kotlinx.serialization.stringify
+import xyz.quaver.Code
 import xyz.quaver.hitomi.GalleryBlock
 import xyz.quaver.hitomi.Reader
 import xyz.quaver.pupil.util.*
@@ -107,17 +111,21 @@ class Cache(context: Context) : ContextWrapper(context) {
     suspend fun getGalleryBlock(galleryID: Int): GalleryBlock? {
         val metadata = Cache(this).getCachedMetadata(galleryID)
 
+        val source = mapOf(
+            Code.HITOMI to { xyz.quaver.hitomi.getGalleryBlock(galleryID) },
+            Code.HIYOBI to { xyz.quaver.hiyobi.getGalleryBlock(galleryID) }
+        )
+
         val galleryBlock = if (metadata?.galleryBlock == null)
-           listOf(
-               { xyz.quaver.hitomi.getGalleryBlock(galleryID) },
-               { xyz.quaver.hiyobi.getGalleryBlock(galleryID) }
-           ).map {
+           source.entries.map {
                CoroutineScope(Dispatchers.IO).async {
                    kotlin.runCatching {
-                       it.invoke()
+                       it.value.invoke()
                    }.getOrNull()
                }
-           }.awaitAll().filterNotNull()
+           }.firstOrNull {
+               it.await() != null
+           }?.await()
         else
             metadata.galleryBlock
 
@@ -126,52 +134,56 @@ class Cache(context: Context) : ContextWrapper(context) {
             Metadata(Cache(this).getCachedMetadata(galleryID), galleryBlock = galleryBlock)
         )
 
-        val mirrors = preference.getString("mirrors", "")!!.split('>')
-
-        return galleryBlock.firstOrNull {
-            mirrors.contains(it.code.name)
-        } ?: galleryBlock.firstOrNull()
+        return galleryBlock
     }
 
     fun getReaderOrNull(galleryID: Int): Reader? {
-        val metadata = getCachedMetadata(galleryID)
-
-        val mirrors = preference.getString("mirrors", "")!!.split('>')
-
-        return metadata?.readers?.firstOrNull {
-            mirrors.contains(it.code.name)
-        } ?: metadata?.readers?.firstOrNull()
+        return getCachedMetadata(galleryID)?.reader
     }
 
     suspend fun getReader(galleryID: Int): Reader? {
         val metadata = getCachedMetadata(galleryID)
+        val mirrors = preference.getString("mirrors", null)?.split('>') ?: listOf()
 
-        val readers = if (metadata?.readers == null) {
-             listOf(
-                { xyz.quaver.hitomi.getReader(galleryID) },
-                { xyz.quaver.hiyobi.getReader(galleryID) }
-            ).map {
-                CoroutineScope(Dispatchers.IO).async {
-                    kotlin.runCatching {
-                        it.invoke()
-                    }.getOrNull()
-                }
-            }.awaitAll().filterNotNull()
-        } else {
-            metadata.readers
+        val sources = mapOf(
+            Code.HITOMI to { xyz.quaver.hitomi.getReader(galleryID) },
+            Code.HIYOBI to { xyz.quaver.hiyobi.getReader(galleryID) }
+        ).let {
+            if (mirrors.isNotEmpty())
+                it.toSortedMap(
+                    Comparator { o1, o2 ->
+                        mirrors.indexOf(o1.name) - mirrors.indexOf(o2.name)
+                    }
+                )
+            else
+                it
         }
 
-        if (readers.isNotEmpty())
+        val reader = if (metadata?.reader == null) {
+            CoroutineScope(Dispatchers.IO).async {
+                var retval: Reader? = null
+
+                for (source in sources) {
+                    retval = kotlin.runCatching {
+                        source.value.invoke()
+                    }.getOrNull()
+
+                    if (retval != null)
+                        break
+                }
+
+                retval
+            }.await()
+        } else
+            metadata.reader
+
+        if (reader != null)
             setCachedMetadata(
                 galleryID,
-                Metadata(Cache(this).getCachedMetadata(galleryID), readers = readers)
+                Metadata(Cache(this).getCachedMetadata(galleryID), readers = reader)
             )
 
-        val mirrors = preference.getString("mirrors", "")!!.split('>')
-
-        return readers.firstOrNull {
-            mirrors.contains(it.code.name)
-        } ?: readers.firstOrNull()
+        return reader
     }
 
     fun getImages(galleryID: Int): List<DocumentFile?>? {
