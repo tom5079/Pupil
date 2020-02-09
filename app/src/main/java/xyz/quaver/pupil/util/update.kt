@@ -146,7 +146,12 @@ fun checkUpdate(context: AppCompatActivity, force: Boolean = false) {
                 }
 
                 CoroutineScope(Dispatchers.IO).launch io@{
-                    val target = getDownloadDirectory(context)?.createFile("null", "Pupil.apk")!!
+                    val target = getDownloadDirectory(context).let {
+                        if (it.findFile("Pupil.apk") != null)
+                            it
+                        else
+                            it.createFile("null", "Pupil.apk")!!
+                    }
 
                     try {
                         URL(url).download(context, target) { progress, fileSize ->

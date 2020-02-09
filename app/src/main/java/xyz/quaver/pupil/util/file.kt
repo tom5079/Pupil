@@ -104,12 +104,17 @@ fun DocumentFile.copyRecursively(
     if (!exists())
         throw Exception("The source file doesn't exist.")
 
-    if (this.isFile)
-        target.createFile("null", name!!)!!.writeBytes(
+    if (this.isFile) {
+        target.let {
+            if (it.findFile(name!!) != null)
+                it
+            else
+                createFile("null", name!!)!!
+        }.writeBytes(
             context,
             readBytes(context)
         )
-    else if (this.isDirectory) {
+    } else if (this.isDirectory) {
         target.createDirectory(name!!).also { newTarget ->
             listFiles().forEach { child ->
                 child.copyRecursively(context, newTarget!!)

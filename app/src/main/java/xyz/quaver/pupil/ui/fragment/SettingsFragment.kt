@@ -150,7 +150,12 @@ class SettingsFragment :
                 "backup" -> {
                     File(ContextCompat.getDataDir(context), "favorites.json").copyTo(
                         context,
-                        getDownloadDirectory(context).createFile("null", "favorites.json")!!
+                        getDownloadDirectory(context).let {
+                            if (it.findFile("favorites.json") != null)
+                                it
+                            else
+                                it.createFile("null", "favorites.json")!!
+                        }
                     )
 
                     Snackbar.make(this@SettingsFragment.listView, R.string.settings_backup_snackbar, Snackbar.LENGTH_LONG)

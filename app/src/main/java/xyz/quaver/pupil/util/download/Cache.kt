@@ -206,7 +206,12 @@ class Cache(context: Context) : ContextWrapper(context) {
         if (!Regex("""^[0-9]+.+$""").matches(name))
             throw IllegalArgumentException("File name is not a number")
 
-        cache.createFile("null", name)?.writeBytes(this, data)
+        cache.let {
+            if (it.findFile(name) != null)
+                it
+            else
+                it.createFile("null", name)
+        }?.writeBytes(this, data)
     }
 
     fun moveToDownload(galleryID: Int) {
