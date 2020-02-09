@@ -29,21 +29,21 @@ import java.nio.charset.Charset
 import java.util.*
 
 fun getCachedGallery(context: Context, galleryID: Int) =
-    getDownloadDirectory(context)?.findFile(galleryID.toString()) ?:
+    getDownloadDirectory(context).findFile(galleryID.toString()) ?:
     DocumentFile.fromFile(File(context.cacheDir, "imageCache/$galleryID"))
 
-fun getDownloadDirectory(context: Context) : DocumentFile? {
+fun getDownloadDirectory(context: Context) : DocumentFile {
     val uri = PreferenceManager.getDefaultSharedPreferences(context).getString("dl_location", null).let {
         if (it != null)
             Uri.parse(it)
         else
-            return null
+            Uri.fromFile(context.getExternalFilesDir(null))
     }
 
     return if (uri.toString().startsWith("file"))
         DocumentFile.fromFile(File(uri.path!!))
     else
-        DocumentFile.fromTreeUri(context, uri)
+        DocumentFile.fromTreeUri(context, uri) ?: DocumentFile.fromFile(context.getExternalFilesDir(null)!!)
 }
 
 fun convertUpdateUri(context: Context, uri: Uri) : Uri =
