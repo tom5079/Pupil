@@ -969,11 +969,11 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
                 Mode.DOWNLOAD -> {
-                    val downloads = getDownloadDirectory(this@MainActivity)?.listFiles()?.filter { file ->
+                    val downloads = getDownloadDirectory(this@MainActivity).listFiles().filter { file ->
                         file.isDirectory && (file.name!!.toIntOrNull() != null) && file.findFile(".metadata") != null
-                    }?.map {
+                    }.map {
                         it.name!!.toInt()
-                    }?: listOf()
+                    }
 
                     when {
                         query.isEmpty() -> downloads.apply {
