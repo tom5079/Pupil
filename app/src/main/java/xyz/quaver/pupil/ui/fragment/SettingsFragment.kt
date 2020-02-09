@@ -101,7 +101,7 @@ class SettingsFragment :
                     }.show()
                 }
                 "delete_downloads" -> {
-                    val dir = getDownloadDirectory(context)!!
+                    val dir = getDownloadDirectory(context)
 
                     AlertDialog.Builder(context).apply {
                         setTitle(R.string.warning)
@@ -150,7 +150,7 @@ class SettingsFragment :
                 "backup" -> {
                     File(ContextCompat.getDataDir(context), "favorites.json").copyTo(
                         context,
-                        getDownloadDirectory(context)?.createFile("null", "favorites.json")!!
+                        getDownloadDirectory(context).createFile("null", "favorites.json")!!
                     )
 
                     Snackbar.make(this@SettingsFragment.listView, R.string.settings_backup_snackbar, Snackbar.LENGTH_LONG)
@@ -192,8 +192,7 @@ class SettingsFragment :
     override fun onSharedPreferenceChanged(sharedPreferences: SharedPreferences?, key: String?) {
         when (key) {
             "dl_location" -> {
-                findPreference<Preference>(key)?.summary =
-                    FileUtils.getPath(context, getDownloadDirectory(context!!)?.uri)
+                findPreference<Preference>(key)?.summary = getDownloadDirectory(context!!).uri.path
             }
         }
     }
@@ -230,7 +229,7 @@ class SettingsFragment :
                             onPreferenceClickListener = this@SettingsFragment
                         }
                         "delete_downloads" -> {
-                            val dir = getDownloadDirectory(context)!!
+                            val dir = getDownloadDirectory(context)
                             summary = getDirSize(dir)
 
                             onPreferenceClickListener = this@SettingsFragment
@@ -242,7 +241,7 @@ class SettingsFragment :
                             onPreferenceClickListener = this@SettingsFragment
                         }
                         "dl_location" -> {
-                            summary = FileUtils.getPath(context, getDownloadDirectory(context)?.uri)
+                            summary = getDownloadDirectory(context).uri.path
 
                             onPreferenceClickListener = this@SettingsFragment
                         }
