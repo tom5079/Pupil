@@ -312,7 +312,7 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
                         val ext =
                             call.request().url().encodedPath().split('.').last()
 
-                        Cache(this@DownloadWorker).putImage(galleryID, "$i.$ext", res)
+                        Cache(this@DownloadWorker).putImage(galleryID, "%05d.%s".format(i, ext), res)
                         progress[galleryID]?.set(i, Float.POSITIVE_INFINITY)
                     }
 
