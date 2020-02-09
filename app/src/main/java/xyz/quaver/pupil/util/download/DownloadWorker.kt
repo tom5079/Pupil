@@ -162,7 +162,7 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
                 .body(ProgressResponseBody(request.tag(), response.body(), progressListener))
                 .build()
         }
-        .dispatcher(Dispatcher(Executors.newSingleThreadExecutor()))
+        .dispatcher(Dispatcher(Executors.newFixedThreadPool(4)))
         .build()
 
     fun stop() {
