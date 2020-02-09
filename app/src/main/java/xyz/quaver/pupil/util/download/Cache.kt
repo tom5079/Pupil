@@ -45,7 +45,7 @@ class Cache(context: Context) : ContextWrapper(context) {
     // Search in this order
     // Download -> Cache
     fun getCachedGallery(galleryID: Int) : DocumentFile? {
-        var file = getDownloadDirectory(this)?.findFile(galleryID.toString())
+        var file = getDownloadDirectory(this).findFile(galleryID.toString())
 
         if (file?.exists() == true)
             return file
@@ -192,7 +192,7 @@ class Cache(context: Context) : ContextWrapper(context) {
         val images = gallery.listFiles()
 
         return reader.galleryInfo.indices.map { index ->
-            images.firstOrNull { file -> file.name?.startsWith(index.toString()) == true }
+            images.firstOrNull { file -> file.name?.startsWith("%05d".format(index)) == true }
         }
     }
 
@@ -213,14 +213,14 @@ class Cache(context: Context) : ContextWrapper(context) {
         val cache = getCachedGallery(galleryID)
 
         if (cache != null) {
-            val download = getDownloadDirectory(this)!!
+            val download = getDownloadDirectory(this)
 
             if (!download.isParentOf(cache)) {
                 cache.copyRecursively(this, download)
                 cache.deleteRecursively()
             }
         } else
-            getDownloadDirectory(this)?.createDirectory(galleryID.toString())
+            getDownloadDirectory(this).createDirectory(galleryID.toString())
     }
 
     fun isDownloading(galleryID: Int) = getCachedMetadata(galleryID)?.isDownloading == true
