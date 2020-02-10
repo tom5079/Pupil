@@ -239,7 +239,7 @@ class ReaderActivity : AppCompatActivity() {
             queue.add(galleryID)
         }
 
-        timer.schedule(0, 1000) {
+        timer.schedule(1000, 1000) {
             if (worker.progress.indexOfKey(galleryID) < 0)  //loading
                 return@schedule
 
@@ -296,6 +296,7 @@ class ReaderActivity : AppCompatActivity() {
                 }
             }
 
+            //addOnScrollListener((adapter as ReaderAdapter).preloader)
             addOnScrollListener(object: RecyclerView.OnScrollListener() {
                 override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
                     super.onScrolled(recyclerView, dx, dy)

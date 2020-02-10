@@ -25,6 +25,9 @@ import android.view.ViewGroup
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
+import com.bumptech.glide.ListPreloader
+import com.bumptech.glide.RequestBuilder
+import com.bumptech.glide.integration.recyclerview.RecyclerViewPreloader
 import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.crashlytics.android.Crashlytics
 import io.fabric.sdk.android.Fabric
@@ -37,6 +40,7 @@ import xyz.quaver.pupil.BuildConfig
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.util.download.Cache
 import xyz.quaver.pupil.util.download.DownloadWorker
+import java.io.File
 import java.util.*
 import kotlin.concurrent.schedule
 import kotlin.math.roundToInt
@@ -44,11 +48,47 @@ import kotlin.math.roundToInt
 class ReaderAdapter(private val context: Context,
                     private val galleryID: Int) : RecyclerView.Adapter<ReaderAdapter.ViewHolder>() {
 
-    var isFullScreen = false
+    //region Glide.RecyclerView
+    inner class SizeProvider : ListPreloader.PreloadSizeProvider<File> {
+
+        override fun getPreloadSize(item: File, adapterPosition: Int, itemPosition: Int): IntArray? {
+            return Cache(context).getReaderOrNull(galleryID)?.galleryInfo?.getOrNull(itemPosition)?.let {
+                arrayOf(it.width, it.height).toIntArray()
+            }
+        }
+
+    }
+
+    inner class ModelProvider : ListPreloader.PreloadModelProvider<File> {
+
+        override fun getPreloadItems(position: Int): MutableList<File> {
+            return listOf(Cache(context).getImages(galleryID)?.get(position)).filterNotNullTo(mutableListOf())
+        }
+
+        override fun getPreloadRequestBuilder(item: File): RequestBuilder<*>? {
+            return glide
+                .load(item)
+                .diskCacheStrategy(DiskCacheStrategy.NONE)
+                .skipMemoryCache(true)
+                .error(R.drawable.image_broken_variant)
+                .apply {
+                    if (BuildConfig.CENSOR)
+                        override(5, 8)
+                }
+        }
+
+    }
+    //endregion
 
     var reader: Reader? = null
-    private val glide = Glide.with(context)
+    val glide = Glide.with(context)
     val timer = Timer()
+
+    val sizeProvider = SizeProvider()
+    val modelProvider = ModelProvider()
+    val preloader = RecyclerViewPreloader<File>(glide, modelProvider, sizeProvider, 10)
+
+    var isFullScreen = false
 
     var onItemClickListener : ((Int) -> (Unit))? = null
 
@@ -92,46 +132,47 @@ class ReaderAdapter(private val context: Context,
 
         holder.view.reader_index.text = (position+1).toString()
 
-        val images = Cache(context).getImages(galleryID)
+        CoroutineScope(Dispatchers.IO).launch {
+            val images = Cache(context).getImages(galleryID)
 
-        if (images?.get(position) != null) {
-            glide
-                .load(images[position]?.uri)
-                .diskCacheStrategy(DiskCacheStrategy.NONE)
-                .skipMemoryCache(true)
-                .error(R.drawable.image_broken_variant)
-                .apply {
-                    if (BuildConfig.CENSOR)
-                        override(5, 8)
-                }
-                .into(holder.view.image)
-        } else {
-            val progress = DownloadWorker.getInstance(context).progress[galleryID]?.get(position)
+            launch(Dispatchers.Main) {
+                if (images?.get(position) != null) {
+                    glide
+                        .load(images[position])
+                        .diskCacheStrategy(DiskCacheStrategy.NONE)
+                        .skipMemoryCache(true)
+                        .error(R.drawable.image_broken_variant)
+                        .apply {
+                            if (BuildConfig.CENSOR)
+                                override(5, 8)
+                        }
+                        .into(holder.view.image)
+                } else {
+                    val progress = DownloadWorker.getInstance(context).progress[galleryID]?.get(position)
 
-            if (progress?.isNaN() == true) {
+                    if (progress?.isNaN() == true) {
 
-                if (Fabric.isInitialized())
-                    Crashlytics.logException(DownloadWorker.getInstance(context).exception[galleryID]?.get(position))
+                        if (Fabric.isInitialized())
+                            Crashlytics.logException(DownloadWorker.getInstance(context).exception[galleryID]?.get(position))
 
-                glide
-                    .load(R.drawable.image_broken_variant)
-                    .into(holder.view.image)
+                        glide
+                            .load(R.drawable.image_broken_variant)
+                            .into(holder.view.image)
+                    } else {
+                        holder.view.reader_item_progressbar.progress =
+                            if (progress?.isInfinite() == true)
+                                100
+                            else
+                                progress?.roundToInt() ?: 0
 
-                return
-            }
+                        holder.view.image.setImageDrawable(null)
+                    }
 
-            holder.view.reader_item_progressbar.progress =
-                if (progress?.isInfinite() == true)
-                    100
-                else
-                    progress?.roundToInt() ?: 0
-
-            holder.view.image.setImageDrawable(null)
-
-
-            timer.schedule(1000) {
-                CoroutineScope(Dispatchers.Main).launch {
-                    notifyItemChanged(position)
+                    timer.schedule(1000) {
+                        CoroutineScope(Dispatchers.Main).launch {
+                            notifyItemChanged(position)
+                        }
+                    }
                 }
             }
         }

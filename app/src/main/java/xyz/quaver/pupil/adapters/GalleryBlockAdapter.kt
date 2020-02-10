@@ -71,44 +71,46 @@ class GalleryBlockAdapter(context: Context, private val galleries: List<GalleryB
     inner class GalleryViewHolder(val view: View) : RecyclerView.ViewHolder(view) {
         var timerTask: TimerTask? = null
 
-        fun updateProgress(context: Context, galleryID: Int) = CoroutineScope(Dispatchers.Main).launch {
+        private fun updateProgress(context: Context, galleryID: Int) = CoroutineScope(Dispatchers.IO).launch {
             val cache = Cache(context).getCachedGallery(galleryID)
             val reader = Cache(context).getReaderOrNull(galleryID)
 
-            if (reader == null) {
-                view.galleryblock_progressbar.visibility = View.GONE
-                view.galleryblock_progress_complete.visibility = View.GONE
-                return@launch
-            }
-
-            with(view.galleryblock_progressbar) {
-
-                progress = cache?.listFiles()?.count { file ->
-                    Regex("^[0-9]+.+\$").matches(file.name!!)
-                } ?: 0
-
-                if (visibility == View.GONE) {
-                    visibility = View.VISIBLE
-                    max = reader.galleryInfo.size
+            launch(Dispatchers.Main) main@{
+                if (reader == null) {
+                    view.galleryblock_progressbar.visibility = View.GONE
+                    view.galleryblock_progress_complete.visibility = View.GONE
+                    return@main
                 }
 
-                if (progress == max) {
-                    if (completeFlag.get(galleryID, false)) {
-                        with(view.galleryblock_progress_complete) {
-                            setImageResource(R.drawable.ic_progressbar)
-                            visibility = View.VISIBLE
-                        }
-                    } else {
-                        with(view.galleryblock_progress_complete) {
-                            setImageDrawable(AnimatedVectorDrawableCompat.create(context, R.drawable.ic_progressbar_complete).apply {
-                                this?.start()
-                            })
-                            visibility = View.VISIBLE
-                        }
-                        completeFlag.put(galleryID, true)
+                with(view.galleryblock_progressbar) {
+
+                    progress = cache.listFiles()?.count { file ->
+                        Regex("^[0-9]+.+\$").matches(file.name)
+                    } ?: 0
+
+                    if (visibility == View.GONE) {
+                        visibility = View.VISIBLE
+                        max = reader.galleryInfo.size
                     }
-                } else
-                    view.galleryblock_progress_complete.visibility = View.INVISIBLE
+
+                    if (progress == max) {
+                        if (completeFlag.get(galleryID, false)) {
+                            with(view.galleryblock_progress_complete) {
+                                setImageResource(R.drawable.ic_progressbar)
+                                visibility = View.VISIBLE
+                            }
+                        } else {
+                            with(view.galleryblock_progress_complete) {
+                                setImageDrawable(AnimatedVectorDrawableCompat.create(context, R.drawable.ic_progressbar_complete).apply {
+                                    this?.start()
+                                })
+                                visibility = View.VISIBLE
+                            }
+                            completeFlag.put(galleryID, true)
+                        }
+                    } else
+                        view.galleryblock_progress_complete.visibility = View.INVISIBLE
+                }
             }
         }
 
@@ -152,10 +154,10 @@ class GalleryBlockAdapter(context: Context, private val galleries: List<GalleryB
                 val cache = Cache(context).getCachedGallery(galleryBlock.id)
                 val reader = Cache(context).getReaderOrNull(galleryBlock.id)
 
-                if (cache != null && reader != null) {
-                    val count = cache.listFiles().count {
-                        Regex("^[0-9]+.+\$").matches(it.name!!)
-                    }
+                if (reader != null) {
+                    val count = cache.listFiles()?.count {
+                        Regex("^[0-9]+.+\$").matches(it.name)
+                    } ?: 0
 
                     with(galleryblock_progressbar) {
                         max = reader.galleryInfo.size
