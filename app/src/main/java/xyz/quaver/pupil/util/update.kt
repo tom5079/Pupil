@@ -26,6 +26,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.FileProvider
 import androidx.lifecycle.Lifecycle
 import androidx.preference.PreferenceManager
 import kotlinx.coroutines.CoroutineScope
@@ -35,6 +36,7 @@ import kotlinx.serialization.json.*
 import ru.noties.markwon.Markwon
 import xyz.quaver.pupil.BuildConfig
 import xyz.quaver.pupil.R
+import java.io.File
 import java.net.URL
 import java.util.*
 
@@ -146,15 +148,10 @@ fun checkUpdate(context: AppCompatActivity, force: Boolean = false) {
                 }
 
                 CoroutineScope(Dispatchers.IO).launch io@{
-                    val target = getDownloadDirectory(context).let {
-                        if (it.findFile("Pupil.apk") != null)
-                            it
-                        else
-                            it.createFile("null", "Pupil.apk")!!
-                    }
+                    val target = File(getDownloadDirectory(context), "Pupil.apk")
 
                     try {
-                        URL(url).download(context, target) { progress, fileSize ->
+                        URL(url).download(target) { progress, fileSize ->
                             builder.setProgress(fileSize.toInt(), progress.toInt(), false)
                             notificationManager.notify(UPDATE_NOTIFICATION_ID, builder.build())
                         }
@@ -173,7 +170,7 @@ fun checkUpdate(context: AppCompatActivity, force: Boolean = false) {
 
                     val install = Intent(Intent.ACTION_VIEW).apply {
                         flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_GRANT_READ_URI_PERMISSION
-                        setDataAndType(convertUpdateUri(context, target.uri), MimeTypeMap.getSingleton().getMimeTypeFromExtension("apk"))
+                        setDataAndType(FileProvider.getUriForFile(context, context.applicationContext.packageName + ".provider", target), MimeTypeMap.getSingleton().getMimeTypeFromExtension("apk"))
                     }
 
                     builder.apply {

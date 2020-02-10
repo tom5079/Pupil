@@ -429,12 +429,7 @@ class MainActivity : AppCompatActivity() {
                     CoroutineScope(Dispatchers.Default).launch {
                         DownloadWorker.getInstance(context).cancel(galleryID)
 
-                        var cache = Cache(context).getCachedGallery(galleryID)
-
-                        while (cache != null) {
-                            cache.deleteRecursively()
-                            cache = Cache(context).getCachedGallery(galleryID)
-                        }
+                        Cache(context).getCachedGallery(galleryID).deleteRecursively()
 
                         histories.remove(galleryID)
 
@@ -969,11 +964,11 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
                 Mode.DOWNLOAD -> {
-                    val downloads = getDownloadDirectory(this@MainActivity).listFiles().filter { file ->
-                        file.isDirectory && (file.name!!.toIntOrNull() != null) && file.findFile(".metadata") != null
-                    }.map {
-                        it.name!!.toInt()
-                    }
+                    val downloads = getDownloadDirectory(this@MainActivity).listFiles()?.filter { file ->
+                        file.isDirectory && (file.name.toIntOrNull() != null) && File(file, ".metadata").exists()
+                    }?.map {
+                        it.name.toInt()
+                    } ?: emptyList()
 
                     when {
                         query.isEmpty() -> downloads.apply {

@@ -18,15 +18,15 @@
 
 package xyz.quaver.pupil.ui
 
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Intent
-import android.net.Uri
+import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.view.MenuItem
 import android.view.WindowManager
 import androidx.appcompat.app.AppCompatActivity
-import androidx.documentfile.provider.DocumentFile
 import androidx.preference.PreferenceManager
 import com.google.android.material.snackbar.Snackbar
 import kotlinx.android.synthetic.main.settings_activity.*
@@ -38,10 +38,7 @@ import xyz.quaver.pupil.Pupil
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.ui.fragment.LockFragment
 import xyz.quaver.pupil.ui.fragment.SettingsFragment
-import xyz.quaver.pupil.util.REQUEST_DOWNLOAD_FOLDER
-import xyz.quaver.pupil.util.REQUEST_DOWNLOAD_FOLDER_OLD
-import xyz.quaver.pupil.util.REQUEST_LOCK
-import xyz.quaver.pupil.util.REQUEST_RESTORE
+import xyz.quaver.pupil.util.*
 import java.io.File
 import java.nio.charset.Charset
 
@@ -124,16 +121,23 @@ class SettingsActivity : AppCompatActivity() {
             REQUEST_DOWNLOAD_FOLDER -> {
                 if (resultCode == Activity.RESULT_OK) {
                     data?.data?.also { uri ->
-                        val takeFlags: Int = intent.flags and (Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+                        val takeFlags: Int =
+                            intent.flags and (Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
 
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT)
                             contentResolver.takePersistableUriPermission(uri, takeFlags)
 
-                        if (DocumentFile.fromTreeUri(this, uri)?.canWrite() == false)
-                            Snackbar.make(settings, R.string.settings_dl_location_not_writable, Snackbar.LENGTH_LONG).show()
+                        val file = uri.toFile(this)
+
+                        if (file?.canWrite() != true)
+                            Snackbar.make(
+                                settings,
+                                R.string.settings_dl_location_not_writable,
+                                Snackbar.LENGTH_LONG
+                            ).show()
                         else
                             PreferenceManager.getDefaultSharedPreferences(this).edit()
-                                .putString("dl_location", uri.toString())
+                                .putString("dl_location", file.canonicalPath)
                                 .apply()
                     }
                 }
@@ -143,14 +147,33 @@ class SettingsActivity : AppCompatActivity() {
                     val directory = data?.getStringExtra(DirectoryChooserActivity.RESULT_SELECTED_DIR)!!
 
                     if (!File(directory).canWrite())
-                        Snackbar.make(settings, R.string.settings_dl_location_not_writable, Snackbar.LENGTH_LONG).show()
+                        Snackbar.make(
+                            settings,
+                            R.string.settings_dl_location_not_writable,
+                            Snackbar.LENGTH_LONG
+                        ).show()
                     else
                         PreferenceManager.getDefaultSharedPreferences(this).edit()
-                            .putString("dl_location", Uri.fromFile(File(directory)).toString())
+                            .putString("dl_location", File(directory).canonicalPath)
                             .apply()
                 }
             }
             else -> super.onActivityResult(requestCode, resultCode, data)
+        }
+    }
+
+    @SuppressLint("InlinedApi")
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        when (requestCode) {
+            REQUEST_WRITE_PERMISSION_AND_SAF -> {
+                if (grantResults.firstOrNull() == PackageManager.PERMISSION_GRANTED) {
+                    val intent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).apply {
+                        putExtra("android.content.extra.SHOW_ADVANCED", true)
+                    }
+
+                    startActivityForResult(intent, REQUEST_DOWNLOAD_FOLDER)
+                }
+            }
         }
     }
 }

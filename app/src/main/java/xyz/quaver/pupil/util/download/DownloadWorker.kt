@@ -214,27 +214,7 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
     fun isCompleted(galleryID: Int) = progress[galleryID]?.all { !it.isFinite() } == true
 
     private fun queueDownload(galleryID: Int, reader: Reader, index: Int, callback: Callback) {
-        val cache = Cache(this@DownloadWorker).getImages(galleryID)
         val lowQuality = preferences.getBoolean("low_quality", false)
-
-        //Cache exists :P
-        cache?.get(index)?.let {
-            progress[galleryID]?.set(index, Float.POSITIVE_INFINITY)
-
-            notify(galleryID)
-
-            if (isCompleted(galleryID)) {
-                with(Cache(this@DownloadWorker)) {
-                    if (isDownloading(galleryID)) {
-                        moveToDownload(galleryID)
-                        setDownloading(galleryID, false)
-                    }
-                }
-                nRunners--
-            }
-
-            return
-        }
 
         val request = Request.Builder().apply {
             when (reader.code) {
@@ -276,7 +256,14 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
             return@launch
         }
 
-        progress.put(galleryID, reader.galleryInfo.map { 0F }.toMutableList())
+        val cache = Cache(this@DownloadWorker).getImages(galleryID)
+
+        progress.put(galleryID, reader.galleryInfo.indices.map { index ->
+            if (cache?.get(index) != null)
+                Float.POSITIVE_INFINITY
+            else
+                0F
+        }.toMutableList())
         exception.put(galleryID, reader.galleryInfo.map { null }.toMutableList())
 
         if (notification[galleryID] == null)
@@ -284,6 +271,18 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
 
         notification[galleryID].setContentTitle(reader.title)
         notify(galleryID)
+
+        if (isCompleted(galleryID)) {
+            with(Cache(this@DownloadWorker)) {
+                if (isDownloading(galleryID)) {
+                    moveToDownload(galleryID)
+                    setDownloading(galleryID, false)
+                }
+            }
+            nRunners--
+
+            return@launch
+        }
 
         for (i in reader.galleryInfo.indices) {
             val callback = object : Callback {
@@ -297,10 +296,11 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
                     notify(galleryID)
 
                     if (isCompleted(galleryID)) {
-                        val cache = Cache(this@DownloadWorker)
-                        if (cache.isDownloading(galleryID)) {
-                            cache.moveToDownload(galleryID)
-                            cache.setDownloading(galleryID, false)
+                        with(Cache(this@DownloadWorker)) {
+                            if (isDownloading(galleryID)) {
+                                moveToDownload(galleryID)
+                                setDownloading(galleryID, false)
+                            }
                         }
                         nRunners--
                     }
@@ -319,17 +319,19 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
                     notify(galleryID)
 
                     if (isCompleted(galleryID)) {
-                        val cache = Cache(this@DownloadWorker)
-                        if (cache.isDownloading(galleryID)) {
-                            cache.moveToDownload(galleryID)
-                            cache.setDownloading(galleryID, false)
+                        with(Cache(this@DownloadWorker)) {
+                            if (isDownloading(galleryID)) {
+                                moveToDownload(galleryID)
+                                setDownloading(galleryID, false)
+                            }
                         }
                         nRunners--
                     }
                 }
             }
 
-            queueDownload(galleryID, reader, i, callback)
+            if (progress[galleryID]?.get(i)?.isFinite() == true)
+                queueDownload(galleryID, reader, i, callback)
         }
     }
 

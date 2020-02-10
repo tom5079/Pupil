@@ -18,16 +18,18 @@
 
 package xyz.quaver.pupil.ui.dialog
 
+import android.Manifest
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.Dialog
 import android.content.Intent
-import android.net.Uri
+import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.widget.LinearLayout
 import android.widget.RadioButton
 import androidx.appcompat.app.AlertDialog
+import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.preference.PreferenceManager
 import kotlinx.android.synthetic.main.item_dl_location.view.*
@@ -36,13 +38,15 @@ import net.rdrei.android.dirchooser.DirectoryChooserConfig
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.util.REQUEST_DOWNLOAD_FOLDER
 import xyz.quaver.pupil.util.REQUEST_DOWNLOAD_FOLDER_OLD
+import xyz.quaver.pupil.util.REQUEST_WRITE_PERMISSION_AND_SAF
 import xyz.quaver.pupil.util.byteToString
+import java.io.File
 
 @SuppressLint("InflateParams")
 class DownloadLocationDialog(val activity: Activity) : AlertDialog(activity) {
 
     private val preference = PreferenceManager.getDefaultSharedPreferences(context)
-    private val buttons = mutableListOf<Pair<RadioButton, Uri?>>()
+    private val buttons = mutableListOf<Pair<RadioButton, File?>>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         val view = layoutInflater.inflate(R.layout.dialog_dl_location, null) as LinearLayout
@@ -67,9 +71,9 @@ class DownloadLocationDialog(val activity: Activity) : AlertDialog(activity) {
                         pair.first.isChecked = false
                     }
                     button.performClick()
-                    preference.edit().putString("dl_location", Uri.fromFile(dir).toString()).apply()
+                    preference.edit().putString("dl_location", dir.canonicalPath).apply()
                 }
-                buttons.add(button to Uri.fromFile(dir))
+                buttons.add(button to dir)
             })
         }
 
@@ -82,11 +86,16 @@ class DownloadLocationDialog(val activity: Activity) : AlertDialog(activity) {
                 button.performClick()
 
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                    val intent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).apply {
-                        putExtra("android.content.extra.SHOW_ADVANCED", true)
-                    }
 
-                    activity.startActivityForResult(intent, REQUEST_DOWNLOAD_FOLDER)
+                    if (ContextCompat.checkSelfPermission(context, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED)
+                        ActivityCompat.requestPermissions(activity, arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE), REQUEST_WRITE_PERMISSION_AND_SAF)
+                    else {
+                        val intent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).apply {
+                            putExtra("android.content.extra.SHOW_ADVANCED", true)
+                        }
+
+                        activity.startActivityForResult(intent, REQUEST_DOWNLOAD_FOLDER)
+                    }
 
                     dismiss()
                 } else {    // Can't use SAF on old Androids!
@@ -106,9 +115,9 @@ class DownloadLocationDialog(val activity: Activity) : AlertDialog(activity) {
             buttons.add(button to null)
         })
 
-        val pref = Uri.parse(preference.getString("dl_location", null))
+        val pref = preference.getString("dl_location", null)
         val index = externalFilesDirs.indexOfFirst {
-            Uri.fromFile(it).toString() == pref.toString()
+            it.canonicalPath == pref
         }
 
         if (index < 0)

@@ -24,7 +24,6 @@ import android.os.Bundle
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.content.ContextCompat
-import androidx.documentfile.provider.DocumentFile
 import androidx.preference.Preference
 import androidx.preference.PreferenceCategory
 import androidx.preference.PreferenceFragmentCompat
@@ -71,7 +70,7 @@ class SettingsFragment :
         }
     }
 
-    private fun getDirSize(dir: DocumentFile) : String {
+    private fun getDirSize(dir: File) : String {
         val size = dir.walk().map { it.length() }.sum()
 
         return getString(R.string.settings_clear_summary, byteToString(size))
@@ -86,7 +85,7 @@ class SettingsFragment :
                     checkUpdate(activity as SettingsActivity, true)
                 }
                 "delete_cache" -> {
-                    val dir = DocumentFile.fromFile(File(context.cacheDir, "imageCache"))
+                    val dir = File(context.cacheDir, "imageCache")
 
                     AlertDialog.Builder(context).apply {
                         setTitle(R.string.warning)
@@ -149,13 +148,8 @@ class SettingsFragment :
                 }
                 "backup" -> {
                     File(ContextCompat.getDataDir(context), "favorites.json").copyTo(
-                        context,
-                        getDownloadDirectory(context).let {
-                            if (it.findFile("favorites.json") != null)
-                                it
-                            else
-                                it.createFile("null", "favorites.json")!!
-                        }
+                        File(getDownloadDirectory(context), "favorites.json"),
+                        true
                     )
 
                     Snackbar.make(this@SettingsFragment.listView, R.string.settings_backup_snackbar, Snackbar.LENGTH_LONG)
@@ -197,7 +191,7 @@ class SettingsFragment :
     override fun onSharedPreferenceChanged(sharedPreferences: SharedPreferences?, key: String?) {
         when (key) {
             "dl_location" -> {
-                findPreference<Preference>(key)?.summary = getDownloadDirectory(context!!).uri.path
+                findPreference<Preference>(key)?.summary = getDownloadDirectory(context!!).canonicalPath
             }
         }
     }
@@ -228,7 +222,7 @@ class SettingsFragment :
                             onPreferenceClickListener = this@SettingsFragment
                         }
                         "delete_cache" -> {
-                            val dir = DocumentFile.fromFile(File(context.cacheDir, "imageCache"))
+                            val dir = File(context.cacheDir, "imageCache")
                             summary = getDirSize(dir)
 
                             onPreferenceClickListener = this@SettingsFragment
@@ -246,7 +240,7 @@ class SettingsFragment :
                             onPreferenceClickListener = this@SettingsFragment
                         }
                         "dl_location" -> {
-                            summary = getDownloadDirectory(context).uri.path
+                            summary = getDownloadDirectory(context).canonicalPath
 
                             onPreferenceClickListener = this@SettingsFragment
                         }
