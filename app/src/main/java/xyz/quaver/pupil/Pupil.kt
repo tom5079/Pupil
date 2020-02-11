@@ -45,6 +45,12 @@ class Pupil : MultiDexApplication() {
     override fun onCreate() {
         val preference = PreferenceManager.getDefaultSharedPreferences(this)
 
+        try {
+            PreferenceManager.getDefaultSharedPreferences(this).getInt("dl_location", 0)
+        } catch (e: Exception) {
+            preference.edit().remove("dl_location").apply()
+        }
+
         histories = Histories(File(ContextCompat.getDataDir(this), "histories.json"))
         favorites = Histories(File(ContextCompat.getDataDir(this), "favorites.json"))
 
