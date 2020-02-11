@@ -22,7 +22,6 @@ import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
-import android.net.Uri
 import android.os.Build
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.content.ContextCompat
@@ -41,6 +40,7 @@ class Pupil : MultiDexApplication() {
 
     init {
         AppCompatDelegate.setCompatVectorFromResourcesEnabled(true)
+
     }
 
     override fun onCreate() {
@@ -48,17 +48,6 @@ class Pupil : MultiDexApplication() {
 
         histories = Histories(File(ContextCompat.getDataDir(this), "histories.json"))
         favorites = Histories(File(ContextCompat.getDataDir(this), "favorites.json"))
-
-        val download = try {
-            preference.getString("dl_location", null)
-        } catch (e: Exception) {
-            preference.edit().remove("dl_location").apply()
-        }
-
-        if (download == null) {
-            val default = ContextCompat.getExternalFilesDirs(this, null)[0]
-            preference.edit().putString("dl_location", Uri.fromFile(default).toString()).apply()
-        }
 
         try {
             ProviderInstaller.installIfNeeded(this)

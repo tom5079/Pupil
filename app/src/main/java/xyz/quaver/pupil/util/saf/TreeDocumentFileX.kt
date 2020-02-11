@@ -73,21 +73,25 @@ class TreeDocumentFileX(
         val uri = kotlin.runCatching {
             DocumentsContract.createDocument(context.contentResolver, uri, "null", displayName)
         }.getOrNull() ?: return null
+
+        return TreeDocumentFileX(context, uri, displayName, DocumentsContract.getDocumentId(uri), 0)
     }
 
     override fun getUri() = uri
 
     override fun getName() = name ?: "null"
 
-    override fun getParentFile(): DocumentFileX?
-
     override fun isDirectory() = name?.contains('.') == false
     override fun isFile() = name?.contains('.') == true
 
     override fun length() = length ?: -1
 
-    override fun canRead(): Boolean
-    override fun canWrite(): Boolean
+    override fun canRead(): Boolean {
+        TODO("Not impelmented")
+    }
+    override fun canWrite(): Boolean {
+        TODO("Not impelmented")
+    }
 
     override fun delete() =
         kotlin.runCatching {
@@ -111,8 +115,12 @@ class TreeDocumentFileX(
         ).use {
 
         }
+
+        TODO("Not impelmented")
     }
 
-    override fun findFile(displayName: String): DocumentFileX?
+    override fun findFile(displayName: String): DocumentFileX? {
+        TODO("Not impelmented")
+    }
     
 }

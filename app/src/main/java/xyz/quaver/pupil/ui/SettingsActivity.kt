@@ -124,10 +124,8 @@ class SettingsActivity : AppCompatActivity() {
             REQUEST_DOWNLOAD_FOLDER -> {
                 if (resultCode == Activity.RESULT_OK) {
                     data?.data?.also { uri ->
-                        val takeFlags: Int = intent.flags and (Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
-
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT)
-                            contentResolver.takePersistableUriPermission(uri, takeFlags)
+                            contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
 
                         if (DocumentFile.fromTreeUri(this, uri)?.canWrite() == false)
                             Snackbar.make(settings, R.string.settings_dl_location_not_writable, Snackbar.LENGTH_LONG).show()
