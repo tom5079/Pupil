@@ -33,17 +33,22 @@ fun getCachedGallery(context: Context, galleryID: Int) =
     DocumentFile.fromFile(File(context.cacheDir, "imageCache/$galleryID"))
 
 fun getDownloadDirectory(context: Context) : DocumentFile {
-    val uri = PreferenceManager.getDefaultSharedPreferences(context).getString("dl_location", null).let {
+    return runCatching {
+        val uri = PreferenceManager.getDefaultSharedPreferences(context).getString("dl_location", null).let {
         if (it != null)
             Uri.parse(it)
         else
             Uri.fromFile(context.getExternalFilesDir(null))
-    }
+        }
 
-    return if (uri.toString().startsWith("file"))
-        DocumentFile.fromFile(File(uri.path!!))
-    else
-        DocumentFile.fromTreeUri(context, uri) ?: DocumentFile.fromFile(context.getExternalFilesDir(null)!!)
+        if (uri.toString().startsWith("file"))
+            DocumentFile.fromFile(File(uri.path!!))
+        else
+            DocumentFile.fromTreeUri(context, uri) ?: DocumentFile.fromFile(context.getExternalFilesDir(null)!!)
+    }.getOrElse {
+        PreferenceManager.getDefaultSharedPreferences(context).edit().remove("dl_location").apply()
+        DocumentFile.fromFile(context.getExternalFilesDir(null)!!)
+    }
 }
 
 fun convertUpdateUri(context: Context, uri: Uri) : Uri =
@@ -104,32 +109,26 @@ fun DocumentFile.copyRecursively(
     if (!exists())
         throw Exception("The source file doesn't exist.")
 
-    if (this.isFile) {
-        target.let {
-            if (it.findFile(name!!) != null)
-                it
-            else
-                createFile("null", name!!)!!
-        }.writeBytes(
-            context,
-            readBytes(context)
-        )
-    } else if (this.isDirectory) {
-        target.createDirectory(name!!).also { newTarget ->
-            listFiles().forEach { child ->
-                child.copyRecursively(context, newTarget!!)
+    this.listFiles().forEach { child ->
+        try {
+            if (child.isFile) {
+                target.findFile(name!!) ?: target.createFile("null", name!!)!!
+                    .writeBytes(
+                        context,
+                        readBytes(context)
+                    )
+            } else if (child.isDirectory) {
+                target.findFile(name!!) ?: target.createDirectory(name!!).also { newTarget ->
+                    child.copyRecursively(context, newTarget!!)
+                }
             }
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
     }
 }
 
 fun DocumentFile.deleteRecursively() {
-
-    if (this.isDirectory)
-        listFiles().forEach {
-            it.deleteRecursively()
-        }
-
     this.delete()
 }
 

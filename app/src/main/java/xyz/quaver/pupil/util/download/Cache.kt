@@ -207,10 +207,7 @@ class Cache(context: Context) : ContextWrapper(context) {
             throw IllegalArgumentException("File name is not a number")
 
         cache.let {
-            if (it.findFile(name) != null)
-                it
-            else
-                it.createFile("null", name)
+            it.findFile(name) ?: it.createFile("null", name)
         }?.writeBytes(this, data)
     }
 
@@ -221,11 +218,14 @@ class Cache(context: Context) : ContextWrapper(context) {
             val download = getDownloadDirectory(this)
 
             if (!download.isParentOf(cache)) {
+                val target = getDownloadDirectory(this).let {
+                    it.findFile(galleryID.toString()) ?: it.createDirectory(galleryID.toString())
+                }
+
                 cache.copyRecursively(this, download)
                 cache.deleteRecursively()
             }
-        } else
-            getDownloadDirectory(this).createDirectory(galleryID.toString())
+        }
     }
 
     fun isDownloading(galleryID: Int) = getCachedMetadata(galleryID)?.isDownloading == true

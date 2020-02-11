@@ -45,7 +45,7 @@ class RawDocumentFileX(private var file: File) : DocumentFileX() {
 
     override fun getName() = file.name
 
-    override fun getParentFile() =
+    fun getParentFile() =
         file.parentFile.let {
             if (it == null)
                 null

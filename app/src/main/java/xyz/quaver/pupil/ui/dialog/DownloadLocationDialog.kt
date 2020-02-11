@@ -37,6 +37,7 @@ import xyz.quaver.pupil.R
 import xyz.quaver.pupil.util.REQUEST_DOWNLOAD_FOLDER
 import xyz.quaver.pupil.util.REQUEST_DOWNLOAD_FOLDER_OLD
 import xyz.quaver.pupil.util.byteToString
+import xyz.quaver.pupil.util.getDownloadDirectory
 
 @SuppressLint("InflateParams")
 class DownloadLocationDialog(val activity: Activity) : AlertDialog(activity) {
@@ -106,9 +107,9 @@ class DownloadLocationDialog(val activity: Activity) : AlertDialog(activity) {
             buttons.add(button to null)
         })
 
-        val pref = Uri.parse(preference.getString("dl_location", null))
+        val pref = getDownloadDirectory(context)
         val index = externalFilesDirs.indexOfFirst {
-            Uri.fromFile(it).toString() == pref.toString()
+            Uri.fromFile(it).toString() == pref.uri.toString()
         }
 
         if (index < 0)

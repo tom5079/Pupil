@@ -28,7 +28,6 @@ abstract class DocumentFileX {
     abstract fun createDirectory(displayName: String): DocumentFileX?
     abstract fun getUri(): Uri
     abstract fun getName(): String
-    abstract fun getParentFile(): DocumentFileX?
     abstract fun isDirectory(): Boolean
     abstract fun isFile(): Boolean
     abstract fun length(): Long

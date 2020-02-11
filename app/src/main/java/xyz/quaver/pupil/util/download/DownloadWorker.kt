@@ -23,6 +23,7 @@ import android.content.Context
 import android.content.ContextWrapper
 import android.content.Intent
 import android.content.SharedPreferences
+import android.util.Log
 import android.util.SparseArray
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
@@ -151,12 +152,6 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
         .addInterceptor { chain ->
             val request = chain.request()
             var response = chain.proceed(request)
-
-            var retry = preferences.getInt("retry", 3)
-            while (!response.isSuccessful && retry > 0) {
-                response = chain.proceed(request)
-                retry--
-            }
 
             response.newBuilder()
                 .body(ProgressResponseBody(request.tag(), response.body(), progressListener))
@@ -288,6 +283,7 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
         for (i in reader.galleryInfo.indices) {
             val callback = object : Callback {
                 override fun onFailure(call: Call, e: IOException) {
+                    Log.i("PUPILD", "FAILED $i")
                     if (Fabric.isInitialized())
                         Crashlytics.logException(e)
 
@@ -307,6 +303,7 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
                 }
 
                 override fun onResponse(call: Call, response: Response) {
+                    Log.i("PUPILD", "SUCCESS $i")
                     response.body().use {
                         val res = it.bytes()
                         val ext =
