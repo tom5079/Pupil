@@ -429,12 +429,7 @@ class MainActivity : AppCompatActivity() {
                     CoroutineScope(Dispatchers.Default).launch {
                         DownloadWorker.getInstance(context).cancel(galleryID)
 
-                        var cache = Cache(context).getCachedGallery(galleryID)
-
-                        while (cache != null) {
-                            cache.deleteRecursively()
-                            cache = Cache(context).getCachedGallery(galleryID)
-                        }
+                        Cache(context).getCachedGallery(galleryID)?.delete()
 
                         histories.remove(galleryID)
 

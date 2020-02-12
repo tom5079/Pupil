@@ -93,7 +93,7 @@ class SettingsFragment :
                         setMessage(R.string.settings_clear_cache_alert_message)
                         setPositiveButton(android.R.string.yes) { _, _ ->
                             if (dir.exists())
-                                dir.deleteRecursively()
+                                dir.delete()
 
                             summary = getDirSize(dir)
                         }
@@ -108,7 +108,7 @@ class SettingsFragment :
                         setMessage(R.string.settings_clear_downloads_alert_message)
                         setPositiveButton(android.R.string.yes) { _, _ ->
                             if (dir.exists())
-                                dir.deleteRecursively()
+                                dir.delete()
 
                             summary = getDirSize(dir)
                         }

@@ -128,10 +128,6 @@ fun DocumentFile.copyRecursively(
     }
 }
 
-fun DocumentFile.deleteRecursively() {
-    this.delete()
-}
-
 fun DocumentFile.walk(state: LinkedList<DocumentFile> = LinkedList()) : Queue<DocumentFile> {
     if (state.isEmpty())
         state.push(this)

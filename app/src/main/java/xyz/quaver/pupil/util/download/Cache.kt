@@ -21,6 +21,7 @@ package xyz.quaver.pupil.util.download
 import android.content.Context
 import android.content.ContextWrapper
 import android.util.Base64
+import android.util.Log
 import androidx.documentfile.provider.DocumentFile
 import androidx.preference.PreferenceManager
 import kotlinx.coroutines.CoroutineScope
@@ -189,7 +190,12 @@ class Cache(context: Context) : ContextWrapper(context) {
     fun getImages(galleryID: Int): List<DocumentFile?>? {
         val gallery = getCachedGallery(galleryID) ?: return null
         val reader = getReaderOrNull(galleryID) ?: return null
+
+        val time = System.currentTimeMillis()
+
         val images = gallery.listFiles()
+
+        Log.i("PUPILD", "${System.currentTimeMillis() - time} ms")
 
         return reader.galleryInfo.indices.map { index ->
             images.firstOrNull { file -> file.name?.startsWith("%05d".format(index)) == true }
@@ -220,10 +226,10 @@ class Cache(context: Context) : ContextWrapper(context) {
             if (!download.isParentOf(cache)) {
                 val target = getDownloadDirectory(this).let {
                     it.findFile(galleryID.toString()) ?: it.createDirectory(galleryID.toString())
-                }
+                } ?: return
 
-                cache.copyRecursively(this, download)
-                cache.deleteRecursively()
+                cache.copyRecursively(this, target)
+                cache.delete()
             }
         }
     }
