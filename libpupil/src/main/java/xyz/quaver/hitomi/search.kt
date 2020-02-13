@@ -173,22 +173,18 @@ fun getGalleryIDsFromNozomi(area: String?, tag: String, language: String) : List
                 else -> "$protocol//$domain/$compressed_nozomi_prefix/$area/$tag-$language$nozomiextension"
             }
 
-    try {
-        val bytes = URL(nozomiAddress).readBytes()
+    val bytes = URL(nozomiAddress).readBytes()
 
-        val nozomi = ArrayList<Int>()
+    val nozomi = ArrayList<Int>()
 
-        val arrayBuffer = ByteBuffer
-            .wrap(bytes)
-            .order(ByteOrder.BIG_ENDIAN)
+    val arrayBuffer = ByteBuffer
+        .wrap(bytes)
+        .order(ByteOrder.BIG_ENDIAN)
 
-        while (arrayBuffer.hasRemaining())
-            nozomi.add(arrayBuffer.int)
+    while (arrayBuffer.hasRemaining())
+        nozomi.add(arrayBuffer.int)
 
-        return nozomi
-    } catch (e: Exception) {
-        return emptyList()
-    }
+    return nozomi
 }
 
 fun getGalleryIDsFromData(data: Pair<Long, Int>) : List<Int> {

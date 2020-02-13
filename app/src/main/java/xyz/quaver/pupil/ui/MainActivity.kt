@@ -45,7 +45,9 @@ import androidx.vectordrawable.graphics.drawable.AnimatedVectorDrawableCompat
 import com.arlib.floatingsearchview.FloatingSearchView
 import com.arlib.floatingsearchview.suggestions.model.SearchSuggestion
 import com.arlib.floatingsearchview.util.view.SearchInputView
+import com.crashlytics.android.Crashlytics
 import com.google.android.material.appbar.AppBarLayout
+import io.fabric.sdk.android.Fabric
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.activity_main_content.*
 import kotlinx.coroutines.*
@@ -1004,9 +1006,13 @@ class MainActivity : AppCompatActivity() {
         val perPage = preference.getString("per_page", "25")?.toInt() ?: 25
 
         loadingJob = CoroutineScope(Dispatchers.IO).launch {
-            val galleryIDs = galleryIDs?.await()
+            val galleryIDs = try {
+                galleryIDs!!.await()
+            } catch (e: Exception) {
 
-            if (galleryIDs.isNullOrEmpty()) { //No result
+                if (Fabric.isInitialized())
+                    Crashlytics.logException(e)
+
                 withContext(Dispatchers.Main) {
                     main_noresult.visibility = View.VISIBLE
                     main_progressbar.hide()

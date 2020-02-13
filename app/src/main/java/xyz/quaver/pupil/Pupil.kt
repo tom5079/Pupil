@@ -30,6 +30,7 @@ import androidx.preference.PreferenceManager
 import com.google.android.gms.common.GooglePlayServicesNotAvailableException
 import com.google.android.gms.common.GooglePlayServicesRepairableException
 import com.google.android.gms.security.ProviderInstaller
+import com.google.firebase.analytics.FirebaseAnalytics
 import xyz.quaver.pupil.util.Histories
 import java.io.File
 
@@ -53,6 +54,9 @@ class Pupil : MultiDexApplication() {
 
         histories = Histories(File(ContextCompat.getDataDir(this), "histories.json"))
         favorites = Histories(File(ContextCompat.getDataDir(this), "favorites.json"))
+
+        if (BuildConfig.DEBUG)
+            FirebaseAnalytics.getInstance(this).setAnalyticsCollectionEnabled(false)
 
         val file = preference.getString("dl_location", null)
 
