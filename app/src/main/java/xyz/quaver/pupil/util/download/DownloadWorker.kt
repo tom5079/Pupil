@@ -338,7 +338,9 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
         if (isCompleted(galleryID))
             notification[galleryID]
                 ?.setContentText(getString(R.string.reader_notification_complete))
+                ?.setSmallIcon(android.R.drawable.stat_sys_download_done)
                 ?.setProgress(0, 0, false)
+                ?.setOngoing(false)
         else
             notification[galleryID]
                 ?.setProgress(max, progress, false)
@@ -365,6 +367,7 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
             setSmallIcon(android.R.drawable.stat_sys_download)                                  // had to use this because old android doesn't support VectorDrawable on Notification :P
             setContentIntent(pendingIntent)
             setProgress(0, 0, true)
+            setOngoing(true)
         })
     }
 
