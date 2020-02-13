@@ -102,21 +102,27 @@ class Cache(context: Context) : ContextWrapper(context) {
     suspend fun getGalleryBlock(galleryID: Int): GalleryBlock? {
         val metadata = Cache(this).getCachedMetadata(galleryID)
 
-        val source = mapOf(
+        val sources = mapOf(
             Code.HITOMI to { xyz.quaver.hitomi.getGalleryBlock(galleryID) },
             Code.HIYOBI to { xyz.quaver.hiyobi.getGalleryBlock(galleryID) }
         )
 
-        val galleryBlock = if (metadata?.galleryBlock == null)
-           source.entries.map {
-               CoroutineScope(Dispatchers.IO).async {
-                   kotlin.runCatching {
-                       it.value.invoke()
-                   }.getOrNull()
-               }
-           }.firstOrNull {
-               it.await() != null
-           }?.await()
+        val galleryBlock = if (metadata?.galleryBlock == null) {
+            CoroutineScope(Dispatchers.IO).async {
+                var galleryBlock: GalleryBlock? = null
+
+                for (source in sources) {
+                    galleryBlock = kotlin.runCatching {
+                        source.value.invoke()
+                    }.getOrNull()
+
+                    if (galleryBlock != null)
+                        break
+                }
+
+                galleryBlock
+            }.await() ?: return null
+        }
         else
             metadata.galleryBlock
 
@@ -164,15 +170,14 @@ class Cache(context: Context) : ContextWrapper(context) {
                 }
 
                 retval
-            }.await()
+            }.await() ?: return null
         } else
             metadata.reader
 
-        if (reader != null)
-            setCachedMetadata(
-                galleryID,
-                Metadata(Cache(this).getCachedMetadata(galleryID), readers = reader)
-            )
+        setCachedMetadata(
+            galleryID,
+            Metadata(Cache(this).getCachedMetadata(galleryID), readers = reader)
+        )
 
         return reader
     }
