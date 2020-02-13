@@ -145,25 +145,21 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
 
     private val loop = loop()
     private val worker = SparseArray<Job?>()
-    @Volatile var nRunners = 0
+    val clients = SparseArray<OkHttpClient>()
 
-    private val client = OkHttpClient.Builder()
-        .addInterceptor { chain ->
-            val request = chain.request()
-            var response = chain.proceed(request)
+    val interceptor = Interceptor { chain ->
+        val request = chain.request()
+        val response = chain.proceed(request)
 
-            var retry = preferences.getInt("retry", 3)
-            while (!response.isSuccessful && retry > 0) {
-                response = chain.proceed(request)
-                retry--
-            }
-
-            response.newBuilder()
-                .body(ProgressResponseBody(request.tag(), response.body(), progressListener))
-                .build()
-        }
-        .dispatcher(Dispatcher(Executors.newFixedThreadPool(4)))
+        response.newBuilder()
+        .body(ProgressResponseBody(request.tag(), response.body(), progressListener))
         .build()
+    }
+    fun buildClient() =
+        OkHttpClient.Builder()
+            .addInterceptor(interceptor)
+            .dispatcher(Dispatcher(Executors.newFixedThreadPool(4)))
+            .build()
 
     fun stop() {
         queue.clear()
@@ -176,29 +172,30 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
             worker[galleryID]?.cancel()
         }
 
-        client.dispatcher().cancelAll()
+        for (i in 0 until clients.size()) {
+            clients.valueAt(i).dispatcher().cancelAll()
+        }
+        clients.clear()
 
         progress.clear()
         exception.clear()
         notification.clear()
         notificationManager.cancelAll()
-
-        nRunners = 0
-
     }
 
     fun cancel(galleryID: Int) {
         queue.remove(galleryID)
         worker[galleryID]?.cancel()
 
-        client.dispatcher().queuedCalls()
-            .filter {
+        clients[galleryID]?.dispatcher()?.queuedCalls()
+            ?.filter {
                 @Suppress("UNCHECKED_CAST")
                 (it.request().tag() as? Pair<Int, Int>)?.first == galleryID
             }
-            .forEach {
+            ?.forEach {
                 it.cancel()
             }
+        clients.remove(galleryID)
 
         progress.remove(galleryID)
         exception.remove(galleryID)
@@ -207,7 +204,6 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
 
         if (progress.indexOfKey(galleryID) >= 0) {
             Cache(this@DownloadWorker).setDownloading(galleryID, false)
-            nRunners--
         }
     }
 
@@ -240,7 +236,7 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
             tag(galleryID to index)
         }.build()
 
-        client.newCall(request).enqueue(callback)
+        clients[galleryID].newCall(request).enqueue(callback)
     }
 
     private fun download(galleryID: Int) = CoroutineScope(Dispatchers.IO).launch {
@@ -252,7 +248,6 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
             exception.put(galleryID, null)
 
             Cache(this@DownloadWorker).setDownloading(galleryID, false)
-            nRunners--
             return@launch
         }
 
@@ -279,10 +274,11 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
                     setDownloading(galleryID, false)
                 }
             }
-            nRunners--
 
             return@launch
         }
+
+        clients.put(galleryID, buildClient())
 
         for (i in reader.galleryInfo.indices) {
             val callback = object : Callback {
@@ -302,7 +298,7 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
                                 setDownloading(galleryID, false)
                             }
                         }
-                        nRunners--
+                        clients.remove(galleryID)
                     }
                 }
 
@@ -325,7 +321,7 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
                                 setDownloading(galleryID, false)
                             }
                         }
-                        nRunners--
+                        clients.remove(galleryID)
                     }
                 }
             }
@@ -374,19 +370,18 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
 
     private fun loop() = CoroutineScope(Dispatchers.Default).launch {
         while (true) {
-            if (queue.isEmpty() || nRunners > preferences.getInt("max_download", 4))
+            if (queue.isEmpty() || clients.size() > preferences.getInt("max_download", 4))
                 continue
 
             val galleryID = queue.poll() ?: continue
 
-            if (progress.indexOfKey(galleryID) >= 0)    // Gallery already downloading!
+            if (clients.indexOfKey(galleryID) >= 0)    // Gallery already downloading!
                 continue
 
             initNotification(galleryID)
             if (Cache(this@DownloadWorker).isDownloading(galleryID))
                 notificationManager.notify(galleryID, notification[galleryID].build())
             worker.put(galleryID, download(galleryID))
-            nRunners++
         }
     }
 
