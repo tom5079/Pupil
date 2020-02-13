@@ -102,9 +102,9 @@ class Cache(context: Context) : ContextWrapper(context) {
     suspend fun getGalleryBlock(galleryID: Int): GalleryBlock? {
         val metadata = Cache(this).getCachedMetadata(galleryID)
 
-        val sources = mapOf(
-            Code.HITOMI to { xyz.quaver.hitomi.getGalleryBlock(galleryID) },
-            Code.HIYOBI to { xyz.quaver.hiyobi.getGalleryBlock(galleryID) }
+        val sources = listOf(
+            { xyz.quaver.hitomi.getGalleryBlock(galleryID) },
+            { xyz.quaver.hiyobi.getGalleryBlock(galleryID) }
         )
 
         val galleryBlock = if (metadata?.galleryBlock == null) {
@@ -113,7 +113,7 @@ class Cache(context: Context) : ContextWrapper(context) {
 
                 for (source in sources) {
                     galleryBlock = kotlin.runCatching {
-                        source.value.invoke()
+                        source.invoke()
                     }.getOrNull()
 
                     if (galleryBlock != null)
