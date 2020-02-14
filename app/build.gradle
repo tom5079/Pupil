@@ -4,7 +4,7 @@ apply plugin: 'kotlin-kapt'
 apply plugin: 'kotlin-android-extensions'
 apply plugin: 'kotlinx-serialization'
 
-if (file("src/google-services.json").exists() && file("src/debug/google-services.json").exists()) {
+if (file("google-services.json").exists() && file("src/debug/google-services.json").exists()) {
     logger.lifecycle("Firebase Enabled")
     apply plugin: 'com.google.gms.google-services'
     apply plugin: 'io.fabric'
@@ -20,7 +20,7 @@ android {
         minSdkVersion 16
         targetSdkVersion 29
         versionCode 42
-        versionName "4.6-beta1"
+        versionName "4.6-beta2"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         multiDexEnabled true
         vectorDrawables.useSupportLibrary = true
