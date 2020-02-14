@@ -47,7 +47,7 @@ class Pupil : MultiDexApplication() {
         val preference = PreferenceManager.getDefaultSharedPreferences(this)
 
         try {
-            PreferenceManager.getDefaultSharedPreferences(this).getInt("dl_location", 0)
+            preference.getString("dl_location", null)
         } catch (e: Exception) {
             preference.edit().remove("dl_location").apply()
         }
@@ -57,11 +57,6 @@ class Pupil : MultiDexApplication() {
 
         if (BuildConfig.DEBUG)
             FirebaseAnalytics.getInstance(this).setAnalyticsCollectionEnabled(false)
-
-        val file = preference.getString("dl_location", null)
-
-        if (file?.startsWith("content") == true)
-            preference.edit().remove("dl_location").apply()
 
         try {
             ProviderInstaller.installIfNeeded(this)
