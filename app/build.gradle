@@ -4,7 +4,7 @@ apply plugin: 'kotlin-kapt'
 apply plugin: 'kotlin-android-extensions'
 apply plugin: 'kotlinx-serialization'
 
-if (file("google-services.json").exists()) {
+if (file("src/google-services.json").exists() && file("src/debug/google-services.json").exists()) {
     logger.lifecycle("Firebase Enabled")
     apply plugin: 'com.google.gms.google-services'
     apply plugin: 'io.fabric'
@@ -20,18 +20,23 @@ android {
         minSdkVersion 16
         targetSdkVersion 29
         versionCode 42
-        versionName "4.6-beta1"
+        versionName "4.6-alpha1"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         multiDexEnabled true
         vectorDrawables.useSupportLibrary = true
     }
     buildTypes {
-        release {
-            minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        debug {
+            debuggable true
+            applicationIdSuffix ".debug"
+            versionNameSuffix "-DEBUG"
+
+            buildConfigField('Boolean', 'CENSOR', 'false')
         }
-        buildTypes.each {
-            it.buildConfigField('boolean', 'CENSOR', 'false')
+        release {
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
     kotlinOptions {

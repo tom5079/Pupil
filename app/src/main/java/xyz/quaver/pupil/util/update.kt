@@ -32,7 +32,10 @@ import androidx.preference.PreferenceManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.serialization.json.*
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.boolean
+import kotlinx.serialization.json.content
 import ru.noties.markwon.Markwon
 import xyz.quaver.pupil.BuildConfig
 import xyz.quaver.pupil.R
@@ -43,7 +46,7 @@ import java.util.*
 fun getReleases(url: String) : JsonArray {
     return try {
         URL(url).readText().let {
-            Json(JsonConfiguration.Stable).parse(JsonArray.serializer(), it)
+            json.parse(JsonArray.serializer(), it)
         }
     } catch (e: Exception) {
         JsonArray(emptyList())

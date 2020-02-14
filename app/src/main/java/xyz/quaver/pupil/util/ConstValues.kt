@@ -18,8 +18,13 @@
 
 package xyz.quaver.pupil.util
 
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonConfiguration
+
 const val REQUEST_LOCK = 38238
 const val REQUEST_RESTORE = 16546
 const val REQUEST_DOWNLOAD_FOLDER = 3874
 const val REQUEST_DOWNLOAD_FOLDER_OLD = 3425
 const val REQUEST_WRITE_PERMISSION_AND_SAF = 13900
+
+val json = Json(JsonConfiguration.Stable)
