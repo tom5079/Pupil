@@ -48,19 +48,15 @@ import kotlin.math.roundToInt
 class ReaderAdapter(private val context: Context,
                     private val galleryID: Int) : RecyclerView.Adapter<ReaderAdapter.ViewHolder>() {
 
+    val glide = Glide.with(context)
+
     //region Glide.RecyclerView
-    inner class SizeProvider : ListPreloader.PreloadSizeProvider<File> {
-
-        override fun getPreloadSize(item: File, adapterPosition: Int, itemPosition: Int): IntArray? {
-            return Cache(context).getReaderOrNull(galleryID)?.galleryInfo?.getOrNull(itemPosition)?.let {
-                arrayOf(it.width, it.height).toIntArray()
-            }
+    val sizeProvider = ListPreloader.PreloadSizeProvider<File> { _, _, position ->
+        Cache(context).getReaderOrNull(galleryID)?.galleryInfo?.getOrNull(position)?.let {
+            arrayOf(it.width, it.height).toIntArray()
         }
-
     }
-
-    inner class ModelProvider : ListPreloader.PreloadModelProvider<File> {
-
+    val modelProvider = object: ListPreloader.PreloadModelProvider<File> {
         override fun getPreloadItems(position: Int): MutableList<File> {
             return listOf(Cache(context).getImages(galleryID)?.get(position)).filterNotNullTo(mutableListOf())
         }
@@ -76,17 +72,12 @@ class ReaderAdapter(private val context: Context,
                         override(5, 8)
                 }
         }
-
     }
+    val preloader = RecyclerViewPreloader<File>(glide, modelProvider, sizeProvider, 10)
     //endregion
 
     var reader: Reader? = null
-    val glide = Glide.with(context)
     val timer = Timer()
-
-    val sizeProvider = SizeProvider()
-    val modelProvider = ModelProvider()
-    val preloader = RecyclerViewPreloader<File>(glide, modelProvider, sizeProvider, 10)
 
     var isFullScreen = false
 
@@ -114,10 +105,13 @@ class ReaderAdapter(private val context: Context,
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         holder.view as ConstraintLayout
 
-        if (isFullScreen)
+        if (isFullScreen) {
             holder.view.layoutParams.height = RecyclerView.LayoutParams.MATCH_PARENT
-        else
+            holder.view.container.layoutParams.height = ConstraintLayout.LayoutParams.MATCH_PARENT
+        } else {
             holder.view.layoutParams.height = RecyclerView.LayoutParams.WRAP_CONTENT
+            holder.view.container.layoutParams.height = 0
+        }
 
         holder.view.image.setOnPhotoTapListener { _, _, _ ->
             onItemClickListener?.invoke(position)
@@ -127,52 +121,51 @@ class ReaderAdapter(private val context: Context,
             onItemClickListener?.invoke(position)
         }
 
-        (holder.view.container.layoutParams as ConstraintLayout.LayoutParams)
-            .dimensionRatio = "${reader!!.galleryInfo[position].width}:${reader!!.galleryInfo[position].height}"
+        if (!isFullScreen)
+            (holder.view.container.layoutParams as ConstraintLayout.LayoutParams)
+                .dimensionRatio = "${reader!!.galleryInfo[position].width}:${reader!!.galleryInfo[position].height}"
 
         holder.view.reader_index.text = (position+1).toString()
 
-        CoroutineScope(Dispatchers.IO).launch {
-            val images = Cache(context).getImages(galleryID)
+        val images = Cache(context).getImages(galleryID)
 
-            launch(Dispatchers.Main) {
-                if (images?.get(position) != null) {
-                    glide
-                        .load(images[position])
-                        .diskCacheStrategy(DiskCacheStrategy.NONE)
-                        .skipMemoryCache(true)
-                        .error(R.drawable.image_broken_variant)
-                        .apply {
-                            if (BuildConfig.CENSOR)
-                                override(5, 8)
-                        }
-                        .into(holder.view.image)
-                } else {
-                    val progress = DownloadWorker.getInstance(context).progress[galleryID]?.get(position)
+        if (images?.get(position) != null) {
+            glide
+                .load(images[position])
+                .diskCacheStrategy(DiskCacheStrategy.NONE)
+                .skipMemoryCache(true)
+                .error(R.drawable.image_broken_variant)
+                .dontTransform()
+                .apply {
+                    if (BuildConfig.CENSOR)
+                        override(5, 8)
+                }
+                .into(holder.view.image)
+        } else {
+            val progress = DownloadWorker.getInstance(context).progress[galleryID]?.get(position)
 
-                    if (progress?.isNaN() == true) {
+            if (progress?.isNaN() == true) {
+                if (Fabric.isInitialized())
+                    Crashlytics.logException(DownloadWorker.getInstance(context).exception[galleryID]?.get(position))
 
-                        if (Fabric.isInitialized())
-                            Crashlytics.logException(DownloadWorker.getInstance(context).exception[galleryID]?.get(position))
+                glide
+                    .load(R.drawable.image_broken_variant)
+                    .into(holder.view.image)
 
-                        glide
-                            .load(R.drawable.image_broken_variant)
-                            .into(holder.view.image)
-                    } else {
-                        holder.view.reader_item_progressbar.progress =
-                            if (progress?.isInfinite() == true)
-                                100
-                            else
-                                progress?.roundToInt() ?: 0
+                return
+            } else {
+                holder.view.reader_item_progressbar.progress =
+                    if (progress?.isInfinite() == true)
+                        100
+                    else
+                        progress?.roundToInt() ?: 0
 
-                        holder.view.image.setImageDrawable(null)
-                    }
+                holder.view.image.setImageDrawable(null)
+            }
 
-                    timer.schedule(1000) {
-                        CoroutineScope(Dispatchers.Main).launch {
-                            notifyItemChanged(position)
-                        }
-                    }
+            timer.schedule(1000) {
+                CoroutineScope(Dispatchers.Main).launch {
+                    notifyItemChanged(position)
                 }
             }
         }
