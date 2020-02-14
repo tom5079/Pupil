@@ -38,7 +38,6 @@ import io.fabric.sdk.android.Fabric
 import kotlinx.android.synthetic.main.activity_reader.*
 import kotlinx.android.synthetic.main.activity_reader.view.*
 import kotlinx.android.synthetic.main.dialog_numberpicker.view.*
-import kotlinx.serialization.ImplicitReflectionSerializer
 import xyz.quaver.Code
 import xyz.quaver.pupil.Pupil
 import xyz.quaver.pupil.R
@@ -141,7 +140,6 @@ class ReaderActivity : AppCompatActivity() {
         super.onResume()
     }
 
-    @UseExperimental(ImplicitReflectionSerializer::class)
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
         menuInflater.inflate(R.menu.reader, menu)
 

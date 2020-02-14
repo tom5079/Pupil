@@ -25,6 +25,7 @@ import android.net.Uri
 import android.os.Bundle
 import android.text.*
 import android.text.style.AlignmentSpan
+import android.util.Log
 import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.View
@@ -51,11 +52,7 @@ import io.fabric.sdk.android.Fabric
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.activity_main_content.*
 import kotlinx.coroutines.*
-import kotlinx.serialization.ImplicitReflectionSerializer
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonConfiguration
 import kotlinx.serialization.list
-import kotlinx.serialization.stringify
 import xyz.quaver.hitomi.GalleryBlock
 import xyz.quaver.hitomi.doSearch
 import xyz.quaver.hitomi.getGalleryIDsFromNozomi
@@ -123,6 +120,7 @@ class MainActivity : AppCompatActivity() {
         val lockManager = try {
             LockManager(this)
         } catch (e: Exception) {
+            Log.i("PUPILD", e.toString())
             android.app.AlertDialog.Builder(this).apply {
                 setTitle(R.string.warning)
                 setMessage(R.string.lock_corrupted)
@@ -181,7 +179,7 @@ class MainActivity : AppCompatActivity() {
     override fun onDestroy() {
         super.onDestroy()
 
-        (main_recyclerview.adapter as GalleryBlockAdapter).timer.cancel()
+        (main_recyclerview?.adapter as? GalleryBlockAdapter)?.timer?.cancel()
     }
 
     override fun onResume() {
@@ -695,7 +693,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     private var suggestionJob : Job? = null
-    @UseExperimental(ImplicitReflectionSerializer::class)
     private fun setupSearchBar() {
         val searchInputView = findViewById<SearchInputView>(R.id.search_bar_text)
         //Change upper case letters to lower case
@@ -719,12 +716,11 @@ class MainActivity : AppCompatActivity() {
 
         with(main_searchview as FloatingSearchView) {
             val favoritesFile = File(ContextCompat.getDataDir(context), "favorites_tags.json")
-            val json = Json(JsonConfiguration.Stable)
             val serializer = Tag.serializer().list
 
             if (!favoritesFile.exists()) {
                 favoritesFile.createNewFile()
-                favoritesFile.writeText(json.stringify(Tags(listOf())))
+                favoritesFile.writeText(json.stringify(serializer, Tags(listOf())))
             }
 
             setOnMenuItemClickListener {
@@ -842,7 +838,7 @@ class MainActivity : AppCompatActivity() {
                             favorites.add(tag)
                         }
 
-                        favoritesFile.writeText(json.stringify(favorites))
+                        favoritesFile.writeText(json.stringify(serializer, favorites))
                     }
                 }
 
