@@ -36,10 +36,7 @@ import kotlinx.android.synthetic.main.item_dl_location.view.*
 import net.rdrei.android.dirchooser.DirectoryChooserActivity
 import net.rdrei.android.dirchooser.DirectoryChooserConfig
 import xyz.quaver.pupil.R
-import xyz.quaver.pupil.util.REQUEST_DOWNLOAD_FOLDER
-import xyz.quaver.pupil.util.REQUEST_DOWNLOAD_FOLDER_OLD
-import xyz.quaver.pupil.util.REQUEST_WRITE_PERMISSION_AND_SAF
-import xyz.quaver.pupil.util.byteToString
+import xyz.quaver.pupil.util.*
 import java.io.File
 
 @SuppressLint("InflateParams")
@@ -115,15 +112,11 @@ class DownloadLocationDialog(val activity: Activity) : AlertDialog(activity) {
             buttons.add(button to null)
         })
 
-        val pref = preference.getString("dl_location", null)
-        val index = externalFilesDirs.indexOfFirst {
-            it.canonicalPath == pref
-        }
-
-        if (index < 0)
-            buttons.last().first.isChecked = true
-        else
+        externalFilesDirs.indexOfFirst {
+            it.canonicalPath == getDownloadDirectory(context).canonicalPath
+        }.let { index ->
             buttons[index].first.isChecked = true
+        }
 
         setTitle(R.string.settings_dl_location)
 
