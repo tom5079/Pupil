@@ -122,4 +122,12 @@
     <string name="settings_mirror_title">미러 설정</string>
     <string name="settings_dl_location_custom">직접 설정</string>
     <string name="settings_dl_location_not_writable">이 폴더에 접근할 수 없습니다. 다른 폴더를 선택해주세요.</string>
+    <string name="settings_proxy_title">프록시</string>
+    <string name="proxy_dialog_username_hint">ID</string>
+    <string name="proxy_dialog_type">프록시 타입</string>
+    <string name="proxy_dialog_port_hint">포트</string>
+    <string name="proxy_dialog_password_hint">비밀번호</string>
+    <string name="proxy_dialog_error">잘못된 값</string>
+    <string name="proxy_dialog_addr_hint">서버 주소</string>
+    <string name="proxy_dialog_server">서버</string>
 </resources>

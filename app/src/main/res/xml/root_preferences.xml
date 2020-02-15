@@ -71,6 +71,10 @@
             app:title="@string/settings_mirror_title"
             app:summary="@string/settings_mirror_summary"/>
 
+        <Preference
+            app:key="proxy"
+            app:title="@string/settings_proxy_title"/>
+
         <SwitchPreferenceCompat
             app:key="security_mode"
             app:title="@string/settings_security_mode_title"

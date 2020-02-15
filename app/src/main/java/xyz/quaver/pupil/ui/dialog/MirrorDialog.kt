@@ -22,6 +22,7 @@ import android.annotation.SuppressLint
 import android.app.Dialog
 import android.content.Context
 import android.os.Bundle
+import android.view.View
 import androidx.appcompat.app.AlertDialog
 import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.DividerItemDecoration
@@ -56,21 +57,17 @@ class MirrorDialog(context: Context) : AlertDialog(context) {
         }
     }
 
-    private lateinit var recyclerView: RecyclerView
-
     @SuppressLint("InflateParams")
     override fun onCreate(savedInstanceState: Bundle?) {
-        initDialog()
-
         setTitle(R.string.settings_mirror_title)
-        setView(recyclerView)
+        setView(build())
         setButton(Dialog.BUTTON_POSITIVE, context.getString(android.R.string.ok)) { _, _ -> }
 
         super.onCreate(savedInstanceState)
     }
 
-    private fun initDialog() {
-        recyclerView = RecyclerView(context).apply recyclerview@{
+    private fun build() : View {
+        return RecyclerView(context).apply recyclerview@{
             addItemDecoration(DividerItemDecoration(context, DividerItemDecoration.VERTICAL))
             layoutManager = LinearLayoutManager(context)
             adapter = MirrorAdapter(context).apply adapter@{
