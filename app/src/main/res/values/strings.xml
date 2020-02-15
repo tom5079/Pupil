@@ -154,6 +154,7 @@
 
     <string name="settings_miscellaneous_title">Miscellaneous</string>
     <string name="settings_mirror_summary">Load images from mirrors</string>
+    <string name="settings_proxy_title">Proxy</string>
     <string name="settings_security_mode_title">Enable security mode</string>
     <string name="settings_security_mode_summary">Enable security mode to make the screen invisible on recent app window</string>
     <string name="settings_dark_mode_title">Dark mode</string>
@@ -188,5 +189,14 @@
     <string name="default_query_dialog_filter_guro">Filter Guro</string>
     <string name="default_query_dialog_language_selector_none">Any</string>
     <string name="settings_mirror_title">Mirrors</string>
+
+    <!-- PROXY DIALOG -->
+    <string name="proxy_dialog_type">type</string>
+    <string name="proxy_dialog_addr_hint">address</string>
+    <string name="proxy_dialog_port_hint">port</string>
+    <string name="proxy_dialog_username_hint">username</string>
+    <string name="proxy_dialog_password_hint">password</string>
+    <string name="proxy_dialog_error">Wrong value</string>
+    <string name="proxy_dialog_server">server</string>
 
 </resources>

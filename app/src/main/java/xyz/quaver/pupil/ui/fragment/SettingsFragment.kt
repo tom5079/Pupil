@@ -36,6 +36,7 @@ import xyz.quaver.pupil.ui.SettingsActivity
 import xyz.quaver.pupil.ui.dialog.DefaultQueryDialog
 import xyz.quaver.pupil.ui.dialog.DownloadLocationDialog
 import xyz.quaver.pupil.ui.dialog.MirrorDialog
+import xyz.quaver.pupil.ui.dialog.ProxyDialog
 import xyz.quaver.pupil.util.*
 import java.io.File
 
@@ -146,6 +147,10 @@ class SettingsFragment :
                     MirrorDialog(context)
                         .show()
                 }
+                "proxy" -> {
+                    ProxyDialog(context)
+                        .show()
+                }
                 "backup" -> {
                     File(ContextCompat.getDataDir(context), "favorites.json").copyTo(
                         File(getDownloadDirectory(context), "favorites.json"),
@@ -189,9 +194,18 @@ class SettingsFragment :
     }
 
     override fun onSharedPreferenceChanged(sharedPreferences: SharedPreferences?, key: String?) {
-        when (key) {
-            "dl_location" -> {
-                findPreference<Preference>(key)?.summary = getDownloadDirectory(context!!).canonicalPath
+        key ?: return
+
+        with(findPreference<Preference>(key)) {
+            this ?: return
+
+            when (key) {
+                "proxy" -> {
+                    summary = getProxyInfo(context).type.name
+                }
+                "dl_location" -> {
+                    summary = getDownloadDirectory(context!!).canonicalPath
+                }
             }
         }
     }
@@ -245,8 +259,7 @@ class SettingsFragment :
                             onPreferenceClickListener = this@SettingsFragment
                         }
                         "default_query" -> {
-                            val preferences = PreferenceManager.getDefaultSharedPreferences(context)
-                            summary = preferences.getString("default_query", "") ?: ""
+                            summary = PreferenceManager.getDefaultSharedPreferences(context).getString("default_query", "") ?: ""
 
                             onPreferenceClickListener = this@SettingsFragment
                         }
@@ -268,6 +281,11 @@ class SettingsFragment :
                             onPreferenceClickListener = this@SettingsFragment
                         }
                         "mirrors" -> {
+                            onPreferenceClickListener = this@SettingsFragment
+                        }
+                        "proxy" -> {
+                            summary = getProxyInfo(context).type.name
+
                             onPreferenceClickListener = this@SettingsFragment
                         }
                         "dark_mode" -> {

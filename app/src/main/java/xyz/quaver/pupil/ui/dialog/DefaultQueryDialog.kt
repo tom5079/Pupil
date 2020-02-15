@@ -46,16 +46,12 @@ class DefaultQueryDialog(context : Context) : AlertDialog(context) {
     private val excludeBL = "-male:yaoi"
     private val excludeGuro = listOf("-female:guro", "-male:guro")
 
-    private lateinit var dialogView : View
-
     var onPositiveButtonClickListener : ((Tags) -> (Unit))? = null
 
     @SuppressLint("InflateParams")
     override fun onCreate(savedInstanceState: Bundle?) {
-        initDialog()
-
         setTitle(R.string.default_query_dialog_title)
-        setView(dialogView)
+        setView(build())
         setButton(Dialog.BUTTON_POSITIVE, context.getString(android.R.string.ok)) { _, _ ->
             val newTags = Tags.parse(default_query_dialog_edittext.text.toString())
 
@@ -79,15 +75,15 @@ class DefaultQueryDialog(context : Context) : AlertDialog(context) {
     }
 
     @SuppressLint("InflateParams")
-    private fun initDialog() {
+    private fun build() : View {
         val preferences = PreferenceManager.getDefaultSharedPreferences(context)
         val tags = Tags.parse(
             preferences.getString("default_query", "") ?: ""
         )
 
-        dialogView = LayoutInflater.from(context).inflate(R.layout.dialog_default_query, null)
+        val view = LayoutInflater.from(context).inflate(R.layout.dialog_default_query, null)
 
-        with(dialogView.default_query_dialog_language_selector) {
+        with(view.default_query_dialog_language_selector) {
             adapter =
                 ArrayAdapter(
                     context,
@@ -110,13 +106,13 @@ class DefaultQueryDialog(context : Context) : AlertDialog(context) {
             }
         }
 
-        with(dialogView.default_query_dialog_BL_checkbox) {
+        with(view.default_query_dialog_BL_checkbox) {
             isChecked = tags.contains(excludeBL)
             if (tags.contains(excludeBL))
                 tags.remove(excludeBL)
         }
 
-        with(dialogView.default_query_dialog_guro_checkbox) {
+        with(view.default_query_dialog_guro_checkbox) {
             isChecked = excludeGuro.all { tags.contains(it) }
             if (excludeGuro.all { tags.contains(it) })
                 excludeGuro.forEach {
@@ -124,7 +120,7 @@ class DefaultQueryDialog(context : Context) : AlertDialog(context) {
                 }
         }
 
-        with(dialogView.default_query_dialog_edittext) {
+        with(view.default_query_dialog_edittext) {
             setText(tags.toString(), android.widget.TextView.BufferType.EDITABLE)
             addTextChangedListener(object : TextWatcher {
                 override fun beforeTextChanged(
@@ -149,6 +145,8 @@ class DefaultQueryDialog(context : Context) : AlertDialog(context) {
                 }
             })
         }
+
+        return view
     }
 
 }
