@@ -187,14 +187,7 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
         queue.remove(galleryID)
         worker[galleryID]?.cancel()
 
-        clients[galleryID]?.dispatcher()?.queuedCalls()
-            ?.filter {
-                @Suppress("UNCHECKED_CAST")
-                (it.request().tag() as? Pair<Int, Int>)?.first == galleryID
-            }
-            ?.forEach {
-                it.cancel()
-            }
+        clients[galleryID]?.dispatcher()?.cancelAll()
         clients.remove(galleryID)
 
         progress.remove(galleryID)
@@ -283,7 +276,7 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
         for (i in reader.galleryInfo.indices) {
             val callback = object : Callback {
                 override fun onFailure(call: Call, e: IOException) {
-                    if (Fabric.isInitialized())
+                    if (Fabric.isInitialized() && e.message != "Canceled")
                         Crashlytics.logException(e)
 
                     progress[galleryID]?.set(i, Float.NaN)
