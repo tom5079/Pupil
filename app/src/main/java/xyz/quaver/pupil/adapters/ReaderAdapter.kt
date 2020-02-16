@@ -83,15 +83,6 @@ class ReaderAdapter(private val context: Context,
 
     var onItemClickListener : ((Int) -> (Unit))? = null
 
-    init {
-        CoroutineScope(Dispatchers.IO).launch {
-            reader = Cache(context).getReader(galleryID)
-            launch(Dispatchers.Main) {
-                notifyDataSetChanged()
-            }
-        }
-    }
-
     class ViewHolder(val view: View) : RecyclerView.ViewHolder(view)
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
