@@ -22,6 +22,7 @@ import android.content.Intent
 import android.graphics.drawable.Animatable
 import android.graphics.drawable.Drawable
 import android.os.Bundle
+import android.util.Log
 import android.view.*
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -238,9 +239,11 @@ class ReaderActivity : AppCompatActivity() {
         }
 
         timer.schedule(1000, 1000) {
+            Log.i("PUPILD", "TIMER")
             if (worker.progress.indexOfKey(galleryID) < 0)  //loading
                 return@schedule
 
+            Log.i("PUPILD", "LOADEND")
             if (worker.progress[galleryID] == null) {      //Gallery not found
                 timer.cancel()
                 Snackbar
@@ -248,15 +251,25 @@ class ReaderActivity : AppCompatActivity() {
                     .show()
             }
 
+            Log.i("PUPILD", "GALLERY")
             runOnUiThread {
+                Log.i("PUPILD", "UI")
                 reader_download_progressbar.max = reader_recyclerview.adapter?.itemCount ?: 0
                 reader_download_progressbar.progress = worker.progress[galleryID]?.count { !it.isFinite() } ?: 0
                 reader_progressbar.max = reader_recyclerview.adapter?.itemCount ?: 0
 
+                Log.i("PUPILD", "COUNTEND")
                 if (title == getString(R.string.reader_loading)) {
-                    val reader = (reader_recyclerview.adapter as ReaderAdapter).reader
+                    Log.i("PUPILD", "LOADING")
+                    val reader = Cache(this@ReaderActivity).getReaderOrNull(galleryID)
 
+                    Log.i("PUPILD", "READER")
                     if (reader != null) {
+                        Log.i("PUPILD", "NOTNULL")
+                        with (reader_recyclerview?.adapter as ReaderAdapter) {
+                            this.reader = reader
+                            notifyDataSetChanged()
+                        }
                         title = reader.title
                         menu?.findItem(R.id.reader_menu_page_indicator)?.title = "$currentPage/${reader.galleryInfo.size}"
 

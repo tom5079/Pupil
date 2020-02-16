@@ -19,6 +19,7 @@ package xyz.quaver.hitomi
 import kotlinx.serialization.Serializable
 import org.jsoup.Jsoup
 import xyz.quaver.Code
+import xyz.quaver.proxy
 
 fun getReferer(galleryID: Int) = "https://hitomi.la/reader/$galleryID.html"
 
@@ -38,7 +39,7 @@ data class Reader(val code: Code, val title: String, val galleryInfo: List<Galle
 fun getReader(galleryID: Int) : Reader {
     val readerUrl = "https://hitomi.la/reader/$galleryID.html"
 
-    val doc = Jsoup.connect(readerUrl).get()
+    val doc = Jsoup.connect(readerUrl).proxy(proxy).get()
 
    return Reader(Code.HITOMI, doc.title(), getGalleryInfo(galleryID))
 }

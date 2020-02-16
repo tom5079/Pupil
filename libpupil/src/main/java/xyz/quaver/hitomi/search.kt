@@ -16,6 +16,7 @@
 
 package xyz.quaver.hitomi
 
+import xyz.quaver.proxy
 import java.net.URL
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
@@ -49,8 +50,9 @@ fun sanitize(input: String) : String {
 
 fun getIndexVersion(name: String) : String {
     return try {
-        URL("$protocol//$domain/$name/version?_=${System.currentTimeMillis()}")
-            .readText()
+        URL("$protocol//$domain/$name/version?_=${System.currentTimeMillis()}").openConnection(proxy).getInputStream().use {
+            it.reader().readText()
+        }
     } catch (e: Exception) {
         ""
     }
@@ -167,13 +169,16 @@ fun getSuggestionsFromData(field: String, data: Pair<Long, Int>) : List<Suggesti
 }
 
 fun getGalleryIDsFromNozomi(area: String?, tag: String, language: String) : List<Int> {
+    print("PUPILD: NOZOMI REQUEST: $area:$tag ($language)")
     val nozomiAddress =
             when(area) {
                 null -> "$protocol//$domain/$compressed_nozomi_prefix/$tag-$language$nozomiextension"
                 else -> "$protocol//$domain/$compressed_nozomi_prefix/$area/$tag-$language$nozomiextension"
             }
 
-    val bytes = URL(nozomiAddress).readBytes()
+    val bytes = URL(nozomiAddress).openConnection(proxy).getInputStream().use {
+        it.readBytes()
+    }
 
     val nozomi = ArrayList<Int>()
 
@@ -184,6 +189,7 @@ fun getGalleryIDsFromNozomi(area: String?, tag: String, language: String) : List
     while (arrayBuffer.hasRemaining())
         nozomi.add(arrayBuffer.int)
 
+    print("PUPILD: NOZOMI REQUEST END: $area:$tag ($language)")
     return nozomi
 }
 
@@ -238,7 +244,7 @@ fun getNodeAtAddress(field: String, address: Long) : Node? {
 
 fun getURLAtRange(url: String, range: LongRange) : ByteArray? {
     try {
-        with (URL(url).openConnection() as HttpsURLConnection) {
+        with (URL(url).openConnection(proxy) as HttpsURLConnection) {
             requestMethod = "GET"
 
             setRequestProperty("Range", "bytes=${range.first}-${range.last}")
