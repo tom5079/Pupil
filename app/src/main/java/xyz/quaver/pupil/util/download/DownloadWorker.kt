@@ -42,6 +42,7 @@ import xyz.quaver.hiyobi.createImgList
 import xyz.quaver.hiyobi.user_agent
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.ui.ReaderActivity
+import xyz.quaver.pupil.util.getProxy
 import java.io.IOException
 import java.util.concurrent.Executors
 import java.util.concurrent.LinkedBlockingQueue
@@ -159,6 +160,7 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
         OkHttpClient.Builder()
             .addInterceptor(interceptor)
             .dispatcher(Dispatcher(Executors.newFixedThreadPool(4)))
+            .proxy(getProxy(this))
             .build()
 
     fun stop() {
