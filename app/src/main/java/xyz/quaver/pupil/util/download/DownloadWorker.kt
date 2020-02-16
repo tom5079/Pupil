@@ -23,6 +23,7 @@ import android.content.Context
 import android.content.ContextWrapper
 import android.content.Intent
 import android.content.SharedPreferences
+import android.util.Log
 import android.util.SparseArray
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
@@ -40,9 +41,9 @@ import xyz.quaver.hitomi.urlFromUrlFromHash
 import xyz.quaver.hiyobi.cookie
 import xyz.quaver.hiyobi.createImgList
 import xyz.quaver.hiyobi.user_agent
+import xyz.quaver.proxy
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.ui.ReaderActivity
-import xyz.quaver.pupil.util.getProxy
 import java.io.IOException
 import java.util.concurrent.Executors
 import java.util.concurrent.LinkedBlockingQueue
@@ -160,7 +161,7 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
         OkHttpClient.Builder()
             .addInterceptor(interceptor)
             .dispatcher(Dispatcher(Executors.newFixedThreadPool(4)))
-            .proxy(getProxy(this))
+            .proxy(proxy)
             .build()
 
     fun stop() {
@@ -262,6 +263,8 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
                 0F
         }.toMutableList())
         exception.put(galleryID, reader.galleryInfo.map { null }.toMutableList())
+
+        Log.i("PUPILD", "READER HERE!")
 
         if (notification[galleryID] == null)
             initNotification(galleryID)

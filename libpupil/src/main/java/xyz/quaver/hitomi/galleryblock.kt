@@ -19,6 +19,7 @@ package xyz.quaver.hitomi
 import kotlinx.serialization.Serializable
 import org.jsoup.Jsoup
 import xyz.quaver.Code
+import xyz.quaver.proxy
 import java.net.URL
 import java.net.URLDecoder
 import java.nio.ByteBuffer
@@ -78,7 +79,7 @@ data class GalleryBlock(
 fun getGalleryBlock(galleryID: Int) : GalleryBlock? {
     val url = "$protocol//$domain/$galleryblockdir/$galleryID$extension"
 
-    val doc = Jsoup.connect(url).get()
+    val doc = Jsoup.connect(url).proxy(proxy).get()
 
     val galleryUrl = doc.selectFirst(".lillie").attr("href")
 

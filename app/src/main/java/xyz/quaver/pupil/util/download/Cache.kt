@@ -155,9 +155,11 @@ class Cache(context: Context) : ContextWrapper(context) {
                 var retval: Reader? = null
 
                 for (source in sources) {
-                    retval = kotlin.runCatching {
+                    retval = try {
                         source.value.invoke()
-                    }.getOrNull()
+                    } catch (e: Exception) {
+                        null
+                    }
 
                     if (retval != null)
                         break
