@@ -937,26 +937,26 @@ class MainActivity : AppCompatActivity() {
                             when(sortMode) {
                                 SortMode.POPULAR -> getGalleryIDsFromNozomi(null, "popular", "all")
                                 else -> getGalleryIDsFromNozomi(null, "index", "all")
-                            }.apply {
-                                totalItems = size
+                            }.also {
+                                totalItems = it.size
                             }
                         }
-                        else -> doSearch("$defaultQuery $query", sortMode == SortMode.POPULAR).apply {
-                            totalItems = size
+                        else -> doSearch("$defaultQuery $query", sortMode == SortMode.POPULAR).also {
+                            totalItems = it.size
                         }
                     }
                 }
                 Mode.HISTORY -> {
                     when {
                         query.isEmpty() -> {
-                            histories.toList().apply {
-                                totalItems = size
+                            histories.toList().also {
+                                totalItems = it.size
                             }
                         }
                         else -> {
                             val result = doSearch(query).sorted()
-                            histories.filter { result.binarySearch(it) >= 0 }.apply {
-                                totalItems = size
+                            histories.filter { result.binarySearch(it) >= 0 }.also {
+                                totalItems = it.size
                             }
                         }
                     }
@@ -969,26 +969,26 @@ class MainActivity : AppCompatActivity() {
                     } ?: emptyList()
 
                     when {
-                        query.isEmpty() -> downloads.apply {
-                            totalItems = size
+                        query.isEmpty() -> downloads.also {
+                            totalItems = it.size
                         }
                         else -> {
                             val result = doSearch(query).sorted()
-                            downloads.filter { result.binarySearch(it) >= 0 }.apply {
-                                totalItems = size
+                            downloads.filter { result.binarySearch(it) >= 0 }.also {
+                                totalItems = it.size
                             }
                         }
                     }
                 }
                 Mode.FAVORITE -> {
                     when {
-                        query.isEmpty() -> favorites.toList().apply {
-                            totalItems = size
+                        query.isEmpty() -> favorites.toList().also {
+                            totalItems = it.size
                         }
                         else -> {
                             val result = doSearch(query).sorted()
-                            favorites.filter { result.binarySearch(it) >= 0 }.apply {
-                                totalItems = size
+                            favorites.filter { result.binarySearch(it) >= 0 }.also {
+                                totalItems = it.size
                             }
                         }
                     }
@@ -1003,10 +1003,13 @@ class MainActivity : AppCompatActivity() {
 
         loadingJob = CoroutineScope(Dispatchers.IO).launch {
             val galleryIDs = try {
-                galleryIDs!!.await()
+                galleryIDs!!.await().also {
+                    if (it.isEmpty())
+                        throw Exception("No result")
+                }
             } catch (e: Exception) {
 
-                if (Fabric.isInitialized())
+                if (Fabric.isInitialized() && e.message != "No result")
                     Crashlytics.logException(e)
 
                 withContext(Dispatchers.Main) {
