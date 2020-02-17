@@ -48,7 +48,7 @@
             app:title="@string/settings_dl_location"/>
 
         <SwitchPreferenceCompat
-            app:key="dl_low_quality"
+            app:key="low_quality"
             app:title="@string/settings_low_quality"
             app:summary="@string/settings_low_quality_summary"/>
 

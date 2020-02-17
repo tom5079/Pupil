@@ -84,8 +84,8 @@ fun getReader(galleryID: Int) : Reader {
 fun createImgList(galleryID: Int, reader: Reader, lowQuality: Boolean = false) =
     if (lowQuality)
         reader.galleryInfo.map {
-            val name = it.name.replace(Regex("/.[^/.]+$"), "") + ".jpg"
-            Images("$protocol//$hiyobi/data/$galleryID/$name.jpg", galleryID, it.name)
+            val name = it.name.replace(Regex("""\.[^/.]+$"""), "")
+            Images("$protocol//$hiyobi/data_r/$galleryID/$name.jpg", galleryID, it.name)
         }
     else
         reader.galleryInfo.map { Images("$protocol//$hiyobi/data/$galleryID/${it.name}", galleryID, it.name) }
