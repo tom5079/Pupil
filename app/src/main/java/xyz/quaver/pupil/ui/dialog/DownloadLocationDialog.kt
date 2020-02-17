@@ -115,7 +115,10 @@ class DownloadLocationDialog(val activity: Activity) : AlertDialog(activity) {
         externalFilesDirs.indexOfFirst {
             it.canonicalPath == getDownloadDirectory(context).canonicalPath
         }.let { index ->
-            buttons[index].first.isChecked = true
+            if (index < 0)
+                buttons.first().first.isChecked = true
+            else
+                buttons[index].first.isChecked = true
         }
 
         setTitle(R.string.settings_dl_location)
