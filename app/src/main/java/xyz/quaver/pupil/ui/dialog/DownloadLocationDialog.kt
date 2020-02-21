@@ -26,6 +26,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.view.View
 import android.widget.LinearLayout
 import android.widget.RadioButton
 import androidx.appcompat.app.AlertDialog
@@ -46,6 +47,16 @@ class DownloadLocationDialog(val activity: Activity) : AlertDialog(activity) {
     private val buttons = mutableListOf<Pair<RadioButton, File?>>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        setTitle(R.string.settings_dl_location)
+
+        setView(build())
+
+        setButton(Dialog.BUTTON_POSITIVE, context.getText(android.R.string.ok)) { _, _ -> }
+
+        super.onCreate(savedInstanceState)
+    }
+
+    private fun build() : View {
         val view = layoutInflater.inflate(R.layout.dialog_dl_location, null) as LinearLayout
 
         val externalFilesDirs = ContextCompat.getExternalFilesDirs(context, null)
@@ -121,15 +132,7 @@ class DownloadLocationDialog(val activity: Activity) : AlertDialog(activity) {
                 buttons[index].first.isChecked = true
         }
 
-        setTitle(R.string.settings_dl_location)
-
-        setView(view)
-
-        setButton(Dialog.BUTTON_POSITIVE, context.getText(android.R.string.ok)) { _, _ ->
-            dismiss()
-        }
-
-        super.onCreate(savedInstanceState)
+        return view
     }
 
 }

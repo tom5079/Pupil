@@ -18,6 +18,7 @@ package xyz.quaver.hitomi
 
 import kotlinx.serialization.Serializable
 import org.jsoup.Jsoup
+import xyz.quaver.proxy
 import java.net.URLDecoder
 
 @Serializable
@@ -36,7 +37,7 @@ data class Gallery(
     val thumbnails: List<String>
 )
 fun getGallery(galleryID: Int) : Gallery {
-    val url = Jsoup.connect("https://hitomi.la/galleries/$galleryID.html").get()
+    val url = Jsoup.connect("https://hitomi.la/galleries/$galleryID.html").proxy(proxy).get()
         .select("a").attr("href")
 
     val doc = Jsoup.connect(url).get()

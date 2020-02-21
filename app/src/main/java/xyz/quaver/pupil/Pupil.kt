@@ -31,7 +31,9 @@ import com.google.android.gms.common.GooglePlayServicesNotAvailableException
 import com.google.android.gms.common.GooglePlayServicesRepairableException
 import com.google.android.gms.security.ProviderInstaller
 import com.google.firebase.analytics.FirebaseAnalytics
+import xyz.quaver.proxy
 import xyz.quaver.pupil.util.Histories
+import xyz.quaver.pupil.util.getProxy
 import java.io.File
 
 class Pupil : MultiDexApplication() {
@@ -45,6 +47,8 @@ class Pupil : MultiDexApplication() {
 
     override fun onCreate() {
         val preference = PreferenceManager.getDefaultSharedPreferences(this)
+
+        proxy = getProxy(this)
 
         try {
             preference.getString("dl_location", null)
