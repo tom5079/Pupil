@@ -20,7 +20,7 @@ android {
         minSdkVersion 16
         targetSdkVersion 29
         versionCode 42
-        versionName "4.6-alpha5"
+        versionName "4.6-alpha6"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         multiDexEnabled true
         vectorDrawables.useSupportLibrary = true
@@ -68,7 +68,7 @@ dependencies {
     implementation "androidx.biometric:biometric:1.0.1"
     implementation 'com.android.support:multidex:1.0.3'
     implementation "com.daimajia.swipelayout:library:1.2.0@aar"
-    implementation 'com.google.android.material:material:1.2.0-alpha04'
+    implementation 'com.google.android.material:material:1.2.0-alpha05'
     implementation 'com.google.firebase:firebase-core:17.2.2'
     implementation 'com.google.firebase:firebase-perf:19.0.5'
     implementation 'com.crashlytics.sdk.android:crashlytics:2.10.1'

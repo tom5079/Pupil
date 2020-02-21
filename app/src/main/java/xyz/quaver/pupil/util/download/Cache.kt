@@ -188,6 +188,23 @@ class Cache(context: Context) : ContextWrapper(context) {
         }
     }
 
+    val imageExts = listOf(
+        "jpg",
+        "webp"
+    )
+    fun getImage(galleryID: Int, index: Int): File? {
+        val gallery = getCachedGallery(galleryID)
+
+        for (ext in imageExts) {
+            File(gallery, "%05d.$ext".format(index)).let {
+                if (it.exists())
+                    return it
+            }
+        }
+
+        return null
+    }
+
     fun putImage(galleryID: Int, name: String, data: ByteArray) {
         val cache = File(getCachedGallery(galleryID), name).also {
             if (!it.exists())

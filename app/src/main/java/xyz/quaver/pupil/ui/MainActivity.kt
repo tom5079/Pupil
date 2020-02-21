@@ -25,7 +25,6 @@ import android.net.Uri
 import android.os.Bundle
 import android.text.*
 import android.text.style.AlignmentSpan
-import android.util.Log
 import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.View
@@ -120,7 +119,6 @@ class MainActivity : AppCompatActivity() {
         val lockManager = try {
             LockManager(this)
         } catch (e: Exception) {
-            Log.i("PUPILD", e.toString())
             android.app.AlertDialog.Builder(this).apply {
                 setTitle(R.string.warning)
                 setMessage(R.string.lock_corrupted)
