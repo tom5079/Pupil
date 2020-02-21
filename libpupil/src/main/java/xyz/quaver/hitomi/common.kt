@@ -18,6 +18,7 @@ package xyz.quaver.hitomi
 
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.list
+import xyz.quaver.proxy
 import java.net.URL
 
 const val protocol = "https:"
@@ -27,7 +28,9 @@ fun getGalleryInfo(galleryID: Int) =
     Json.nonstrict.parse(
         GalleryInfo.serializer().list,
         Regex("""\[.+]""").find(
-            URL("$protocol//$domain/galleries/$galleryID.js").readText()
+            URL("$protocol//$domain/galleries/$galleryID.js").openConnection(proxy).getInputStream().use {
+                it.reader().readText()
+            }
         )?.value ?: "[]"
     )
 

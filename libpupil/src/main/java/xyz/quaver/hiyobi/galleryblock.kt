@@ -20,11 +20,12 @@ import org.jsoup.Jsoup
 import xyz.quaver.Code
 import xyz.quaver.hitomi.GalleryBlock
 import xyz.quaver.hitomi.protocol
+import xyz.quaver.proxy
 
 fun getGalleryBlock(galleryID: Int) : GalleryBlock? {
     val url = "$protocol//$hiyobi/info/$galleryID"
 
-    val doc = Jsoup.connect(url).get()
+    val doc = Jsoup.connect(url).proxy(proxy).get()
 
     val galleryBlock = doc.selectFirst(".gallery-content")
 

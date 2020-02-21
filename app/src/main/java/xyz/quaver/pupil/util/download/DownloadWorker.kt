@@ -23,6 +23,7 @@ import android.content.Context
 import android.content.ContextWrapper
 import android.content.Intent
 import android.content.SharedPreferences
+import android.util.Log
 import android.util.SparseArray
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
@@ -40,6 +41,7 @@ import xyz.quaver.hitomi.urlFromUrlFromHash
 import xyz.quaver.hiyobi.cookie
 import xyz.quaver.hiyobi.createImgList
 import xyz.quaver.hiyobi.user_agent
+import xyz.quaver.proxy
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.ui.ReaderActivity
 import java.io.IOException
@@ -159,6 +161,7 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
         OkHttpClient.Builder()
             .addInterceptor(interceptor)
             .dispatcher(Dispatcher(Executors.newFixedThreadPool(4)))
+            .proxy(proxy)
             .build()
 
     fun stop() {
@@ -229,7 +232,10 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
             tag(galleryID to index)
         }.build()
 
-        clients[galleryID].newCall(request).enqueue(callback)
+        if (clients.get(galleryID) == null)
+            clients.put(galleryID, buildClient())
+
+        clients[galleryID]?.newCall(request)?.enqueue(callback)
     }
 
     private fun download(galleryID: Int) = CoroutineScope(Dispatchers.IO).launch {
@@ -254,6 +260,8 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
         }.toMutableList())
         exception.put(galleryID, reader.galleryInfo.map { null }.toMutableList())
 
+        Log.i("PUPILD", "READER HERE!")
+
         if (notification[galleryID] == null)
             initNotification(galleryID)
 
@@ -270,8 +278,6 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
 
             return@launch
         }
-
-        clients.put(galleryID, buildClient())
 
         for (i in reader.galleryInfo.indices) {
             val callback = object : Callback {

@@ -24,6 +24,7 @@ import xyz.quaver.Code
 import xyz.quaver.hitomi.GalleryInfo
 import xyz.quaver.hitomi.Reader
 import xyz.quaver.hitomi.protocol
+import xyz.quaver.proxy
 import java.net.URL
 import javax.net.ssl.HttpsURLConnection
 
@@ -48,7 +49,7 @@ fun renewCookie() : String {
     val url = "https://$hiyobi/"
 
     try {
-        with(URL(url).openConnection() as HttpsURLConnection) {
+        with(URL(url).openConnection(proxy) as HttpsURLConnection) {
             setRequestProperty("User-Agent", user_agent)
             connectTimeout = 2000
             connect()
@@ -64,11 +65,11 @@ fun getReader(galleryID: Int) : Reader {
     val reader = "https://$hiyobi/reader/$galleryID"
     val url = "https://$hiyobi/data/json/${galleryID}_list.json"
 
-    val title = Jsoup.connect(reader).get().title()
+    val title = Jsoup.connect(reader).proxy(proxy).get().title()
 
     val galleryInfo = Json.nonstrict.parse(
         GalleryInfo.serializer().list,
-        with(URL(url).openConnection() as HttpsURLConnection) {
+        with(URL(url).openConnection(proxy) as HttpsURLConnection) {
             setRequestProperty("User-Agent", user_agent)
             setRequestProperty("Cookie", cookie)
             connectTimeout = 2000
