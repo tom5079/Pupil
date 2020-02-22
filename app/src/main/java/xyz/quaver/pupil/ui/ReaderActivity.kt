@@ -300,7 +300,7 @@ class ReaderActivity : AppCompatActivity() {
                 }
             }
 
-            //addOnScrollListener((adapter as ReaderAdapter).preloader)
+            addOnScrollListener((adapter as ReaderAdapter).preloader)
             addOnScrollListener(object: RecyclerView.OnScrollListener() {
                 override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
                     super.onScrolled(recyclerView, dx, dy)

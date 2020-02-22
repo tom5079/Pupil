@@ -23,7 +23,6 @@ import android.content.Context
 import android.content.ContextWrapper
 import android.content.Intent
 import android.content.SharedPreferences
-import android.util.Log
 import android.util.SparseArray
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
@@ -253,14 +252,12 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
         val cache = Cache(this@DownloadWorker).getImages(galleryID)
 
         progress.put(galleryID, reader.galleryInfo.indices.map { index ->
-            if (cache?.get(index) != null)
+            if (cache?.getOrNull(index) != null)
                 Float.POSITIVE_INFINITY
             else
                 0F
         }.toMutableList())
         exception.put(galleryID, reader.galleryInfo.map { null }.toMutableList())
-
-        Log.i("PUPILD", "READER HERE!")
 
         if (notification[galleryID] == null)
             initNotification(galleryID)
