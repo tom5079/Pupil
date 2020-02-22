@@ -169,7 +169,6 @@ fun getSuggestionsFromData(field: String, data: Pair<Long, Int>) : List<Suggesti
 }
 
 fun getGalleryIDsFromNozomi(area: String?, tag: String, language: String) : List<Int> {
-    print("PUPILD: NOZOMI REQUEST: $area:$tag ($language)")
     val nozomiAddress =
             when(area) {
                 null -> "$protocol//$domain/$compressed_nozomi_prefix/$tag-$language$nozomiextension"
@@ -189,7 +188,6 @@ fun getGalleryIDsFromNozomi(area: String?, tag: String, language: String) : List
     while (arrayBuffer.hasRemaining())
         nozomi.add(arrayBuffer.int)
 
-    print("PUPILD: NOZOMI REQUEST END: $area:$tag ($language)")
     return nozomi
 }
 

@@ -178,24 +178,27 @@ class Cache(context: Context) : ContextWrapper(context) {
         return reader
     }
 
+    val imageNameRegex = Regex("""^\d+\..+$""")
     fun getImages(galleryID: Int): List<File?>? {
         val gallery = getCachedGallery(galleryID)
-        val reader = getReaderOrNull(galleryID) ?: return null
-        val images = gallery.listFiles() ?: return null
 
-        return reader.galleryInfo.indices.map { index ->
-            images.firstOrNull { file -> file.name.startsWith("%05d".format(index)) }
+        return gallery.list { _, name ->
+            imageNameRegex.matches(name)
+        }?.map {
+            File(gallery, it)
         }
     }
 
-    val imageExts = listOf(
+    val imageExtensions = listOf(
+        "png",
         "jpg",
-        "webp"
+        "webp",
+        "gif"
     )
     fun getImage(galleryID: Int, index: Int): File? {
         val gallery = getCachedGallery(galleryID)
 
-        for (ext in imageExts) {
+        for (ext in imageExtensions) {
             File(gallery, "%05d.$ext".format(index)).let {
                 if (it.exists())
                     return it

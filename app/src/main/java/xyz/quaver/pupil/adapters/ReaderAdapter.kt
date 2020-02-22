@@ -58,7 +58,7 @@ class ReaderAdapter(private val context: Context,
     }
     val modelProvider = object: ListPreloader.PreloadModelProvider<File> {
         override fun getPreloadItems(position: Int): MutableList<File> {
-            return listOf(Cache(context).getImages(galleryID)?.get(position)).filterNotNullTo(mutableListOf())
+            return listOf(Cache(context).getImages(galleryID)?.getOrNull(position)).filterNotNullTo(mutableListOf())
         }
 
         override fun getPreloadRequestBuilder(item: File): RequestBuilder<*>? {
