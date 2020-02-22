@@ -26,6 +26,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.view.View
 import android.widget.LinearLayout
 import android.widget.RadioButton
 import androidx.appcompat.app.AlertDialog
@@ -36,10 +37,7 @@ import kotlinx.android.synthetic.main.item_dl_location.view.*
 import net.rdrei.android.dirchooser.DirectoryChooserActivity
 import net.rdrei.android.dirchooser.DirectoryChooserConfig
 import xyz.quaver.pupil.R
-import xyz.quaver.pupil.util.REQUEST_DOWNLOAD_FOLDER
-import xyz.quaver.pupil.util.REQUEST_DOWNLOAD_FOLDER_OLD
-import xyz.quaver.pupil.util.REQUEST_WRITE_PERMISSION_AND_SAF
-import xyz.quaver.pupil.util.byteToString
+import xyz.quaver.pupil.util.*
 import java.io.File
 
 @SuppressLint("InflateParams")
@@ -49,6 +47,16 @@ class DownloadLocationDialog(val activity: Activity) : AlertDialog(activity) {
     private val buttons = mutableListOf<Pair<RadioButton, File?>>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        setTitle(R.string.settings_dl_location)
+
+        setView(build())
+
+        setButton(Dialog.BUTTON_POSITIVE, context.getText(android.R.string.ok)) { _, _ -> }
+
+        super.onCreate(savedInstanceState)
+    }
+
+    private fun build() : View {
         val view = layoutInflater.inflate(R.layout.dialog_dl_location, null) as LinearLayout
 
         val externalFilesDirs = ContextCompat.getExternalFilesDirs(context, null)
@@ -115,25 +123,16 @@ class DownloadLocationDialog(val activity: Activity) : AlertDialog(activity) {
             buttons.add(button to null)
         })
 
-        val pref = preference.getString("dl_location", null)
-        val index = externalFilesDirs.indexOfFirst {
-            it.canonicalPath == pref
+        externalFilesDirs.indexOfFirst {
+            it.canonicalPath == getDownloadDirectory(context).canonicalPath
+        }.let { index ->
+            if (index < 0)
+                buttons.first().first.isChecked = true
+            else
+                buttons[index].first.isChecked = true
         }
 
-        if (index < 0)
-            buttons.last().first.isChecked = true
-        else
-            buttons[index].first.isChecked = true
-
-        setTitle(R.string.settings_dl_location)
-
-        setView(view)
-
-        setButton(Dialog.BUTTON_POSITIVE, context.getText(android.R.string.ok)) { _, _ ->
-            dismiss()
-        }
-
-        super.onCreate(savedInstanceState)
+        return view
     }
 
 }

@@ -71,15 +71,15 @@ class GalleryBlockAdapter(context: Context, private val galleries: List<GalleryB
     inner class GalleryViewHolder(val view: View) : RecyclerView.ViewHolder(view) {
         var timerTask: TimerTask? = null
 
-        private fun updateProgress(context: Context, galleryID: Int) = CoroutineScope(Dispatchers.IO).launch {
+        private fun updateProgress(context: Context, galleryID: Int) {
             val cache = Cache(context).getCachedGallery(galleryID)
             val reader = Cache(context).getReaderOrNull(galleryID)
 
-            launch(Dispatchers.Main) main@{
+            CoroutineScope(Dispatchers.Main).launch {
                 if (reader == null) {
                     view.galleryblock_progressbar.visibility = View.GONE
                     view.galleryblock_progress_complete.visibility = View.GONE
-                    return@main
+                    return@launch
                 }
 
                 with(view.galleryblock_progressbar) {
@@ -90,7 +90,7 @@ class GalleryBlockAdapter(context: Context, private val galleries: List<GalleryB
 
                     if (visibility == View.GONE) {
                         visibility = View.VISIBLE
-                        max = reader.galleryInfo.size
+                        max = reader.galleryInfo.files.size
                     }
 
                     if (progress == max) {
@@ -160,7 +160,7 @@ class GalleryBlockAdapter(context: Context, private val galleries: List<GalleryB
                     } ?: 0
 
                     with(galleryblock_progressbar) {
-                        max = reader.galleryInfo.size
+                        max = reader.galleryInfo.files.size
                         progress = count
 
                         visibility = View.VISIBLE

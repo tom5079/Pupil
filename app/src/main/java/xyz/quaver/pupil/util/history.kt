@@ -18,14 +18,13 @@
 
 package xyz.quaver.pupil.util
 
-import kotlinx.serialization.ImplicitReflectionSerializer
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonConfiguration
-import kotlinx.serialization.parseList
-import kotlinx.serialization.stringify
+import kotlinx.serialization.list
+import kotlinx.serialization.serializer
 import java.io.File
 
 class Histories(private val file: File) : ArrayList<Int>() {
+
+    val serializer = Int.serializer().list
 
     init {
         if (!file.exists())
@@ -38,21 +37,20 @@ class Histories(private val file: File) : ArrayList<Int>() {
         }
     }
 
-    @UseExperimental(ImplicitReflectionSerializer::class)
     fun load() : Histories {
         return apply {
             super.clear()
             addAll(
-                Json(JsonConfiguration.Stable).parseList(
+                json.parse(
+                    serializer,
                     file.bufferedReader().use { it.readText() }
                 )
             )
         }
     }
 
-    @UseExperimental(ImplicitReflectionSerializer::class)
     fun save() {
-        file.writeText(Json(JsonConfiguration.Stable).stringify(this))
+        file.writeText(json.stringify(serializer, this))
     }
 
     override fun add(element: Int): Boolean {

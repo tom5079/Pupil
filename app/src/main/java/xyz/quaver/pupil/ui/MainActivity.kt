@@ -45,15 +45,13 @@ import androidx.vectordrawable.graphics.drawable.AnimatedVectorDrawableCompat
 import com.arlib.floatingsearchview.FloatingSearchView
 import com.arlib.floatingsearchview.suggestions.model.SearchSuggestion
 import com.arlib.floatingsearchview.util.view.SearchInputView
+import com.crashlytics.android.Crashlytics
 import com.google.android.material.appbar.AppBarLayout
+import io.fabric.sdk.android.Fabric
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.activity_main_content.*
 import kotlinx.coroutines.*
-import kotlinx.serialization.ImplicitReflectionSerializer
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonConfiguration
 import kotlinx.serialization.list
-import kotlinx.serialization.stringify
 import xyz.quaver.hitomi.GalleryBlock
 import xyz.quaver.hitomi.doSearch
 import xyz.quaver.hitomi.getGalleryIDsFromNozomi
@@ -179,7 +177,7 @@ class MainActivity : AppCompatActivity() {
     override fun onDestroy() {
         super.onDestroy()
 
-        (main_recyclerview.adapter as GalleryBlockAdapter).timer.cancel()
+        (main_recyclerview?.adapter as? GalleryBlockAdapter)?.timer?.cancel()
     }
 
     override fun onResume() {
@@ -693,7 +691,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     private var suggestionJob : Job? = null
-    @UseExperimental(ImplicitReflectionSerializer::class)
     private fun setupSearchBar() {
         val searchInputView = findViewById<SearchInputView>(R.id.search_bar_text)
         //Change upper case letters to lower case
@@ -717,12 +714,11 @@ class MainActivity : AppCompatActivity() {
 
         with(main_searchview as FloatingSearchView) {
             val favoritesFile = File(ContextCompat.getDataDir(context), "favorites_tags.json")
-            val json = Json(JsonConfiguration.Stable)
             val serializer = Tag.serializer().list
 
             if (!favoritesFile.exists()) {
                 favoritesFile.createNewFile()
-                favoritesFile.writeText(json.stringify(Tags(listOf())))
+                favoritesFile.writeText(json.stringify(serializer, Tags(listOf())))
             }
 
             setOnMenuItemClickListener {
@@ -840,7 +836,7 @@ class MainActivity : AppCompatActivity() {
                             favorites.add(tag)
                         }
 
-                        favoritesFile.writeText(json.stringify(favorites))
+                        favoritesFile.writeText(json.stringify(serializer, favorites))
                     }
                 }
 
@@ -939,26 +935,26 @@ class MainActivity : AppCompatActivity() {
                             when(sortMode) {
                                 SortMode.POPULAR -> getGalleryIDsFromNozomi(null, "popular", "all")
                                 else -> getGalleryIDsFromNozomi(null, "index", "all")
-                            }.apply {
-                                totalItems = size
+                            }.also {
+                                totalItems = it.size
                             }
                         }
-                        else -> doSearch("$defaultQuery $query", sortMode == SortMode.POPULAR).apply {
-                            totalItems = size
+                        else -> doSearch("$defaultQuery $query", sortMode == SortMode.POPULAR).also {
+                            totalItems = it.size
                         }
                     }
                 }
                 Mode.HISTORY -> {
                     when {
                         query.isEmpty() -> {
-                            histories.toList().apply {
-                                totalItems = size
+                            histories.toList().also {
+                                totalItems = it.size
                             }
                         }
                         else -> {
                             val result = doSearch(query).sorted()
-                            histories.filter { result.binarySearch(it) >= 0 }.apply {
-                                totalItems = size
+                            histories.filter { result.binarySearch(it) >= 0 }.also {
+                                totalItems = it.size
                             }
                         }
                     }
@@ -971,26 +967,26 @@ class MainActivity : AppCompatActivity() {
                     } ?: emptyList()
 
                     when {
-                        query.isEmpty() -> downloads.apply {
-                            totalItems = size
+                        query.isEmpty() -> downloads.also {
+                            totalItems = it.size
                         }
                         else -> {
                             val result = doSearch(query).sorted()
-                            downloads.filter { result.binarySearch(it) >= 0 }.apply {
-                                totalItems = size
+                            downloads.filter { result.binarySearch(it) >= 0 }.also {
+                                totalItems = it.size
                             }
                         }
                     }
                 }
                 Mode.FAVORITE -> {
                     when {
-                        query.isEmpty() -> favorites.toList().apply {
-                            totalItems = size
+                        query.isEmpty() -> favorites.toList().also {
+                            totalItems = it.size
                         }
                         else -> {
                             val result = doSearch(query).sorted()
-                            favorites.filter { result.binarySearch(it) >= 0 }.apply {
-                                totalItems = size
+                            favorites.filter { result.binarySearch(it) >= 0 }.also {
+                                totalItems = it.size
                             }
                         }
                     }
@@ -1004,9 +1000,16 @@ class MainActivity : AppCompatActivity() {
         val perPage = preference.getString("per_page", "25")?.toInt() ?: 25
 
         loadingJob = CoroutineScope(Dispatchers.IO).launch {
-            val galleryIDs = galleryIDs?.await()
+            val galleryIDs = try {
+                galleryIDs!!.await().also {
+                    if (it.isEmpty())
+                        throw Exception("No result")
+                }
+            } catch (e: Exception) {
 
-            if (galleryIDs.isNullOrEmpty()) { //No result
+                if (Fabric.isInitialized() && e.message != "No result")
+                    Crashlytics.logException(e)
+
                 withContext(Dispatchers.Main) {
                     main_noresult.visibility = View.VISIBLE
                     main_progressbar.hide()

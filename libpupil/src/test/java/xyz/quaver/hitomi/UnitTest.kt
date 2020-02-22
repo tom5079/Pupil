@@ -82,14 +82,14 @@ class UnitTest {
 
     @Test
     fun test_hiyobi() {
-        val reader = xyz.quaver.hiyobi.getReader(10000062)
+        val reader = xyz.quaver.hiyobi.getReader(1574736)
 
         print(reader)
     }
 
     @Test
     fun test_urlFromUrlFromHash() {
-        val url = urlFromUrlFromHash(1531795, GalleryInfo(
+        val url = urlFromUrlFromHash(1531795, GalleryFiles(
             212, "719d46a7556be0d0021c5105878507129b5b3308b02cf67f18901b69dbb3b5ef", 1, "00.jpg", 300
         ), "webp")
 

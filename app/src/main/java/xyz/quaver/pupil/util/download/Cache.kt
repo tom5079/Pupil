@@ -21,21 +21,18 @@ package xyz.quaver.pupil.util.download
 import android.content.Context
 import android.content.ContextWrapper
 import android.util.Base64
-import android.util.Log
 import androidx.preference.PreferenceManager
+import com.crashlytics.android.Crashlytics
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.withContext
-import kotlinx.serialization.ImplicitReflectionSerializer
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.parse
-import kotlinx.serialization.stringify
 import xyz.quaver.Code
 import xyz.quaver.hitomi.GalleryBlock
 import xyz.quaver.hitomi.Reader
 import xyz.quaver.pupil.util.getCachedGallery
 import xyz.quaver.pupil.util.getDownloadDirectory
+import xyz.quaver.pupil.util.json
 import java.io.File
 import java.net.URL
 
@@ -50,7 +47,6 @@ class Cache(context: Context) : ContextWrapper(context) {
             it.mkdirs()
     }
 
-    @UseExperimental(ImplicitReflectionSerializer::class)
     fun getCachedMetadata(galleryID: Int) : Metadata? {
         val file = File(getCachedGallery(galleryID), ".metadata")
 
@@ -58,7 +54,7 @@ class Cache(context: Context) : ContextWrapper(context) {
             return null
 
         return try {
-            Json.parse(file.readText())
+            json.parse(Metadata.serializer(), file.readText())
         } catch (e: Exception) {
             //File corrupted
             file.delete()
@@ -66,14 +62,13 @@ class Cache(context: Context) : ContextWrapper(context) {
         }
     }
 
-    @UseExperimental(ImplicitReflectionSerializer::class)
     fun setCachedMetadata(galleryID: Int, metadata: Metadata) {
         val file = File(getCachedGallery(galleryID), ".metadata").also {
             if (!it.exists())
                 it.createNewFile()
         }
 
-        file.writeText(Json.stringify(metadata))
+        file.writeText(json.stringify(Metadata.serializer(), metadata))
     }
 
     suspend fun getThumbnail(galleryID: Int): String? {
@@ -102,21 +97,29 @@ class Cache(context: Context) : ContextWrapper(context) {
     suspend fun getGalleryBlock(galleryID: Int): GalleryBlock? {
         val metadata = Cache(this).getCachedMetadata(galleryID)
 
-        val source = mapOf(
-            Code.HITOMI to { xyz.quaver.hitomi.getGalleryBlock(galleryID) },
-            Code.HIYOBI to { xyz.quaver.hiyobi.getGalleryBlock(galleryID) }
+        val sources = listOf(
+            { xyz.quaver.hitomi.getGalleryBlock(galleryID) },
+            { xyz.quaver.hiyobi.getGalleryBlock(galleryID) }
         )
 
-        val galleryBlock = if (metadata?.galleryBlock == null)
-           source.entries.map {
-               CoroutineScope(Dispatchers.IO).async {
-                   kotlin.runCatching {
-                       it.value.invoke()
-                   }.getOrNull()
-               }
-           }.firstOrNull {
-               it.await() != null
-           }?.await()
+        val galleryBlock = if (metadata?.galleryBlock == null) {
+            CoroutineScope(Dispatchers.IO).async {
+                var galleryBlock: GalleryBlock? = null
+
+                for (source in sources) {
+                    galleryBlock = try {
+                        source.invoke()
+                    } catch (e: Exception) {
+                        null
+                    }
+
+                    if (galleryBlock != null)
+                        break
+                }
+
+                galleryBlock
+            }.await() ?: return null
+        }
         else
             metadata.galleryBlock
 
@@ -155,38 +158,58 @@ class Cache(context: Context) : ContextWrapper(context) {
                 var retval: Reader? = null
 
                 for (source in sources) {
-                    retval = kotlin.runCatching {
+                    retval = try {
                         source.value.invoke()
-                    }.getOrNull()
+                    } catch (e: Exception) {
+                        Crashlytics.logException(e)
+                        null
+                    }
 
                     if (retval != null)
                         break
                 }
 
                 retval
-            }.await()
+            }.await() ?: return null
         } else
             metadata.reader
 
-        if (reader != null)
-            setCachedMetadata(
-                galleryID,
-                Metadata(Cache(this).getCachedMetadata(galleryID), readers = reader)
-            )
+        setCachedMetadata(
+            galleryID,
+            Metadata(Cache(this).getCachedMetadata(galleryID), readers = reader)
+        )
 
         return reader
     }
 
+    val imageNameRegex = Regex("""^\d+\..+$""")
     fun getImages(galleryID: Int): List<File?>? {
-        val started = System.currentTimeMillis()
         val gallery = getCachedGallery(galleryID)
-        val reader = getReaderOrNull(galleryID) ?: return null
-        val images = gallery.listFiles() ?: return null
 
-        Log.i("PUPILD", "${System.currentTimeMillis() - started} ms")
-        return reader.galleryInfo.indices.map { index ->
-            images.firstOrNull { file -> file.name.startsWith("%05d".format(index)) }
+        return gallery.list { _, name ->
+            imageNameRegex.matches(name)
+        }?.map {
+            File(gallery, it)
         }
+    }
+
+    val imageExtensions = listOf(
+        "png",
+        "jpg",
+        "webp",
+        "gif"
+    )
+    fun getImage(galleryID: Int, index: Int): File? {
+        val gallery = getCachedGallery(galleryID)
+
+        for (ext in imageExtensions) {
+            File(gallery, "%05d.$ext".format(index)).let {
+                if (it.exists())
+                    return it
+            }
+        }
+
+        return null
     }
 
     fun putImage(galleryID: Int, name: String, data: ByteArray) {

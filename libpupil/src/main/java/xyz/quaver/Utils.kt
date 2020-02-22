@@ -16,6 +16,10 @@
 
 package xyz.quaver
 
+import java.net.Proxy
+
+var proxy = Proxy.NO_PROXY
+
 fun availableInHiyobi(galleryID: Int) : Boolean {
     return try {
         xyz.quaver.hiyobi.getReader(galleryID)

@@ -17,28 +17,35 @@
 package xyz.quaver.hitomi
 
 import kotlinx.serialization.Serializable
-import org.jsoup.Jsoup
 import xyz.quaver.Code
 
 fun getReferer(galleryID: Int) = "https://hitomi.la/reader/$galleryID.html"
 
 @Serializable
 data class GalleryInfo(
+    val language_localname: String? = null,
+    val language: String? = null,
+    val date: String? = null,
+    val files: List<GalleryFiles>,
+    val id: Int? = null,
+    val type: String? = null,
+    val title: String? = null
+)
+
+@Serializable
+data class GalleryFiles(
     val width: Int,
     val hash: String? = null,
     val haswebp: Int = 0,
     val name: String,
-    val height: Int
+    val height: Int,
+    val hasavif: Int = 0
 )
 
 @Serializable
-data class Reader(val code: Code, val title: String, val galleryInfo: List<GalleryInfo>)
+data class Reader(val code: Code, val galleryInfo: GalleryInfo)
 
 //Set header `Referer` to reader url to avoid 403 error
 fun getReader(galleryID: Int) : Reader {
-    val readerUrl = "https://hitomi.la/reader/$galleryID.html"
-
-    val doc = Jsoup.connect(readerUrl).get()
-
-   return Reader(Code.HITOMI, doc.title(), getGalleryInfo(galleryID))
+   return Reader(Code.HITOMI, getGalleryInfo(galleryID))
 }

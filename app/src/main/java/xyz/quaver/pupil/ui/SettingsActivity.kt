@@ -30,9 +30,8 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.preference.PreferenceManager
 import com.google.android.material.snackbar.Snackbar
 import kotlinx.android.synthetic.main.settings_activity.*
-import kotlinx.serialization.ImplicitReflectionSerializer
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.parseList
+import kotlinx.serialization.list
+import kotlinx.serialization.serializer
 import net.rdrei.android.dirchooser.DirectoryChooserActivity
 import xyz.quaver.pupil.Pupil
 import xyz.quaver.pupil.R
@@ -79,7 +78,6 @@ class SettingsActivity : AppCompatActivity() {
         return true
     }
 
-    @UseExperimental(ImplicitReflectionSerializer::class)
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         when(requestCode) {
             REQUEST_LOCK -> {
@@ -96,13 +94,13 @@ class SettingsActivity : AppCompatActivity() {
                     val uri = data?.data ?: return
 
                     try {
-                        val json = contentResolver.openInputStream(uri).use { inputStream ->
+                        val str = contentResolver.openInputStream(uri).use { inputStream ->
                             inputStream!!
 
                             inputStream.readBytes().toString(Charset.defaultCharset())
                         }
 
-                        (application as Pupil).favorites.addAll(Json.parseList<Int>(json).also {
+                        (application as Pupil).favorites.addAll(json.parse(Int.serializer().list, str).also {
                             Snackbar.make(
                                 window.decorView,
                                 getString(R.string.settings_restore_successful, it.size),

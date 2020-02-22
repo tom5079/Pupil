@@ -30,7 +30,10 @@ import androidx.preference.PreferenceManager
 import com.google.android.gms.common.GooglePlayServicesNotAvailableException
 import com.google.android.gms.common.GooglePlayServicesRepairableException
 import com.google.android.gms.security.ProviderInstaller
+import com.google.firebase.analytics.FirebaseAnalytics
+import xyz.quaver.proxy
 import xyz.quaver.pupil.util.Histories
+import xyz.quaver.pupil.util.getProxy
 import java.io.File
 
 class Pupil : MultiDexApplication() {
@@ -45,8 +48,10 @@ class Pupil : MultiDexApplication() {
     override fun onCreate() {
         val preference = PreferenceManager.getDefaultSharedPreferences(this)
 
+        proxy = getProxy(this)
+
         try {
-            PreferenceManager.getDefaultSharedPreferences(this).getInt("dl_location", 0)
+            preference.getString("dl_location", null)
         } catch (e: Exception) {
             preference.edit().remove("dl_location").apply()
         }
@@ -54,10 +59,8 @@ class Pupil : MultiDexApplication() {
         histories = Histories(File(ContextCompat.getDataDir(this), "histories.json"))
         favorites = Histories(File(ContextCompat.getDataDir(this), "favorites.json"))
 
-        val file = preference.getString("dl_location", null)
-
-        if (file?.startsWith("content") == true)
-            preference.edit().remove("dl_location").apply()
+        if (BuildConfig.DEBUG)
+            FirebaseAnalytics.getInstance(this).setAnalyticsCollectionEnabled(false)
 
         try {
             ProviderInstaller.installIfNeeded(this)
