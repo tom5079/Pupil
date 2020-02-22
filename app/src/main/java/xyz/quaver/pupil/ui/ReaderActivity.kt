@@ -38,7 +38,6 @@ import io.fabric.sdk.android.Fabric
 import kotlinx.android.synthetic.main.activity_reader.*
 import kotlinx.android.synthetic.main.activity_reader.view.*
 import kotlinx.android.synthetic.main.dialog_numberpicker.view.*
-import kotlinx.serialization.ImplicitReflectionSerializer
 import xyz.quaver.Code
 import xyz.quaver.pupil.Pupil
 import xyz.quaver.pupil.R
@@ -141,7 +140,6 @@ class ReaderActivity : AppCompatActivity() {
         super.onResume()
     }
 
-    @UseExperimental(ImplicitReflectionSerializer::class)
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
         menuInflater.inflate(R.menu.reader, menu)
 
@@ -256,11 +254,17 @@ class ReaderActivity : AppCompatActivity() {
                 reader_progressbar.max = reader_recyclerview.adapter?.itemCount ?: 0
 
                 if (title == getString(R.string.reader_loading)) {
-                    val reader = (reader_recyclerview.adapter as ReaderAdapter).reader
+                    val reader = Cache(this@ReaderActivity).getReaderOrNull(galleryID)
 
                     if (reader != null) {
-                        title = reader.title
-                        menu?.findItem(R.id.reader_menu_page_indicator)?.title = "$currentPage/${reader.galleryInfo.size}"
+
+                        with (reader_recyclerview.adapter as ReaderAdapter) {
+                            this.reader = reader
+                            notifyDataSetChanged()
+                        }
+
+                        title = reader.galleryInfo.title
+                        menu?.findItem(R.id.reader_menu_page_indicator)?.title = "$currentPage/${reader.galleryInfo.files.size}"
 
                         menu?.findItem(R.id.reader_type)?.icon = ContextCompat.getDrawable(this@ReaderActivity,
                             when (reader.code) {
@@ -296,7 +300,7 @@ class ReaderActivity : AppCompatActivity() {
                 }
             }
 
-            //addOnScrollListener((adapter as ReaderAdapter).preloader)
+            addOnScrollListener((adapter as ReaderAdapter).preloader)
             addOnScrollListener(object: RecyclerView.OnScrollListener() {
                 override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
                     super.onScrolled(recyclerView, dx, dy)

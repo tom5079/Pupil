@@ -21,9 +21,10 @@ package xyz.quaver.pupil.util
 import android.content.Context
 import android.content.ContextWrapper
 import androidx.core.content.ContextCompat
-import kotlinx.serialization.*
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonConfiguration
+import kotlinx.serialization.list
 import java.io.File
 import java.security.MessageDigest
 
@@ -73,7 +74,6 @@ class LockManager(base: Context): ContextWrapper(base) {
         load()
     }
 
-    @UseExperimental(ImplicitReflectionSerializer::class)
     private fun load() {
         val lock = File(ContextCompat.getDataDir(this), "lock.json")
 
@@ -82,17 +82,16 @@ class LockManager(base: Context): ContextWrapper(base) {
             lock.writeText("[]")
         }
 
-        locks = ArrayList(Json(JsonConfiguration.Stable).parseList(lock.readText()))
+        locks = ArrayList(json.parse(Lock.serializer().list, lock.readText()))
     }
 
-    @UseExperimental(ImplicitReflectionSerializer::class)
     private fun save() {
         val lock = File(ContextCompat.getDataDir(this), "lock.json")
 
         if (!lock.exists())
             lock.createNewFile()
 
-        lock.writeText(Json(JsonConfiguration.Stable).stringify(locks?.toList() ?: listOf()))
+        lock.writeText(json.stringify(Lock.serializer().list, locks?.toList() ?: listOf()))
     }
 
     fun add(lock: Lock) {

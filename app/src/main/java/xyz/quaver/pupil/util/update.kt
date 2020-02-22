@@ -32,7 +32,10 @@ import androidx.preference.PreferenceManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.serialization.json.*
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.boolean
+import kotlinx.serialization.json.content
 import ru.noties.markwon.Markwon
 import xyz.quaver.pupil.BuildConfig
 import xyz.quaver.pupil.R
@@ -43,7 +46,7 @@ import java.util.*
 fun getReleases(url: String) : JsonArray {
     return try {
         URL(url).readText().let {
-            Json(JsonConfiguration.Stable).parse(JsonArray.serializer(), it)
+            json.parse(JsonArray.serializer(), it)
         }
     } catch (e: Exception) {
         JsonArray(emptyList())
@@ -145,6 +148,7 @@ fun checkUpdate(context: AppCompatActivity, force: Boolean = false) {
                     setContentTitle(context.getString(R.string.update_notification_description))
                     setSmallIcon(android.R.drawable.stat_sys_download)
                     priority = NotificationCompat.PRIORITY_LOW
+                    setOngoing(true)
                 }
 
                 CoroutineScope(Dispatchers.IO).launch io@{
@@ -160,6 +164,7 @@ fun checkUpdate(context: AppCompatActivity, force: Boolean = false) {
                             setContentText(context.getString(R.string.update_failed))
                             setMessage(context.getString(R.string.update_failed_message))
                             setSmallIcon(android.R.drawable.stat_sys_download_done)
+                            setOngoing(false)
                         }
 
                         notificationManager.cancel(UPDATE_NOTIFICATION_ID)
@@ -179,6 +184,7 @@ fun checkUpdate(context: AppCompatActivity, force: Boolean = false) {
                         setSmallIcon(android.R.drawable.stat_sys_download_done)
                         setContentTitle(context.getString(R.string.update_download_completed))
                         setContentText(context.getString(R.string.update_download_completed_description))
+                        setOngoing(false)
                     }
 
                     notificationManager.cancel(UPDATE_NOTIFICATION_ID)

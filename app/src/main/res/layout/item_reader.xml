@@ -62,6 +62,8 @@
         <com.github.chrisbanes.photoview.PhotoView
             android:id="@+id/image"
             android:contentDescription="@string/reader_imageview_description"
+            android:adjustViewBounds="true"
+            android:scaleType="fitCenter"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:paddingBottom="8dp"/>

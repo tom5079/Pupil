@@ -17,7 +17,7 @@
 package xyz.quaver.hitomi
 
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.list
+import xyz.quaver.proxy
 import java.net.URL
 
 const val protocol = "https:"
@@ -25,10 +25,10 @@ const val protocol = "https:"
 @Suppress("EXPERIMENTAL_API_USAGE")
 fun getGalleryInfo(galleryID: Int) =
     Json.nonstrict.parse(
-        GalleryInfo.serializer().list,
-        Regex("""\[.+]""").find(
-            URL("$protocol//$domain/galleries/$galleryID.js").readText()
-        )?.value ?: "[]"
+        GalleryInfo.serializer(),
+        URL("$protocol//$domain/galleries/$galleryID.js").openConnection(proxy).getInputStream().use {
+            it.reader().readText()
+        }.replace("var galleryinfo = ", "")
     )
 
 //common.js
@@ -68,6 +68,7 @@ fun urlFromURL(url: String, base: String? = null) : String {
     return url.replace(Regex("""//..?\.hitomi\.la/"""), "//${subdomainFromURL(url, base)}.hitomi.la/")
 }
 
+
 fun fullPathFromHash(hash: String?) : String? {
     return when {
         (hash?.length ?: 0) < 3 -> hash
@@ -76,11 +77,20 @@ fun fullPathFromHash(hash: String?) : String? {
 }
 
 @Suppress("NAME_SHADOWING", "UNUSED_PARAMETER")
-fun urlFromHash(galleryID: Int, image: GalleryInfo, dir: String? = null, ext: String? = null) : String {
+fun urlFromHash(galleryID: Int, image: GalleryFiles, dir: String? = null, ext: String? = null) : String {
     val ext = ext ?: dir ?: image.name.split('.').last()
     val dir = dir ?: "images"
     return "$protocol//a.hitomi.la/$dir/${fullPathFromHash(image.hash)}.$ext"
 }
 
-fun urlFromUrlFromHash(galleryID: Int, image: GalleryInfo, dir: String? = null, ext: String? = null, base: String? = null) =
+fun urlFromUrlFromHash(galleryID: Int, image: GalleryFiles, dir: String? = null, ext: String? = null, base: String? = null) =
     urlFromURL(urlFromHash(galleryID, image, dir, ext), base)
+
+fun imageUrlFromImage(galleryID: Int, image: GalleryFiles, noWebp: Boolean) : String {
+    val webp = if (image.hash != null && image.haswebp != 0 && !noWebp)
+        "webp"
+    else
+        null
+
+    return urlFromUrlFromHash(galleryID, image, webp)
+}

@@ -16,13 +16,16 @@
 
 package xyz.quaver.hiyobi
 
+import kotlinx.serialization.UnstableDefault
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.list
 import org.jsoup.Jsoup
 import xyz.quaver.Code
+import xyz.quaver.hitomi.GalleryFiles
 import xyz.quaver.hitomi.GalleryInfo
 import xyz.quaver.hitomi.Reader
 import xyz.quaver.hitomi.protocol
+import xyz.quaver.proxy
 import java.net.URL
 import javax.net.ssl.HttpsURLConnection
 
@@ -47,7 +50,7 @@ fun renewCookie() : String {
     val url = "https://$hiyobi/"
 
     try {
-        with(URL(url).openConnection() as HttpsURLConnection) {
+        with(URL(url).openConnection(proxy) as HttpsURLConnection) {
             setRequestProperty("User-Agent", user_agent)
             connectTimeout = 2000
             connect()
@@ -58,16 +61,16 @@ fun renewCookie() : String {
     }
 }
 
+@UseExperimental(UnstableDefault::class)
 fun getReader(galleryID: Int) : Reader {
     val reader = "https://$hiyobi/reader/$galleryID"
-    val url = "https://$hiyobi/data/json/${galleryID}_list.json"
+    val url = "https://cdn.hiyobi.me/data/json/${galleryID}_list.json"
 
-    val title = Jsoup.connect(reader).get().title()
+    val title = Jsoup.connect(reader).proxy(proxy).get().title()
 
-    @Suppress("EXPERIMENTAL_API_USAGE")
-    val galleryInfo = Json.parse(
-        GalleryInfo.serializer().list,
-        with(URL(url).openConnection() as HttpsURLConnection) {
+    val galleryFiles = Json.nonstrict.parse(
+        GalleryFiles.serializer().list,
+        with(URL(url).openConnection(proxy) as HttpsURLConnection) {
             setRequestProperty("User-Agent", user_agent)
             setRequestProperty("Cookie", cookie)
             connectTimeout = 2000
@@ -77,14 +80,14 @@ fun getReader(galleryID: Int) : Reader {
         }
     )
 
-    return Reader(Code.HIYOBI, title, galleryInfo)
+    return Reader(Code.HIYOBI, GalleryInfo(title = title, files = galleryFiles))
 }
 
 fun createImgList(galleryID: Int, reader: Reader, lowQuality: Boolean = false) =
     if (lowQuality)
-        reader.galleryInfo.map {
-            val name = it.name.replace(Regex("/.[^/.]+$"), "") + ".jpg"
-            Images("$protocol//$hiyobi/data/$galleryID/$name.jpg", galleryID, it.name)
+        reader.galleryInfo.files.map {
+            val name = it.name.replace(Regex("""\.[^/.]+$"""), "")
+            Images("$protocol//$hiyobi/data_r/$galleryID/$name.jpg", galleryID, it.name)
         }
     else
-        reader.galleryInfo.map { Images("$protocol//$hiyobi/data/$galleryID/${it.name}", galleryID, it.name) }
+        reader.galleryInfo.files.map { Images("$protocol//$hiyobi/data/$galleryID/${it.name}", galleryID, it.name) }
