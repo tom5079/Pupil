@@ -23,6 +23,7 @@ import android.content.Context
 import android.content.ContextWrapper
 import android.content.Intent
 import android.content.SharedPreferences
+import android.util.Log
 import android.util.SparseArray
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
@@ -159,7 +160,7 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
     fun buildClient() =
         OkHttpClient.Builder()
             .addInterceptor(interceptor)
-            .dispatcher(Dispatcher(Executors.newFixedThreadPool(4)))
+            .dispatcher(Dispatcher(Executors.newSingleThreadExecutor()))
             .proxy(proxy)
             .build()
 
@@ -279,6 +280,7 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
         for (i in reader.galleryInfo.files.indices) {
             val callback = object : Callback {
                 override fun onFailure(call: Call, e: IOException) {
+                    Log.i("PUPILD", "FAIL ${call.request().tag()} (${e.message})")
                     if (Fabric.isInitialized() && e.message != "Canceled")
                         Crashlytics.logException(e)
 
@@ -287,43 +289,59 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
 
                     notify(galleryID)
 
-                    if (isCompleted(galleryID)) {
-                        with(Cache(this@DownloadWorker)) {
-                            if (isDownloading(galleryID)) {
-                                moveToDownload(galleryID)
-                                setDownloading(galleryID, false)
+                    CoroutineScope(Dispatchers.IO).launch {
+                        if (isCompleted(galleryID) && clients.indexOfKey(galleryID) >= 0) {
+                            clients.remove(galleryID)
+                            with(Cache(this@DownloadWorker)) {
+                                if (isDownloading(galleryID)) {
+                                    moveToDownload(galleryID)
+                                    setDownloading(galleryID, false)
+                                }
                             }
                         }
-                        clients.remove(galleryID)
                     }
                 }
 
                 override fun onResponse(call: Call, response: Response) {
-                    response.body().use {
-                        val res = it.bytes()
-                        val ext =
-                            call.request().url().encodedPath().split('.').last()
+                    Log.i("PUPILD", "OK ${call.request().tag()}")
 
-                        Cache(this@DownloadWorker).putImage(galleryID, "%05d.%s".format(i, ext), res)
-                        progress[galleryID]?.set(i, Float.POSITIVE_INFINITY)
-                    }
+                    try {
+                        response.body().use {
+                            val res = it.bytes()
+                            val ext =
+                                call.request().url().encodedPath().split('.').last()
 
-                    notify(galleryID)
+                            Cache(this@DownloadWorker).putImage(galleryID, "%05d.%s".format(i, ext), res)
+                            progress[galleryID]?.set(i, Float.POSITIVE_INFINITY)
+                        }
 
-                    if (isCompleted(galleryID)) {
-                        with(Cache(this@DownloadWorker)) {
-                            if (isDownloading(galleryID)) {
-                                moveToDownload(galleryID)
-                                setDownloading(galleryID, false)
+                        notify(galleryID)
+
+                        CoroutineScope(Dispatchers.IO).launch {
+                            if (isCompleted(galleryID) && clients.indexOfKey(galleryID) >= 0) {
+                                clients.remove(galleryID)
+                                with(Cache(this@DownloadWorker)) {
+                                    if (isDownloading(galleryID)) {
+                                        moveToDownload(galleryID)
+                                        setDownloading(galleryID, false)
+                                    }
+                                }
                             }
                         }
-                        clients.remove(galleryID)
+
+                        Log.i("PUPILD", "SUCCESS ${call.request().tag()}")
+                    } catch (e: Exception) {
+                        Log.i("PUPILD", "FAIL ON OK ${call.request().tag()} (${e.message})")
                     }
                 }
             }
 
-            if (progress[galleryID]?.get(i)?.isFinite() == true)
+            if (progress[galleryID]?.get(i)?.isFinite() == true) {
                 queueDownload(galleryID, reader, i, callback)
+                Log.i("PUPILD", "$galleryID QUEUED $i")
+            } else {
+                Log.i("PUPILD", "$galleryID SKIPPED $i (${progress[galleryID]?.get(i)})")
+            }
         }
     }
 
