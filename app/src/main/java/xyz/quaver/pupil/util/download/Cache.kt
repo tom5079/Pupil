@@ -30,6 +30,7 @@ import kotlinx.coroutines.withContext
 import xyz.quaver.Code
 import xyz.quaver.hitomi.GalleryBlock
 import xyz.quaver.hitomi.Reader
+import xyz.quaver.proxy
 import xyz.quaver.pupil.util.getCachedGallery
 import xyz.quaver.pupil.util.getDownloadDirectory
 import xyz.quaver.pupil.util.json
@@ -78,7 +79,9 @@ class Cache(context: Context) : ContextWrapper(context) {
             withContext(Dispatchers.IO) {
                 val thumbnails = getGalleryBlock(galleryID)?.thumbnails
                 try {
-                    Base64.encodeToString(URL(thumbnails?.firstOrNull()).readBytes(), Base64.DEFAULT)
+                    Base64.encodeToString(URL(thumbnails?.firstOrNull()).openConnection(proxy).getInputStream().use {
+                        it.readBytes()
+                    }, Base64.DEFAULT)
                 } catch (e: Exception) {
                     null
                 }
