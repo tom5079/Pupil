@@ -90,7 +90,7 @@ class GalleryBlockAdapter(context: Context, private val galleries: List<GalleryB
 
                     if (visibility == View.GONE) {
                         visibility = View.VISIBLE
-                        max = reader.galleryInfo.size
+                        max = reader.galleryInfo.files.size
                     }
 
                     if (progress == max) {
@@ -160,7 +160,7 @@ class GalleryBlockAdapter(context: Context, private val galleries: List<GalleryB
                     } ?: 0
 
                     with(galleryblock_progressbar) {
-                        max = reader.galleryInfo.size
+                        max = reader.galleryInfo.files.size
                         progress = count
 
                         visibility = View.VISIBLE

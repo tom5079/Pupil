@@ -213,7 +213,7 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
                     url(
                         urlFromUrlFromHash(
                             galleryID,
-                            reader.galleryInfo[index],
+                            reader.galleryInfo.files[index],
                             if (lowQuality) "webp" else null
                         )
                     )
@@ -251,18 +251,18 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
 
         val cache = Cache(this@DownloadWorker).getImages(galleryID)
 
-        progress.put(galleryID, reader.galleryInfo.indices.map { index ->
+        progress.put(galleryID, reader.galleryInfo.files.indices.map { index ->
             if (cache?.getOrNull(index) != null)
                 Float.POSITIVE_INFINITY
             else
                 0F
         }.toMutableList())
-        exception.put(galleryID, reader.galleryInfo.map { null }.toMutableList())
+        exception.put(galleryID, reader.galleryInfo.files.map { null }.toMutableList())
 
         if (notification[galleryID] == null)
             initNotification(galleryID)
 
-        notification[galleryID].setContentTitle(reader.title)
+        notification[galleryID].setContentTitle(reader.galleryInfo.title)
         notify(galleryID)
 
         if (isCompleted(galleryID)) {
@@ -276,7 +276,7 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
             return@launch
         }
 
-        for (i in reader.galleryInfo.indices) {
+        for (i in reader.galleryInfo.files.indices) {
             val callback = object : Callback {
                 override fun onFailure(call: Call, e: IOException) {
                     if (Fabric.isInitialized() && e.message != "Canceled")

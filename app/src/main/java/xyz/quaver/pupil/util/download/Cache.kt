@@ -22,6 +22,7 @@ import android.content.Context
 import android.content.ContextWrapper
 import android.util.Base64
 import androidx.preference.PreferenceManager
+import com.crashlytics.android.Crashlytics
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
@@ -106,9 +107,11 @@ class Cache(context: Context) : ContextWrapper(context) {
                 var galleryBlock: GalleryBlock? = null
 
                 for (source in sources) {
-                    galleryBlock = kotlin.runCatching {
+                    galleryBlock = try {
                         source.invoke()
-                    }.getOrNull()
+                    } catch (e: Exception) {
+                        null
+                    }
 
                     if (galleryBlock != null)
                         break
@@ -158,6 +161,7 @@ class Cache(context: Context) : ContextWrapper(context) {
                     retval = try {
                         source.value.invoke()
                     } catch (e: Exception) {
+                        Crashlytics.logException(e)
                         null
                     }
 
