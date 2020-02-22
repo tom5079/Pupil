@@ -263,8 +263,8 @@ class ReaderActivity : AppCompatActivity() {
                             notifyDataSetChanged()
                         }
 
-                        title = reader.title
-                        menu?.findItem(R.id.reader_menu_page_indicator)?.title = "$currentPage/${reader.galleryInfo.size}"
+                        title = reader.galleryInfo.title
+                        menu?.findItem(R.id.reader_menu_page_indicator)?.title = "$currentPage/${reader.galleryInfo.files.size}"
 
                         menu?.findItem(R.id.reader_type)?.icon = ContextCompat.getDrawable(this@ReaderActivity,
                             when (reader.code) {

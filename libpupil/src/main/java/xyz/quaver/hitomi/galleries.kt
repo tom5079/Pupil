@@ -71,7 +71,7 @@ fun getGallery(galleryID: Int) : Gallery {
         href.slice(5 until href.indexOf('-'))
     }
 
-    val thumbnails = getGalleryInfo(galleryID).map { galleryInfo ->
+    val thumbnails = getGalleryInfo(galleryID).files.map { galleryInfo ->
         urlFromUrlFromHash(galleryID, galleryInfo, "smalltn", "jpg", "tn")
     }
 

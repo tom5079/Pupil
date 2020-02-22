@@ -21,6 +21,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.list
 import org.jsoup.Jsoup
 import xyz.quaver.Code
+import xyz.quaver.hitomi.GalleryFiles
 import xyz.quaver.hitomi.GalleryInfo
 import xyz.quaver.hitomi.Reader
 import xyz.quaver.hitomi.protocol
@@ -63,12 +64,12 @@ fun renewCookie() : String {
 @UseExperimental(UnstableDefault::class)
 fun getReader(galleryID: Int) : Reader {
     val reader = "https://$hiyobi/reader/$galleryID"
-    val url = "https://$hiyobi/data/json/${galleryID}_list.json"
+    val url = "https://cdn.hiyobi.me/data/json/${galleryID}_list.json"
 
     val title = Jsoup.connect(reader).proxy(proxy).get().title()
 
-    val galleryInfo = Json.nonstrict.parse(
-        GalleryInfo.serializer().list,
+    val galleryFiles = Json.nonstrict.parse(
+        GalleryFiles.serializer().list,
         with(URL(url).openConnection(proxy) as HttpsURLConnection) {
             setRequestProperty("User-Agent", user_agent)
             setRequestProperty("Cookie", cookie)
@@ -79,14 +80,14 @@ fun getReader(galleryID: Int) : Reader {
         }
     )
 
-    return Reader(Code.HIYOBI, title, galleryInfo)
+    return Reader(Code.HIYOBI, GalleryInfo(title = title, files = galleryFiles))
 }
 
 fun createImgList(galleryID: Int, reader: Reader, lowQuality: Boolean = false) =
     if (lowQuality)
-        reader.galleryInfo.map {
+        reader.galleryInfo.files.map {
             val name = it.name.replace(Regex("""\.[^/.]+$"""), "")
             Images("$protocol//$hiyobi/data_r/$galleryID/$name.jpg", galleryID, it.name)
         }
     else
-        reader.galleryInfo.map { Images("$protocol//$hiyobi/data/$galleryID/${it.name}", galleryID, it.name) }
+        reader.galleryInfo.files.map { Images("$protocol//$hiyobi/data/$galleryID/${it.name}", galleryID, it.name) }

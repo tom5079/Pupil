@@ -52,7 +52,7 @@ class ReaderAdapter(private val context: Context,
 
     //region Glide.RecyclerView
     val sizeProvider = ListPreloader.PreloadSizeProvider<File> { _, _, position ->
-        Cache(context).getReaderOrNull(galleryID)?.galleryInfo?.getOrNull(position)?.let {
+        Cache(context).getReaderOrNull(galleryID)?.galleryInfo?.files?.getOrNull(position)?.let {
             arrayOf(it.width, it.height).toIntArray()
         }
     }
@@ -114,7 +114,7 @@ class ReaderAdapter(private val context: Context,
 
         if (!isFullScreen)
             (holder.view.container.layoutParams as ConstraintLayout.LayoutParams)
-                .dimensionRatio = "${reader!!.galleryInfo[position].width}:${reader!!.galleryInfo[position].height}"
+                .dimensionRatio = "${reader!!.galleryInfo.files[position].width}:${reader!!.galleryInfo.files[position].height}"
 
         holder.view.reader_index.text = (position+1).toString()
 
@@ -161,6 +161,6 @@ class ReaderAdapter(private val context: Context,
         }
     }
 
-    override fun getItemCount() = reader?.galleryInfo?.size ?: 0
+    override fun getItemCount() = reader?.galleryInfo?.files?.size ?: 0
 
 }
