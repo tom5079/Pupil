@@ -23,6 +23,7 @@ import android.content.Context
 import android.content.ContextWrapper
 import android.content.Intent
 import android.content.SharedPreferences
+import android.util.Log
 import android.util.SparseArray
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
@@ -46,6 +47,7 @@ import xyz.quaver.pupil.ui.ReaderActivity
 import java.io.IOException
 import java.util.concurrent.Executors
 import java.util.concurrent.LinkedBlockingQueue
+import java.util.concurrent.TimeUnit
 
 @UseExperimental(ExperimentalCoroutinesApi::class)
 class DownloadWorker private constructor(context: Context) : ContextWrapper(context) {
@@ -153,12 +155,14 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
         val response = chain.proceed(request)
 
         response.newBuilder()
-        .body(ProgressResponseBody(request.tag(), response.body(), progressListener))
-        .build()
+            .body(ProgressResponseBody(request.tag(), response.body(), progressListener))
+            .build()
     }
     fun buildClient() =
         OkHttpClient.Builder()
             .addInterceptor(interceptor)
+            .connectTimeout(0, TimeUnit.SECONDS)
+            .readTimeout(0, TimeUnit.SECONDS)
             .dispatcher(Dispatcher(Executors.newFixedThreadPool(4)))
             .proxy(proxy)
             .build()
@@ -279,6 +283,7 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
         for (i in reader.galleryInfo.files.indices) {
             val callback = object : Callback {
                 override fun onFailure(call: Call, e: IOException) {
+                    Log.i("PUPILD", "FAIL ${call.request().tag()} (${e.message})")
                     if (Fabric.isInitialized() && e.message != "Canceled")
                         Crashlytics.logException(e)
 
@@ -287,43 +292,57 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
 
                     notify(galleryID)
 
-                    if (isCompleted(galleryID)) {
-                        with(Cache(this@DownloadWorker)) {
-                            if (isDownloading(galleryID)) {
-                                moveToDownload(galleryID)
-                                setDownloading(galleryID, false)
+                    CoroutineScope(Dispatchers.IO).launch {
+                        if (isCompleted(galleryID) && clients.indexOfKey(galleryID) >= 0) {
+                            clients.remove(galleryID)
+                            with(Cache(this@DownloadWorker)) {
+                                if (isDownloading(galleryID)) {
+                                    moveToDownload(galleryID)
+                                    setDownloading(galleryID, false)
+                                }
                             }
                         }
-                        clients.remove(galleryID)
                     }
                 }
 
                 override fun onResponse(call: Call, response: Response) {
-                    response.body().use {
-                        val res = it.bytes()
-                        val ext =
-                            call.request().url().encodedPath().split('.').last()
+                    Log.i("PUPILD", "OK ${call.request().tag()}")
 
-                        Cache(this@DownloadWorker).putImage(galleryID, "%05d.%s".format(i, ext), res)
+                    try {
+                        val ext = call.request().url().encodedPath().split('.').last()
+
+                        response.body().use {
+                            Cache(this@DownloadWorker).putImage(galleryID, i, ext, it.byteStream())
+                        }
                         progress[galleryID]?.set(i, Float.POSITIVE_INFINITY)
-                    }
 
-                    notify(galleryID)
+                        notify(galleryID)
 
-                    if (isCompleted(galleryID)) {
-                        with(Cache(this@DownloadWorker)) {
-                            if (isDownloading(galleryID)) {
-                                moveToDownload(galleryID)
-                                setDownloading(galleryID, false)
+                        CoroutineScope(Dispatchers.IO).launch {
+                            if (isCompleted(galleryID) && clients.indexOfKey(galleryID) >= 0) {
+                                clients.remove(galleryID)
+                                with(Cache(this@DownloadWorker)) {
+                                    if (isDownloading(galleryID)) {
+                                        moveToDownload(galleryID)
+                                        setDownloading(galleryID, false)
+                                    }
+                                }
                             }
                         }
-                        clients.remove(galleryID)
+
+                        Log.i("PUPILD", "SUCCESS ${call.request().tag()}")
+                    } catch (e: Exception) {
+                        Log.i("PUPILD", "FAIL ON OK ${call.request().tag()} (${e.message})")
                     }
                 }
             }
 
-            if (progress[galleryID]?.get(i)?.isFinite() == true)
+            if (progress[galleryID]?.get(i)?.isFinite() == true) {
                 queueDownload(galleryID, reader, i, callback)
+                Log.i("PUPILD", "$galleryID QUEUED $i")
+            } else {
+                Log.i("PUPILD", "$galleryID SKIPPED $i (${progress[galleryID]?.get(i)})")
+            }
         }
     }
 
@@ -354,7 +373,7 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
         }
         val pendingIntent = TaskStackBuilder.create(this).run {
             addNextIntentWithParentStack(intent)
-            getPendingIntent(0, PendingIntent.FLAG_UPDATE_CURRENT)
+            getPendingIntent(galleryID, PendingIntent.FLAG_UPDATE_CURRENT)
         }
 
         notification.put(galleryID, NotificationCompat.Builder(this, "download").apply {
@@ -369,7 +388,7 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
 
     private fun loop() = CoroutineScope(Dispatchers.Default).launch {
         while (true) {
-            if (queue.isEmpty() || clients.size() > preferences.getInt("max_download", 4))
+            if (queue.isEmpty() || clients.size() >= preferences.getInt("max_download", 4))
                 continue
 
             val galleryID = queue.poll() ?: continue
