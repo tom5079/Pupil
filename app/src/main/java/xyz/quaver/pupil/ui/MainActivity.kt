@@ -961,7 +961,9 @@ class MainActivity : AppCompatActivity() {
                 }
                 Mode.DOWNLOAD -> {
                     val downloads = getDownloadDirectory(this@MainActivity).listFiles()?.filter { file ->
-                        file.isDirectory && (file.name.toIntOrNull() != null) && File(file, ".metadata").exists()
+                        file.isDirectory && file.name.toIntOrNull() != null
+                    }?.sortedByDescending {
+                        it.lastModified()
                     }?.map {
                         it.name.toInt()
                     } ?: emptyList()

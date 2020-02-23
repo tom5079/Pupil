@@ -122,6 +122,8 @@ class ReaderAdapter(private val context: Context,
         val progress = DownloadWorker.getInstance(context).progress[galleryID]?.get(position)
 
         if (progress?.isInfinite() == true && images != null) {
+            holder.view.reader_item_progressbar.visibility = View.GONE
+
             glide
                 .load(images)
                 .diskCacheStrategy(DiskCacheStrategy.NONE)

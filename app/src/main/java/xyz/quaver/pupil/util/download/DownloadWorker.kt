@@ -37,13 +37,14 @@ import okio.*
 import xyz.quaver.Code
 import xyz.quaver.hitomi.Reader
 import xyz.quaver.hitomi.getReferer
-import xyz.quaver.hitomi.urlFromUrlFromHash
+import xyz.quaver.hitomi.imageUrlFromImage
 import xyz.quaver.hiyobi.cookie
 import xyz.quaver.hiyobi.createImgList
 import xyz.quaver.hiyobi.user_agent
 import xyz.quaver.proxy
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.ui.ReaderActivity
+import java.io.File
 import java.io.IOException
 import java.util.concurrent.Executors
 import java.util.concurrent.LinkedBlockingQueue
@@ -215,10 +216,10 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
             when (reader.code) {
                 Code.HITOMI -> {
                     url(
-                        urlFromUrlFromHash(
+                        imageUrlFromImage(
                             galleryID,
                             reader.galleryInfo.files[index],
-                            if (lowQuality) "webp" else null
+                            lowQuality
                         )
                     )
                     addHeader("Referer", getReferer(galleryID))
@@ -256,7 +257,7 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
         val cache = Cache(this@DownloadWorker).getImages(galleryID)
 
         progress.put(galleryID, reader.galleryInfo.files.indices.map { index ->
-            if (cache?.getOrNull(index) != null)
+            if (cache?.firstOrNull { it?.nameWithoutExtension?.toIntOrNull()  == index } != null)
                 Float.POSITIVE_INFINITY
             else
                 0F
@@ -308,9 +309,9 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
                 override fun onResponse(call: Call, response: Response) {
                     Log.i("PUPILD", "OK ${call.request().tag()}")
 
-                    try {
-                        val ext = call.request().url().encodedPath().split('.').last()
+                    val ext = call.request().url().encodedPath().split('.').last()
 
+                    try {
                         response.body().use {
                             Cache(this@DownloadWorker).putImage(galleryID, i, ext, it.byteStream())
                         }
@@ -332,6 +333,7 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
 
                         Log.i("PUPILD", "SUCCESS ${call.request().tag()}")
                     } catch (e: Exception) {
+                        File(Cache(this@DownloadWorker).getCachedGallery(galleryID), "%05d.$ext".format(i)).delete()
                         Log.i("PUPILD", "FAIL ON OK ${call.request().tag()} (${e.message})")
                     }
                 }
