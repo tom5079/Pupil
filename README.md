@@ -1,7 +1,10 @@
 # Pupil
 
 ![Banner](https://github.com/tom5079/Pupil/blob/gh-pages/assets/images/pupil-banner.png?raw=true)
-*Pupil, Hitomi.la viewer for Android*
+*Pupil, Hitomi.la viewer for Android*  
+
+[![](https://discordapp.com/api/guilds/610452916612104194/embed.png?style=banner2)](https://discord.gg/Stj4b5v)  
+I can speak English, Japanese and Korean. If you have any questions, head over to my discord server or DM me!
 
 # Screenshot
 ![Main Screen](https://github.com/tom5079/Pupil/blob/gh-pages/assets/images/main-screenshot.png?raw=true)
