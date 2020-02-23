@@ -119,8 +119,9 @@ class ReaderAdapter(private val context: Context,
         holder.view.reader_index.text = (position+1).toString()
 
         val images = Cache(context).getImage(galleryID, position)
+        val progress = DownloadWorker.getInstance(context).progress[galleryID]?.get(position)
 
-        if (images != null) {
+        if (progress?.isInfinite() == true && images != null) {
             glide
                 .load(images)
                 .diskCacheStrategy(DiskCacheStrategy.NONE)
@@ -132,8 +133,6 @@ class ReaderAdapter(private val context: Context,
                 }
                 .into(holder.view.image)
         } else {
-            val progress = DownloadWorker.getInstance(context).progress[galleryID]?.get(position)
-
             if (progress?.isNaN() == true) {
                 if (Fabric.isInitialized())
                     Crashlytics.logException(DownloadWorker.getInstance(context).exception[galleryID]?.get(position))
