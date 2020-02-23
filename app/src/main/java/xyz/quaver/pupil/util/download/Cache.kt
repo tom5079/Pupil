@@ -27,6 +27,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.withContext
+import kotlinx.io.InputStream
 import xyz.quaver.Code
 import xyz.quaver.hitomi.GalleryBlock
 import xyz.quaver.hitomi.Reader
@@ -34,6 +35,7 @@ import xyz.quaver.pupil.util.getCachedGallery
 import xyz.quaver.pupil.util.getDownloadDirectory
 import xyz.quaver.pupil.util.json
 import java.io.File
+import java.io.FileOutputStream
 import java.net.URL
 
 class Cache(context: Context) : ContextWrapper(context) {
@@ -212,16 +214,13 @@ class Cache(context: Context) : ContextWrapper(context) {
         return null
     }
 
-    fun putImage(galleryID: Int, name: String, data: ByteArray) {
-        val cache = File(getCachedGallery(galleryID), name).also {
+    fun putImage(galleryID: Int, index: Int, ext: String, data: InputStream) {
+        val cache = File(getCachedGallery(galleryID), "%05d.$ext".format(index)).also {
             if (!it.exists())
                 it.createNewFile()
         }
 
-        if (!Regex("""^[0-9]+.+$""").matches(name))
-            throw IllegalArgumentException("File name is not a number")
-
-        cache.writeBytes(data)
+        data.copyTo(FileOutputStream(cache))
     }
 
     fun moveToDownload(galleryID: Int) {
