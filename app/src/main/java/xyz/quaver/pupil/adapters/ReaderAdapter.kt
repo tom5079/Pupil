@@ -110,10 +110,9 @@ class ReaderAdapter(private val context: Context,
             onItemClickListener?.invoke(position)
         }
 
-        if (!isFullScreen) {
+        if (!isFullScreen)
             (holder.view.container.layoutParams as ConstraintLayout.LayoutParams)
-                .dimensionRatio = "${reader!!.galleryInfo.files[position].width}:${reader!!.galleryInfo.files[position].height}"
-        }
+                .dimensionRatio = "W,${reader!!.galleryInfo.files[position].width}:${reader!!.galleryInfo.files[position].height}"
 
         holder.view.reader_index.text = (position+1).toString()
 
@@ -123,17 +122,18 @@ class ReaderAdapter(private val context: Context,
         if (progress?.isInfinite() == true && images != null) {
             holder.view.reader_item_progressbar.visibility = View.INVISIBLE
 
-            glide
-                .load(images)
-                .fitCenter()
-                .error(R.drawable.image_broken_variant)
-                .apply {
-                    if (BuildConfig.CENSOR)
-                        override(5, 8)
-                }
-                .into(holder.view.image)
+            holder.view.image.post {
+                glide
+                    .load(images)
+                    .fitCenter()
+                    .error(R.drawable.image_broken_variant)
+                    .into(holder.view.image)
+            }
+
         } else {
             holder.view.reader_item_progressbar.visibility = View.VISIBLE
+
+            glide.clear(holder.view.image)
 
             if (progress?.isNaN() == true) {
                 if (Fabric.isInitialized())
