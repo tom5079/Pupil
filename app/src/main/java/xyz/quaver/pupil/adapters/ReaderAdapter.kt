@@ -19,7 +19,6 @@
 package xyz.quaver.pupil.adapters
 
 import android.content.Context
-import android.graphics.BitmapFactory
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -29,7 +28,6 @@ import com.bumptech.glide.Glide
 import com.bumptech.glide.ListPreloader
 import com.bumptech.glide.RequestBuilder
 import com.bumptech.glide.integration.recyclerview.RecyclerViewPreloader
-import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.crashlytics.android.Crashlytics
 import io.fabric.sdk.android.Fabric
 import kotlinx.android.synthetic.main.item_reader.view.*
@@ -65,8 +63,7 @@ class ReaderAdapter(private val context: Context,
         override fun getPreloadRequestBuilder(item: File): RequestBuilder<*>? {
             return glide
                 .load(item)
-                .diskCacheStrategy(DiskCacheStrategy.NONE)
-                .skipMemoryCache(true)
+                .fitCenter()
                 .error(R.drawable.image_broken_variant)
                 .apply {
                     if (BuildConfig.CENSOR)
@@ -113,9 +110,10 @@ class ReaderAdapter(private val context: Context,
             onItemClickListener?.invoke(position)
         }
 
-        if (!isFullScreen)
+        if (!isFullScreen) {
             (holder.view.container.layoutParams as ConstraintLayout.LayoutParams)
                 .dimensionRatio = "${reader!!.galleryInfo.files[position].width}:${reader!!.galleryInfo.files[position].height}"
+        }
 
         holder.view.reader_index.text = (position+1).toString()
 
@@ -124,22 +122,10 @@ class ReaderAdapter(private val context: Context,
 
         if (progress?.isInfinite() == true && images != null) {
             holder.view.reader_item_progressbar.visibility = View.INVISIBLE
-            holder.view.container.apply {
-                val options = BitmapFactory.Options().apply {
-                    inJustDecodeBounds = true
-                }
-
-                BitmapFactory.decodeFile(images.canonicalPath, options)
-
-                maxWidth = options.outWidth
-                maxHeight = options.outHeight
-            }
 
             glide
                 .load(images)
-                .diskCacheStrategy(DiskCacheStrategy.NONE)
-                .skipMemoryCache(true)
-                .dontTransform()
+                .fitCenter()
                 .error(R.drawable.image_broken_variant)
                 .apply {
                     if (BuildConfig.CENSOR)
@@ -148,10 +134,6 @@ class ReaderAdapter(private val context: Context,
                 .into(holder.view.image)
         } else {
             holder.view.reader_item_progressbar.visibility = View.VISIBLE
-            holder.view.container.apply {
-                maxWidth = Integer.MAX_VALUE
-                maxHeight = Integer.MAX_VALUE
-            }
 
             if (progress?.isNaN() == true) {
                 if (Fabric.isInitialized())
