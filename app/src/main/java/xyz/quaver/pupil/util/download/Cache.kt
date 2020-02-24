@@ -21,22 +21,42 @@ package xyz.quaver.pupil.util.download
 import android.content.Context
 import android.content.ContextWrapper
 import android.util.Base64
+import android.util.SparseArray
 import androidx.preference.PreferenceManager
 import com.crashlytics.android.Crashlytics
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.withContext
+import kotlinx.io.InputStream
 import xyz.quaver.Code
 import xyz.quaver.hitomi.GalleryBlock
 import xyz.quaver.hitomi.Reader
+import xyz.quaver.proxy
 import xyz.quaver.pupil.util.getCachedGallery
 import xyz.quaver.pupil.util.getDownloadDirectory
 import xyz.quaver.pupil.util.json
 import java.io.File
+import java.io.FileOutputStream
 import java.net.URL
+import java.util.concurrent.locks.Lock
+import java.util.concurrent.locks.ReentrantLock
 
 class Cache(context: Context) : ContextWrapper(context) {
+
+    private val locks = SparseArray<Lock>()
+    private fun lock(galleryID: Int) {
+        synchronized(locks) {
+            if (locks.indexOfKey(galleryID) < 0)
+                locks.put(galleryID, ReentrantLock())
+        }
+
+        locks[galleryID].lock()
+    }
+
+    private fun unlock(galleryID: Int) {
+        locks[galleryID]?.unlock()
+    }
 
     private val preference = PreferenceManager.getDefaultSharedPreferences(this)
 
@@ -78,7 +98,9 @@ class Cache(context: Context) : ContextWrapper(context) {
             withContext(Dispatchers.IO) {
                 val thumbnails = getGalleryBlock(galleryID)?.thumbnails
                 try {
-                    Base64.encodeToString(URL(thumbnails?.firstOrNull()).readBytes(), Base64.DEFAULT)
+                    Base64.encodeToString(URL(thumbnails?.firstOrNull()).openConnection(proxy).getInputStream().use {
+                        it.readBytes()
+                    }, Base64.DEFAULT)
                 } catch (e: Exception) {
                     null
                 }
@@ -212,16 +234,16 @@ class Cache(context: Context) : ContextWrapper(context) {
         return null
     }
 
-    fun putImage(galleryID: Int, name: String, data: ByteArray) {
-        val cache = File(getCachedGallery(galleryID), name).also {
+
+    fun putImage(galleryID: Int, index: Int, ext: String, data: InputStream) {
+        val cache = File(getCachedGallery(galleryID), "%05d.$ext".format(index)).also {
             if (!it.exists())
                 it.createNewFile()
         }
 
-        if (!Regex("""^[0-9]+.+$""").matches(name))
-            throw IllegalArgumentException("File name is not a number")
-
-        cache.writeBytes(data)
+        data.use {
+            it.copyTo(FileOutputStream(cache))
+        }
     }
 
     fun moveToDownload(galleryID: Int) {
@@ -231,7 +253,7 @@ class Cache(context: Context) : ContextWrapper(context) {
         }
         val download = File(getDownloadDirectory(this), galleryID.toString())
 
-        cache.copyRecursively(download, true)
+        cache.copyRecursively(download, true) { _, _ -> OnErrorAction.SKIP }
         cache.deleteRecursively()
     }
 
