@@ -26,6 +26,7 @@ import android.os.storage.StorageManager
 import android.provider.DocumentsContract
 import androidx.core.content.ContextCompat
 import androidx.preference.PreferenceManager
+import kotlinx.io.IOException
 import java.io.File
 import java.io.FileOutputStream
 import java.lang.reflect.Array
@@ -211,4 +212,66 @@ fun Uri.toFile(context: Context): File? {
     }
 
     return File(context.getExternalFilesDir(null)?.canonicalPath?.substringBeforeLast("/Android/data") ?: return null, folderName)
+}
+
+fun File.copyRecursively(
+    target: File,
+    overwrite: Boolean = false,
+    onError: (File, IOException) -> OnErrorAction = { _, exception -> throw exception }
+): Boolean {
+    if (!exists()) {
+        return onError(this, NoSuchFileException(file = this, reason = "The source file doesn't exist.")) !=
+                OnErrorAction.TERMINATE
+    }
+    try {
+        // We cannot break for loop from inside a lambda, so we have to use an exception here
+        for (src in walkTopDown().onFail { f, e -> if (onError(f, e) == OnErrorAction.TERMINATE) throw IOException("Walk failed") }) {
+            if (!src.exists()) {
+                if (onError(src, NoSuchFileException(file = src, reason = "The source file doesn't exist.")) ==
+                    OnErrorAction.TERMINATE)
+                    return false
+            } else {
+                val relPath = src.toRelativeString(this)
+                val dstFile = File(target, relPath)
+                if (dstFile.exists() && !(src.isDirectory && dstFile.isDirectory)) {
+                    val stillExists = if (!overwrite) true else {
+                        if (dstFile.isDirectory)
+                            !dstFile.deleteRecursively()
+                        else
+                            !dstFile.delete()
+                    }
+
+                    if (stillExists) {
+                        if (onError(dstFile, FileAlreadyExistsException(file = src,
+                                other = dstFile,
+                                reason = "The destination file already exists.")) == OnErrorAction.TERMINATE)
+                            return false
+
+                        continue
+                    }
+                }
+
+                if (src.isDirectory) {
+                    dstFile.mkdirs()
+                } else {
+                    val length = try {
+                        src.copyTo(dstFile, overwrite).length()
+                    } catch (e: IOException) {
+                        if (onError(src, e) == OnErrorAction.TERMINATE)
+                            return false
+                        else
+                            -1
+                    }
+
+                    if (length != src.length()) {
+                        if (onError(src, IOException("Source file wasn't copied completely, length of destination file differs.")) == OnErrorAction.TERMINATE)
+                            return false
+                    }
+                }
+            }
+        }
+        return true
+    } catch (e: IOException) {
+        return false
+    }
 }
