@@ -333,7 +333,26 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
 
                         Log.i("PUPILD", "SUCCESS ${call.request().tag()}")
                     } catch (e: Exception) {
+
+                        progress[galleryID]?.set(i, Float.NaN)
+                        exception[galleryID]?.set(i, e)
+
+                        notify(galleryID)
+
+                        CoroutineScope(Dispatchers.IO).launch {
+                            if (isCompleted(galleryID) && clients.indexOfKey(galleryID) >= 0) {
+                                clients.remove(galleryID)
+                                with(Cache(this@DownloadWorker)) {
+                                    if (isDownloading(galleryID)) {
+                                        moveToDownload(galleryID)
+                                        setDownloading(galleryID, false)
+                                    }
+                                }
+                            }
+                        }
+
                         File(Cache(this@DownloadWorker).getCachedGallery(galleryID), "%05d.$ext".format(i)).delete()
+
                         Log.i("PUPILD", "FAIL ON OK ${call.request().tag()} (${e.message})")
                     }
                 }
@@ -352,13 +371,17 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
         val max = progress[galleryID]?.size ?: 0
         val progress = progress[galleryID]?.count { !it.isFinite() } ?: 0
 
-        if (isCompleted(galleryID))
+        Log.i("PUPILD", "NOTIFY $galleryID ${isCompleted(galleryID)} $progress/$max")
+
+        if (isCompleted(galleryID)) {
             notification[galleryID]
                 ?.setContentText(getString(R.string.reader_notification_complete))
                 ?.setSmallIcon(android.R.drawable.stat_sys_download_done)
                 ?.setProgress(0, 0, false)
                 ?.setOngoing(false)
-        else
+
+            notificationManager.cancel(galleryID)
+        } else
             notification[galleryID]
                 ?.setProgress(max, progress, false)
                 ?.setContentText("$progress/$max")
@@ -390,18 +413,27 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
 
     private fun loop() = CoroutineScope(Dispatchers.Default).launch {
         while (true) {
-            if (queue.isEmpty() || clients.size() >= preferences.getInt("max_download", 4))
+            if (queue.isEmpty())
                 continue
 
-            val galleryID = queue.poll() ?: continue
+            val galleryID = queue.peek() ?: continue
 
             if (clients.indexOfKey(galleryID) >= 0)    // Gallery already downloading!
                 continue
 
-            initNotification(galleryID)
+            if (notification[galleryID] == null)
+                initNotification(galleryID)
+
             if (Cache(this@DownloadWorker).isDownloading(galleryID))
                 notificationManager.notify(galleryID, notification[galleryID].build())
+
+            if (clients.size() >= preferences.getInt("max_download", 4))
+                continue
+
+            Log.i("PUPILD", "QUEUED $galleryID #${clients.size()+1}")
+
             worker.put(galleryID, download(galleryID))
+            queue.poll()
         }
     }
 
