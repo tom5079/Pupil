@@ -23,6 +23,7 @@ import android.content.Context
 import android.content.ContextWrapper
 import android.content.Intent
 import android.content.SharedPreferences
+import android.util.Log
 import android.util.SparseArray
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
@@ -36,16 +37,18 @@ import okio.*
 import xyz.quaver.Code
 import xyz.quaver.hitomi.Reader
 import xyz.quaver.hitomi.getReferer
-import xyz.quaver.hitomi.urlFromUrlFromHash
+import xyz.quaver.hitomi.imageUrlFromImage
 import xyz.quaver.hiyobi.cookie
 import xyz.quaver.hiyobi.createImgList
 import xyz.quaver.hiyobi.user_agent
 import xyz.quaver.proxy
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.ui.ReaderActivity
+import java.io.File
 import java.io.IOException
 import java.util.concurrent.Executors
 import java.util.concurrent.LinkedBlockingQueue
+import java.util.concurrent.TimeUnit
 
 @UseExperimental(ExperimentalCoroutinesApi::class)
 class DownloadWorker private constructor(context: Context) : ContextWrapper(context) {
@@ -153,12 +156,14 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
         val response = chain.proceed(request)
 
         response.newBuilder()
-        .body(ProgressResponseBody(request.tag(), response.body(), progressListener))
-        .build()
+            .body(ProgressResponseBody(request.tag(), response.body(), progressListener))
+            .build()
     }
     fun buildClient() =
         OkHttpClient.Builder()
             .addInterceptor(interceptor)
+            .connectTimeout(0, TimeUnit.SECONDS)
+            .readTimeout(0, TimeUnit.SECONDS)
             .dispatcher(Dispatcher(Executors.newFixedThreadPool(4)))
             .proxy(proxy)
             .build()
@@ -211,10 +216,10 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
             when (reader.code) {
                 Code.HITOMI -> {
                     url(
-                        urlFromUrlFromHash(
+                        imageUrlFromImage(
                             galleryID,
                             reader.galleryInfo.files[index],
-                            if (lowQuality) "webp" else null
+                            lowQuality
                         )
                     )
                     addHeader("Referer", getReferer(galleryID))
@@ -252,7 +257,7 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
         val cache = Cache(this@DownloadWorker).getImages(galleryID)
 
         progress.put(galleryID, reader.galleryInfo.files.indices.map { index ->
-            if (cache?.getOrNull(index) != null)
+            if (cache?.firstOrNull { it?.nameWithoutExtension?.toIntOrNull()  == index } != null)
                 Float.POSITIVE_INFINITY
             else
                 0F
@@ -279,6 +284,7 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
         for (i in reader.galleryInfo.files.indices) {
             val callback = object : Callback {
                 override fun onFailure(call: Call, e: IOException) {
+                    Log.i("PUPILD", "FAIL ${call.request().tag()} (${e.message})")
                     if (Fabric.isInitialized() && e.message != "Canceled")
                         Crashlytics.logException(e)
 
@@ -287,43 +293,77 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
 
                     notify(galleryID)
 
-                    if (isCompleted(galleryID)) {
-                        with(Cache(this@DownloadWorker)) {
-                            if (isDownloading(galleryID)) {
-                                moveToDownload(galleryID)
-                                setDownloading(galleryID, false)
+                    CoroutineScope(Dispatchers.IO).launch {
+                        if (isCompleted(galleryID) && clients.indexOfKey(galleryID) >= 0) {
+                            clients.remove(galleryID)
+                            with(Cache(this@DownloadWorker)) {
+                                if (isDownloading(galleryID)) {
+                                    moveToDownload(galleryID)
+                                    setDownloading(galleryID, false)
+                                }
                             }
                         }
-                        clients.remove(galleryID)
                     }
                 }
 
                 override fun onResponse(call: Call, response: Response) {
-                    response.body().use {
-                        val res = it.bytes()
-                        val ext =
-                            call.request().url().encodedPath().split('.').last()
+                    Log.i("PUPILD", "OK ${call.request().tag()}")
 
-                        Cache(this@DownloadWorker).putImage(galleryID, "%05d.%s".format(i, ext), res)
+                    val ext = call.request().url().encodedPath().split('.').last()
+
+                    try {
+                        response.body().use {
+                            Cache(this@DownloadWorker).putImage(galleryID, i, ext, it.byteStream())
+                        }
                         progress[galleryID]?.set(i, Float.POSITIVE_INFINITY)
-                    }
 
-                    notify(galleryID)
+                        notify(galleryID)
 
-                    if (isCompleted(galleryID)) {
-                        with(Cache(this@DownloadWorker)) {
-                            if (isDownloading(galleryID)) {
-                                moveToDownload(galleryID)
-                                setDownloading(galleryID, false)
+                        CoroutineScope(Dispatchers.IO).launch {
+                            if (isCompleted(galleryID) && clients.indexOfKey(galleryID) >= 0) {
+                                clients.remove(galleryID)
+                                with(Cache(this@DownloadWorker)) {
+                                    if (isDownloading(galleryID)) {
+                                        moveToDownload(galleryID)
+                                        setDownloading(galleryID, false)
+                                    }
+                                }
                             }
                         }
-                        clients.remove(galleryID)
+
+                        Log.i("PUPILD", "SUCCESS ${call.request().tag()}")
+                    } catch (e: Exception) {
+
+                        progress[galleryID]?.set(i, Float.NaN)
+                        exception[galleryID]?.set(i, e)
+
+                        notify(galleryID)
+
+                        CoroutineScope(Dispatchers.IO).launch {
+                            if (isCompleted(galleryID) && clients.indexOfKey(galleryID) >= 0) {
+                                clients.remove(galleryID)
+                                with(Cache(this@DownloadWorker)) {
+                                    if (isDownloading(galleryID)) {
+                                        moveToDownload(galleryID)
+                                        setDownloading(galleryID, false)
+                                    }
+                                }
+                            }
+                        }
+
+                        File(Cache(this@DownloadWorker).getCachedGallery(galleryID), "%05d.$ext".format(i)).delete()
+
+                        Log.i("PUPILD", "FAIL ON OK ${call.request().tag()} (${e.message})")
                     }
                 }
             }
 
-            if (progress[galleryID]?.get(i)?.isFinite() == true)
+            if (progress[galleryID]?.get(i)?.isFinite() == true) {
                 queueDownload(galleryID, reader, i, callback)
+                Log.i("PUPILD", "$galleryID QUEUED $i")
+            } else {
+                Log.i("PUPILD", "$galleryID SKIPPED $i (${progress[galleryID]?.get(i)})")
+            }
         }
     }
 
@@ -331,13 +371,17 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
         val max = progress[galleryID]?.size ?: 0
         val progress = progress[galleryID]?.count { !it.isFinite() } ?: 0
 
-        if (isCompleted(galleryID))
+        Log.i("PUPILD", "NOTIFY $galleryID ${isCompleted(galleryID)} $progress/$max")
+
+        if (isCompleted(galleryID)) {
             notification[galleryID]
                 ?.setContentText(getString(R.string.reader_notification_complete))
                 ?.setSmallIcon(android.R.drawable.stat_sys_download_done)
                 ?.setProgress(0, 0, false)
                 ?.setOngoing(false)
-        else
+
+            notificationManager.cancel(galleryID)
+        } else
             notification[galleryID]
                 ?.setProgress(max, progress, false)
                 ?.setContentText("$progress/$max")
@@ -354,7 +398,7 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
         }
         val pendingIntent = TaskStackBuilder.create(this).run {
             addNextIntentWithParentStack(intent)
-            getPendingIntent(0, PendingIntent.FLAG_UPDATE_CURRENT)
+            getPendingIntent(galleryID, PendingIntent.FLAG_UPDATE_CURRENT)
         }
 
         notification.put(galleryID, NotificationCompat.Builder(this, "download").apply {
@@ -369,18 +413,27 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
 
     private fun loop() = CoroutineScope(Dispatchers.Default).launch {
         while (true) {
-            if (queue.isEmpty() || clients.size() > preferences.getInt("max_download", 4))
+            if (queue.isEmpty())
                 continue
 
-            val galleryID = queue.poll() ?: continue
+            val galleryID = queue.peek() ?: continue
 
             if (clients.indexOfKey(galleryID) >= 0)    // Gallery already downloading!
                 continue
 
-            initNotification(galleryID)
+            if (notification[galleryID] == null)
+                initNotification(galleryID)
+
             if (Cache(this@DownloadWorker).isDownloading(galleryID))
                 notificationManager.notify(galleryID, notification[galleryID].build())
+
+            if (clients.size() >= preferences.getInt("max_download", 4))
+                continue
+
+            Log.i("PUPILD", "QUEUED $galleryID #${clients.size()+1}")
+
             worker.put(galleryID, download(galleryID))
+            queue.poll()
         }
     }
 

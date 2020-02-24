@@ -19,6 +19,7 @@
 package xyz.quaver.pupil.adapters
 
 import android.content.Context
+import android.graphics.BitmapFactory
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -119,12 +120,26 @@ class ReaderAdapter(private val context: Context,
         holder.view.reader_index.text = (position+1).toString()
 
         val images = Cache(context).getImage(galleryID, position)
+        val progress = DownloadWorker.getInstance(context).progress[galleryID]?.get(position)
 
-        if (images != null) {
+        if (progress?.isInfinite() == true && images != null) {
+            holder.view.reader_item_progressbar.visibility = View.INVISIBLE
+            holder.view.container.apply {
+                val options = BitmapFactory.Options().apply {
+                    inJustDecodeBounds = true
+                }
+
+                BitmapFactory.decodeFile(images.canonicalPath, options)
+
+                maxWidth = options.outWidth
+                maxHeight = options.outHeight
+            }
+
             glide
                 .load(images)
                 .diskCacheStrategy(DiskCacheStrategy.NONE)
                 .skipMemoryCache(true)
+                .dontTransform()
                 .error(R.drawable.image_broken_variant)
                 .apply {
                     if (BuildConfig.CENSOR)
@@ -132,7 +147,11 @@ class ReaderAdapter(private val context: Context,
                 }
                 .into(holder.view.image)
         } else {
-            val progress = DownloadWorker.getInstance(context).progress[galleryID]?.get(position)
+            holder.view.reader_item_progressbar.visibility = View.VISIBLE
+            holder.view.container.apply {
+                maxWidth = Integer.MAX_VALUE
+                maxHeight = Integer.MAX_VALUE
+            }
 
             if (progress?.isNaN() == true) {
                 if (Fabric.isInitialized())
