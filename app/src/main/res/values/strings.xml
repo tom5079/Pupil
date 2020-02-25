@@ -53,6 +53,8 @@
     <string name="main_drawer_group_contact_email">Email me!</string>
     <string name="main_drawer_grouop_contact_discord">Discord</string>
 
+    <string name="main_menu_thin">Toggle Thin Mode</string>
+
     <string name="main_menu_sort">Sort</string>
     <string name="main_menu_sort_newest">Newest</string>
     <string name="main_menu_sort_popular">Popular</string>
@@ -61,6 +63,7 @@
     <string name="main_jump_message">Current page: %1$d\nMaximum page: %2$d</string>
     <string name="main_open_gallery_by_id">Open Gallery by ID</string>
     <string name="reader_failed_to_find_gallery">Failed to open gallery</string>
+    <string name="main_fab_cancel">Cancel all downloads</string>
 
     <string name="main_move">Move to page %1$d</string>
 

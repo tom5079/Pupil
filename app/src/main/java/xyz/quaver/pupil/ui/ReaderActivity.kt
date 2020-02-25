@@ -362,7 +362,7 @@ class ReaderActivity : AppCompatActivity() {
             window.attributes = this
         }
 
-        reader_recyclerview.adapter?.notifyDataSetChanged()   // Force to redraw
+        reader_recyclerview.adapter = reader_recyclerview.adapter   // Force to redraw
     }
 
     private fun scrollMode(isScroll: Boolean) {
@@ -388,7 +388,7 @@ class ReaderActivity : AppCompatActivity() {
                         if (worker.progress[galleryID]?.all { !it.isFinite() } == true) // If download is finished, stop animating
                             post {
                                 setImageResource(R.drawable.ic_download)
-                                labelText = getString(R.string.reader_fab_download)
+                                labelText = getString(R.string.reader_fab_download_cancel)
                             }
                         else                                                            // Or continue animate
                             post {

@@ -49,13 +49,12 @@ import xyz.quaver.pupil.R
 import xyz.quaver.pupil.types.Tag
 import xyz.quaver.pupil.util.Histories
 import xyz.quaver.pupil.util.download.Cache
-import xyz.quaver.pupil.util.download.DownloadWorker
 import xyz.quaver.pupil.util.wordCapitalize
 import java.util.*
 import kotlin.collections.ArrayList
 import kotlin.concurrent.schedule
 
-class GalleryBlockAdapter(context: Context, private val galleries: List<GalleryBlock>) : RecyclerSwipeAdapter<RecyclerView.ViewHolder>(), SwipeAdapterInterface {
+class GalleryBlockAdapter(private val context: Context, private val galleries: List<GalleryBlock>) : RecyclerSwipeAdapter<RecyclerView.ViewHolder>(), SwipeAdapterInterface {
 
     enum class ViewType {
         NEXT,
@@ -68,11 +67,12 @@ class GalleryBlockAdapter(context: Context, private val galleries: List<GalleryB
 
     val timer = Timer()
 
+    var isThin = false
+
     inner class GalleryViewHolder(val view: View) : RecyclerView.ViewHolder(view) {
         var timerTask: TimerTask? = null
 
         private fun updateProgress(context: Context, galleryID: Int) {
-            val cache = Cache(context).getCachedGallery(galleryID)
             val reader = Cache(context).getReaderOrNull(galleryID)
 
             CoroutineScope(Dispatchers.Main).launch {
@@ -84,9 +84,7 @@ class GalleryBlockAdapter(context: Context, private val galleries: List<GalleryB
 
                 with(view.galleryblock_progressbar) {
 
-                    progress = cache.listFiles()?.count { file ->
-                        Regex("^[0-9]+.+\$").matches(file.name)
-                    } ?: 0
+                    progress = Cache(context).getImages(galleryID)?.size ?: 0
 
                     if (visibility == View.GONE) {
                         visibility = View.VISIBLE
@@ -126,6 +124,10 @@ class GalleryBlockAdapter(context: Context, private val galleries: List<GalleryB
                 val artists = galleryBlock.artists
                 val series = galleryBlock.series
 
+                if (isThin)
+                    galleryblock_thumbnail.layoutParams.width = context.resources.getDimensionPixelSize(
+                        R.dimen.galleryblock_thumbnail_thin
+                    )
                 galleryblock_thumbnail.setImageDrawable(CircularProgressDrawable(context).also {
                     it.start()
                 })
@@ -138,16 +140,18 @@ class GalleryBlockAdapter(context: Context, private val galleries: List<GalleryB
                             null
                     }
 
-                    glide
-                        .load(thumbnail)
-                        .skipMemoryCache(true)
-                        .diskCacheStrategy(DiskCacheStrategy.NONE)
-                        .error(R.drawable.image_broken_variant)
-                        .apply {
-                            if (BuildConfig.CENSOR)
-                                override(5, 8)
-                        }
-                        .into(galleryblock_thumbnail)
+                    galleryblock_thumbnail.post {
+                        glide
+                            .load(thumbnail)
+                            .skipMemoryCache(true)
+                            .diskCacheStrategy(DiskCacheStrategy.NONE)
+                            .error(R.drawable.image_broken_variant)
+                            .apply {
+                                if (BuildConfig.CENSOR)
+                                    override(5, 8)
+                            }
+                            .into(galleryblock_thumbnail)
+                    }
                 }
 
                 //Check cache
@@ -264,6 +268,14 @@ class GalleryBlockAdapter(context: Context, private val galleries: List<GalleryB
                         }
                     }
                 }
+
+
+                // Make some views invisible to make it thinner
+                if (isThin) {
+                    galleryblock_language.visibility = View.GONE
+                    galleryblock_type.visibility = View.GONE
+                    galleryblock_tag_group.visibility = View.GONE
+                }
             }
         }
     }
@@ -341,10 +353,10 @@ class GalleryBlockAdapter(context: Context, private val galleries: List<GalleryB
                     mItemManger.closeAllExcept(layout)
 
                     holder.view.galleryblock_download.text =
-                        if (DownloadWorker.getInstance(holder.view.context).progress.indexOfKey(gallery.id) < 0)
-                            holder.view.context.getString(R.string.main_download)
-                        else
+                        if (Cache(context).isDownloading(gallery.id))
                             holder.view.context.getString(android.R.string.cancel)
+                        else
+                            holder.view.context.getString(R.string.main_download)
                 }
 
                 override fun onClose(layout: SwipeLayout?) {}

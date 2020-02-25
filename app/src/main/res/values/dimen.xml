@@ -11,6 +11,6 @@
 
 	<dimen name="thumbnail_margin">8dp</dimen>
 
-	<dimen name="galleryblock_thumbnail_thin">50dp</dimen>
+	<dimen name="galleryblock_thumbnail_thin">100dp</dimen>
 	<dimen name="galleryblock_thumbnail_normal">150dp</dimen>
 </resources>

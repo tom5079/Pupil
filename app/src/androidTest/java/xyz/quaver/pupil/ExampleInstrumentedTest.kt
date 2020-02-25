@@ -105,9 +105,9 @@ class ExampleInstrumentedTest {
         val galleryID = 1561552
 
         runBlocking {
-            Log.i("PUPILD", Cache(context).getReader(galleryID)?.title ?: "null")
+            Log.i("PUPILD", Cache(context).getReader(galleryID)?.galleryInfo?.title ?: "null")
         }
 
-        Log.i("PUPILD", Cache(context).getReaderOrNull(galleryID)?.title ?: "null")
+        Log.i("PUPILD", Cache(context).getReaderOrNull(galleryID)?.galleryInfo?.title ?: "null")
     }
 }

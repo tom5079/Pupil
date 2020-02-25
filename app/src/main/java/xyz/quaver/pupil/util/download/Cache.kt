@@ -21,21 +21,19 @@ package xyz.quaver.pupil.util.download
 import android.content.Context
 import android.content.ContextWrapper
 import android.util.Base64
+import android.util.Log
 import android.util.SparseArray
 import androidx.preference.PreferenceManager
 import com.crashlytics.android.Crashlytics
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.*
 import kotlinx.io.InputStream
 import xyz.quaver.Code
 import xyz.quaver.hitomi.GalleryBlock
 import xyz.quaver.hitomi.Reader
 import xyz.quaver.proxy
-import xyz.quaver.pupil.util.copyRecursively
 import xyz.quaver.pupil.util.getCachedGallery
 import xyz.quaver.pupil.util.getDownloadDirectory
+import xyz.quaver.pupil.util.isParentOf
 import xyz.quaver.pupil.util.json
 import java.io.File
 import java.io.FileOutputStream
@@ -247,15 +245,27 @@ class Cache(context: Context) : ContextWrapper(context) {
         }
     }
 
-    fun moveToDownload(galleryID: Int) {
+    fun moveToDownload(galleryID: Int) = CoroutineScope(Dispatchers.IO).launch {
         val cache = getCachedGallery(galleryID).also {
             if (!it.exists())
-                return
+                return@launch
         }
-        val download = File(getDownloadDirectory(this), galleryID.toString())
+        val download = File(getDownloadDirectory(this@Cache), galleryID.toString())
 
-        cache.copyRecursively(download, true) { _, _ -> OnErrorAction.SKIP }
+        if (download.isParentOf(cache))
+            return@launch
+
+        Log.i("PUPILD", "MOVING ${cache.canonicalPath} --> ${download.canonicalPath}")
+
+        cache.copyRecursively(download, true) { file, err ->
+            Log.i("PUPILD", "MOVING ERROR ${file.canonicalPath} ${err.message}")
+            OnErrorAction.SKIP
+        }
+        Log.i("PUPILD", "MOVED ${cache.canonicalPath}")
+
+        Log.i("PUPILD", "DELETING ${cache.canonicalPath}")
         cache.deleteRecursively()
+        Log.i("PUPILD", "DELETED ${cache.canonicalPath}")
     }
 
     fun isDownloading(galleryID: Int) = getCachedMetadata(galleryID)?.isDownloading == true
