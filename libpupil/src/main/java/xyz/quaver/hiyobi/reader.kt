@@ -30,6 +30,7 @@ import java.net.URL
 import javax.net.ssl.HttpsURLConnection
 
 const val hiyobi = "hiyobi.me"
+const val primary_img_domain = "cdn.hiyobi.me"
 const val user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.131 Safari/537.36"
 
 var cookie: String = ""
@@ -87,7 +88,7 @@ fun createImgList(galleryID: Int, reader: Reader, lowQuality: Boolean = false) =
     if (lowQuality)
         reader.galleryInfo.files.map {
             val name = it.name.replace(Regex("""\.[^/.]+$"""), "")
-            Images("$protocol//$hiyobi/data_r/$galleryID/$name.jpg", galleryID, it.name)
+            Images("$protocol//$primary_img_domain/data_r/$galleryID/$name.jpg", galleryID, it.name)
         }
     else
-        reader.galleryInfo.files.map { Images("$protocol//$hiyobi/data/$galleryID/${it.name}", galleryID, it.name) }
+        reader.galleryInfo.files.map { Images("$protocol//$primary_img_domain/data/$galleryID/${it.name}", galleryID, it.name) }
