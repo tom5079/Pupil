@@ -100,6 +100,9 @@ class ReaderAdapter(private val context: Context,
         } else {
             holder.view.layoutParams.height = RecyclerView.LayoutParams.WRAP_CONTENT
             holder.view.container.layoutParams.height = 0
+
+            (holder.view.container.layoutParams as ConstraintLayout.LayoutParams)
+                .dimensionRatio = "W,${reader!!.galleryInfo.files[position].width}:${reader!!.galleryInfo.files[position].height}"
         }
 
         holder.view.image.setOnPhotoTapListener { _, _, _ ->
@@ -109,10 +112,6 @@ class ReaderAdapter(private val context: Context,
         holder.view.container.setOnClickListener {
             onItemClickListener?.invoke(position)
         }
-
-        if (!isFullScreen)
-            (holder.view.container.layoutParams as ConstraintLayout.LayoutParams)
-                .dimensionRatio = "W,${reader!!.galleryInfo.files[position].width}:${reader!!.galleryInfo.files[position].height}"
 
         holder.view.reader_index.text = (position+1).toString()
 

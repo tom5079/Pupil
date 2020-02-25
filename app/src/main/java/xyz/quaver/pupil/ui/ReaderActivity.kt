@@ -361,6 +361,8 @@ class ReaderActivity : AppCompatActivity() {
 
             window.attributes = this
         }
+
+        reader_recyclerview.adapter?.notifyDataSetChanged()   // Force to redraw
     }
 
     private fun scrollMode(isScroll: Boolean) {
