@@ -74,14 +74,12 @@ dependencies {
     implementation 'com.crashlytics.sdk.android:crashlytics:2.10.1'
     implementation 'com.github.arimorty:floatingsearchview:2.1.1'
     implementation 'com.github.clans:fab:1.6.4'
-
     implementation 'com.github.bumptech.glide:glide:4.11.0'
     annotationProcessor 'com.github.bumptech.glide:compiler:4.11.0'
     kapt 'com.github.bumptech.glide:compiler:4.11.0'
     implementation ("com.github.bumptech.glide:recyclerview-integration:4.11.0") {
         transitive = false
     }
-
     implementation 'net.rdrei.android.dirchooser:library:3.2@aar'
     implementation 'com.github.chrisbanes:PhotoView:2.3.0'
     implementation 'com.andrognito.patternlockview:patternlockview:1.0.0'

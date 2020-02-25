@@ -83,6 +83,13 @@
                 app:menu_colorNormal="@color/colorAccent">
 
             <com.github.clans.fab.FloatingActionButton
+                android:id="@+id/main_fab_cancel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:fab_label="@string/main_fab_cancel"
+                app:fab_size="mini"/>
+
+            <com.github.clans.fab.FloatingActionButton
                 android:id="@+id/main_fab_jump"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"

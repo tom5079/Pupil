@@ -330,6 +330,13 @@ class MainActivity : AppCompatActivity() {
             true
         }
 
+        with(main_fab_cancel) {
+            setImageResource(R.drawable.cancel)
+            setOnClickListener {
+                DownloadWorker.getInstance(context).stop()
+            }
+        }
+
         with(main_fab_jump) {
             setImageResource(R.drawable.ic_jump)
             setOnClickListener {
@@ -408,7 +415,7 @@ class MainActivity : AppCompatActivity() {
                     if (!completeFlag.get(galleryID, false)) {
                         val worker = DownloadWorker.getInstance(context)
 
-                        if (worker.progress.indexOfKey(galleryID) >= 0)     //download in progress
+                        if (Cache(context).isDownloading(galleryID))     //download in progress
                             worker.cancel(galleryID)
                         else {
                             Cache(context).setDownloading(galleryID, true)
@@ -724,6 +731,15 @@ class MainActivity : AppCompatActivity() {
             setOnMenuItemClickListener {
                 when(it.itemId) {
                     R.id.main_menu_settings -> startActivityForResult(Intent(this@MainActivity, SettingsActivity::class.java), REQUEST_SETTINGS)
+                    R.id.main_menu_thin -> {
+                        main_recyclerview.apply {
+                            (adapter as GalleryBlockAdapter).apply {
+                                isThin = !isThin
+                            }
+
+                            adapter = adapter       // Force to redraw
+                        }
+                    }
                     R.id.main_menu_sort_newest -> {
                         sortMode = SortMode.NEWEST
                         it.isChecked = true
