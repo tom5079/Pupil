@@ -131,5 +131,5 @@
     <string name="proxy_dialog_addr_hint">サーバーアドレス</string>
     <string name="proxy_dialog_server">サーバー</string>
     <string name="main_menu_thin">簡単モード</string>
-    <string name="main_fab_cancel">すべてのダウンロード取り消し</string>
+    <string name="main_fab_cancel">すべてのダウンロードキャンセル</string>
 </resources>
