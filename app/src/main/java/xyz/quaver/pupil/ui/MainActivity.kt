@@ -341,7 +341,7 @@ class MainActivity : AppCompatActivity() {
             setImageResource(R.drawable.ic_jump)
             setOnClickListener {
                 val preference = PreferenceManager.getDefaultSharedPreferences(context)
-                val perPage = preference.getString("per_page", "25")!!.toInt()
+                val perPage = preference.getString("per_page", "25")!!.toIntOrNull() ?: 25
                 val editText = EditText(context)
 
                 AlertDialog.Builder(context).apply {
