@@ -51,7 +51,10 @@ class Pupil : MultiDexApplication() {
         proxy = getProxy(this)
 
         try {
-            preference.getString("dl_location", null)
+            preference.getString("dl_location", null).also {
+                if (!File(it!!).canWrite())
+                    throw Exception()
+            }
         } catch (e: Exception) {
             preference.edit().remove("dl_location").apply()
         }
@@ -72,13 +75,20 @@ class Pupil : MultiDexApplication() {
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            val channel = NotificationChannel("download", getString(R.string.channel_download), NotificationManager.IMPORTANCE_MIN).apply {
+
+            manager.createNotificationChannel(NotificationChannel("download", getString(R.string.channel_download), NotificationManager.IMPORTANCE_LOW).apply {
                 description = getString(R.string.channel_download_description)
                 enableLights(false)
                 enableVibration(false)
                 lockscreenVisibility = Notification.VISIBILITY_SECRET
-            }
-            manager.createNotificationChannel(channel)
+            })
+
+            manager.createNotificationChannel(NotificationChannel("update", getString(R.string.channel_update), NotificationManager.IMPORTANCE_HIGH).apply {
+                description = getString(R.string.channel_update_description)
+                enableLights(true)
+                enableVibration(true)
+                lockscreenVisibility = Notification.VISIBILITY_SECRET
+            })
         }
 
         AppCompatDelegate.setCompatVectorFromResourcesEnabled(true)

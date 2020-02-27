@@ -27,4 +27,6 @@ const val REQUEST_DOWNLOAD_FOLDER = 3874
 const val REQUEST_DOWNLOAD_FOLDER_OLD = 3425
 const val REQUEST_WRITE_PERMISSION_AND_SAF = 13900
 
+const val NOTIFICATION_ID_UPDATE = 2345
+
 val json = Json(JsonConfiguration.Stable)

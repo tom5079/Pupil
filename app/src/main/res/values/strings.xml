@@ -35,6 +35,9 @@
     <string name="channel_download">Download</string>
     <string name="channel_download_description">Shows download status</string>
 
+    <string name="channel_update">Update</string>
+    <string name="channel_update_description">Shows update progress</string>
+
     <string name="unable_to_connect">Unable to connect to hitomi.la</string>
     
     <string name="lock_corrupted">Lock file corrupted! Please re-install Pupil</string>
