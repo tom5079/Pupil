@@ -21,7 +21,8 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme"
         tools:replace="android:theme"
-        android:requestLegacyExternalStorage="true">
+        android:requestLegacyExternalStorage="true"
+        tools:ignore="UnusedAttribute">
 
         <provider
             android:authorities="${applicationId}.provider"
@@ -34,6 +35,12 @@
                 android:resource="@xml/file_paths" />
 
         </provider>
+
+        <receiver android:name=".BroadcastReciever" android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.DOWNLOAD_COMPLETE"/>
+            </intent-filter>
+        </receiver>
 
         <activity android:name=".ui.LockActivity" />
         <activity

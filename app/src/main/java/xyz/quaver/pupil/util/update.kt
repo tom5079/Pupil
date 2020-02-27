@@ -18,16 +18,10 @@
 
 package xyz.quaver.pupil.util
 
-import android.app.PendingIntent
+import android.app.DownloadManager
 import android.content.Context
-import android.content.Intent
-import android.webkit.MimeTypeMap
+import android.net.Uri
 import androidx.appcompat.app.AlertDialog
-import androidx.appcompat.app.AppCompatActivity
-import androidx.core.app.NotificationCompat
-import androidx.core.app.NotificationManagerCompat
-import androidx.core.content.FileProvider
-import androidx.lifecycle.Lifecycle
 import androidx.preference.PreferenceManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -81,7 +75,7 @@ fun getApkUrl(releases: JsonObject) : String? {
 }
 
 const val UPDATE_NOTIFICATION_ID = 384823
-fun checkUpdate(context: AppCompatActivity, force: Boolean = false) {
+fun checkUpdate(context: Context, force: Boolean = false) {
 
     val preferences = PreferenceManager.getDefaultSharedPreferences(context)
     val ignoreUpdateUntil = preferences.getLong("ignore_update_until", 0)
@@ -143,56 +137,27 @@ fun checkUpdate(context: AppCompatActivity, force: Boolean = false) {
             setMessage(Markwon.create(context).toMarkdown(msg))
             setPositiveButton(android.R.string.yes) { _, _ ->
 
-                val notificationManager = NotificationManagerCompat.from(context)
-                val builder = NotificationCompat.Builder(context, "download").apply {
-                    setContentTitle(context.getString(R.string.update_notification_description))
-                    setSmallIcon(android.R.drawable.stat_sys_download)
-                    priority = NotificationCompat.PRIORITY_LOW
-                    setOngoing(true)
+                val preference = PreferenceManager.getDefaultSharedPreferences(context)
+
+                val downloadManager = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
+
+                //Cancel any download queued before
+
+                val id = preference.getLong("update_download_id", -1)
+
+                if (id != -1L)
+                    downloadManager.remove(id)
+
+                val target = File(context.getExternalFilesDir(null), "Pupil.apk").also {
+                    it.delete()
                 }
 
-                CoroutineScope(Dispatchers.IO).launch io@{
-                    val target = File(getDownloadDirectory(context), "Pupil.apk")
+                val request = DownloadManager.Request(Uri.parse(url))
+                    .setTitle(context.getText(R.string.update_notification_description))
+                    .setDestinationUri(Uri.fromFile(target))
 
-                    try {
-                        URL(url).download(target) { progress, fileSize ->
-                            builder.setProgress(fileSize.toInt(), progress.toInt(), false)
-                            notificationManager.notify(UPDATE_NOTIFICATION_ID, builder.build())
-                        }
-                    } catch (e: Exception) {
-                        builder.apply {
-                            setContentText(context.getString(R.string.update_failed))
-                            setMessage(context.getString(R.string.update_failed_message))
-                            setSmallIcon(android.R.drawable.stat_sys_download_done)
-                            setOngoing(false)
-                        }
-
-                        notificationManager.cancel(UPDATE_NOTIFICATION_ID)
-                        notificationManager.notify(UPDATE_NOTIFICATION_ID, builder.build())
-
-                        return@io
-                    }
-
-                    val install = Intent(Intent.ACTION_VIEW).apply {
-                        flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_GRANT_READ_URI_PERMISSION
-                        setDataAndType(FileProvider.getUriForFile(context, context.applicationContext.packageName + ".provider", target), MimeTypeMap.getSingleton().getMimeTypeFromExtension("apk"))
-                    }
-
-                    builder.apply {
-                        setContentIntent(PendingIntent.getActivity(context, 0, install, 0))
-                        setProgress(0, 0, false)
-                        setSmallIcon(android.R.drawable.stat_sys_download_done)
-                        setContentTitle(context.getString(R.string.update_download_completed))
-                        setContentText(context.getString(R.string.update_download_completed_description))
-                        setOngoing(false)
-                    }
-
-                    notificationManager.cancel(UPDATE_NOTIFICATION_ID)
-
-                    if (context.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED))
-                        context.startActivity(install)
-                    else
-                        notificationManager.notify(UPDATE_NOTIFICATION_ID, builder.build())
+                downloadManager.enqueue(request).also {
+                    preference.edit().putLong("update_download_id", it).apply()
                 }
             }
             setNegativeButton(if (force) android.R.string.no else R.string.ignore_update) { _, _ ->
