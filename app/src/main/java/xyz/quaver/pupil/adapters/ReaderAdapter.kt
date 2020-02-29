@@ -18,16 +18,13 @@
 
 package xyz.quaver.pupil.adapters
 
-import android.content.Context
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.recyclerview.widget.RecyclerView
-import com.bumptech.glide.Glide
-import com.bumptech.glide.ListPreloader
-import com.bumptech.glide.RequestBuilder
-import com.bumptech.glide.integration.recyclerview.RecyclerViewPreloader
+import com.bumptech.glide.RequestManager
+import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.crashlytics.android.Crashlytics
 import io.fabric.sdk.android.Fabric
 import kotlinx.android.synthetic.main.item_reader.view.*
@@ -35,44 +32,15 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import xyz.quaver.hitomi.Reader
-import xyz.quaver.pupil.BuildConfig
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.util.download.Cache
 import xyz.quaver.pupil.util.download.DownloadWorker
-import java.io.File
 import java.util.*
 import kotlin.concurrent.schedule
 import kotlin.math.roundToInt
 
-class ReaderAdapter(private val context: Context,
+class ReaderAdapter(private val glide: RequestManager,
                     private val galleryID: Int) : RecyclerView.Adapter<ReaderAdapter.ViewHolder>() {
-
-    val glide = Glide.with(context)
-
-    //region Glide.RecyclerView
-    val sizeProvider = ListPreloader.PreloadSizeProvider<File> { _, _, position ->
-        Cache(context).getReaderOrNull(galleryID)?.galleryInfo?.files?.getOrNull(position)?.let {
-            arrayOf(it.width, it.height).toIntArray()
-        }
-    }
-    val modelProvider = object: ListPreloader.PreloadModelProvider<File> {
-        override fun getPreloadItems(position: Int): MutableList<File> {
-            return listOf(Cache(context).getImages(galleryID)?.getOrNull(position)).filterNotNullTo(mutableListOf())
-        }
-
-        override fun getPreloadRequestBuilder(item: File): RequestBuilder<*>? {
-            return glide
-                .load(item)
-                .fitCenter()
-                .error(R.drawable.image_broken_variant)
-                .apply {
-                    if (BuildConfig.CENSOR)
-                        override(5, 8)
-                }
-        }
-    }
-    val preloader = RecyclerViewPreloader<File>(glide, modelProvider, sizeProvider, 10)
-    //endregion
 
     var reader: Reader? = null
     val timer = Timer()
@@ -115,8 +83,8 @@ class ReaderAdapter(private val context: Context,
 
         holder.view.reader_index.text = (position+1).toString()
 
-        val images = Cache(context).getImage(galleryID, position)
-        val progress = DownloadWorker.getInstance(context).progress[galleryID]?.get(position)
+        val images = Cache(holder.view.context).getImage(galleryID, position)
+        val progress = DownloadWorker.getInstance(holder.view.context).progress[galleryID]?.get(position)
 
         if (progress?.isInfinite() == true && images != null) {
             holder.view.reader_item_progressbar.visibility = View.INVISIBLE
@@ -124,6 +92,8 @@ class ReaderAdapter(private val context: Context,
             holder.view.image.post {
                 glide
                     .load(images)
+                    .diskCacheStrategy(DiskCacheStrategy.NONE)
+                    .skipMemoryCache(true)
                     .fitCenter()
                     .error(R.drawable.image_broken_variant)
                     .into(holder.view.image)
@@ -136,7 +106,7 @@ class ReaderAdapter(private val context: Context,
 
             if (progress?.isNaN() == true) {
                 if (Fabric.isInitialized())
-                    Crashlytics.logException(DownloadWorker.getInstance(context).exception[galleryID]?.get(position))
+                    Crashlytics.logException(DownloadWorker.getInstance(holder.view.context).exception[galleryID]?.get(position))
 
                 glide
                     .load(R.drawable.image_broken_variant)

@@ -32,6 +32,7 @@ import androidx.recyclerview.widget.PagerSnapHelper
 import androidx.recyclerview.widget.RecyclerView
 import androidx.vectordrawable.graphics.drawable.Animatable2Compat
 import androidx.vectordrawable.graphics.drawable.AnimatedVectorDrawableCompat
+import com.bumptech.glide.Glide
 import com.crashlytics.android.Crashlytics
 import com.google.android.material.snackbar.Snackbar
 import io.fabric.sdk.android.Fabric
@@ -286,7 +287,7 @@ class ReaderActivity : AppCompatActivity() {
 
     private fun initView() {
         with(reader_recyclerview) {
-            adapter = ReaderAdapter(this@ReaderActivity, galleryID).apply {
+            adapter = ReaderAdapter(Glide.with(this@ReaderActivity), galleryID).apply {
                 onItemClickListener = {
                     if (isScroll) {
                         isScroll = false
@@ -300,7 +301,6 @@ class ReaderActivity : AppCompatActivity() {
                 }
             }
 
-            addOnScrollListener((adapter as ReaderAdapter).preloader)
             addOnScrollListener(object: RecyclerView.OnScrollListener() {
                 override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
                     super.onScrolled(recyclerView, dx, dy)

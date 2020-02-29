@@ -45,6 +45,7 @@ import androidx.vectordrawable.graphics.drawable.AnimatedVectorDrawableCompat
 import com.arlib.floatingsearchview.FloatingSearchView
 import com.arlib.floatingsearchview.suggestions.model.SearchSuggestion
 import com.arlib.floatingsearchview.util.view.SearchInputView
+import com.bumptech.glide.Glide
 import com.crashlytics.android.Crashlytics
 import com.google.android.material.appbar.AppBarLayout
 import io.fabric.sdk.android.Fabric
@@ -399,7 +400,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun setupRecyclerView() {
         with(main_recyclerview) {
-            adapter = GalleryBlockAdapter(this@MainActivity, galleries).apply {
+            adapter = GalleryBlockAdapter(Glide.with(this@MainActivity), galleries).apply {
                 onChipClickedHandler.add {
                     runOnUiThread {
                         query = it.toQuery()

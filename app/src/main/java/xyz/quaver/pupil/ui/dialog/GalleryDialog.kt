@@ -226,7 +226,7 @@ class GalleryDialog(context: Context, private val galleryID: Int) : Dialog(conte
         val inflater = LayoutInflater.from(context)
         val galleries = ArrayList<GalleryBlock>()
 
-        val adapter = GalleryBlockAdapter(context, galleries).apply {
+        val adapter = GalleryBlockAdapter(Glide.with(ownerActivity ?: return), galleries).apply {
             onChipClickedHandler.add { tag ->
                 this@GalleryDialog.onChipClickedHandler.forEach { handler ->
                     handler.invoke(tag)
