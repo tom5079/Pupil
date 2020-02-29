@@ -11,8 +11,6 @@ dependencies {
     testImplementation 'junit:junit:4.13'
 }
 
-sourceCompatibility = "7"
-targetCompatibility = "7"
 buildscript {
     repositories {
         mavenCentral()
