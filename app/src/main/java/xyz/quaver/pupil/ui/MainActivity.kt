@@ -195,7 +195,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
         val preference = PreferenceManager.getDefaultSharedPreferences(this)
-        val perPage = preference.getString("per_page", "25")!!.toInt()
+        val perPage = preference.getString("per_page", "25")!!.toIntOrNull() ?: 25
         val maxPage = ceil(totalItems / perPage.toDouble()).roundToInt()
 
         return when(keyCode) {
@@ -341,7 +341,7 @@ class MainActivity : AppCompatActivity() {
             setImageResource(R.drawable.ic_jump)
             setOnClickListener {
                 val preference = PreferenceManager.getDefaultSharedPreferences(context)
-                val perPage = preference.getString("per_page", "25")!!.toInt()
+                val perPage = preference.getString("per_page", "25")!!.toIntOrNull() ?: 25
                 val editText = EditText(context)
 
                 AlertDialog.Builder(context).apply {
@@ -369,14 +369,16 @@ class MainActivity : AppCompatActivity() {
         with(main_fab_id) {
             setImageResource(R.drawable.numeric)
             setOnClickListener {
-                val editText = EditText(context)
+                val editText = EditText(context).apply {
+                    inputType = InputType.TYPE_CLASS_NUMBER
+                }
 
                 AlertDialog.Builder(context).apply {
                     setView(editText)
                     setTitle(R.string.main_open_gallery_by_id)
 
                     setPositiveButton(android.R.string.ok) { _, _ ->
-                            val galleryID = editText.text.toString().toInt()
+                            val galleryID = editText.text.toString().toIntOrNull() ?: return@setPositiveButton
                             val intent = Intent(this@MainActivity, ReaderActivity::class.java).apply {
                                 putExtra("galleryID", galleryID)
                             }
