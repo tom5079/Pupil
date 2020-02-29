@@ -32,7 +32,7 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.CircularProgressDrawable
 import androidx.vectordrawable.graphics.drawable.Animatable2Compat
 import androidx.vectordrawable.graphics.drawable.AnimatedVectorDrawableCompat
-import com.bumptech.glide.Glide
+import com.bumptech.glide.RequestManager
 import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.daimajia.swipe.SwipeLayout
 import com.daimajia.swipe.adapters.RecyclerSwipeAdapter
@@ -54,7 +54,7 @@ import java.util.*
 import kotlin.collections.ArrayList
 import kotlin.concurrent.schedule
 
-class GalleryBlockAdapter(private val context: Context, private val galleries: List<GalleryBlock>) : RecyclerSwipeAdapter<RecyclerView.ViewHolder>(), SwipeAdapterInterface {
+class GalleryBlockAdapter(private val glide: RequestManager, private val galleries: List<GalleryBlock>) : RecyclerSwipeAdapter<RecyclerView.ViewHolder>(), SwipeAdapterInterface {
 
     enum class ViewType {
         NEXT,
@@ -62,7 +62,6 @@ class GalleryBlockAdapter(private val context: Context, private val galleries: L
         PREV
     }
 
-    private val glide = Glide.with(context)
     private lateinit var favorites: Histories
 
     val timer = Timer()
@@ -353,7 +352,7 @@ class GalleryBlockAdapter(private val context: Context, private val galleries: L
                     mItemManger.closeAllExcept(layout)
 
                     holder.view.galleryblock_download.text =
-                        if (Cache(context).isDownloading(gallery.id))
+                        if (Cache(holder.view.context).isDownloading(gallery.id))
                             holder.view.context.getString(android.R.string.cancel)
                         else
                             holder.view.context.getString(R.string.main_download)

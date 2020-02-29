@@ -175,8 +175,12 @@ fun getGalleryIDsFromNozomi(area: String?, tag: String, language: String) : List
                 else -> "$protocol//$domain/$compressed_nozomi_prefix/$area/$tag-$language$nozomiextension"
             }
 
-    val bytes = URL(nozomiAddress).openConnection(proxy).getInputStream().use {
-        it.readBytes()
+    val bytes = try {
+        URL(nozomiAddress).openConnection(proxy).getInputStream().use {
+            it.readBytes()
+        }
+    } catch (e: Exception) {
+        return emptyList()
     }
 
     val nozomi = ArrayList<Int>()
