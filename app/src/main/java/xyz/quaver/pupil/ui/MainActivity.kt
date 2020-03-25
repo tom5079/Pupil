@@ -414,18 +414,14 @@ class MainActivity : AppCompatActivity() {
                 }
                 onDownloadClickedHandler = { position ->
                     val galleryID = galleries[position].id
+                    val worker = DownloadWorker.getInstance(context)
 
-                    if (!completeFlag.get(galleryID, false)) {
-                        val worker = DownloadWorker.getInstance(context)
+                    if (Cache(context).isDownloading(galleryID))     //download in progress
+                        worker.cancel(galleryID)
+                    else {
+                        Cache(context).setDownloading(galleryID, true)
 
-                        if (Cache(context).isDownloading(galleryID))     //download in progress
-                            worker.cancel(galleryID)
-                        else {
-                            Cache(context).setDownloading(galleryID, true)
-
-                            if (!worker.queue.contains(galleryID))
-                                worker.queue.add(galleryID)
-                        }
+                        worker.queue.add(galleryID)
                     }
 
                     closeAllItems()
@@ -477,6 +473,7 @@ class MainActivity : AppCompatActivity() {
 
                     GalleryDialog(
                         this@MainActivity,
+                        Glide.with(this@MainActivity),
                         galleryID
                     ).apply {
                         onChipClickedHandler.add {
@@ -730,6 +727,16 @@ class MainActivity : AppCompatActivity() {
                 favoritesFile.createNewFile()
                 favoritesFile.writeText(json.stringify(serializer, Tags(listOf())))
             }
+
+            setOnLeftMenuClickListener(object: FloatingSearchView.OnLeftMenuClickListener {
+                override fun onMenuOpened() {
+                    (this@MainActivity.main_recyclerview.adapter as GalleryBlockAdapter).closeAllItems()
+                }
+
+                override fun onMenuClosed() {
+                    //Do Nothing
+                }
+            })
 
             setOnMenuItemClickListener {
                 when(it.itemId) {

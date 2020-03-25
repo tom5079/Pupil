@@ -38,6 +38,9 @@
     <string name="channel_update">Update</string>
     <string name="channel_update_description">Shows update progress</string>
 
+    <string name="channel_import">Import</string>
+    <string name="channel_import_description">Shows progress of import</string>
+
     <string name="unable_to_connect">Unable to connect to hitomi.la</string>
     
     <string name="lock_corrupted">Lock file corrupted! Please re-install Pupil</string>
@@ -173,6 +176,7 @@
     <string name="settings_restore_title">Restore favorites</string>
     <string name="settings_restore_failed">Restore failed</string>
     <string name="settings_restore_successful">%1$d entries restored</string>
+    <string name="settings_import_old_galleries">Import old galleries</string>
 
     <!-- SETTINGS/APP LOCK ACTIVITY -->
 
@@ -204,5 +208,11 @@
     <string name="proxy_dialog_password_hint">password</string>
     <string name="proxy_dialog_error">Wrong value</string>
     <string name="proxy_dialog_server">server</string>
+
+    <!-- IMPORT OLD GALLERIES -->
+    <string name="import_old_galleries_folder_not_readable">This folder is not readable</string>
+    <string name="import_old_galleries_notification">Importing old galleries…</string>
+    <string name="import_old_galleries_notification_text" translatable="false">%1$d/%2$d</string>
+    <string name="import_old_galleries_notification_done">Importing completed</string>
 
 </resources>
