@@ -71,7 +71,11 @@
             android:layout_height="match_parent"
             android:paddingTop="64dp"
             android:clipToPadding="false"
-            android:scrollbars="vertical"
+            app:fastScrollEnabled="true"
+            app:fastScrollHorizontalThumbDrawable="@drawable/thumb_drawable"
+            app:fastScrollVerticalThumbDrawable="@drawable/thumb_drawable"
+            app:fastScrollHorizontalTrackDrawable="@drawable/track_drawable"
+            app:fastScrollVerticalTrackDrawable="@drawable/track_drawable"
             app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"/>
 
         <com.github.clans.fab.FloatingActionMenu

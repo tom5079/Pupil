@@ -134,4 +134,10 @@
     <string name="main_fab_cancel">다운로드 모두 취소</string>
     <string name="channel_update">업데이트</string>
     <string name="channel_update_description">업데이트 진행상황 표시</string>
+    <string name="channel_import">가져오기</string>
+    <string name="channel_import_description">가져오기 상태 표시</string>
+    <string name="settings_import_old_galleries">이전 버전 갤러리 가져오기</string>
+    <string name="import_old_galleries_folder_not_readable">폴더를 읽을 수 없습니다</string>
+    <string name="import_old_galleries_notification">이전 버전 갤러리 가져오는 중…</string>
+    <string name="import_old_galleries_notification_done">가져오기 완료</string>
 </resources>

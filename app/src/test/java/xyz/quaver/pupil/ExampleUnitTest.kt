@@ -34,8 +34,6 @@ class ExampleUnitTest {
     @Test
     fun test() {
         val arr = SparseArray<Float>()
-
-        print(arr.indexOfKey(34))
     }
 
 }

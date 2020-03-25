@@ -18,17 +18,23 @@
 
 package xyz.quaver.pupil.ui.fragment
 
+import android.Manifest
 import android.content.Intent
 import android.content.SharedPreferences
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatDelegate
+import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.preference.Preference
 import androidx.preference.PreferenceCategory
 import androidx.preference.PreferenceFragmentCompat
 import androidx.preference.PreferenceManager
 import com.google.android.material.snackbar.Snackbar
+import net.rdrei.android.dirchooser.DirectoryChooserActivity
+import net.rdrei.android.dirchooser.DirectoryChooserConfig
 import xyz.quaver.pupil.Pupil
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.ui.LockActivity
@@ -168,6 +174,31 @@ class SettingsFragment :
 
                     activity?.startActivityForResult(intent, REQUEST_RESTORE)
                 }
+                "old_import_galleries" -> {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+
+                        if (ContextCompat.checkSelfPermission(context, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED)
+                            ActivityCompat.requestPermissions(activity!!, arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE), REQUEST_WRITE_PERMISSION_AND_SAF)
+                        else {
+                            val intent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).apply {
+                                putExtra("android.content.extra.SHOW_ADVANCED", true)
+                            }
+
+                            activity?.startActivityForResult(intent, REQUEST_IMPORT_OLD_GALLERIES)
+                        }
+                    } else {    // Can't use SAF on old Androids!
+                        val config = DirectoryChooserConfig.builder()
+                            .newDirectoryName("Pupil")
+                            .allowNewDirectoryNameModification(true)
+                            .build()
+
+                        val intent = Intent(context, DirectoryChooserActivity::class.java).apply {
+                            putExtra(DirectoryChooserActivity.EXTRA_CONFIG, config)
+                        }
+
+                        activity?.startActivityForResult(intent, REQUEST_IMPORT_OLD_GALLERIES_OLD)
+                    }
+                }
                 else -> return false
             }
         }
@@ -295,6 +326,9 @@ class SettingsFragment :
                             onPreferenceClickListener = this@SettingsFragment
                         }
                         "restore" -> {
+                            onPreferenceClickListener = this@SettingsFragment
+                        }
+                        "old_import_galleries" -> {
                             onPreferenceClickListener = this@SettingsFragment
                         }
                     }

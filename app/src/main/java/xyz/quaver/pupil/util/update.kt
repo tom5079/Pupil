@@ -18,24 +18,40 @@
 
 package xyz.quaver.pupil.util
 
+import android.annotation.SuppressLint
 import android.app.DownloadManager
+import android.app.PendingIntent
 import android.content.Context
+import android.content.Intent
 import android.net.Uri
+import android.util.Base64
 import androidx.appcompat.app.AlertDialog
+import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
 import androidx.preference.PreferenceManager
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.boolean
 import kotlinx.serialization.json.content
+import okhttp3.*
 import ru.noties.markwon.Markwon
+import xyz.quaver.hitomi.GalleryBlock
+import xyz.quaver.hitomi.Reader
+import xyz.quaver.hitomi.getGalleryBlock
+import xyz.quaver.hitomi.getReader
+import xyz.quaver.proxy
+import xyz.quaver.pupil.BroadcastReciever
 import xyz.quaver.pupil.BuildConfig
 import xyz.quaver.pupil.R
+import xyz.quaver.pupil.util.download.Cache
+import xyz.quaver.pupil.util.download.Metadata
 import java.io.File
+import java.io.IOException
 import java.net.URL
 import java.util.*
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 
 fun getReleases(url: String) : JsonArray {
     return try {
@@ -172,4 +188,149 @@ fun checkUpdate(context: Context, force: Boolean = false) {
             dialog.show()
         }
     }
+}
+
+var cancelImport = false
+@SuppressLint("RestrictedApi")
+fun importOldGalleries(context: Context, folder: File) = CoroutineScope(Dispatchers.IO).launch {
+    val client = OkHttpClient.Builder()
+        .connectTimeout(0, TimeUnit.SECONDS)
+        .readTimeout(0, TimeUnit.SECONDS)
+        .proxy(proxy)
+        .build()
+
+    val cancelIntent = Intent(context, BroadcastReciever::class.java).apply {
+        action = BroadcastReciever.ACTION_CANCEL_IMPORT
+        putExtra(BroadcastReciever.EXTRA_IMPORT_NOTIFICATION_ID, 0)
+    }
+    val pendingIntent = PendingIntent.getBroadcast(context, 0, cancelIntent, 0)
+
+    val notificationManager = NotificationManagerCompat.from(context)
+    val notificationBuilder = NotificationCompat.Builder(context, "import").apply {
+        setContentTitle(context.getText(R.string.import_old_galleries_notification))
+        setProgress(0, 0, true)
+        setSmallIcon(R.drawable.ic_notification)
+        addAction(0, context.getText(android.R.string.cancel), pendingIntent)
+        setOngoing(true)
+    }
+
+    notificationManager.notify(0, notificationBuilder.build())
+
+    if (!folder.isDirectory)
+        return@launch
+
+    val galleryRegex = Regex("""[0-9]+$""")
+    val imageRegex = Regex("""^[0-9]+\..+$""")
+    var size = 0
+    fun setProgress(progress: Int) {
+        notificationBuilder.apply {
+            setContentText(
+                context.getString(
+                    R.string.import_old_galleries_notification_text,
+                    progress,
+                    size
+                )
+            )
+            setProgress(size, progress, false)
+        }
+
+        notificationManager.notify(0, notificationBuilder.build())
+    }
+
+    folder.listFiles { _, name ->
+        galleryRegex.matches(name)
+    }?.also {
+        size = it.size
+        setProgress(0)
+    }?.forEachIndexed { index, gallery ->
+        if (cancelImport)
+            return@forEachIndexed
+
+        setProgress(index)
+
+        val galleryID = gallery.name.toIntOrNull() ?: return@forEachIndexed
+
+        File(getDownloadDirectory(context), galleryID.toString()).mkdirs()
+
+        val reader = async {
+            kotlin.runCatching {
+                json.parse(Reader.serializer(), File(gallery, "reader.json").readText())
+            }.getOrElse {
+                getReader(galleryID)
+            }
+        }
+        val galleryBlock = async {
+            kotlin.runCatching {
+                json.parse(GalleryBlock.serializer(), File(gallery, "galleryBlock.json").readText())
+            }.getOrElse {
+                getGalleryBlock(galleryID)
+            }
+        }
+        @Suppress("NAME_SHADOWING")
+        val thumbnail = async thumbnail@{
+            val galleryBlock = galleryBlock.await()
+
+            Base64.encodeToString(try {
+                File(gallery, "thumbnail.jpg").readBytes()
+            } catch (e: Exception) {
+                val url = galleryBlock?.thumbnails?.firstOrNull()
+
+                if (url == null)
+                    null
+                else {
+                    val request = Request.Builder().url(url).build()
+
+                    var done = false
+                    var result: ByteArray? = null
+                    client.newCall(request).enqueue(object : Callback {
+                        override fun onFailure(call: Call?, e: IOException?) {
+                            done = true
+                        }
+
+                        override fun onResponse(call: Call?, response: Response?) {
+                            result = response?.body()?.use {
+                                it.bytes()
+                            }
+                            done = true
+                        }
+                    })
+
+                    if (!done)
+                        yield()
+
+                    result
+                }
+            } ?: return@thumbnail null, Base64.DEFAULT)
+        }
+
+        Cache(context).setCachedMetadata(galleryID,
+            Metadata(
+                thumbnail.await(),
+                galleryBlock.await(),
+                reader.await()
+            )
+        )
+
+        File(gallery, "images").listFiles { _, name ->
+            imageRegex.matches(name)
+        }?.forEach {
+            if (cancelImport)
+                return@forEach
+
+            @Suppress("NAME_SHADOWING")
+            val index = it.nameWithoutExtension.toIntOrNull() ?: return@forEach
+
+            Cache(context).putImage(galleryID, index, it.extension, it.inputStream())
+        }
+    }
+
+    notificationBuilder.apply {
+        setContentText(context.getText(R.string.import_old_galleries_notification_done))
+        setProgress(0, 0, false)
+        setOngoing(false)
+        mActions.clear()
+    }
+    notificationManager.notify(0, notificationBuilder.build())
+
+    cancelImport = false
 }

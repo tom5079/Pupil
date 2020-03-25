@@ -99,6 +99,10 @@
             app:key="restore"
             app:title="@string/settings_restore_title"/>
 
+        <Preference
+            app:key="old_import_galleries"
+            app:title="@string/settings_import_old_galleries"/>
+
     </PreferenceCategory>
 
 </androidx.preference.PreferenceScreen>

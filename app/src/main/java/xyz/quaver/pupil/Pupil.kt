@@ -89,6 +89,13 @@ class Pupil : MultiDexApplication() {
                 enableVibration(true)
                 lockscreenVisibility = Notification.VISIBILITY_SECRET
             })
+
+            manager.createNotificationChannel(NotificationChannel("import", getString(R.string.channel_update), NotificationManager.IMPORTANCE_HIGH).apply {
+                description = getString(R.string.channel_update_description)
+                enableLights(false)
+                enableVibration(false)
+                lockscreenVisibility = Notification.VISIBILITY_SECRET
+            })
         }
 
         AppCompatDelegate.setCompatVectorFromResourcesEnabled(true)
