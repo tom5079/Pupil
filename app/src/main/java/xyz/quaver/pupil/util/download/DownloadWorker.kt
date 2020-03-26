@@ -158,10 +158,11 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
             .body(ProgressResponseBody(request.tag(), response.body(), progressListener))
             .build()
     }
+
     val client =
         OkHttpClient.Builder()
-            .addInterceptor(interceptor)
             .connectTimeout(0, TimeUnit.SECONDS)
+            .addInterceptor(interceptor)
             .readTimeout(0, TimeUnit.SECONDS)
             .dispatcher(Dispatcher(Executors.newFixedThreadPool(4)))
             .proxy(proxy)
@@ -178,7 +179,11 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
             worker[galleryID]?.cancel()
         }
 
-        client.dispatcher().cancelAll()
+        client.dispatcher().queuedCalls().filter {
+            it.request().tag() is Pair<*, *>
+        }.forEach {
+            it.cancel()
+        }
 
         progress.clear()
         exception.clear()
@@ -411,7 +416,7 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
             val galleryID = queue.peek() ?: continue
 
             if (progress.indexOfKey(galleryID) >= 0)    // Gallery already downloading!
-                continue
+                cancel(galleryID)
 
             if (notification[galleryID] == null)
                 initNotification(galleryID)

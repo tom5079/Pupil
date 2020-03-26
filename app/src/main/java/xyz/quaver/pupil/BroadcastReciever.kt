@@ -30,9 +30,16 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.FileProvider
 import androidx.preference.PreferenceManager
 import xyz.quaver.pupil.util.NOTIFICATION_ID_UPDATE
+import xyz.quaver.pupil.util.cancelImport
 import java.io.File
 
 class BroadcastReciever : BroadcastReceiver() {
+
+    companion object {
+        const val ACTION_CANCEL_IMPORT = "ACTION_CANCEL_IMPORT"
+
+        const val EXTRA_IMPORT_NOTIFICATION_ID = "EXTRA_IMPORT_NOTIFICATION_ID"
+    }
 
     override fun onReceive(context: Context?, intent: Intent?) {
         context ?: return
@@ -86,6 +93,9 @@ class BroadcastReciever : BroadcastReceiver() {
                     .build()
 
                 notificationManager.notify(NOTIFICATION_ID_UPDATE, notification)
+            }
+            ACTION_CANCEL_IMPORT -> {
+                cancelImport = true
             }
         }
     }

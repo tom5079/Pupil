@@ -134,4 +134,10 @@
     <string name="main_fab_cancel">すべてのダウンロードキャンセル</string>
     <string name="channel_update">アップデート</string>
     <string name="channel_update_description">アップデートの進行状態を表示</string>
+    <string name="channel_import">インポート</string>
+    <string name="channel_import_description">インポート状態を表示</string>
+    <string name="settings_import_old_galleries">旧ギャラリーインポート</string>
+    <string name="import_old_galleries_folder_not_readable">フォルダを読めません</string>
+    <string name="import_old_galleries_notification">旧ギャラリーインポート中…</string>
+    <string name="import_old_galleries_notification_done">インポート完了</string>
 </resources>

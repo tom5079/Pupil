@@ -28,6 +28,7 @@ import androidx.test.rule.ActivityTestRule
 import kotlinx.coroutines.runBlocking
 import org.junit.Test
 import org.junit.runner.RunWith
+import xyz.quaver.hitomi.getGalleryIDsFromNozomi
 import xyz.quaver.hiyobi.cookie
 import xyz.quaver.hiyobi.createImgList
 import xyz.quaver.hiyobi.getReader
@@ -60,6 +61,13 @@ class ExampleInstrumentedTest {
         ContextCompat.getExternalFilesDirs(appContext, null).forEachIndexed { index, file ->
             Log.i("PUPILD", "$index: ${file?.absolutePath}")
         }
+    }
+
+    @Test
+    fun test_nozomi() {
+        val nozomi = getGalleryIDsFromNozomi(null, "index", "all")
+
+        Log.i("PUPILD", nozomi.size.toString())
     }
 
     @Test

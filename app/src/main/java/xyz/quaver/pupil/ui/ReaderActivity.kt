@@ -158,10 +158,10 @@ class ReaderActivity : AppCompatActivity() {
     override fun onOptionsItemSelected(item: MenuItem?): Boolean {
         when(item?.itemId) {
             R.id.reader_menu_page_indicator -> {
-                val view = LayoutInflater.from(this).inflate(R.layout.dialog_numberpicker, findViewById(android.R.id.content), false)
+                val view = LayoutInflater.from(this).inflate(R.layout.dialog_numberpicker, reader_layout, false)
                 with(view.dialog_number_picker) {
                     minValue=1
-                    maxValue=reader_recyclerview?.adapter?.itemCount ?: 0
+                    maxValue=Cache(context).getReaderOrNull(galleryID)?.galleryInfo?.files?.size ?: 0
                     value=currentPage
                 }
                 val dialog = AlertDialog.Builder(this).apply {

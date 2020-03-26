@@ -38,10 +38,15 @@ import xyz.quaver.pupil.util.json
 import java.io.File
 import java.io.FileOutputStream
 import java.net.URL
+import java.util.concurrent.Executors
 import java.util.concurrent.locks.Lock
 import java.util.concurrent.locks.ReentrantLock
 
 class Cache(context: Context) : ContextWrapper(context) {
+
+    companion object {
+        private val moving = mutableListOf<Int>()
+    }
 
     private val locks = SparseArray<Lock>()
     private fun lock(galleryID: Int) {
@@ -245,27 +250,32 @@ class Cache(context: Context) : ContextWrapper(context) {
         }
     }
 
-    fun moveToDownload(galleryID: Int) = CoroutineScope(Dispatchers.IO).launch {
-        val cache = getCachedGallery(galleryID).also {
-            if (!it.exists())
+    fun moveToDownload(galleryID: Int) {
+        if (moving.contains(galleryID))
+            return
+
+        CoroutineScope(Dispatchers.IO).launch {
+            val cache = getCachedGallery(galleryID).also {
+                if (!it.exists())
+                    return@launch
+            }
+            val download = File(getDownloadDirectory(this@Cache), galleryID.toString())
+
+            if (download.isParentOf(cache))
                 return@launch
+
+            Log.i("PUPILD", "MOVING ${cache.canonicalPath} --> ${download.canonicalPath}")
+
+            cache.copyRecursively(download, true) { file, err ->
+                Log.i("PUPILD", "MOVING ERROR ${file.canonicalPath} ${err.message}")
+                OnErrorAction.SKIP
+            }
+            Log.i("PUPILD", "MOVED ${cache.canonicalPath}")
+
+            Log.i("PUPILD", "DELETING ${cache.canonicalPath}")
+            cache.deleteRecursively()
+            Log.i("PUPILD", "DELETED ${cache.canonicalPath}")
         }
-        val download = File(getDownloadDirectory(this@Cache), galleryID.toString())
-
-        if (download.isParentOf(cache))
-            return@launch
-
-        Log.i("PUPILD", "MOVING ${cache.canonicalPath} --> ${download.canonicalPath}")
-
-        cache.copyRecursively(download, true) { file, err ->
-            Log.i("PUPILD", "MOVING ERROR ${file.canonicalPath} ${err.message}")
-            OnErrorAction.SKIP
-        }
-        Log.i("PUPILD", "MOVED ${cache.canonicalPath}")
-
-        Log.i("PUPILD", "DELETING ${cache.canonicalPath}")
-        cache.deleteRecursively()
-        Log.i("PUPILD", "DELETED ${cache.canonicalPath}")
     }
 
     fun isDownloading(galleryID: Int) = getCachedMetadata(galleryID)?.isDownloading == true
