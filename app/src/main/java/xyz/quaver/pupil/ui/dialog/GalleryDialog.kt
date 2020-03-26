@@ -18,6 +18,7 @@
 
 package xyz.quaver.pupil.ui.dialog
 
+import android.app.Activity
 import android.app.Dialog
 import android.content.Context
 import android.content.Intent
@@ -29,7 +30,7 @@ import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.bumptech.glide.Glide
+import com.bumptech.glide.RequestManager
 import com.google.android.material.chip.Chip
 import com.google.android.material.snackbar.Snackbar
 import kotlinx.android.synthetic.main.dialog_gallery.*
@@ -53,15 +54,13 @@ import xyz.quaver.pupil.util.ItemClickSupport
 import xyz.quaver.pupil.util.download.Cache
 import xyz.quaver.pupil.util.wordCapitalize
 
-class GalleryDialog(context: Context, private val galleryID: Int) : Dialog(context) {
+class GalleryDialog(context: Context, private val glide: RequestManager, private val galleryID: Int) : Dialog(context) {
 
     private val languages = context.resources.getStringArray(R.array.languages).map {
         it.split("|").let { split ->
             Pair(split[0], split[1])
         }
     }.toMap()
-
-    private val glide = Glide.with(context)
 
     val onChipClickedHandler = ArrayList<((Tag) -> (Unit))>()
 
@@ -90,7 +89,7 @@ class GalleryDialog(context: Context, private val galleryID: Int) : Dialog(conte
             try {
                 val gallery = getGallery(galleryID)
 
-                launch(Dispatchers.Main) {
+                gallery_cover.post {
                     gallery_progressbar.visibility = View.GONE
                     gallery_title.text = gallery.title
                     gallery_artist.text = gallery.artists.joinToString(", ") { it.wordCapitalize() }
@@ -112,7 +111,7 @@ class GalleryDialog(context: Context, private val galleryID: Int) : Dialog(conte
                         }
                     }
 
-                    Glide.with(context)
+                    glide
                         .load(gallery.cover)
                         .apply {
                             if (BuildConfig.CENSOR)
@@ -226,7 +225,7 @@ class GalleryDialog(context: Context, private val galleryID: Int) : Dialog(conte
         val inflater = LayoutInflater.from(context)
         val galleries = ArrayList<GalleryBlock>()
 
-        val adapter = GalleryBlockAdapter(Glide.with(ownerActivity ?: return), galleries).apply {
+        val adapter = GalleryBlockAdapter(glide, galleries).apply {
             onChipClickedHandler.add { tag ->
                 this@GalleryDialog.onChipClickedHandler.forEach { handler ->
                     handler.invoke(tag)
@@ -264,6 +263,7 @@ class GalleryDialog(context: Context, private val galleryID: Int) : Dialog(conte
                     .setOnItemLongClickListener { _, position, _ ->
                         GalleryDialog(
                             context,
+                            glide,
                             galleries[position].id
                         ).apply {
                             onChipClickedHandler.add { tag ->
