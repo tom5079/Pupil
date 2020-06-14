@@ -140,4 +140,5 @@
     <string name="import_old_galleries_folder_not_readable">폴더를 읽을 수 없습니다</string>
     <string name="import_old_galleries_notification">이전 버전 갤러리 가져오는 중…</string>
     <string name="import_old_galleries_notification_done">가져오기 완료</string>
+    <string name="main_fab_random">무작위 갤러리 열기</string>
 </resources>

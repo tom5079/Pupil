@@ -16,9 +16,19 @@
 
 package xyz.quaver
 
+import kotlinx.serialization.UnstableDefault
+import kotlinx.serialization.json.Json
 import java.net.Proxy
 
 var proxy = Proxy.NO_PROXY
+
+@OptIn(UnstableDefault::class)
+var json = Json {
+    isLenient = true
+    ignoreUnknownKeys = true
+    serializeSpecialFloatingPointValues = true
+    useArrayPolymorphism = true
+}
 
 fun availableInHiyobi(galleryID: Int) : Boolean {
     return try {

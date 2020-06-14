@@ -50,7 +50,8 @@
         <SwitchPreferenceCompat
             app:key="low_quality"
             app:title="@string/settings_low_quality"
-            app:summary="@string/settings_low_quality_summary"/>
+            app:summary="@string/settings_low_quality_summary"
+            app:defaultValue="true"/>
 
     </PreferenceCategory>
 

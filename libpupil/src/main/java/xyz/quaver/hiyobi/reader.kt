@@ -17,14 +17,14 @@
 package xyz.quaver.hiyobi
 
 import kotlinx.serialization.UnstableDefault
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.list
+import kotlinx.serialization.builtins.list
 import org.jsoup.Jsoup
 import xyz.quaver.Code
 import xyz.quaver.hitomi.GalleryFiles
 import xyz.quaver.hitomi.GalleryInfo
 import xyz.quaver.hitomi.Reader
 import xyz.quaver.hitomi.protocol
+import xyz.quaver.json
 import xyz.quaver.proxy
 import java.net.URL
 import javax.net.ssl.HttpsURLConnection
@@ -62,14 +62,14 @@ fun renewCookie() : String {
     }
 }
 
-@UseExperimental(UnstableDefault::class)
+@OptIn(UnstableDefault::class)
 fun getReader(galleryID: Int) : Reader {
     val reader = "https://$hiyobi/reader/$galleryID"
     val url = "https://cdn.hiyobi.me/data/json/${galleryID}_list.json"
 
     val title = Jsoup.connect(reader).proxy(proxy).get().title()
 
-    val galleryFiles = Json.nonstrict.parse(
+    val galleryFiles = json.parse(
         GalleryFiles.serializer().list,
         with(URL(url).openConnection(proxy) as HttpsURLConnection) {
             setRequestProperty("User-Agent", user_agent)
