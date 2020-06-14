@@ -18,13 +18,14 @@
 
 package xyz.quaver.pupil.util
 
-import kotlinx.serialization.list
-import kotlinx.serialization.serializer
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.builtins.list
+import kotlinx.serialization.builtins.serializer
 import java.io.File
 
 class Histories(private val file: File) : ArrayList<Int>() {
 
-    val serializer = Int.serializer().list
+    val serializer: KSerializer<List<Int>> = Int.serializer().list
 
     init {
         if (!file.exists())

@@ -52,7 +52,7 @@ import io.fabric.sdk.android.Fabric
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.activity_main_content.*
 import kotlinx.coroutines.*
-import kotlinx.serialization.list
+import kotlinx.serialization.builtins.list
 import xyz.quaver.hitomi.GalleryBlock
 import xyz.quaver.hitomi.doSearch
 import xyz.quaver.hitomi.getGalleryIDsFromNozomi
@@ -364,6 +364,29 @@ class MainActivity : AppCompatActivity() {
                         }
                     }
                 }.show()
+            }
+        }
+
+        with(main_fab_random) {
+            setImageResource(R.drawable.shuffle_variant)
+            setOnClickListener {
+                runBlocking {
+                    withTimeoutOrNull(100) {
+                        galleryIDs?.await()
+                    }
+                }.let {
+                    if (it?.isEmpty() == false) {
+                        val galleryID = it.random()
+
+                        val intent = Intent(this@MainActivity, ReaderActivity::class.java).apply {
+                            putExtra("galleryID", galleryID)
+                        }
+
+                        startActivity(intent)
+
+                        histories.add(galleryID)
+                    }
+                }
             }
         }
 
