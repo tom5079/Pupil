@@ -22,9 +22,7 @@ import android.content.Context
 import android.content.ContextWrapper
 import androidx.core.content.ContextCompat
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonConfiguration
-import kotlinx.serialization.list
+import kotlinx.serialization.builtins.list
 import java.io.File
 import java.security.MessageDigest
 

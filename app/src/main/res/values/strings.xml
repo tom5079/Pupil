@@ -69,6 +69,7 @@
     <string name="main_jump_message">Current page: %1$d\nMaximum page: %2$d</string>
     <string name="main_open_gallery_by_id">Open Gallery by ID</string>
     <string name="reader_failed_to_find_gallery">Failed to open gallery</string>
+    <string name="main_fab_random">Open a random gallery</string>
     <string name="main_fab_cancel">Cancel all downloads</string>
 
     <string name="main_move">Move to page %1$d</string>

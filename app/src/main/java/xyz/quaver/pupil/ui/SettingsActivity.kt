@@ -30,8 +30,8 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.preference.PreferenceManager
 import com.google.android.material.snackbar.Snackbar
 import kotlinx.android.synthetic.main.settings_activity.*
-import kotlinx.serialization.list
-import kotlinx.serialization.serializer
+import kotlinx.serialization.builtins.list
+import kotlinx.serialization.builtins.serializer
 import net.rdrei.android.dirchooser.DirectoryChooserActivity
 import xyz.quaver.pupil.Pupil
 import xyz.quaver.pupil.R

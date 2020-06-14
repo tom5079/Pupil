@@ -46,11 +46,10 @@ import xyz.quaver.pupil.R
 import xyz.quaver.pupil.ui.ReaderActivity
 import java.io.File
 import java.io.IOException
-import java.util.concurrent.Executors
 import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.TimeUnit
 
-@UseExperimental(ExperimentalCoroutinesApi::class)
+@OptIn(ExperimentalCoroutinesApi::class)
 class DownloadWorker private constructor(context: Context) : ContextWrapper(context) {
 
     private val preferences : SharedPreferences = PreferenceManager.getDefaultSharedPreferences(this)
@@ -164,7 +163,10 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
             .connectTimeout(0, TimeUnit.SECONDS)
             .addInterceptor(interceptor)
             .readTimeout(0, TimeUnit.SECONDS)
-            .dispatcher(Dispatcher(Executors.newFixedThreadPool(4)))
+            .dispatcher(Dispatcher().apply {
+                maxRequests = 4
+                maxRequestsPerHost = 4
+            })
             .proxy(proxy)
             .build()
 
@@ -222,7 +224,7 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
                         imageUrlFromImage(
                             galleryID,
                             reader.galleryInfo.files[index],
-                            lowQuality
+                            !lowQuality
                         )
                     )
                     addHeader("Referer", getReferer(galleryID))
@@ -240,6 +242,8 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
         }.build()
 
         client.newCall(request).enqueue(callback)
+
+        Log.i("PUPILD", "DOWNLOADING ($galleryID, $index) from ${request.url()}")
     }
 
     private fun download(galleryID: Int) = CoroutineScope(Dispatchers.IO).launch {
