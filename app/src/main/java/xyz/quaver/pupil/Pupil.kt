@@ -59,6 +59,13 @@ class Pupil : MultiDexApplication() {
             preference.edit().remove("dl_location").apply()
         }
 
+        if (!preference.getBoolean("low_quality_reset", false)) {
+            preference.edit()
+                .putBoolean("low_quality", true)
+                .putBoolean("low_quality_reset", true)
+                .apply()
+        }
+
         histories = Histories(File(ContextCompat.getDataDir(this), "histories.json"))
         favorites = Histories(File(ContextCompat.getDataDir(this), "favorites.json"))
 
