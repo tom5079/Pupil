@@ -140,4 +140,5 @@
     <string name="import_old_galleries_folder_not_readable">フォルダを読めません</string>
     <string name="import_old_galleries_notification">旧ギャラリーインポート中…</string>
     <string name="import_old_galleries_notification_done">インポート完了</string>
+    <string name="main_fab_random">ランダムギャラリーを開く</string>
 </resources>

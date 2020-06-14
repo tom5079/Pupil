@@ -39,7 +39,7 @@ fun sha256(data: ByteArray) : ByteArray {
     return MessageDigest.getInstance("SHA-256").digest(data)
 }
 
-@UseExperimental(ExperimentalUnsignedTypes::class)
+@OptIn(ExperimentalUnsignedTypes::class)
 fun hashTerm(term: String) : UByteArray {
     return sha256(term.toByteArray()).toUByteArray().sliceArray(0 until 4)
 }
@@ -258,9 +258,9 @@ fun getURLAtRange(url: String, range: LongRange) : ByteArray? {
     }
 }
 
-@UseExperimental(ExperimentalUnsignedTypes::class)
+@OptIn(ExperimentalUnsignedTypes::class)
 data class Node(val keys: List<UByteArray>, val datas: List<Pair<Long, Int>>, val subNodeAddresses: List<Long>)
-@UseExperimental(ExperimentalUnsignedTypes::class)
+@OptIn(ExperimentalUnsignedTypes::class)
 fun decodeNode(data: ByteArray) : Node {
     val buffer = ByteBuffer
         .wrap(data)
@@ -302,7 +302,7 @@ fun decodeNode(data: ByteArray) : Node {
     return Node(keys, datas, subNodeAddresses)
 }
 
-@UseExperimental(ExperimentalUnsignedTypes::class)
+@OptIn(ExperimentalUnsignedTypes::class)
 fun bSearch(field: String, key: UByteArray, node: Node) : Pair<Long, Int>? {
     fun compareArrayBuffers(dv1: UByteArray, dv2: UByteArray) : Int {
         val top = Math.min(dv1.size, dv2.size)

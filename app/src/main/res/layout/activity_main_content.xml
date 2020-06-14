@@ -101,6 +101,13 @@
                 app:fab_size="mini"/>
 
             <com.github.clans.fab.FloatingActionButton
+                android:id="@+id/main_fab_random"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:fab_label="@string/main_fab_random"
+                app:fab_size="mini"/>
+
+            <com.github.clans.fab.FloatingActionButton
                 android:id="@+id/main_fab_id"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"

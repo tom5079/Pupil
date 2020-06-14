@@ -22,7 +22,7 @@ import android.annotation.SuppressLint
 import java.util.*
 import kotlin.collections.ArrayList
 
-@UseExperimental(ExperimentalStdlibApi::class)
+@OptIn(ExperimentalStdlibApi::class)
 fun String.wordCapitalize() : String {
     val result = ArrayList<String>()
 

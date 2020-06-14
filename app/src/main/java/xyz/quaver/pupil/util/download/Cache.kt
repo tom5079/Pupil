@@ -26,7 +26,6 @@ import android.util.SparseArray
 import androidx.preference.PreferenceManager
 import com.crashlytics.android.Crashlytics
 import kotlinx.coroutines.*
-import kotlinx.io.InputStream
 import xyz.quaver.Code
 import xyz.quaver.hitomi.GalleryBlock
 import xyz.quaver.hitomi.Reader
@@ -35,10 +34,11 @@ import xyz.quaver.pupil.util.getCachedGallery
 import xyz.quaver.pupil.util.getDownloadDirectory
 import xyz.quaver.pupil.util.isParentOf
 import xyz.quaver.pupil.util.json
+import java.io.BufferedInputStream
 import java.io.File
 import java.io.FileOutputStream
+import java.io.InputStream
 import java.net.URL
-import java.util.concurrent.Executors
 import java.util.concurrent.locks.Lock
 import java.util.concurrent.locks.ReentrantLock
 
@@ -245,7 +245,7 @@ class Cache(context: Context) : ContextWrapper(context) {
                 it.createNewFile()
         }
 
-        data.use {
+        BufferedInputStream(data).use {
             it.copyTo(FileOutputStream(cache))
         }
     }
