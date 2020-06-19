@@ -29,8 +29,7 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.app.TaskStackBuilder
 import androidx.preference.PreferenceManager
-import com.crashlytics.android.Crashlytics
-import io.fabric.sdk.android.Fabric
+import com.google.firebase.crashlytics.FirebaseCrashlytics
 import kotlinx.coroutines.*
 import okhttp3.*
 import okio.*
@@ -77,7 +76,7 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
         private var bufferedSource : BufferedSource? = null
 
         override fun contentLength() = responseBody.contentLength()
-        override fun contentType() = responseBody.contentType() ?: null
+        override fun contentType() = responseBody.contentType()
 
         override fun source(): BufferedSource {
             if (bufferedSource == null)
@@ -154,8 +153,9 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
         val response = chain.proceed(request)
 
         response.newBuilder()
-            .body(ProgressResponseBody(request.tag(), response.body(), progressListener))
-            .build()
+            .body(response.body()?.let {
+                ProgressResponseBody(request.tag(), it, progressListener)
+            }).build()
     }
 
     val client =
@@ -289,8 +289,8 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
             val callback = object : Callback {
                 override fun onFailure(call: Call, e: IOException) {
                     Log.i("PUPILD", "FAIL ${call.request().tag()} (${e.message})")
-                    if (Fabric.isInitialized() && e.message != "Canceled")
-                        Crashlytics.logException(e)
+                    if (e.message != "Canceled")
+                        FirebaseCrashlytics.getInstance().recordException(e)
 
                     progress[galleryID]?.set(i, Float.NaN)
                     exception[galleryID]?.set(i, e)
@@ -316,7 +316,7 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
 
                     try {
                         response.body().use {
-                            Cache(this@DownloadWorker).putImage(galleryID, i, ext, it.byteStream())
+                            Cache(this@DownloadWorker).putImage(galleryID, i, ext, it!!.byteStream())
                         }
                         progress[galleryID]?.set(i, Float.POSITIVE_INFINITY)
 

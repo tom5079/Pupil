@@ -74,7 +74,7 @@ fun getReader(galleryID: Int) : Reader {
         with(URL(url).openConnection(proxy) as HttpsURLConnection) {
             setRequestProperty("User-Agent", user_agent)
             setRequestProperty("Cookie", cookie)
-            connectTimeout = 2000
+            connectTimeout = 1000
             connect()
 
             inputStream.bufferedReader().use { it.readText() }

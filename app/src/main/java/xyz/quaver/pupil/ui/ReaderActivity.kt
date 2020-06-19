@@ -33,9 +33,8 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.vectordrawable.graphics.drawable.Animatable2Compat
 import androidx.vectordrawable.graphics.drawable.AnimatedVectorDrawableCompat
 import com.bumptech.glide.Glide
-import com.crashlytics.android.Crashlytics
 import com.google.android.material.snackbar.Snackbar
-import io.fabric.sdk.android.Fabric
+import com.google.firebase.crashlytics.FirebaseCrashlytics
 import kotlinx.android.synthetic.main.activity_reader.*
 import kotlinx.android.synthetic.main.activity_reader.view.*
 import kotlinx.android.synthetic.main.dialog_numberpicker.view.*
@@ -91,8 +90,7 @@ class ReaderActivity : AppCompatActivity() {
 
         handleIntent(intent)
 
-        if (Fabric.isInitialized())
-            Crashlytics.setInt("GalleryID", galleryID)
+        FirebaseCrashlytics.getInstance().setCustomKey("GalleryID", galleryID)
 
         if (galleryID == 0) {
             onBackPressed()

@@ -25,8 +25,7 @@ import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.RequestManager
 import com.bumptech.glide.load.engine.DiskCacheStrategy
-import com.crashlytics.android.Crashlytics
-import io.fabric.sdk.android.Fabric
+import com.google.firebase.crashlytics.FirebaseCrashlytics
 import kotlinx.android.synthetic.main.item_reader.view.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -105,8 +104,9 @@ class ReaderAdapter(private val glide: RequestManager,
             glide.clear(holder.view.image)
 
             if (progress?.isNaN() == true) {
-                if (Fabric.isInitialized())
-                    Crashlytics.logException(DownloadWorker.getInstance(holder.view.context).exception[galleryID]?.get(position))
+                FirebaseCrashlytics.getInstance().recordException(
+                    DownloadWorker.getInstance(holder.view.context).exception[galleryID]?.get(position)!!
+                )
 
                 glide
                     .load(R.drawable.image_broken_variant)

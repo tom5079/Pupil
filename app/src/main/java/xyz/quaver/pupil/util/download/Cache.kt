@@ -24,7 +24,7 @@ import android.util.Base64
 import android.util.Log
 import android.util.SparseArray
 import androidx.preference.PreferenceManager
-import com.crashlytics.android.Crashlytics
+import com.google.firebase.crashlytics.FirebaseCrashlytics
 import kotlinx.coroutines.*
 import xyz.quaver.Code
 import xyz.quaver.hitomi.GalleryBlock
@@ -187,7 +187,7 @@ class Cache(context: Context) : ContextWrapper(context) {
                     retval = try {
                         source.value.invoke()
                     } catch (e: Exception) {
-                        Crashlytics.logException(e)
+                        FirebaseCrashlytics.getInstance().recordException(e)
                         null
                     }
 
