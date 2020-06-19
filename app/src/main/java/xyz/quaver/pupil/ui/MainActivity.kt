@@ -18,6 +18,7 @@
 
 package xyz.quaver.pupil.ui
 
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Intent
 import android.graphics.drawable.Animatable
@@ -46,9 +47,8 @@ import com.arlib.floatingsearchview.FloatingSearchView
 import com.arlib.floatingsearchview.suggestions.model.SearchSuggestion
 import com.arlib.floatingsearchview.util.view.SearchInputView
 import com.bumptech.glide.Glide
-import com.crashlytics.android.Crashlytics
 import com.google.android.material.appbar.AppBarLayout
-import io.fabric.sdk.android.Fabric
+import com.google.firebase.crashlytics.FirebaseCrashlytics
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.activity_main_content.*
 import kotlinx.coroutines.*
@@ -421,6 +421,7 @@ class MainActivity : AppCompatActivity() {
         loadBlocks()
     }
 
+    @SuppressLint("ClickableViewAccessibility")
     private fun setupRecyclerView() {
         with(main_recyclerview) {
             adapter = GalleryBlockAdapter(Glide.with(this@MainActivity), galleries).apply {
@@ -1058,8 +1059,8 @@ class MainActivity : AppCompatActivity() {
                 }
             } catch (e: Exception) {
 
-                if (Fabric.isInitialized() && e.message != "No result")
-                    Crashlytics.logException(e)
+                if (e.message != "No result")
+                    FirebaseCrashlytics.getInstance().recordException(e)
 
                 withContext(Dispatchers.Main) {
                     main_noresult.visibility = View.VISIBLE

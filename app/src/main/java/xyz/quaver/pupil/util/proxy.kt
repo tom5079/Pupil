@@ -42,7 +42,7 @@ data class ProxyInfo(
     }
 
     fun authenticator() = Authenticator { _, response ->
-        val credential = Credentials.basic(username, password)
+        val credential = Credentials.basic(username ?: "", password ?: "")
 
         response.request().newBuilder()
             .header("Proxy-Authorization", credential)
