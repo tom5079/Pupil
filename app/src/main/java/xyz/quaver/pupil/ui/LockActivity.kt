@@ -146,8 +146,8 @@ class LockActivity : AppCompatActivity() {
 
     private fun showBiometricPrompt() {
         val promptInfo = BiometricPrompt.PromptInfo.Builder()
-            .setTitle("Biometric login for my app")
-            .setSubtitle("Log in using your biometric credential")
+            .setTitle(getText(R.string.settings_lock_fingerprint_prompt))
+            .setSubtitle(getText(R.string.settings_lock_fingerprint_prompt_subtitle))
             .setNegativeButtonText("Cancel")
             .setConfirmationRequired(false)
             .build()

@@ -189,6 +189,7 @@
     <string name="settings_lock_biometrics">Biometrics</string>
     <string name="settings_lock_fingerprint">Fingerprint</string>
     <string name="settings_lock_fingerprint_without_lock">Fingerprint can be only enabled if one of the other locks are enabled</string>
+    <string name="settings_lock_fingerprint_prompt">Pupil Fingerprint Lock™</string>
     <string name="settings_lock_enabled">Enabled</string>
     <string name="settings_lock_confirm">Input same lock once more to confirm Lock</string>
     <string name="settings_lock_remove_message">Do you want to remove lock?</string>
@@ -217,5 +218,6 @@
     <string name="import_old_galleries_notification">Importing old galleries…</string>
     <string name="import_old_galleries_notification_text" translatable="false">%1$d/%2$d</string>
     <string name="import_old_galleries_notification_done">Importing completed</string>
+    <string name="settings_lock_fingerprint_prompt_subtitle">Ah Shit, Here we go again</string>
 
 </resources>
