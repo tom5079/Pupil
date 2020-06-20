@@ -42,7 +42,9 @@ import kotlinx.android.synthetic.main.item_galleryblock.view.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import xyz.quaver.hitomi.GalleryBlock
+import xyz.quaver.hitomi.getReader
 import xyz.quaver.pupil.BuildConfig
 import xyz.quaver.pupil.Pupil
 import xyz.quaver.pupil.R
@@ -237,6 +239,15 @@ class GalleryBlockAdapter(private val glide: RequestManager, private val galleri
                 }
 
                 galleryblock_id.text = galleryBlock.id.toString()
+                galleryblock_pagecount.text = "-"
+                CoroutineScope(Dispatchers.IO).launch {
+                    val pageCount = kotlin.runCatching {
+                        getReader(galleryBlock.id).galleryInfo.files.size
+                    }.getOrNull() ?: return@launch
+                    withContext(Dispatchers.Main) {
+                        galleryblock_pagecount.text = context.getString(R.string.galleryblock_pagecount, pageCount)
+                    }
+                }
 
                 if (!::favorites.isInitialized)
                     favorites = (context.applicationContext as Pupil).favorites
