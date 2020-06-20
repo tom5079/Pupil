@@ -188,6 +188,7 @@
     <string name="settings_lock_password">Password</string>
     <string name="settings_lock_biometrics">Biometrics</string>
     <string name="settings_lock_fingerprint">Fingerprint</string>
+    <string name="settings_lock_fingerprint_without_lock">Fingerprint can be only enabled if one of the other locks are enabled</string>
     <string name="settings_lock_enabled">Enabled</string>
     <string name="settings_lock_confirm">Input same lock once more to confirm Lock</string>
     <string name="settings_lock_remove_message">Do you want to remove lock?</string>

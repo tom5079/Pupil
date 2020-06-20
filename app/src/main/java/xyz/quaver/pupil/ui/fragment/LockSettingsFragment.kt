@@ -20,15 +20,17 @@ package xyz.quaver.pupil.ui.fragment
 
 import android.content.Intent
 import android.os.Bundle
+import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
+import androidx.preference.SwitchPreferenceCompat
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.ui.LockActivity
 import xyz.quaver.pupil.util.Lock
 import xyz.quaver.pupil.util.LockManager
 
-class LockFragment :
+class LockSettingsFragment :
     PreferenceFragmentCompat() {
 
     override fun onResume() {
@@ -115,6 +117,24 @@ class LockFragment :
                 }
 
                 true
+            }
+        }
+
+        with(findPreference<Preference>("lock_fingerprint")) {
+            this!!
+
+            setOnPreferenceChangeListener { _, newValue ->
+                this as SwitchPreferenceCompat
+
+                if (newValue == true && LockManager(requireContext()).isEmpty()) {
+                    isChecked = false
+
+                    Toast.makeText(requireContext(), R.string.settings_lock_fingerprint_without_lock, Toast.LENGTH_SHORT).show()
+                }
+
+                isChecked = newValue as Boolean
+
+                false
             }
         }
     }
