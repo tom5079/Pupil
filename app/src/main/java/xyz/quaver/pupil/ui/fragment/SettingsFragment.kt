@@ -56,13 +56,13 @@ class SettingsFragment :
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        PreferenceManager.getDefaultSharedPreferences(context).registerOnSharedPreferenceChangeListener(this)
+        PreferenceManager.getDefaultSharedPreferences(requireContext()).registerOnSharedPreferenceChangeListener(this)
     }
 
     override fun onResume() {
         super.onResume()
 
-        val lockManager = LockManager(context!!)
+        val lockManager = LockManager(requireContext())
 
         findPreference<Preference>("app_lock")?.summary = if (lockManager.locks.isNullOrEmpty()) {
             getString(R.string.settings_lock_none)
@@ -92,9 +92,9 @@ class SettingsFragment :
                     checkUpdate(activity as SettingsActivity, true)
                 }
                 "delete_cache" -> {
-                    val dir = File(context.cacheDir, "imageCache")
+                    val dir = File(requireContext().cacheDir, "imageCache")
 
-                    AlertDialog.Builder(context).apply {
+                    AlertDialog.Builder(requireContext()).apply {
                         setTitle(R.string.warning)
                         setMessage(R.string.settings_clear_cache_alert_message)
                         setPositiveButton(android.R.string.yes) { _, _ ->
@@ -107,9 +107,9 @@ class SettingsFragment :
                     }.show()
                 }
                 "delete_downloads" -> {
-                    val dir = getDownloadDirectory(context)
+                    val dir = getDownloadDirectory(requireContext())
 
-                    AlertDialog.Builder(context).apply {
+                    AlertDialog.Builder(requireContext()).apply {
                         setTitle(R.string.warning)
                         setMessage(R.string.settings_clear_downloads_alert_message)
                         setPositiveButton(android.R.string.yes) { _, _ ->
@@ -122,9 +122,9 @@ class SettingsFragment :
                     }.show()
                 }
                 "clear_history" -> {
-                    val histories = (context.applicationContext as Pupil).histories
+                    val histories = (requireContext().applicationContext as Pupil).histories
 
-                    AlertDialog.Builder(context).apply {
+                    AlertDialog.Builder(requireContext()).apply {
                         setTitle(R.string.warning)
                         setMessage(R.string.settings_clear_history_alert_message)
                         setPositiveButton(android.R.string.yes) { _, _ ->
@@ -135,10 +135,10 @@ class SettingsFragment :
                     }.show()
                 }
                 "dl_location" -> {
-                    DownloadLocationDialog(activity!!).show()
+                    DownloadLocationDialog(requireActivity()).show()
                 }
                 "default_query" -> {
-                    DefaultQueryDialog(context).apply {
+                    DefaultQueryDialog(requireContext()).apply {
                         onPositiveButtonClickListener = { newTags ->
                             sharedPreferences.edit().putString("default_query", newTags.toString()).apply()
                             summary = newTags.toString()
@@ -146,20 +146,20 @@ class SettingsFragment :
                     }.show()
                 }
                 "app_lock" -> {
-                    val intent = Intent(context, LockActivity::class.java)
+                    val intent = Intent(requireContext(), LockActivity::class.java)
                     activity?.startActivityForResult(intent, REQUEST_LOCK)
                 }
                 "mirrors" -> {
-                    MirrorDialog(context)
+                    MirrorDialog(requireContext())
                         .show()
                 }
                 "proxy" -> {
-                    ProxyDialog(context)
+                    ProxyDialog(requireContext())
                         .show()
                 }
                 "backup" -> {
-                    File(ContextCompat.getDataDir(context), "favorites.json").copyTo(
-                        File(getDownloadDirectory(context), "favorites.json"),
+                    File(ContextCompat.getDataDir(requireContext()), "favorites.json").copyTo(
+                        File(getDownloadDirectory(requireContext()), "favorites.json"),
                         true
                     )
 
@@ -177,8 +177,8 @@ class SettingsFragment :
                 "old_import_galleries" -> {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
 
-                        if (ContextCompat.checkSelfPermission(context, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED)
-                            ActivityCompat.requestPermissions(activity!!, arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE), REQUEST_WRITE_PERMISSION_AND_SAF)
+                        if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED)
+                            ActivityCompat.requestPermissions(requireActivity(), arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE), REQUEST_WRITE_PERMISSION_AND_SAF)
                         else {
                             val intent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).apply {
                                 putExtra("android.content.extra.SHOW_ADVANCED", true)
@@ -192,7 +192,7 @@ class SettingsFragment :
                             .allowNewDirectoryNameModification(true)
                             .build()
 
-                        val intent = Intent(context, DirectoryChooserActivity::class.java).apply {
+                        val intent = Intent(requireContext(), DirectoryChooserActivity::class.java).apply {
                             putExtra(DirectoryChooserActivity.EXTRA_CONFIG, config)
                         }
 
@@ -232,10 +232,10 @@ class SettingsFragment :
 
             when (key) {
                 "proxy" -> {
-                    summary = getProxyInfo(context).type.name
+                    summary = getProxyInfo(requireContext()).type.name
                 }
                 "dl_location" -> {
-                    summary = getDownloadDirectory(context!!).canonicalPath
+                    summary = getDownloadDirectory(requireContext()).canonicalPath
                 }
             }
         }
@@ -260,42 +260,42 @@ class SettingsFragment :
 
                     when (key) {
                         "app_version" -> {
-                            val manager = context.packageManager
-                            val info = manager.getPackageInfo(context.packageName, 0)
-                            summary = context.getString(R.string.settings_app_version_description, info.versionName)
+                            val manager = requireContext().packageManager
+                            val info = manager.getPackageInfo(requireContext().packageName, 0)
+                            summary = requireContext().getString(R.string.settings_app_version_description, info.versionName)
 
                             onPreferenceClickListener = this@SettingsFragment
                         }
                         "delete_cache" -> {
-                            val dir = File(context.cacheDir, "imageCache")
+                            val dir = File(requireContext().cacheDir, "imageCache")
                             summary = getDirSize(dir)
 
                             onPreferenceClickListener = this@SettingsFragment
                         }
                         "delete_downloads" -> {
-                            val dir = getDownloadDirectory(context)
+                            val dir = getDownloadDirectory(requireContext())
                             summary = getDirSize(dir)
 
                             onPreferenceClickListener = this@SettingsFragment
                         }
                         "clear_history" -> {
-                            val histories = (activity!!.application as Pupil).histories
+                            val histories = (requireActivity().application as Pupil).histories
                             summary = getString(R.string.settings_clear_history_summary, histories.size)
 
                             onPreferenceClickListener = this@SettingsFragment
                         }
                         "dl_location" -> {
-                            summary = getDownloadDirectory(context).canonicalPath
+                            summary = getDownloadDirectory(requireContext()).canonicalPath
 
                             onPreferenceClickListener = this@SettingsFragment
                         }
                         "default_query" -> {
-                            summary = PreferenceManager.getDefaultSharedPreferences(context).getString("default_query", "") ?: ""
+                            summary = PreferenceManager.getDefaultSharedPreferences(requireContext()).getString("default_query", "") ?: ""
 
                             onPreferenceClickListener = this@SettingsFragment
                         }
                         "app_lock" -> {
-                            val lockManager = LockManager(context)
+                            val lockManager = LockManager(requireContext())
                             summary =
                                 if (lockManager.locks.isNullOrEmpty()) {
                                     getString(R.string.settings_lock_none)
@@ -315,7 +315,7 @@ class SettingsFragment :
                             onPreferenceClickListener = this@SettingsFragment
                         }
                         "proxy" -> {
-                            summary = getProxyInfo(context).type.name
+                            summary = getProxyInfo(requireContext()).type.name
 
                             onPreferenceClickListener = this@SettingsFragment
                         }
