@@ -111,14 +111,12 @@ class ReaderActivity : AppCompatActivity() {
             val uri = intent.data
             val lastPathSegment = uri?.lastPathSegment
             if (uri != null && lastPathSegment != null) {
-                val nonNumber = Regex("[^-?0-9]+")
-
                 galleryID = when (uri.host) {
-                    "hitomi.la" -> lastPathSegment.replace(nonNumber, "").toInt()
-                    "히요비.asia" -> lastPathSegment.toInt()
-                    "xn--9w3b15m8vo.asia" -> lastPathSegment.toInt()
+                    "hitomi.la" ->
+                        Regex("([0-9]+).html").find(lastPathSegment)?.groupValues?.get(1)?.toIntOrNull() ?: 0
+                    "hiyobi.me" -> lastPathSegment.toInt()
                     "e-hentai.org" -> uri.pathSegments[1].toInt()
-                    else -> return
+                    else -> 0
                 }
             }
         } else {
