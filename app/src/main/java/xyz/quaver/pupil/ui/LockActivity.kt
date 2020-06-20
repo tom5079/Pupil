@@ -24,6 +24,10 @@ import android.os.Bundle
 import android.view.animation.Animation
 import android.view.animation.AnimationUtils
 import androidx.appcompat.app.AppCompatActivity
+import androidx.biometric.BiometricManager
+import androidx.biometric.BiometricPrompt
+import androidx.core.content.ContextCompat
+import androidx.preference.PreferenceManager
 import com.andrognito.patternlockview.PatternLockView
 import com.google.android.material.snackbar.Snackbar
 import kotlinx.android.synthetic.main.activity_lock.*
@@ -140,6 +144,29 @@ class LockActivity : AppCompatActivity() {
         }
     }
 
+    private fun showBiometricPrompt() {
+        val promptInfo = BiometricPrompt.PromptInfo.Builder()
+            .setTitle("Biometric login for my app")
+            .setSubtitle("Log in using your biometric credential")
+            .setNegativeButtonText("Cancel")
+            .setConfirmationRequired(false)
+            .build()
+
+        val biometricPrompt = BiometricPrompt(this, ContextCompat.getMainExecutor(this),
+            object : BiometricPrompt.AuthenticationCallback() {
+                override fun onAuthenticationSucceeded(
+                    result: BiometricPrompt.AuthenticationResult) {
+                    super.onAuthenticationSucceeded(result)
+                    setResult(RESULT_OK)
+                    finish()
+                    return
+                }
+            })
+
+        // Displays the "log in" prompt.
+        biometricPrompt.authenticate(promptInfo)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_lock)
@@ -167,6 +194,19 @@ class LockActivity : AppCompatActivity() {
                     return
                 }
 
+                if (
+                    PreferenceManager.getDefaultSharedPreferences(this).getBoolean("lock_fingerprint", false)
+                    && BiometricManager.from(this).canAuthenticate() == BiometricManager.BIOMETRIC_SUCCESS
+                ) {
+                    lock_fingerprint.apply {
+                        isEnabled = true
+                        setOnClickListener {
+                            showBiometricPrompt()
+                        }
+                    }
+                    showBiometricPrompt()
+                }
+
                 lock_pattern.apply {
                     isEnabled = lockManager.contains(Lock.Type.PATTERN)
                     setOnClickListener {
@@ -183,7 +223,6 @@ class LockActivity : AppCompatActivity() {
                         ).commit()
                     }
                 }
-                lock_fingerprint.isEnabled = false
                 lock_password.isEnabled = false
 
                 when (lockManager.locks!!.first().type) {

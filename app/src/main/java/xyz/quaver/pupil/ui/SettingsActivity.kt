@@ -35,7 +35,7 @@ import kotlinx.serialization.builtins.serializer
 import net.rdrei.android.dirchooser.DirectoryChooserActivity
 import xyz.quaver.pupil.Pupil
 import xyz.quaver.pupil.R
-import xyz.quaver.pupil.ui.fragment.LockFragment
+import xyz.quaver.pupil.ui.fragment.LockSettingsFragment
 import xyz.quaver.pupil.ui.fragment.SettingsFragment
 import xyz.quaver.pupil.util.*
 import java.io.File
@@ -84,7 +84,7 @@ class SettingsActivity : AppCompatActivity() {
                 if (resultCode == Activity.RESULT_OK) {
                     supportFragmentManager
                         .beginTransaction()
-                        .replace(R.id.settings, LockFragment())
+                        .replace(R.id.settings, LockSettingsFragment())
                         .addToBackStack("Lock")
                         .commitAllowingStateLoss()
                 }
