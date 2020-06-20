@@ -39,6 +39,7 @@ import java.io.File
 import java.io.FileOutputStream
 import java.io.InputStream
 import java.net.URL
+import java.util.*
 import java.util.concurrent.locks.Lock
 import java.util.concurrent.locks.ReentrantLock
 
@@ -166,8 +167,8 @@ class Cache(context: Context) : ContextWrapper(context) {
         val mirrors = preference.getString("mirrors", null)?.split('>') ?: listOf()
 
         val sources = mapOf(
-            Code.HITOMI to { xyz.quaver.hitomi.getReader(galleryID) },
-            Code.HIYOBI to { xyz.quaver.hiyobi.getReader(galleryID) }
+            Code.HITOMI to { Log.i("PUPILD", "READER - HITOMI"); xyz.quaver.hitomi.getReader(galleryID) },
+            Code.HIYOBI to { Log.i("PUPILD", "READER - HIYOBI"); xyz.quaver.hiyobi.getReader(galleryID) }
         ).let {
             if (mirrors.isNotEmpty())
                 it.toSortedMap(
@@ -180,23 +181,25 @@ class Cache(context: Context) : ContextWrapper(context) {
         }
 
         val reader = if (metadata?.reader == null) {
-            CoroutineScope(Dispatchers.IO).async {
-                var retval: Reader? = null
+            var retval: Reader? = null
 
-                for (source in sources) {
-                    retval = try {
-                        source.value.invoke()
-                    } catch (e: Exception) {
-                        FirebaseCrashlytics.getInstance().recordException(e)
-                        null
+            for (source in sources) {
+                retval = try {
+                    withContext(Dispatchers.IO) {
+                        withTimeoutOrNull(1000) {
+                                source.value.invoke()
+                        }
                     }
-
-                    if (retval != null)
-                        break
+                } catch (e: Exception) {
+                    FirebaseCrashlytics.getInstance().recordException(e)
+                    null
                 }
 
-                retval
-            }.await() ?: return null
+                if (retval != null)
+                    break
+            }
+
+            retval
         } else
             metadata.reader
 
