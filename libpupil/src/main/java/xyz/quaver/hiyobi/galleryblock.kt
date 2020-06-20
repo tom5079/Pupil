@@ -16,31 +16,54 @@
 
 package xyz.quaver.hiyobi
 
-import org.jsoup.Jsoup
+import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.intOrNull
 import xyz.quaver.Code
 import xyz.quaver.hitomi.GalleryBlock
 import xyz.quaver.hitomi.protocol
+import xyz.quaver.json
 import xyz.quaver.proxy
+import java.net.URL
+import javax.net.ssl.HttpsURLConnection
 
 fun getGalleryBlock(galleryID: Int) : GalleryBlock? {
-    val url = "$protocol//$hiyobi/info/$galleryID"
+    val url = "$protocol//api.$hiyobi/gallery/$galleryID"
 
-    val doc = Jsoup.connect(url).proxy(proxy).get()
+    val galleryBlock = with (URL(url).openConnection(proxy) as HttpsURLConnection) {
+        setRequestProperty("User-Agent", user_agent)
+        setRequestProperty("Cookie", cookie)
+        connectTimeout = 1000
+        connect()
 
-    val galleryBlock = doc.selectFirst(".gallery-content")
+        inputStream.bufferedReader().use { it.readText() }
+    }.let {
+        json.parseJson(it).jsonObject
+    }
 
-    val galleryUrl = galleryBlock.selectFirst("a").attr("href")
+    val galleryUrl = "reader/$galleryID"
 
-    val thumbnails = listOf(galleryBlock.selectFirst("img").attr("abs:src"))
+    val thumbnails = listOf("$protocol//cdn.$hiyobi/tn/$galleryID.jpg")
 
-    val title = galleryBlock.selectFirst("b").text()
-    val artists = galleryBlock.select("tr:matches(작가) a[href~=artist]").map { it.text() }
-    val series = galleryBlock.select("tr:matches(원작) a").map { it.attr("href").substringAfter("series:").replace('_', ' ') }
-    val type = galleryBlock.selectFirst("tr:matches(종류) a").attr("href").substringAfter("type:").replace('_', ' ')
+    val title = galleryBlock["title"]?.contentOrNull ?: ""
+    val artists = galleryBlock["artists"]?.jsonArray?.mapNotNull {
+        it.jsonObject["value"]?.contentOrNull
+    } ?: listOf()
+    val series = galleryBlock["parodys"]?.jsonArray?.mapNotNull {
+        it.jsonObject["value"]?.contentOrNull
+    } ?: listOf()
+    val type = when (galleryBlock["type"]?.intOrNull) {
+        1 -> "doujinshi"
+        2 -> "manga"
+        3 -> "artistcg"
+        4 -> "gamecg"
+        else -> ""
+    }
 
     val language = "korean"
 
-    val relatedTags = galleryBlock.select("tr:matches(태그) a").map { it.attr("href").substringAfterLast('/').replace('_', ' ') }
+    val relatedTags = galleryBlock["tags"]?.jsonArray?.mapNotNull {
+        it.jsonObject["value"]?.contentOrNull
+    } ?: listOf()
 
     return GalleryBlock(Code.HIYOBI, galleryID, galleryUrl, thumbnails, title, artists, series, type, language, relatedTags)
 }
