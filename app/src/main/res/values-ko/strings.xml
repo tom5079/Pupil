@@ -142,4 +142,6 @@
     <string name="import_old_galleries_notification_done">가져오기 완료</string>
     <string name="main_fab_random">무작위 갤러리 열기</string>
     <string name="settings_lock_fingerprint_without_lock">지문 잠금은 다른 잠금 방식이 활성화 되어 있을 때만 사용 가능합니다</string>
+    <string name="settings_lock_fingerprint_prompt">Pupil 지문 인식™</string>
+    <string name="settings_lock_fingerprint_prompt_subtitle">힘세고 강한 지문 인식</string>
 </resources>
