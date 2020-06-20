@@ -28,15 +28,22 @@ import xyz.quaver.pupil.ui.LockActivity
 import xyz.quaver.pupil.util.Lock
 import xyz.quaver.pupil.util.LockManager
 
-class LockFragment : PreferenceFragmentCompat() {
+class LockFragment :
+    PreferenceFragmentCompat() {
 
     override fun onResume() {
         super.onResume()
 
-        val lockManager = LockManager(context!!)
+        val lockManager = LockManager(requireContext())
 
         findPreference<Preference>("lock_pattern")?.summary =
             if (lockManager.contains(Lock.Type.PATTERN))
+                getString(R.string.settings_lock_enabled)
+            else
+                ""
+
+        findPreference<Preference>("lock_pin")?.summary =
+            if (lockManager.contains(Lock.Type.PIN))
                 getString(R.string.settings_lock_enabled)
             else
                 ""
@@ -48,14 +55,14 @@ class LockFragment : PreferenceFragmentCompat() {
         with(findPreference<Preference>("lock_pattern")) {
             this!!
 
-            if (LockManager(context!!).contains(Lock.Type.PATTERN))
+            if (LockManager(requireContext()).contains(Lock.Type.PATTERN))
                 summary = getString(R.string.settings_lock_enabled)
 
             onPreferenceClickListener = Preference.OnPreferenceClickListener {
-                val lockManager = LockManager(context!!)
+                val lockManager = LockManager(requireContext())
 
                 if (lockManager.contains(Lock.Type.PATTERN)) {
-                    AlertDialog.Builder(context).apply {
+                    AlertDialog.Builder(requireContext()).apply {
                         setTitle(R.string.warning)
                         setMessage(R.string.settings_lock_remove_message)
 
@@ -66,9 +73,42 @@ class LockFragment : PreferenceFragmentCompat() {
                         setNegativeButton(android.R.string.no) { _, _ -> }
                     }.show()
                 } else {
-                    val intent = Intent(context, LockActivity::class.java).apply {
+                    val intent = Intent(requireContext(), LockActivity::class.java).apply {
                         putExtra("mode", "add_lock")
                         putExtra("type", "pattern")
+                    }
+
+                    startActivity(intent)
+                }
+
+                true
+            }
+        }
+
+        with(findPreference<Preference>("lock_pin")) {
+            this!!
+
+            if (LockManager(requireContext()).contains(Lock.Type.PIN))
+                summary = getString(R.string.settings_lock_enabled)
+
+            onPreferenceClickListener = Preference.OnPreferenceClickListener {
+                val lockManager = LockManager(requireContext())
+
+                if (lockManager.contains(Lock.Type.PIN)) {
+                    AlertDialog.Builder(requireContext()).apply {
+                        setTitle(R.string.warning)
+                        setMessage(R.string.settings_lock_remove_message)
+
+                        setPositiveButton(android.R.string.yes) { _, _ ->
+                            lockManager.remove(Lock.Type.PIN)
+                            onResume()
+                        }
+                        setNegativeButton(android.R.string.no) { _, _ -> }
+                    }.show()
+                } else {
+                    val intent = Intent(requireContext(), LockActivity::class.java).apply {
+                        putExtra("mode", "add_lock")
+                        putExtra("type", "pin")
                     }
 
                     startActivity(intent)
