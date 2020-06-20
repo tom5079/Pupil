@@ -167,8 +167,8 @@ class Cache(context: Context) : ContextWrapper(context) {
         val mirrors = preference.getString("mirrors", null)?.split('>') ?: listOf()
 
         val sources = mapOf(
-            Code.HITOMI to { Log.i("PUPILD", "READER - HITOMI"); xyz.quaver.hitomi.getReader(galleryID) },
-            Code.HIYOBI to { Log.i("PUPILD", "READER - HIYOBI"); xyz.quaver.hiyobi.getReader(galleryID) }
+            Code.HITOMI to { xyz.quaver.hitomi.getReader(galleryID) },
+            Code.HIYOBI to { xyz.quaver.hiyobi.getReader(galleryID) }
         ).let {
             if (mirrors.isNotEmpty())
                 it.toSortedMap(
