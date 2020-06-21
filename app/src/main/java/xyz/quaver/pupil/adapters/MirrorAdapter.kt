@@ -18,6 +18,7 @@
 
 package xyz.quaver.pupil.adapters
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.view.LayoutInflater
 import android.view.MotionEvent
@@ -60,6 +61,7 @@ class MirrorAdapter(context: Context) : RecyclerView.Adapter<MirrorAdapter.ViewH
     var onStartDrag : ((ViewHolder) -> Unit)? = null
     var onItemMoved : ((List<String>) -> (Unit))? = null
 
+    @SuppressLint("ClickableViewAccessibility")
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         with(holder.view) {
             mirror_name.text = mirrors[list.elementAt(position)]

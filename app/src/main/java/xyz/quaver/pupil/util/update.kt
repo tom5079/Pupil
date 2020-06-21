@@ -50,7 +50,6 @@ import java.io.File
 import java.io.IOException
 import java.net.URL
 import java.util.*
-import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 
 fun getReleases(url: String) : JsonArray {
@@ -320,7 +319,7 @@ fun importOldGalleries(context: Context, folder: File) = CoroutineScope(Dispatch
             @Suppress("NAME_SHADOWING")
             val index = it.nameWithoutExtension.toIntOrNull() ?: return@forEach
 
-            Cache(context).putImage(galleryID, index, it.extension, it.inputStream())
+            Cache(context).putImage(galleryID, index, it.extension, it.readBytes())
         }
     }
 
