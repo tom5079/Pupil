@@ -22,9 +22,12 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.RequestManager
 import com.bumptech.glide.load.engine.DiskCacheStrategy
+import com.bumptech.glide.load.model.GlideUrl
+import com.bumptech.glide.load.model.LazyHeaders
 import com.google.android.material.snackbar.Snackbar
 import com.google.firebase.crashlytics.FirebaseCrashlytics
 import kotlinx.android.synthetic.main.activity_reader.view.*
@@ -32,8 +35,15 @@ import kotlinx.android.synthetic.main.item_reader.view.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import xyz.quaver.Code
 import xyz.quaver.hitomi.Reader
+import xyz.quaver.hitomi.getReferer
+import xyz.quaver.hitomi.imageUrlFromImage
+import xyz.quaver.hiyobi.cookie
+import xyz.quaver.hiyobi.createImgList
+import xyz.quaver.hiyobi.user_agent
 import xyz.quaver.pupil.R
+import xyz.quaver.pupil.util.download.Cache
 import xyz.quaver.pupil.util.download.DownloadWorker
 import java.util.*
 import kotlin.concurrent.schedule
@@ -88,58 +98,89 @@ class ReaderAdapter(private val glide: RequestManager,
 
         holder.view.reader_index.text = (position+1).toString()
 
-        val image = downloadWorker!!.results[galleryID]?.get(position)
-        val progress = downloadWorker!!.progress[galleryID]?.get(position)
+        val preferences = PreferenceManager.getDefaultSharedPreferences(holder.view.context)
+        if (preferences.getBoolean("cache_disable", false)) {
+            val lowQuality = preferences.getBoolean("low_quality", false)
 
-        if (progress?.isInfinite() == true && image != null) {
-            holder.view.reader_item_progressbar.visibility = View.INVISIBLE
-
+            val url = when (reader!!.code) {
+                Code.HITOMI ->
+                    GlideUrl(
+                        imageUrlFromImage(
+                            galleryID,
+                            reader!!.galleryInfo.files[position],
+                            !lowQuality
+                        )
+                    , LazyHeaders.Builder().addHeader("Referer", getReferer(galleryID)).build())
+                Code.HIYOBI ->
+                    GlideUrl(createImgList(galleryID, reader!!, lowQuality)[position].path, LazyHeaders.Builder()
+                        .addHeader("User-Agent", user_agent)
+                        .addHeader("Cookie", cookie)
+                        .build())
+                else -> null
+            }
             holder.view.image.post {
                 glide
-                    .load(image)
+                    .load(url!!)
                     .diskCacheStrategy(DiskCacheStrategy.NONE)
-                    .skipMemoryCache(true)
+                    .skipMemoryCache(false)
                     .fitCenter()
                     .error(R.drawable.image_broken_variant)
                     .into(holder.view.image)
             }
-
         } else {
-            holder.view.reader_item_progressbar.visibility = View.VISIBLE
+            val image = Cache(holder.view.context).getImage(galleryID, position)
+            val progress = downloadWorker!!.progress[galleryID]?.get(position)
 
-            glide.clear(holder.view.image)
+            if (progress?.isInfinite() == true && image != null) {
+                holder.view.reader_item_progressbar.visibility = View.INVISIBLE
 
-            if (progress?.isNaN() == true) {
-                FirebaseCrashlytics.getInstance().recordException(
-                    DownloadWorker.getInstance(holder.view.context).exception[galleryID]?.get(position)!!
-                )
+                holder.view.image.post {
+                    glide
+                        .load(image)
+                        .diskCacheStrategy(DiskCacheStrategy.NONE)
+                        .skipMemoryCache(true)
+                        .fitCenter()
+                        .error(R.drawable.image_broken_variant)
+                        .into(holder.view.image)
+                }
 
-                glide
-                    .load(R.drawable.image_broken_variant)
-                    .into(holder.view.image)
-
-                Snackbar.make(holder.view.reader_layout, R.string.reader_error_retry, Snackbar.LENGTH_SHORT).apply {
-                    setAction(android.R.string.no) { }
-                    setAction(android.R.string.yes) {
-                        downloadWorker!!.cancel(galleryID)
-                        downloadWorker!!.queue.add(galleryID)
-                    }
-                }.show()
-
-                return
             } else {
-                holder.view.reader_item_progressbar.progress =
-                    if (progress?.isInfinite() == true)
-                        100
-                    else
-                        progress?.roundToInt() ?: 0
+                holder.view.reader_item_progressbar.visibility = View.VISIBLE
 
-                holder.view.image.setImageDrawable(null)
-            }
+                glide.clear(holder.view.image)
 
-            timer.schedule(1000) {
-                CoroutineScope(Dispatchers.Main).launch {
-                    notifyItemChanged(position)
+                if (progress?.isNaN() == true) {
+                    FirebaseCrashlytics.getInstance().recordException(
+                        DownloadWorker.getInstance(holder.view.context).exception[galleryID]?.get(position)!!
+                    )
+
+                    glide
+                        .load(R.drawable.image_broken_variant)
+                        .into(holder.view.image)
+
+                    Snackbar.make(holder.view.reader_layout, R.string.reader_error_retry, Snackbar.LENGTH_SHORT).apply {
+                        setAction(android.R.string.no) { }
+                        setAction(android.R.string.yes) {
+                            downloadWorker!!.cancel(galleryID)
+                            downloadWorker!!.queue.add(galleryID)
+                        }
+                    }.show()
+
+                    return
+                } else {
+                    holder.view.reader_item_progressbar.progress =
+                        if (progress?.isInfinite() == true)
+                            100
+                        else
+                            progress?.roundToInt() ?: 0
+
+                    holder.view.image.setImageDrawable(null)
+                }
+
+                timer.schedule(1000) {
+                    CoroutineScope(Dispatchers.Main).launch {
+                        notifyItemChanged(position)
+                    }
                 }
             }
         }
