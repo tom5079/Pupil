@@ -24,6 +24,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
+import androidx.preference.PreferenceManager
 import androidx.preference.SwitchPreferenceCompat
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.ui.LockActivity
@@ -49,6 +50,12 @@ class LockSettingsFragment :
                 getString(R.string.settings_lock_enabled)
             else
                 ""
+
+        if (lockManager.isEmpty()) {
+            (findPreference<Preference>("lock_fingerprint") as SwitchPreferenceCompat).isChecked = false
+
+            PreferenceManager.getDefaultSharedPreferences(context).edit().putBoolean("lock_fingerprint", false).apply()
+        }
     }
 
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
@@ -130,9 +137,8 @@ class LockSettingsFragment :
                     isChecked = false
 
                     Toast.makeText(requireContext(), R.string.settings_lock_fingerprint_without_lock, Toast.LENGTH_SHORT).show()
-                }
-
-                isChecked = newValue as Boolean
+                } else
+                    isChecked = newValue as Boolean
 
                 false
             }
