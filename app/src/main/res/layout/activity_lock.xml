@@ -36,7 +36,6 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
-        android:layout_marginBottom="32dp"
         android:gravity="center"
         app:layout_constraintTop_toBottomOf="@id/lock_content"
         app:layout_constraintBottom_toTopOf="@id/lock_button_layout">
@@ -46,9 +45,10 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             app:srcCompat="@drawable/fingerprint"
+            app:backgroundTint="@color/lock_fab"
             android:layout_marginLeft="8dp"
             android:layout_marginRight="8dp"
-            app:backgroundTint="@color/dark_gray"
+            app:tint="@null"
             app:fabSize="mini"/>
 
     </LinearLayout>
@@ -67,26 +67,29 @@
             android:id="@+id/lock_pattern"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            app:tint="@null"
             app:srcCompat="@drawable/lock_pattern"
-            app:backgroundTint="@color/colorPrimary"
+            app:backgroundTint="@color/lock_fab"
             app:fabSize="mini"/>
 
         <com.google.android.material.floatingactionbutton.FloatingActionButton
             android:id="@+id/lock_pin"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            app:tint="@null"
             app:srcCompat="@drawable/numeric"
+            app:backgroundTint="@color/lock_fab"
             android:layout_marginLeft="8dp"
             android:layout_marginRight="8dp"
-            app:backgroundTint="@color/dark_gray"
             app:fabSize="mini"/>
 
         <com.google.android.material.floatingactionbutton.FloatingActionButton
             android:id="@+id/lock_password"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            app:tint="@null"
             app:srcCompat="@drawable/lastpass"
-            app:backgroundTint="@color/dark_gray"
+            app:backgroundTint="@color/lock_fab"
             app:fabSize="mini"/>
 
     </LinearLayout>

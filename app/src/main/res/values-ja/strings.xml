@@ -141,4 +141,7 @@
     <string name="import_old_galleries_notification">旧ギャラリーインポート中…</string>
     <string name="import_old_galleries_notification_done">インポート完了</string>
     <string name="main_fab_random">ランダムギャラリーを開く</string>
+    <string name="settings_lock_fingerprint_without_lock">予備のロックが設定されていないと指紋ロックは使用できません</string>
+    <string name="settings_lock_fingerprint_prompt">Pupil指紋ロック™</string>
+    <string name="settings_lock_fingerprint_prompt_subtitle">こうかはばつぐんだ!</string>
 </resources>
