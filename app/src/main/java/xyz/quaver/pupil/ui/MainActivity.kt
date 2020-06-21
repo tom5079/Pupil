@@ -41,6 +41,7 @@ import androidx.core.view.GravityCompat
 import androidx.preference.PreferenceManager
 import androidx.vectordrawable.graphics.drawable.AnimatedVectorDrawableCompat
 import com.arlib.floatingsearchview.FloatingSearchView
+import com.arlib.floatingsearchview.FloatingSearchViewDayNight
 import com.arlib.floatingsearchview.suggestions.model.SearchSuggestion
 import com.arlib.floatingsearchview.util.view.SearchInputView
 import com.bumptech.glide.Glide
@@ -767,7 +768,7 @@ class MainActivity : AppCompatActivity() {
         })
         searchInputView.imeOptions = EditorInfo.IME_FLAG_NO_EXTRACT_UI
 
-        with(main_searchview as FloatingSearchView) {
+        with(main_searchview as FloatingSearchViewDayNight) {
             val favoritesFile = File(ContextCompat.getDataDir(context), "favorites_tags.json")
             val serializer = Tag.serializer().list
 
@@ -870,14 +871,14 @@ class MainActivity : AppCompatActivity() {
                     ResourcesCompat.getDrawable(
                         resources,
                         when(item.n) {
-                            "female" -> R.drawable.ic_gender_female
-                            "male" -> R.drawable.ic_gender_male
-                            "language" -> R.drawable.ic_translate
-                            "group" -> R.drawable.ic_account_group
-                            "character" -> R.drawable.ic_account_star
-                            "series" -> R.drawable.ic_book_open
-                            "artist" -> R.drawable.ic_brush
-                            else -> R.drawable.ic_tag
+                            "female" -> R.drawable.gender_female
+                            "male" -> R.drawable.gender_male
+                            "language" -> R.drawable.translate
+                            "group" -> R.drawable.account_group
+                            "character" -> R.drawable.account_star
+                            "series" -> R.drawable.book_open
+                            "artist" -> R.drawable.brush
+                            else -> R.drawable.tag
                         },
                         null)
                 )
