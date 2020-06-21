@@ -31,10 +31,12 @@ import com.google.android.gms.common.GooglePlayServicesNotAvailableException
 import com.google.android.gms.common.GooglePlayServicesRepairableException
 import com.google.android.gms.security.ProviderInstaller
 import com.google.firebase.analytics.FirebaseAnalytics
+import com.google.firebase.crashlytics.FirebaseCrashlytics
 import xyz.quaver.proxy
 import xyz.quaver.pupil.util.Histories
 import xyz.quaver.pupil.util.getProxy
 import java.io.File
+import java.util.*
 
 class Pupil : MultiDexApplication() {
 
@@ -47,6 +49,16 @@ class Pupil : MultiDexApplication() {
 
     override fun onCreate() {
         val preference = PreferenceManager.getDefaultSharedPreferences(this)
+
+        val userID =
+            if (preference.getString("user_id", "").isNullOrEmpty()) {
+                UUID.randomUUID().toString().also {
+                    preference.edit().putString("user_id", it).apply()
+                }
+            } else
+                preference.getString("user_id", "") ?: ""
+
+        FirebaseCrashlytics.getInstance().setUserId(userID)
 
         proxy = getProxy(this)
 

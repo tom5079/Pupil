@@ -107,6 +107,10 @@
             app:key="old_import_galleries"
             app:title="@string/settings_import_old_galleries"/>
 
+        <Preference
+            app:key="user_id"
+            app:title="@string/settings_user_id"/>
+
     </PreferenceCategory>
 
 </androidx.preference.PreferenceScreen>

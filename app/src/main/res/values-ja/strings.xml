@@ -148,4 +148,6 @@
     <string name="settings_download_when_cache_disable_warning">キャッシュを使用しないため、ダウンロードできません</string>
     <string name="apcjsa_option_title">(Korean only)</string>
     <string name="apcjsa_option_message">(Korean only)</string>
+    <string name="settings_user_id">ユーザーID</string>
+    <string name="settings_user_id_toast">ユーザーIDをクリップボードにコピーしました</string>
 </resources>
