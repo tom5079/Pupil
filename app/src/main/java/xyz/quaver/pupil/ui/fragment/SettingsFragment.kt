@@ -19,11 +19,11 @@
 package xyz.quaver.pupil.ui.fragment
 
 import android.Manifest
-import android.content.Intent
-import android.content.SharedPreferences
+import android.content.*
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.app.ActivityCompat
@@ -53,11 +53,7 @@ class SettingsFragment :
     Preference.OnPreferenceChangeListener,
     SharedPreferences.OnSharedPreferenceChangeListener {
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-
-        PreferenceManager.getDefaultSharedPreferences(requireContext()).registerOnSharedPreferenceChangeListener(this)
-    }
+    lateinit var sharedPreference: SharedPreferences
 
     override fun onResume() {
         super.onResume()
@@ -202,6 +198,12 @@ class SettingsFragment :
                         activity?.startActivityForResult(intent, REQUEST_IMPORT_OLD_GALLERIES_OLD)
                     }
                 }
+                "user_id" -> {
+                    (context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager).setPrimaryClip(
+                        ClipData.newPlainText("user_id", sharedPreference.getString("user_id", ""))
+                    )
+                    Toast.makeText(context, R.string.settings_user_id_toast, Toast.LENGTH_SHORT).show()
+                }
                 else -> return false
             }
         }
@@ -246,6 +248,9 @@ class SettingsFragment :
 
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
         setPreferencesFromResource(R.xml.root_preferences, rootKey)
+
+        sharedPreference = PreferenceManager.getDefaultSharedPreferences(requireContext())
+        sharedPreference.registerOnSharedPreferenceChangeListener(this)
 
         initPreferences()
     }
@@ -293,7 +298,7 @@ class SettingsFragment :
                             onPreferenceClickListener = this@SettingsFragment
                         }
                         "default_query" -> {
-                            summary = PreferenceManager.getDefaultSharedPreferences(requireContext()).getString("default_query", "") ?: ""
+                            summary = sharedPreference.getString("default_query", "") ?: ""
 
                             onPreferenceClickListener = this@SettingsFragment
                         }
@@ -335,6 +340,10 @@ class SettingsFragment :
                             onPreferenceClickListener = this@SettingsFragment
                         }
                         "old_import_galleries" -> {
+                            onPreferenceClickListener = this@SettingsFragment
+                        }
+                        "user_id" -> {
+                            summary = sharedPreference.getString("user_id", "")
                             onPreferenceClickListener = this@SettingsFragment
                         }
                     }

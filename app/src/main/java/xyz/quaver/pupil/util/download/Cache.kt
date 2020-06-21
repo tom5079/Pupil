@@ -259,8 +259,12 @@ class Cache(context: Context) : ContextWrapper(context) {
                 it.createNewFile()
         }
 
-        FileOutputStream(cache).use {
-            it.write(data)
+        try {
+            FileOutputStream(cache).use {
+                it.write(data)
+            }
+        } catch (e: Exception) {
+            cache.delete()
         }
     }
 

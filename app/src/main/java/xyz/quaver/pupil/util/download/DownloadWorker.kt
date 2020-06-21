@@ -151,7 +151,13 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
 
     val interceptor = Interceptor { chain ->
         val request = chain.request()
-        val response = chain.proceed(request)
+        var response = chain.proceed(request)
+
+        var retry = 5
+        while (!response.isSuccessful && retry > 0) {
+            response = chain.proceed(request)
+            retry--
+        }
 
         response.newBuilder()
             .body(response.body()?.let {
@@ -296,7 +302,7 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
             val callback = object : Callback {
                 override fun onFailure(call: Call, e: IOException) {
                     Log.i("PUPILD", "FAIL ${call.request().tag()} (${e.message})")
-                    if (e.message != "Canceled")
+                    if (e.message?.contains("cancel", true) != true)
                         FirebaseCrashlytics.getInstance().recordException(e)
 
                     progress[galleryID]?.set(i, Float.NaN)
