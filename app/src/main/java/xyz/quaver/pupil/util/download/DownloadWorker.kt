@@ -151,7 +151,13 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
 
     val interceptor = Interceptor { chain ->
         val request = chain.request()
-        val response = chain.proceed(request)
+        var response = chain.proceed(request)
+
+        var retry = 5
+        while (!response.isSuccessful && retry > 0) {
+            response = chain.proceed(request)
+            retry--
+        }
 
         response.newBuilder()
             .body(response.body()?.let {
