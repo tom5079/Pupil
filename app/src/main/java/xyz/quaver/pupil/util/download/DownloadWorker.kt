@@ -296,7 +296,7 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
             val callback = object : Callback {
                 override fun onFailure(call: Call, e: IOException) {
                     Log.i("PUPILD", "FAIL ${call.request().tag()} (${e.message})")
-                    if (e.message != "Canceled")
+                    if (e.message?.contains("cancel", true) != true)
                         FirebaseCrashlytics.getInstance().recordException(e)
 
                     progress[galleryID]?.set(i, Float.NaN)
