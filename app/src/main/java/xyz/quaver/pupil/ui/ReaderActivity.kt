@@ -39,6 +39,9 @@ import com.google.firebase.crashlytics.FirebaseCrashlytics
 import kotlinx.android.synthetic.main.activity_reader.*
 import kotlinx.android.synthetic.main.activity_reader.view.*
 import kotlinx.android.synthetic.main.dialog_numberpicker.view.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import xyz.quaver.Code
 import xyz.quaver.pupil.Pupil
 import xyz.quaver.pupil.R
@@ -99,7 +102,36 @@ class ReaderActivity : AppCompatActivity() {
         }
 
         initView()
-        initDownloader()
+        if (PreferenceManager.getDefaultSharedPreferences(this).getBoolean("cache_disable", false)) {
+            reader_download_progressbar.visibility = View.GONE
+            CoroutineScope(Dispatchers.IO).launch {
+                val reader = Cache(this@ReaderActivity).getReader(galleryID)
+
+                launch(Dispatchers.Main) initDownloader@{
+                    if (reader == null) {
+                        Snackbar
+                            .make(reader_layout, R.string.reader_failed_to_find_gallery, Snackbar.LENGTH_INDEFINITE)
+                            .show()
+                        return@initDownloader
+                    }
+
+                    (reader_recyclerview.adapter as ReaderAdapter).apply {
+                        this.reader = reader
+                        notifyDataSetChanged()
+                    }
+                    title = reader.galleryInfo.title ?: ""
+                    menu?.findItem(R.id.reader_menu_page_indicator)?.title = "$currentPage/${reader.galleryInfo.files.size}"
+
+                    menu?.findItem(R.id.reader_type)?.icon = ContextCompat.getDrawable(this@ReaderActivity,
+                        when (reader.code) {
+                            Code.HITOMI -> R.drawable.hitomi
+                            Code.HIYOBI -> R.drawable.ic_hiyobi
+                            else -> android.R.color.transparent
+                        })
+                }
+            }
+        } else
+            initDownloader()
     }
 
     override fun onNewIntent(intent: Intent) {
