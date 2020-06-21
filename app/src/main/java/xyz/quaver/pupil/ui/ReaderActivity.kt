@@ -337,6 +337,16 @@ class ReaderActivity : AppCompatActivity() {
             }
         }
 
+        with(reader_fab_retry) {
+            setImageResource(R.drawable.refresh)
+            setOnClickListener {
+                DownloadWorker.getInstance(context).let {
+                    it.cancel(galleryID)
+                    it.queue.add(galleryID)
+                }
+            }
+        }
+
         with(reader_fab_fullscreen) {
             setImageResource(R.drawable.ic_fullscreen)
             setOnClickListener {

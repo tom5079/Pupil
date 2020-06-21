@@ -150,4 +150,6 @@
     <string name="apcjsa_option_message">경찰서 정모 확률을 줄여보고자 캐시 비활성화/태그 필터를 추가하였습니다. 적용하시겠습니까?</string>
     <string name="settings_user_id">유저 ID</string>
     <string name="settings_user_id_toast">유저 ID를 클립보드에 복사했습니다</string>
+    <string name="reader_error_retry">다운로드 에러가 발생했습니다. 재시도 하시겠습니까?</string>
+    <string name="reader_fab_retry">재시도</string>
 </resources>
