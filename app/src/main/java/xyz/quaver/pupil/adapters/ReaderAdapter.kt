@@ -25,7 +25,9 @@ import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.RequestManager
 import com.bumptech.glide.load.engine.DiskCacheStrategy
+import com.google.android.material.snackbar.Snackbar
 import com.google.firebase.crashlytics.FirebaseCrashlytics
+import kotlinx.android.synthetic.main.activity_reader.view.*
 import kotlinx.android.synthetic.main.item_reader.view.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -115,6 +117,14 @@ class ReaderAdapter(private val glide: RequestManager,
                 glide
                     .load(R.drawable.image_broken_variant)
                     .into(holder.view.image)
+
+                Snackbar.make(holder.view.reader_layout, R.string.reader_error_retry, Snackbar.LENGTH_INDEFINITE).apply {
+                    setAction(android.R.string.no) { }
+                    setAction(android.R.string.yes) {
+                        downloadWorker!!.cancel(galleryID)
+                        downloadWorker!!.queue.add(galleryID)
+                    }
+                }.show()
 
                 return
             } else {
