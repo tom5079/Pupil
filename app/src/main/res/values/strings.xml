@@ -176,7 +176,6 @@
     <string name="settings_dark_mode_title">Dark mode</string>
     <string name="settings_dark_mode_summary">Protect yourself against light attacks!</string>
     <string name="settings_nomedia_title">Hide image from gallery</string>
-    <string name="settings_nomedia_summary">Hides image from gallery</string>
     <string name="settings_backup_title">Backup favorites</string>
     <string name="settings_backup_snackbar">Backup file created</string>
     <string name="settings_backup_checkout">Check out</string>

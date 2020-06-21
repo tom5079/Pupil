@@ -157,6 +157,9 @@ class SettingsFragment :
                     ProxyDialog(requireContext())
                         .show()
                 }
+                "nomedia" -> {
+                    File(getDownloadDirectory(context), ".nomedia").createNewFile()
+                }
                 "backup" -> {
                     File(ContextCompat.getDataDir(requireContext()), "favorites.json").copyTo(
                         File(getDownloadDirectory(requireContext()), "favorites.json"),
@@ -321,6 +324,9 @@ class SettingsFragment :
                         }
                         "dark_mode" -> {
                             onPreferenceChangeListener = this@SettingsFragment
+                        }
+                        "nomedia" -> {
+                            onPreferenceClickListener = this@SettingsFragment
                         }
                         "backup" -> {
                             onPreferenceClickListener = this@SettingsFragment
