@@ -34,10 +34,8 @@ import xyz.quaver.pupil.util.getCachedGallery
 import xyz.quaver.pupil.util.getDownloadDirectory
 import xyz.quaver.pupil.util.isParentOf
 import xyz.quaver.pupil.util.json
-import java.io.BufferedInputStream
 import java.io.File
 import java.io.FileOutputStream
-import java.io.InputStream
 import java.net.URL
 import java.util.*
 import java.util.concurrent.locks.Lock
@@ -47,6 +45,7 @@ class Cache(context: Context) : ContextWrapper(context) {
 
     companion object {
         private val moving = mutableListOf<Int>()
+        private val readers = SparseArray<Reader?>()
     }
 
     private val locks = SparseArray<Lock>()
@@ -68,7 +67,7 @@ class Cache(context: Context) : ContextWrapper(context) {
     // Search in this order
     // Download -> Cache
     fun getCachedGallery(galleryID: Int) = getCachedGallery(this, galleryID).also {
-        if (!it.exists())
+        if (!it.exists() && !preference.getBoolean("cache_disable", false))
             it.mkdirs()
     }
 
@@ -88,6 +87,9 @@ class Cache(context: Context) : ContextWrapper(context) {
     }
 
     fun setCachedMetadata(galleryID: Int, metadata: Metadata) {
+        if (preference.getBoolean("cache_disable", false))
+            return
+
         val file = File(getCachedGallery(galleryID), ".metadata").also {
             if (!it.exists())
                 it.createNewFile()
@@ -99,6 +101,7 @@ class Cache(context: Context) : ContextWrapper(context) {
     suspend fun getThumbnail(galleryID: Int): String? {
         val metadata = Cache(this).getCachedMetadata(galleryID)
 
+        @Suppress("BlockingMethodInNonBlockingContext")
         val thumbnail = if (metadata?.thumbnail == null)
             withContext(Dispatchers.IO) {
                 val thumbnails = getGalleryBlock(galleryID)?.thumbnails
@@ -159,7 +162,7 @@ class Cache(context: Context) : ContextWrapper(context) {
     }
 
     fun getReaderOrNull(galleryID: Int): Reader? {
-        return getCachedMetadata(galleryID)?.reader
+        return readers[galleryID] ?: getCachedMetadata(galleryID)?.reader
     }
 
     suspend fun getReader(galleryID: Int): Reader? {
@@ -180,28 +183,33 @@ class Cache(context: Context) : ContextWrapper(context) {
                 it
         }
 
-        val reader = if (metadata?.reader == null) {
-            var retval: Reader? = null
+        val reader =
+            if (readers[galleryID] != null)
+                return readers[galleryID]
+            else if (metadata?.reader == null) {
+                var retval: Reader? = null
 
-            for (source in sources) {
-                retval = try {
-                    withContext(Dispatchers.IO) {
-                        withTimeoutOrNull(1000) {
-                                source.value.invoke()
+                for (source in sources) {
+                    retval = try {
+                        withContext(Dispatchers.IO) {
+                            withTimeoutOrNull(1000) {
+                                    source.value.invoke()
+                            }
                         }
+                    } catch (e: Exception) {
+                        FirebaseCrashlytics.getInstance().recordException(e)
+                        null
                     }
-                } catch (e: Exception) {
-                    FirebaseCrashlytics.getInstance().recordException(e)
-                    null
+
+                    if (retval != null)
+                        break
                 }
 
-                if (retval != null)
-                    break
-            }
+                retval
+            } else
+                metadata.reader
 
-            retval
-        } else
-            metadata.reader
+        readers.put(galleryID, reader)
 
         setCachedMetadata(
             galleryID,
@@ -242,18 +250,24 @@ class Cache(context: Context) : ContextWrapper(context) {
     }
 
 
-    fun putImage(galleryID: Int, index: Int, ext: String, data: InputStream) {
+    fun putImage(galleryID: Int, index: Int, ext: String, data: ByteArray) {
+        if (preference.getBoolean("cache_disable", false))
+            return
+
         val cache = File(getCachedGallery(galleryID), "%05d.$ext".format(index)).also {
             if (!it.exists())
                 it.createNewFile()
         }
 
-        BufferedInputStream(data).use {
-            it.copyTo(FileOutputStream(cache))
+        FileOutputStream(cache).use {
+            it.write(data)
         }
     }
 
     fun moveToDownload(galleryID: Int) {
+        if (preference.getBoolean("cache_disable", false))
+            return
+
         if (moving.contains(galleryID))
             return
 

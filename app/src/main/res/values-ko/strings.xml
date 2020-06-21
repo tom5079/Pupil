@@ -145,4 +145,6 @@
     <string name="settings_lock_fingerprint_prompt">Pupil 지문 인식™</string>
     <string name="settings_lock_fingerprint_prompt_subtitle">힘세고 강한 지문 인식</string>
     <string name="default_query_dialog_filter_loli">히익 페도</string>
+    <string name="settings_cache_disable">캐시 비활성화</string>
+    <string name="settings_download_when_cache_disable_warning">캐시를 활성화 해야 다운로드를 진행할 수 있습니다</string>
 </resources>

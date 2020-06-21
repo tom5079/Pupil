@@ -31,10 +31,7 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.WindowManager
 import android.view.inputmethod.EditorInfo
-import android.widget.EditText
-import android.widget.ImageView
-import android.widget.LinearLayout
-import android.widget.TextView
+import android.widget.*
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.cardview.widget.CardView
@@ -439,13 +436,16 @@ class MainActivity : AppCompatActivity() {
                 onDownloadClickedHandler = { position ->
                     val galleryID = galleries[position].id
                     val worker = DownloadWorker.getInstance(context)
-
-                    if (Cache(context).isDownloading(galleryID))     //download in progress
-                        worker.cancel(galleryID)
+                    if (PreferenceManager.getDefaultSharedPreferences(context).getBoolean("cache_disable", false))
+                        Toast.makeText(context, R.string.settings_download_when_cache_disable_warning, Toast.LENGTH_SHORT).show()
                     else {
-                        Cache(context).setDownloading(galleryID, true)
+                        if (Cache(context).isDownloading(galleryID))     //download in progress
+                            worker.cancel(galleryID)
+                        else {
+                            Cache(context).setDownloading(galleryID, true)
 
-                        worker.queue.add(galleryID)
+                            worker.queue.add(galleryID)
+                        }
                     }
 
                     closeAllItems()
