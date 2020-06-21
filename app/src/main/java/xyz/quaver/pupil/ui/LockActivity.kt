@@ -148,7 +148,7 @@ class LockActivity : AppCompatActivity() {
         val promptInfo = BiometricPrompt.PromptInfo.Builder()
             .setTitle(getText(R.string.settings_lock_fingerprint_prompt))
             .setSubtitle(getText(R.string.settings_lock_fingerprint_prompt_subtitle))
-            .setNegativeButtonText("Cancel")
+            .setNegativeButtonText(getText(android.R.string.cancel))
             .setConfirmationRequired(false)
             .build()
 

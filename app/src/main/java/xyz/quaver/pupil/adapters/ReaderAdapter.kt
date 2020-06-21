@@ -118,7 +118,7 @@ class ReaderAdapter(private val glide: RequestManager,
                     .load(R.drawable.image_broken_variant)
                     .into(holder.view.image)
 
-                Snackbar.make(holder.view.reader_layout, R.string.reader_error_retry, Snackbar.LENGTH_INDEFINITE).apply {
+                Snackbar.make(holder.view.reader_layout, R.string.reader_error_retry, Snackbar.LENGTH_SHORT).apply {
                     setAction(android.R.string.no) { }
                     setAction(android.R.string.yes) {
                         downloadWorker!!.cancel(galleryID)
