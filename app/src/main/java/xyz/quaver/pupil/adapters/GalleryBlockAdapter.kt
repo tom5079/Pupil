@@ -28,6 +28,7 @@ import android.view.ViewGroup
 import android.widget.LinearLayout
 import androidx.cardview.widget.CardView
 import androidx.core.content.ContextCompat
+import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.CircularProgressDrawable
 import androidx.vectordrawable.graphics.drawable.Animatable2Compat
@@ -42,7 +43,9 @@ import kotlinx.android.synthetic.main.item_galleryblock.view.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import xyz.quaver.hitomi.GalleryBlock
+import xyz.quaver.hitomi.getReader
 import xyz.quaver.pupil.BuildConfig
 import xyz.quaver.pupil.Pupil
 import xyz.quaver.pupil.R
@@ -75,7 +78,7 @@ class GalleryBlockAdapter(private val glide: RequestManager, private val galleri
             val reader = Cache(context).getReaderOrNull(galleryID)
 
             CoroutineScope(Dispatchers.Main).launch {
-                if (reader == null) {
+                if (reader == null || PreferenceManager.getDefaultSharedPreferences(context).getBoolean("cache_disable", false)) {
                     view.galleryblock_progressbar.visibility = View.GONE
                     view.galleryblock_progress_complete.visibility = View.GONE
                     return@launch
@@ -218,12 +221,12 @@ class GalleryBlockAdapter(private val glide: RequestManager, private val galleri
                             "male" -> {
                                 setChipBackgroundColorResource(R.color.material_blue_700)
                                 setTextColor(ContextCompat.getColor(context, android.R.color.white))
-                                ContextCompat.getDrawable(context, R.drawable.ic_gender_male_white)
+                                ContextCompat.getDrawable(context, R.drawable.gender_male)
                             }
                             "female" -> {
                                 setChipBackgroundColorResource(R.color.material_pink_600)
                                 setTextColor(ContextCompat.getColor(context, android.R.color.white))
-                                ContextCompat.getDrawable(context, R.drawable.ic_gender_female_white)
+                                ContextCompat.getDrawable(context, R.drawable.gender_female)
                             }
                             else -> null
                         }
@@ -237,6 +240,15 @@ class GalleryBlockAdapter(private val glide: RequestManager, private val galleri
                 }
 
                 galleryblock_id.text = galleryBlock.id.toString()
+                galleryblock_pagecount.text = "-"
+                CoroutineScope(Dispatchers.IO).launch {
+                    val pageCount = kotlin.runCatching {
+                        getReader(galleryBlock.id).galleryInfo.files.size
+                    }.getOrNull() ?: return@launch
+                    withContext(Dispatchers.Main) {
+                        galleryblock_pagecount.text = context.getString(R.string.galleryblock_pagecount, pageCount)
+                    }
+                }
 
                 if (!::favorites.isInitialized)
                     favorites = (context.applicationContext as Pupil).favorites

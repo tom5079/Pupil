@@ -18,7 +18,7 @@ package xyz.quaver.hiyobi
 
 import kotlinx.serialization.UnstableDefault
 import kotlinx.serialization.builtins.list
-import org.jsoup.Jsoup
+import kotlinx.serialization.json.contentOrNull
 import xyz.quaver.Code
 import xyz.quaver.hitomi.GalleryFiles
 import xyz.quaver.hitomi.GalleryInfo
@@ -64,17 +64,26 @@ fun renewCookie() : String {
 
 @OptIn(UnstableDefault::class)
 fun getReader(galleryID: Int) : Reader {
-    val reader = "https://$hiyobi/reader/$galleryID"
-    val url = "https://cdn.hiyobi.me/data/json/${galleryID}_list.json"
+    val data = "https://cdn.$hiyobi/data/json/$galleryID.json"
+    val list = "https://cdn.$hiyobi/data/json/${galleryID}_list.json"
 
-    val title = Jsoup.connect(reader).proxy(proxy).get().title()
+    val title = with(URL(data).openConnection(proxy) as HttpsURLConnection) {
+        setRequestProperty("User-Agent", user_agent)
+        setRequestProperty("Cookie", cookie)
+        connectTimeout = 1000
+        connect()
+
+        inputStream.bufferedReader().use { it.readText() }
+    }.let {
+        json.parseJson(it).jsonObject["n"]?.contentOrNull
+    }
 
     val galleryFiles = json.parse(
         GalleryFiles.serializer().list,
-        with(URL(url).openConnection(proxy) as HttpsURLConnection) {
+        with(URL(list).openConnection(proxy) as HttpsURLConnection) {
             setRequestProperty("User-Agent", user_agent)
             setRequestProperty("Cookie", cookie)
-            connectTimeout = 2000
+            connectTimeout = 1000
             connect()
 
             inputStream.bufferedReader().use { it.readText() }

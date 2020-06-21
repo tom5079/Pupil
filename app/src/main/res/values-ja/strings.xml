@@ -99,7 +99,6 @@
     <string name="gallery_tags">タグ</string>
     <string name="gallery_thumbnails">サムネイル</string>
     <string name="gallery_related">おすすめ</string>
-    <string name="settings_nomedia_summary">イメージをギャラリーから見えなくする</string>
     <string name="settings_nomedia_title">イメージを隠す</string>
     <string name="reader_help">ヘルプ</string>
     <string name="main_delete">削除</string>
@@ -141,4 +140,16 @@
     <string name="import_old_galleries_notification">旧ギャラリーインポート中…</string>
     <string name="import_old_galleries_notification_done">インポート完了</string>
     <string name="main_fab_random">ランダムギャラリーを開く</string>
+    <string name="settings_lock_fingerprint_without_lock">予備のロックが設定されていないと指紋ロックは使用できません</string>
+    <string name="settings_lock_fingerprint_prompt">Pupil指紋ロック™</string>
+    <string name="settings_lock_fingerprint_prompt_subtitle">こうかはばつぐんだ!</string>
+    <string name="default_query_dialog_filter_loli">登場人物を全て18歳以上にする</string>
+    <string name="settings_cache_disable">キャッシュを使用しない</string>
+    <string name="settings_download_when_cache_disable_warning">キャッシュを使用しないため、ダウンロードできません</string>
+    <string name="apcjsa_option_title">(Korean only)</string>
+    <string name="apcjsa_option_message">(Korean only)</string>
+    <string name="settings_user_id">ユーザーID</string>
+    <string name="settings_user_id_toast">ユーザーIDをクリップボードにコピーしました</string>
+    <string name="reader_error_retry">ダウンロードエラーが発生しました。リトライしますか？</string>
+    <string name="reader_fab_retry">リトライ</string>
 </resources>

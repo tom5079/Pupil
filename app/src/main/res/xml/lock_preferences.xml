@@ -17,7 +17,7 @@
     <PreferenceCategory
         app:title="@string/settings_lock_biometrics">
 
-        <Preference
+        <SwitchPreferenceCompat
             app:title="@string/settings_lock_fingerprint"
             app:key="lock_fingerprint"/>
 

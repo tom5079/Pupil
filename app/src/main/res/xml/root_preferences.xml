@@ -48,6 +48,10 @@
             app:title="@string/settings_dl_location"/>
 
         <SwitchPreferenceCompat
+            app:key="cache_disable"
+            app:title="@string/settings_cache_disable"/>
+
+        <SwitchPreferenceCompat
             app:key="low_quality"
             app:title="@string/settings_low_quality"
             app:summary="@string/settings_low_quality_summary"
@@ -87,10 +91,9 @@
             app:title="@string/settings_dark_mode_title"
             app:summary="@string/settings_dark_mode_summary"/>
 
-        <SwitchPreferenceCompat
+        <Preference
             app:key="nomedia"
-            app:title="@string/settings_nomedia_title"
-            app:summary="@string/settings_nomedia_title"/>
+            app:title="@string/settings_nomedia_title"/>
 
         <Preference
             app:key="backup"
@@ -103,6 +106,10 @@
         <Preference
             app:key="old_import_galleries"
             app:title="@string/settings_import_old_galleries"/>
+
+        <Preference
+            app:key="user_id"
+            app:title="@string/settings_user_id"/>
 
     </PreferenceCategory>
 

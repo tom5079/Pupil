@@ -45,6 +45,7 @@ class DefaultQueryDialog(context : Context) : AlertDialog(context) {
 
     private val excludeBL = "-male:yaoi"
     private val excludeGuro = listOf("-female:guro", "-male:guro")
+    private val excludeLoli = listOf("-female:loli", "-male:shota")
 
     var onPositiveButtonClickListener : ((Tags) -> (Unit))? = null
 
@@ -65,6 +66,11 @@ class DefaultQueryDialog(context : Context) : AlertDialog(context) {
 
             if (default_query_dialog_guro_checkbox.isChecked)
                 excludeGuro.forEach { tag ->
+                    newTags.add(tag)
+                }
+
+            if (default_query_dialog_loli_checkbox.isChecked)
+                excludeLoli.forEach { tag ->
                     newTags.add(tag)
                 }
 
@@ -116,6 +122,14 @@ class DefaultQueryDialog(context : Context) : AlertDialog(context) {
             isChecked = excludeGuro.all { tags.contains(it) }
             if (excludeGuro.all { tags.contains(it) })
                 excludeGuro.forEach {
+                    tags.remove(it)
+                }
+        }
+
+        with(view.default_query_dialog_loli_checkbox) {
+            isChecked = excludeLoli.all { tags.contains(it) }
+            if (excludeLoli.all { tags.contains(it) })
+                excludeLoli.forEach {
                     tags.remove(it)
                 }
         }
