@@ -144,4 +144,5 @@
     <string name="settings_lock_fingerprint_without_lock">予備のロックが設定されていないと指紋ロックは使用できません</string>
     <string name="settings_lock_fingerprint_prompt">Pupil指紋ロック™</string>
     <string name="settings_lock_fingerprint_prompt_subtitle">こうかはばつぐんだ!</string>
+    <string name="default_query_dialog_filter_loli">登場人物を全て18歳以上にする</string>
 </resources>
