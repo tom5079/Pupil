@@ -27,6 +27,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.RequestManager
 import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.load.model.GlideUrl
+import com.bumptech.glide.load.model.LazyHeaders
 import com.google.android.material.snackbar.Snackbar
 import com.google.firebase.crashlytics.FirebaseCrashlytics
 import kotlinx.android.synthetic.main.activity_reader.view.*
@@ -102,23 +103,19 @@ class ReaderAdapter(private val glide: RequestManager,
             val lowQuality = preferences.getBoolean("low_quality", false)
 
             val url = when (reader!!.code) {
-                Code.HITOMI -> {
+                Code.HITOMI ->
                     GlideUrl(
                         imageUrlFromImage(
                             galleryID,
                             reader!!.galleryInfo.files[position],
                             !lowQuality
                         )
-                    ).apply {
-                        headers["Referer"] = getReferer(galleryID)
-                    }
-                }
-                Code.HIYOBI -> {
-                    GlideUrl(createImgList(galleryID, reader!!, lowQuality)[position].path).apply {
-                        headers["User-Agent"] = user_agent
-                        headers["Cookie"] = cookie
-                    }
-                }
+                    , LazyHeaders.Builder().addHeader("Referer", getReferer(galleryID)).build())
+                Code.HIYOBI ->
+                    GlideUrl(createImgList(galleryID, reader!!, lowQuality)[position].path, LazyHeaders.Builder()
+                        .addHeader("User-Agent", user_agent)
+                        .addHeader("Cookie", cookie)
+                        .build())
                 else -> null
             }
             holder.view.image.post {

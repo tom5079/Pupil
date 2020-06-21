@@ -19,8 +19,8 @@ android {
         applicationId "xyz.quaver.pupil"
         minSdkVersion 16
         targetSdkVersion 29
-        versionCode 53
-        versionName "4.18"
+        versionCode 54
+        versionName "4.18.1"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         multiDexEnabled true
         vectorDrawables.useSupportLibrary = true
@@ -72,7 +72,6 @@ dependencies {
     implementation 'com.github.arimorty:floatingsearchview:2.1.1'
     implementation 'com.github.clans:fab:1.6.4'
     implementation 'com.github.bumptech.glide:glide:4.11.0'
-    implementation "com.github.bumptech.glide:okhttp3-integration:4.11.0"
     annotationProcessor 'com.github.bumptech.glide:compiler:4.11.0'
     kapt 'com.github.bumptech.glide:compiler:4.11.0'
     implementation ("com.github.bumptech.glide:recyclerview-integration:4.11.0") {
