@@ -27,6 +27,9 @@
     <string name="https_block_alert_title">(Korean only)</string>
     <string name="https_block_alert">(Korean only)</string>
 
+    <string name="apcjsa_option_title">(Korean only)</string>
+    <string name="apcjsa_option_message">(Korean only)</string>
+
     <string name="update_failed">Update failed</string>
     <string name="update_failed_message">Please install manually by visiting github release page :{ (or try again!)</string>
     <string name="update_no_permission">Cannot auto update because permission is denied. Please download manually from the webpage.</string>
@@ -153,6 +156,8 @@
     <string name="settings_dl_location_available">%s available</string>
     <string name="settings_dl_location_custom">Custom Location</string>
     <string name="settings_dl_location_not_writable">This folder is not writable. Please select another folder.</string>
+    <string name="settings_cache_disable">Disable Cache</string>
+    <string name="settings_download_when_cache_disable_warning">Download is disabled when the cache is disabled</string>
     <string name="settings_low_quality">Low quality images</string>
     <string name="settings_low_quality_summary">Load low quality images to improve load speed and data usage</string>
 
@@ -201,6 +206,7 @@
     <string name="default_query_dialog_language">Language: </string>
     <string name="default_query_dialog_filter_BL">Filter BL</string>
     <string name="default_query_dialog_filter_guro">Filter Guro</string>
+    <string name="default_query_dialog_filter_loli">I\'m not a pedophile</string>
     <string name="default_query_dialog_language_selector_none">Any</string>
     <string name="settings_mirror_title">Mirrors</string>
 

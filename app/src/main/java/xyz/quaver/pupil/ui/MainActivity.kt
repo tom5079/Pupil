@@ -31,10 +31,7 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.WindowManager
 import android.view.inputmethod.EditorInfo
-import android.widget.EditText
-import android.widget.ImageView
-import android.widget.LinearLayout
-import android.widget.TextView
+import android.widget.*
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.cardview.widget.CardView
@@ -145,6 +142,30 @@ class MainActivity : AppCompatActivity() {
                 }.show()
 
                 preference.edit().putBoolean("https_block_alert", true).apply()
+            }
+
+            if (!preference.getBoolean("apcjsa_option", false)) {
+                android.app.AlertDialog.Builder(this).apply {
+                    setTitle(R.string.apcjsa_option_title)
+                    setMessage(R.string.apcjsa_option_message)
+                    setPositiveButton(android.R.string.yes) { _, _ ->
+                        val tags = Tags.parse(
+                            preference.getString("default_query", "") ?: ""
+                        )
+
+                        tags.add("-female:loli")
+                        tags.add("-male:shota")
+
+                        preference.edit()
+                            .putString("default_query", tags.toString())
+                            .putBoolean("cache_disable", true)
+                            .putBoolean("apcjsa_option", true)
+                            .apply()
+                    }
+                    setNegativeButton(android.R.string.no) { _, _ -> }
+                }.show()
+
+                preference.edit().putBoolean("apcjsa_option", true).apply()
             }
         }
 
@@ -439,13 +460,16 @@ class MainActivity : AppCompatActivity() {
                 onDownloadClickedHandler = { position ->
                     val galleryID = galleries[position].id
                     val worker = DownloadWorker.getInstance(context)
-
-                    if (Cache(context).isDownloading(galleryID))     //download in progress
-                        worker.cancel(galleryID)
+                    if (PreferenceManager.getDefaultSharedPreferences(context).getBoolean("cache_disable", false))
+                        Toast.makeText(context, R.string.settings_download_when_cache_disable_warning, Toast.LENGTH_SHORT).show()
                     else {
-                        Cache(context).setDownloading(galleryID, true)
+                        if (Cache(context).isDownloading(galleryID))     //download in progress
+                            worker.cancel(galleryID)
+                        else {
+                            Cache(context).setDownloading(galleryID, true)
 
-                        worker.queue.add(galleryID)
+                            worker.queue.add(galleryID)
+                        }
                     }
 
                     closeAllItems()

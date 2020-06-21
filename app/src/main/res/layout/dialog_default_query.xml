@@ -107,4 +107,30 @@
 
     </LinearLayout>
 
+    <LinearLayout
+        android:id="@+id/default_query_dialog_loli_layout"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:paddingLeft="0dp"
+        android:paddingStart="0dp"
+        android:paddingEnd="8dp"
+        android:paddingRight="8dp"
+        app:layout_constraintTop_toBottomOf="@id/default_query_dialog_guro_layout"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:text="@string/default_query_dialog_filter_loli"/>
+
+        <CheckBox
+            android:id="@+id/default_query_dialog_loli_checkbox"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+
+    </LinearLayout>
+
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -32,7 +32,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import xyz.quaver.hitomi.Reader
 import xyz.quaver.pupil.R
-import xyz.quaver.pupil.util.download.Cache
 import xyz.quaver.pupil.util.download.DownloadWorker
 import java.util.*
 import kotlin.concurrent.schedule
@@ -50,6 +49,8 @@ class ReaderAdapter(private val glide: RequestManager,
 
     class ViewHolder(val view: View) : RecyclerView.ViewHolder(view)
 
+    var downloadWorker: DownloadWorker? = null
+
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         return LayoutInflater.from(parent.context).inflate(
             R.layout.item_reader, parent, false
@@ -60,6 +61,9 @@ class ReaderAdapter(private val glide: RequestManager,
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         holder.view as ConstraintLayout
+
+        if (downloadWorker == null)
+            downloadWorker = DownloadWorker.getInstance(holder.view.context)
 
         if (isFullScreen) {
             holder.view.layoutParams.height = RecyclerView.LayoutParams.MATCH_PARENT
@@ -82,15 +86,15 @@ class ReaderAdapter(private val glide: RequestManager,
 
         holder.view.reader_index.text = (position+1).toString()
 
-        val images = Cache(holder.view.context).getImage(galleryID, position)
-        val progress = DownloadWorker.getInstance(holder.view.context).progress[galleryID]?.get(position)
+        val image = downloadWorker!!.results[galleryID]?.get(position)
+        val progress = downloadWorker!!.progress[galleryID]?.get(position)
 
-        if (progress?.isInfinite() == true && images != null) {
+        if (progress?.isInfinite() == true && image != null) {
             holder.view.reader_item_progressbar.visibility = View.INVISIBLE
 
             holder.view.image.post {
                 glide
-                    .load(images)
+                    .load(image)
                     .diskCacheStrategy(DiskCacheStrategy.NONE)
                     .skipMemoryCache(true)
                     .fitCenter()

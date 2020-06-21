@@ -143,6 +143,7 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
     *  null -> Download in progress / Loading
     */
     val exception = SparseArray<MutableList<Throwable?>?>()
+    val results = SparseArray<MutableList<ByteArray?>?>()
     val notification = SparseArray<NotificationCompat.Builder>()
 
     private val loop = loop()
@@ -189,6 +190,7 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
 
         progress.clear()
         exception.clear()
+        results.clear()
         notification.clear()
         notificationManager.cancelAll()
     }
@@ -205,6 +207,7 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
 
         progress.remove(galleryID)
         exception.remove(galleryID)
+        results.remove(galleryID)
         notification.remove(galleryID)
         notificationManager.cancel(galleryID)
 
@@ -253,6 +256,7 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
         if (reader == null) {
             progress.put(galleryID, null)
             exception.put(galleryID, null)
+            results.put(galleryID, null)
 
             Cache(this@DownloadWorker).setDownloading(galleryID, false)
             return@launch
@@ -267,6 +271,9 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
                 0F
         }.toMutableList())
         exception.put(galleryID, reader.galleryInfo.files.map { null }.toMutableList())
+        results.put(galleryID, reader.galleryInfo.files.indices.map { index ->
+            cache?.firstOrNull { it?.nameWithoutExtension?.toIntOrNull()  == index }?.readBytes()
+        }.toMutableList())
 
         if (notification[galleryID] == null)
             initNotification(galleryID)
@@ -316,13 +323,19 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
 
                     try {
                         response.body().use {
-                            Cache(this@DownloadWorker).putImage(galleryID, i, ext, it!!.byteStream())
+                            it!!
+
+                            results[galleryID]?.set(i, it.source().readByteArray())
                         }
                         progress[galleryID]?.set(i, Float.POSITIVE_INFINITY)
 
                         notify(galleryID)
 
                         CoroutineScope(Dispatchers.IO).launch {
+                            results[galleryID]?.get(i)?.also {
+                                Cache(this@DownloadWorker).putImage(galleryID, i, ext, it)
+                            }
+
                             if (isCompleted(galleryID)) {
                                 with(Cache(this@DownloadWorker)) {
                                     if (isDownloading(galleryID)) {
