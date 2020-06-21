@@ -23,6 +23,7 @@ import android.graphics.drawable.Animatable
 import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.view.*
+import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
@@ -321,13 +322,17 @@ class ReaderActivity : AppCompatActivity() {
             animateDownloadFAB(Cache(context).isDownloading(galleryID)) //If download in progress, animate button
 
             setOnClickListener {
-                if (Cache(context).isDownloading(galleryID)) {
-                   Cache(context).setDownloading(galleryID, false)
+                if (PreferenceManager.getDefaultSharedPreferences(context).getBoolean("cache_disable", false))
+                    Toast.makeText(context, R.string.settings_download_when_cache_disable_warning, Toast.LENGTH_SHORT).show()
+                else {
+                    if (Cache(context).isDownloading(galleryID)) {
+                        Cache(context).setDownloading(galleryID, false)
 
-                    animateDownloadFAB(false)
-                } else {
-                    Cache(context).setDownloading(galleryID, true)
-                    animateDownloadFAB(true)
+                        animateDownloadFAB(false)
+                    } else {
+                        Cache(context).setDownloading(galleryID, true)
+                        animateDownloadFAB(true)
+                    }
                 }
             }
         }
