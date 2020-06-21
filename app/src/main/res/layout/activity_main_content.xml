@@ -118,11 +118,17 @@
 
     </androidx.coordinatorlayout.widget.CoordinatorLayout>
 
-    <com.arlib.floatingsearchview.FloatingSearchView
+    <com.arlib.floatingsearchview.FloatingSearchViewDayNight
         android:id="@+id/main_searchview"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        app:floatingSearch_backgroundColor="?attr/colorSurface"
+        app:floatingSearch_backgroundColor="?android:attr/colorBackgroundFloating"
+        app:floatingSearch_leftActionColor="?attr/colorControlNormal"
+        app:floatingSearch_menuItemIconColor="?attr/colorControlNormal"
+        app:floatingSearch_actionMenuOverflowColor="?attr/colorControlNormal"
+        app:floatingSearch_clearBtnColor="?attr/colorControlNormal"
+        app:floatingSearch_viewTextColor="?android:attr/textColorPrimary"
+        app:floatingSearch_suggestionRightIconColor="@color/material_orange_500"
         app:floatingSearch_searchBarMarginLeft="8dp"
         app:floatingSearch_searchBarMarginRight="8dp"
         app:floatingSearch_searchBarMarginTop="8dp"
@@ -132,6 +138,7 @@
         app:floatingSearch_leftActionMode="showHamburger"
         app:floatingSearch_menu="@menu/main"
         app:floatingSearch_dismissOnOutsideTouch="true"
-        app:floatingSearch_close_search_on_keyboard_dismiss="true"/>
+        app:floatingSearch_close_search_on_keyboard_dismiss="true"
+        tools:ignore="NewApi" />
 
 </RelativeLayout>
