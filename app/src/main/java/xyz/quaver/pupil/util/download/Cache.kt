@@ -34,8 +34,10 @@ import xyz.quaver.pupil.util.getCachedGallery
 import xyz.quaver.pupil.util.getDownloadDirectory
 import xyz.quaver.pupil.util.isParentOf
 import xyz.quaver.pupil.util.json
+import java.io.BufferedInputStream
 import java.io.File
 import java.io.FileOutputStream
+import java.io.InputStream
 import java.net.URL
 import java.util.*
 import java.util.concurrent.locks.Lock
@@ -250,7 +252,7 @@ class Cache(context: Context) : ContextWrapper(context) {
     }
 
 
-    fun putImage(galleryID: Int, index: Int, ext: String, data: ByteArray) {
+    fun putImage(galleryID: Int, index: Int, ext: String, data: InputStream) {
         if (preference.getBoolean("cache_disable", false))
             return
 
@@ -260,8 +262,10 @@ class Cache(context: Context) : ContextWrapper(context) {
         }
 
         try {
-            FileOutputStream(cache).use {
-                it.write(data)
+            BufferedInputStream(data).use { inputStream ->
+                FileOutputStream(cache).use { outputStream ->
+                    inputStream.copyTo(outputStream)
+                }
             }
         } catch (e: Exception) {
             cache.delete()

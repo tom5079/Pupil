@@ -19,6 +19,5 @@ package xyz.quaver
 
 enum class Code {
     HITOMI,
-    HIYOBI,
-    SORALA
+    HIYOBI
 }

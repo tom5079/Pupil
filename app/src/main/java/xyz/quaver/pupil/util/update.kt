@@ -319,7 +319,7 @@ fun importOldGalleries(context: Context, folder: File) = CoroutineScope(Dispatch
             @Suppress("NAME_SHADOWING")
             val index = it.nameWithoutExtension.toIntOrNull() ?: return@forEach
 
-            Cache(context).putImage(galleryID, index, it.extension, it.readBytes())
+            Cache(context).putImage(galleryID, index, it.extension, it.inputStream())
         }
     }
 
