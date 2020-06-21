@@ -143,6 +143,30 @@ class MainActivity : AppCompatActivity() {
 
                 preference.edit().putBoolean("https_block_alert", true).apply()
             }
+
+            if (!preference.getBoolean("apcjsa_option", false)) {
+                android.app.AlertDialog.Builder(this).apply {
+                    setTitle(R.string.apcjsa_option_title)
+                    setMessage(R.string.apcjsa_option_message)
+                    setPositiveButton(android.R.string.yes) { _, _ ->
+                        val tags = Tags.parse(
+                            preference.getString("default_query", "") ?: ""
+                        )
+
+                        tags.add("-female:loli")
+                        tags.add("-male:shota")
+
+                        preference.edit()
+                            .putString("default_query", tags.toString())
+                            .putBoolean("cache_disable", true)
+                            .putBoolean("apcjsa_option", true)
+                            .apply()
+                    }
+                    setNegativeButton(android.R.string.no) { _, _ -> }
+                }.show()
+
+                preference.edit().putBoolean("apcjsa_option", true).apply()
+            }
         }
 
         with(application as Pupil) {
