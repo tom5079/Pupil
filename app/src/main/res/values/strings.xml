@@ -27,6 +27,9 @@
     <string name="https_block_alert_title">(Korean only)</string>
     <string name="https_block_alert">(Korean only)</string>
 
+    <string name="apcjsa_option_title">(Korean only)</string>
+    <string name="apcjsa_option_message">(Korean only)</string>
+
     <string name="update_failed">Update failed</string>
     <string name="update_failed_message">Please install manually by visiting github release page :{ (or try again!)</string>
     <string name="update_no_permission">Cannot auto update because permission is denied. Please download manually from the webpage.</string>
