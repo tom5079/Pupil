@@ -20,7 +20,7 @@ import kotlinx.serialization.UnstableDefault
 import kotlinx.serialization.json.Json
 import java.net.Proxy
 
-var proxy = Proxy.NO_PROXY
+var proxy : Proxy = Proxy.NO_PROXY
 
 @OptIn(UnstableDefault::class)
 var json = Json {

@@ -27,6 +27,9 @@
     <string name="https_block_alert_title">(Korean only)</string>
     <string name="https_block_alert">(Korean only)</string>
 
+    <string name="apcjsa_option_title">(Korean only)</string>
+    <string name="apcjsa_option_message">(Korean only)</string>
+
     <string name="update_failed">Update failed</string>
     <string name="update_failed_message">Please install manually by visiting github release page :{ (or try again!)</string>
     <string name="update_no_permission">Cannot auto update because permission is denied. Please download manually from the webpage.</string>
@@ -107,17 +110,21 @@
     <string name="galleryblock_series">Series: %1$s</string>
     <string name="galleryblock_type">Type: %1$s</string>
     <string name="galleryblock_language">Language: %1$s</string>
+    <string name="galleryblock_pagecount" translatable="false">%dP</string>
 
     <!-- READER -->
 
     <string name="reader_loading">Loading</string>
     <string name="reader_go_to_page">Go to page</string>
-    <string name="reader_fab_fullscreen">Fullscreen</string>
+    <string name="reader_fab_fullscreen">Fullscreen</string>>
+    <string name="reader_fab_retry">Retry</string>
     <string name="reader_fab_download">Background download</string>
     <string name="reader_fab_download_cancel">Cancel background download</string>
     <string name="reader_notification_text">Downloading&#8230;</string>
     <string name="reader_notification_complete">Download complete</string>
     <string name="reader_notification_error">Download error</string>
+
+    <string name="reader_error_retry">Download Error occurred. Retry?</string>
 
     <string name="reader_help">Help</string>
 
@@ -152,6 +159,8 @@
     <string name="settings_dl_location_available">%s available</string>
     <string name="settings_dl_location_custom">Custom Location</string>
     <string name="settings_dl_location_not_writable">This folder is not writable. Please select another folder.</string>
+    <string name="settings_cache_disable">Disable Cache</string>
+    <string name="settings_download_when_cache_disable_warning">Download is disabled when the cache is disabled</string>
     <string name="settings_low_quality">Low quality images</string>
     <string name="settings_low_quality_summary">Load low quality images to improve load speed and data usage</string>
 
@@ -170,7 +179,6 @@
     <string name="settings_dark_mode_title">Dark mode</string>
     <string name="settings_dark_mode_summary">Protect yourself against light attacks!</string>
     <string name="settings_nomedia_title">Hide image from gallery</string>
-    <string name="settings_nomedia_summary">Hides image from gallery</string>
     <string name="settings_backup_title">Backup favorites</string>
     <string name="settings_backup_snackbar">Backup file created</string>
     <string name="settings_backup_checkout">Check out</string>
@@ -178,6 +186,8 @@
     <string name="settings_restore_failed">Restore failed</string>
     <string name="settings_restore_successful">%1$d entries restored</string>
     <string name="settings_import_old_galleries">Import old galleries</string>
+    <string name="settings_user_id">User ID</string>
+    <string name="settings_user_id_toast">User ID is copied to clipboard</string>
 
     <!-- SETTINGS/APP LOCK ACTIVITY -->
 
@@ -187,6 +197,8 @@
     <string name="settings_lock_password">Password</string>
     <string name="settings_lock_biometrics">Biometrics</string>
     <string name="settings_lock_fingerprint">Fingerprint</string>
+    <string name="settings_lock_fingerprint_without_lock">Fingerprint can be only enabled if one of the other locks are enabled</string>
+    <string name="settings_lock_fingerprint_prompt">Pupil Fingerprint Lock™</string>
     <string name="settings_lock_enabled">Enabled</string>
     <string name="settings_lock_confirm">Input same lock once more to confirm Lock</string>
     <string name="settings_lock_remove_message">Do you want to remove lock?</string>
@@ -198,6 +210,7 @@
     <string name="default_query_dialog_language">Language: </string>
     <string name="default_query_dialog_filter_BL">Filter BL</string>
     <string name="default_query_dialog_filter_guro">Filter Guro</string>
+    <string name="default_query_dialog_filter_loli">I\'m not a pedophile</string>
     <string name="default_query_dialog_language_selector_none">Any</string>
     <string name="settings_mirror_title">Mirrors</string>
 
@@ -215,5 +228,6 @@
     <string name="import_old_galleries_notification">Importing old galleries…</string>
     <string name="import_old_galleries_notification_text" translatable="false">%1$d/%2$d</string>
     <string name="import_old_galleries_notification_done">Importing completed</string>
+    <string name="settings_lock_fingerprint_prompt_subtitle">Ah Shit, Here we go again</string>
 
 </resources>

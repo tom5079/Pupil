@@ -18,7 +18,6 @@
 
 package xyz.quaver.pupil.ui.dialog
 
-import android.app.Activity
 import android.app.Dialog
 import android.content.Context
 import android.content.Intent
@@ -170,12 +169,12 @@ class GalleryDialog(context: Context, private val glide: RequestManager, private
                                     "male" -> {
                                         setChipBackgroundColorResource(R.color.material_blue_700)
                                         setTextColor(ContextCompat.getColor(context, android.R.color.white))
-                                        ContextCompat.getDrawable(context, R.drawable.ic_gender_male_white)
+                                        ContextCompat.getDrawable(context, R.drawable.gender_male)
                                     }
                                     "female" -> {
                                         setChipBackgroundColorResource(R.color.material_pink_600)
                                         setTextColor(ContextCompat.getColor(context, android.R.color.white))
-                                        ContextCompat.getDrawable(context, R.drawable.ic_gender_female_white)
+                                        ContextCompat.getDrawable(context, R.drawable.gender_female)
                                     }
                                     else -> null
                                 }

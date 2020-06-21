@@ -23,6 +23,7 @@ import android.graphics.drawable.Animatable
 import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.view.*
+import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
@@ -33,9 +34,8 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.vectordrawable.graphics.drawable.Animatable2Compat
 import androidx.vectordrawable.graphics.drawable.AnimatedVectorDrawableCompat
 import com.bumptech.glide.Glide
-import com.crashlytics.android.Crashlytics
 import com.google.android.material.snackbar.Snackbar
-import io.fabric.sdk.android.Fabric
+import com.google.firebase.crashlytics.FirebaseCrashlytics
 import kotlinx.android.synthetic.main.activity_reader.*
 import kotlinx.android.synthetic.main.activity_reader.view.*
 import kotlinx.android.synthetic.main.dialog_numberpicker.view.*
@@ -91,8 +91,7 @@ class ReaderActivity : AppCompatActivity() {
 
         handleIntent(intent)
 
-        if (Fabric.isInitialized())
-            Crashlytics.setInt("GalleryID", galleryID)
+        FirebaseCrashlytics.getInstance().setCustomKey("GalleryID", galleryID)
 
         if (galleryID == 0) {
             onBackPressed()
@@ -113,14 +112,12 @@ class ReaderActivity : AppCompatActivity() {
             val uri = intent.data
             val lastPathSegment = uri?.lastPathSegment
             if (uri != null && lastPathSegment != null) {
-                val nonNumber = Regex("[^-?0-9]+")
-
                 galleryID = when (uri.host) {
-                    "hitomi.la" -> lastPathSegment.replace(nonNumber, "").toInt()
-                    "히요비.asia" -> lastPathSegment.toInt()
-                    "xn--9w3b15m8vo.asia" -> lastPathSegment.toInt()
+                    "hitomi.la" ->
+                        Regex("([0-9]+).html").find(lastPathSegment)?.groupValues?.get(1)?.toIntOrNull() ?: 0
+                    "hiyobi.me" -> lastPathSegment.toInt()
                     "e-hentai.org" -> uri.pathSegments[1].toInt()
-                    else -> return
+                    else -> 0
                 }
             }
         } else {
@@ -325,13 +322,27 @@ class ReaderActivity : AppCompatActivity() {
             animateDownloadFAB(Cache(context).isDownloading(galleryID)) //If download in progress, animate button
 
             setOnClickListener {
-                if (Cache(context).isDownloading(galleryID)) {
-                   Cache(context).setDownloading(galleryID, false)
+                if (PreferenceManager.getDefaultSharedPreferences(context).getBoolean("cache_disable", false))
+                    Toast.makeText(context, R.string.settings_download_when_cache_disable_warning, Toast.LENGTH_SHORT).show()
+                else {
+                    if (Cache(context).isDownloading(galleryID)) {
+                        Cache(context).setDownloading(galleryID, false)
 
-                    animateDownloadFAB(false)
-                } else {
-                    Cache(context).setDownloading(galleryID, true)
-                    animateDownloadFAB(true)
+                        animateDownloadFAB(false)
+                    } else {
+                        Cache(context).setDownloading(galleryID, true)
+                        animateDownloadFAB(true)
+                    }
+                }
+            }
+        }
+
+        with(reader_fab_retry) {
+            setImageResource(R.drawable.refresh)
+            setOnClickListener {
+                DownloadWorker.getInstance(context).let {
+                    it.cancel(galleryID)
+                    it.queue.add(galleryID)
                 }
             }
         }

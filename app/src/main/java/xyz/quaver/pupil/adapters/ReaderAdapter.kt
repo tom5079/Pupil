@@ -25,15 +25,15 @@ import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.RequestManager
 import com.bumptech.glide.load.engine.DiskCacheStrategy
-import com.crashlytics.android.Crashlytics
-import io.fabric.sdk.android.Fabric
+import com.google.android.material.snackbar.Snackbar
+import com.google.firebase.crashlytics.FirebaseCrashlytics
+import kotlinx.android.synthetic.main.activity_reader.view.*
 import kotlinx.android.synthetic.main.item_reader.view.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import xyz.quaver.hitomi.Reader
 import xyz.quaver.pupil.R
-import xyz.quaver.pupil.util.download.Cache
 import xyz.quaver.pupil.util.download.DownloadWorker
 import java.util.*
 import kotlin.concurrent.schedule
@@ -51,6 +51,8 @@ class ReaderAdapter(private val glide: RequestManager,
 
     class ViewHolder(val view: View) : RecyclerView.ViewHolder(view)
 
+    var downloadWorker: DownloadWorker? = null
+
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         return LayoutInflater.from(parent.context).inflate(
             R.layout.item_reader, parent, false
@@ -61,6 +63,9 @@ class ReaderAdapter(private val glide: RequestManager,
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         holder.view as ConstraintLayout
+
+        if (downloadWorker == null)
+            downloadWorker = DownloadWorker.getInstance(holder.view.context)
 
         if (isFullScreen) {
             holder.view.layoutParams.height = RecyclerView.LayoutParams.MATCH_PARENT
@@ -83,15 +88,15 @@ class ReaderAdapter(private val glide: RequestManager,
 
         holder.view.reader_index.text = (position+1).toString()
 
-        val images = Cache(holder.view.context).getImage(galleryID, position)
-        val progress = DownloadWorker.getInstance(holder.view.context).progress[galleryID]?.get(position)
+        val image = downloadWorker!!.results[galleryID]?.get(position)
+        val progress = downloadWorker!!.progress[galleryID]?.get(position)
 
-        if (progress?.isInfinite() == true && images != null) {
+        if (progress?.isInfinite() == true && image != null) {
             holder.view.reader_item_progressbar.visibility = View.INVISIBLE
 
             holder.view.image.post {
                 glide
-                    .load(images)
+                    .load(image)
                     .diskCacheStrategy(DiskCacheStrategy.NONE)
                     .skipMemoryCache(true)
                     .fitCenter()
@@ -105,12 +110,21 @@ class ReaderAdapter(private val glide: RequestManager,
             glide.clear(holder.view.image)
 
             if (progress?.isNaN() == true) {
-                if (Fabric.isInitialized())
-                    Crashlytics.logException(DownloadWorker.getInstance(holder.view.context).exception[galleryID]?.get(position))
+                FirebaseCrashlytics.getInstance().recordException(
+                    DownloadWorker.getInstance(holder.view.context).exception[galleryID]?.get(position)!!
+                )
 
                 glide
                     .load(R.drawable.image_broken_variant)
                     .into(holder.view.image)
+
+                Snackbar.make(holder.view.reader_layout, R.string.reader_error_retry, Snackbar.LENGTH_SHORT).apply {
+                    setAction(android.R.string.no) { }
+                    setAction(android.R.string.yes) {
+                        downloadWorker!!.cancel(galleryID)
+                        downloadWorker!!.queue.add(galleryID)
+                    }
+                }.show()
 
                 return
             } else {

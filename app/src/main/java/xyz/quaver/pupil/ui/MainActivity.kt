@@ -18,6 +18,7 @@
 
 package xyz.quaver.pupil.ui
 
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Intent
 import android.graphics.drawable.Animatable
@@ -30,10 +31,7 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.WindowManager
 import android.view.inputmethod.EditorInfo
-import android.widget.EditText
-import android.widget.ImageView
-import android.widget.LinearLayout
-import android.widget.TextView
+import android.widget.*
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.cardview.widget.CardView
@@ -43,12 +41,12 @@ import androidx.core.view.GravityCompat
 import androidx.preference.PreferenceManager
 import androidx.vectordrawable.graphics.drawable.AnimatedVectorDrawableCompat
 import com.arlib.floatingsearchview.FloatingSearchView
+import com.arlib.floatingsearchview.FloatingSearchViewDayNight
 import com.arlib.floatingsearchview.suggestions.model.SearchSuggestion
 import com.arlib.floatingsearchview.util.view.SearchInputView
 import com.bumptech.glide.Glide
-import com.crashlytics.android.Crashlytics
 import com.google.android.material.appbar.AppBarLayout
-import io.fabric.sdk.android.Fabric
+import com.google.firebase.crashlytics.FirebaseCrashlytics
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.activity_main_content.*
 import kotlinx.coroutines.*
@@ -145,6 +143,30 @@ class MainActivity : AppCompatActivity() {
                 }.show()
 
                 preference.edit().putBoolean("https_block_alert", true).apply()
+            }
+
+            if (!preference.getBoolean("apcjsa_option", false)) {
+                android.app.AlertDialog.Builder(this).apply {
+                    setTitle(R.string.apcjsa_option_title)
+                    setMessage(R.string.apcjsa_option_message)
+                    setPositiveButton(android.R.string.yes) { _, _ ->
+                        val tags = Tags.parse(
+                            preference.getString("default_query", "") ?: ""
+                        )
+
+                        tags.add("-female:loli")
+                        tags.add("-male:shota")
+
+                        preference.edit()
+                            .putString("default_query", tags.toString())
+                            .putBoolean("cache_disable", true)
+                            .putBoolean("apcjsa_option", true)
+                            .apply()
+                    }
+                    setNegativeButton(android.R.string.no) { _, _ -> }
+                }.show()
+
+                preference.edit().putBoolean("apcjsa_option", true).apply()
             }
         }
 
@@ -421,6 +443,7 @@ class MainActivity : AppCompatActivity() {
         loadBlocks()
     }
 
+    @SuppressLint("ClickableViewAccessibility")
     private fun setupRecyclerView() {
         with(main_recyclerview) {
             adapter = GalleryBlockAdapter(Glide.with(this@MainActivity), galleries).apply {
@@ -438,13 +461,16 @@ class MainActivity : AppCompatActivity() {
                 onDownloadClickedHandler = { position ->
                     val galleryID = galleries[position].id
                     val worker = DownloadWorker.getInstance(context)
-
-                    if (Cache(context).isDownloading(galleryID))     //download in progress
-                        worker.cancel(galleryID)
+                    if (PreferenceManager.getDefaultSharedPreferences(context).getBoolean("cache_disable", false))
+                        Toast.makeText(context, R.string.settings_download_when_cache_disable_warning, Toast.LENGTH_SHORT).show()
                     else {
-                        Cache(context).setDownloading(galleryID, true)
+                        if (Cache(context).isDownloading(galleryID))     //download in progress
+                            worker.cancel(galleryID)
+                        else {
+                            Cache(context).setDownloading(galleryID, true)
 
-                        worker.queue.add(galleryID)
+                            worker.queue.add(galleryID)
+                        }
                     }
 
                     closeAllItems()
@@ -742,7 +768,7 @@ class MainActivity : AppCompatActivity() {
         })
         searchInputView.imeOptions = EditorInfo.IME_FLAG_NO_EXTRACT_UI
 
-        with(main_searchview as FloatingSearchView) {
+        with(main_searchview as FloatingSearchViewDayNight) {
             val favoritesFile = File(ContextCompat.getDataDir(context), "favorites_tags.json")
             val serializer = Tag.serializer().list
 
@@ -845,14 +871,14 @@ class MainActivity : AppCompatActivity() {
                     ResourcesCompat.getDrawable(
                         resources,
                         when(item.n) {
-                            "female" -> R.drawable.ic_gender_female
-                            "male" -> R.drawable.ic_gender_male
-                            "language" -> R.drawable.ic_translate
-                            "group" -> R.drawable.ic_account_group
-                            "character" -> R.drawable.ic_account_star
-                            "series" -> R.drawable.ic_book_open
-                            "artist" -> R.drawable.ic_brush
-                            else -> R.drawable.ic_tag
+                            "female" -> R.drawable.gender_female
+                            "male" -> R.drawable.gender_male
+                            "language" -> R.drawable.translate
+                            "group" -> R.drawable.account_group
+                            "character" -> R.drawable.account_star
+                            "series" -> R.drawable.book_open
+                            "artist" -> R.drawable.brush
+                            else -> R.drawable.tag
                         },
                         null)
                 )
@@ -1058,8 +1084,8 @@ class MainActivity : AppCompatActivity() {
                 }
             } catch (e: Exception) {
 
-                if (Fabric.isInitialized() && e.message != "No result")
-                    Crashlytics.logException(e)
+                if (e.message != "No result")
+                    FirebaseCrashlytics.getInstance().recordException(e)
 
                 withContext(Dispatchers.Main) {
                     main_noresult.visibility = View.VISIBLE

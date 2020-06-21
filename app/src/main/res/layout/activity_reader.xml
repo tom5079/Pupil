@@ -76,6 +76,13 @@
             app:fab_size="mini"/>
 
         <com.github.clans.fab.FloatingActionButton
+            android:id="@+id/reader_fab_retry"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:fab_label="@string/reader_fab_retry"
+            app:fab_size="mini"/>
+
+        <com.github.clans.fab.FloatingActionButton
             android:id="@+id/reader_fab_fullscreen"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
