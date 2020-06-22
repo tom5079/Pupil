@@ -99,7 +99,7 @@ class ExampleInstrumentedTest {
         while(worker.progress.indexOfKey(galleryID) < 0 || worker.progress[galleryID] != null) {
             Log.i("PUPILD", worker.progress[galleryID]?.joinToString(" ") ?: "null")
 
-            if (worker.progress[galleryID]?.all { !it.isFinite() } == true)
+            if (worker.progress[galleryID]?.all { it.isInfinite() } == true)
                 break
         }
 
