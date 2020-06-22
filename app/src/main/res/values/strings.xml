@@ -121,7 +121,7 @@
     <string name="reader_notification_complete">Download complete</string>
     <string name="reader_notification_error">Download error</string>
 
-    <string name="reader_error_retry">Download Error occurred. Retry?</string>
+    <string name="reader_error_retry">Download Error. Retry?</string>
 
     <string name="reader_help">Help</string>
 

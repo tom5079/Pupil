@@ -264,6 +264,7 @@ class ReaderActivity : AppCompatActivity() {
 
     private fun initDownloader() {
         val worker = DownloadWorker.getInstance(this).apply {
+            cancel(galleryID)
             queue.add(galleryID)
         }
 
@@ -280,7 +281,7 @@ class ReaderActivity : AppCompatActivity() {
 
             runOnUiThread {
                 reader_download_progressbar.max = reader_recyclerview.adapter?.itemCount ?: 0
-                reader_download_progressbar.progress = worker.progress[galleryID]?.count { !it.isFinite() } ?: 0
+                reader_download_progressbar.progress = worker.progress[galleryID]?.count { it.isInfinite() } ?: 0
                 reader_progressbar.max = reader_recyclerview.adapter?.itemCount ?: 0
 
                 if (title == getString(R.string.reader_loading)) {
@@ -305,7 +306,7 @@ class ReaderActivity : AppCompatActivity() {
                     }
                 }
 
-                if (worker.progress[galleryID]?.all { !it.isFinite() } == true) {   //Download finished
+                if (worker.progress[galleryID]?.all { it.isInfinite() } == true) {   //Download finished
                     reader_download_progressbar.visibility = View.GONE
 
                     animateDownloadFAB(false)
@@ -316,7 +317,7 @@ class ReaderActivity : AppCompatActivity() {
 
     private fun initView() {
         with(reader_recyclerview) {
-            adapter = ReaderAdapter(Glide.with(this@ReaderActivity), galleryID).apply {
+            adapter = ReaderAdapter(Glide.with(this@ReaderActivity), galleryID, this@ReaderActivity).apply {
                 onItemClickListener = {
                     if (isScroll) {
                         isScroll = false
@@ -428,7 +429,7 @@ class ReaderActivity : AppCompatActivity() {
                 icon?.registerAnimationCallback(object : Animatable2Compat.AnimationCallback() {
                     override fun onAnimationEnd(drawable: Drawable?) {
                         val worker = DownloadWorker.getInstance(context)
-                        if (worker.progress[galleryID]?.all { !it.isFinite() } == true) // If download is finished, stop animating
+                        if (worker.progress[galleryID]?.all { it.isInfinite() } == true) // If download is finished, stop animating
                             post {
                                 setImageResource(R.drawable.ic_download)
                                 labelText = getString(R.string.reader_fab_download_cancel)
