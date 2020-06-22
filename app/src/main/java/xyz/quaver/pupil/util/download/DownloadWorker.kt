@@ -309,6 +309,7 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
                         }
                     } catch (e: Exception) {
                         FirebaseCrashlytics.getInstance().apply {
+                            log("FAIL ON OK ${call.request().tag()} (${e.message})")
                             setCustomKey("POS", "FAIL ON OK")
                             recordException(e)
                         }
