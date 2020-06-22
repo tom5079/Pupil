@@ -440,8 +440,10 @@ class MainActivity : AppCompatActivity() {
                     if (PreferenceManager.getDefaultSharedPreferences(context).getBoolean("cache_disable", false))
                         Toast.makeText(context, R.string.settings_download_when_cache_disable_warning, Toast.LENGTH_SHORT).show()
                     else {
-                        if (Cache(context).isDownloading(galleryID))     //download in progress
+                        if (worker.progress.indexOfKey(galleryID) >= 0 && Cache(context).isDownloading(galleryID)) {     //download in progress
+                            Cache(context).setDownloading(galleryID, false)
                             worker.cancel(galleryID)
+                        }
                         else {
                             Cache(context).setDownloading(galleryID, true)
 
