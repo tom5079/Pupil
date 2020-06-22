@@ -128,21 +128,8 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
     * SECONDARY VALUE
     *  0 <= value < 100 -> Download in progress
     *  Float.POSITIVE_INFINITY -> Download completed
-    *  Float.NaN -> Exception
     */
     val progress = SparseArray<MutableList<Float>?>()
-    /*
-    * KEY
-    *  primary galleryID
-    *  secondary index
-    * PRIMARY VALUE
-    *  MutableList -> Download in progress / Loading
-    *  null -> Gallery doesn't exist
-    * SECONDARY VALUE
-    *  Throwable -> Exception
-    *  null -> Download in progress / Loading
-    */
-    val exception = SparseArray<MutableList<Throwable?>?>()
     val notification = SparseArray<NotificationCompat.Builder>()
 
     private val loop = loop()
@@ -194,7 +181,6 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
         }
 
         progress.clear()
-        exception.clear()
         notification.clear()
         notificationManager.cancelAll()
     }
@@ -210,15 +196,11 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
         }
 
         progress.remove(galleryID)
-        exception.remove(galleryID)
         notification.remove(galleryID)
         notificationManager.cancel(galleryID)
-
-        if (progress.indexOfKey(galleryID) >= 0)
-            Cache(this@DownloadWorker).setDownloading(galleryID, false)
     }
 
-    fun isCompleted(galleryID: Int) = progress[galleryID]?.all { !it.isFinite() } == true
+    fun isCompleted(galleryID: Int) = progress[galleryID]?.all { it.isInfinite() } == true
 
     private fun queueDownload(galleryID: Int, reader: Reader, index: Int, callback: Callback) {
         val lowQuality = preferences.getBoolean("low_quality", false)
@@ -248,8 +230,6 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
         }.build()
 
         client.newCall(request).enqueue(callback)
-
-        Log.i("PUPILD", "DOWNLOADING ($galleryID, $index) from ${request.url()}")
     }
 
     private fun download(galleryID: Int) = CoroutineScope(Dispatchers.IO).launch {
@@ -258,7 +238,6 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
         //gallery doesn't exist
         if (reader == null) {
             progress.put(galleryID, null)
-            exception.put(galleryID, null)
 
             Cache(this@DownloadWorker).setDownloading(galleryID, false)
             return@launch
@@ -272,7 +251,6 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
             else
                 0F
         }.toMutableList())
-        exception.put(galleryID, reader.galleryInfo.files.map { null }.toMutableList())
 
         if (notification[galleryID] == null)
             initNotification(galleryID)
@@ -294,30 +272,21 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
         for (i in reader.galleryInfo.files.indices) {
             val callback = object : Callback {
                 override fun onFailure(call: Call, e: IOException) {
+                    if (e.message?.contains("cancel", true) != false)
+                        return
+
                     Log.i("PUPILD", "FAIL ${call.request().tag()} (${e.message})")
-                    if (e.message?.contains("cancel", true) != true)
-                        FirebaseCrashlytics.getInstance().recordException(e)
-
-                    progress[galleryID]?.set(i, Float.NaN)
-                    exception[galleryID]?.set(i, e)
-
-                    notify(galleryID)
-
-                    CoroutineScope(Dispatchers.IO).launch {
-                        if (isCompleted(galleryID)) {
-                            with(Cache(this@DownloadWorker)) {
-                                if (isDownloading(galleryID)) {
-                                    moveToDownload(galleryID)
-                                    setDownloading(galleryID, false)
-                                }
-                            }
-                        }
+                    FirebaseCrashlytics.getInstance().apply {
+                        log("FAIL ${call.request().tag()} (${e.message})")
+                        setCustomKey("POS", "FAIL")
+                        recordException(e)
                     }
+
+                    cancel(galleryID)
+                    queue.add(galleryID)
                 }
 
                 override fun onResponse(call: Call, response: Response) {
-                    Log.i("PUPILD", "OK ${call.request().tag()}")
-
                     val ext = call.request().url().encodedPath().split('.').last()
 
                     try {
@@ -338,47 +307,28 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
                                 }
                             }
                         }
-
-                        Log.i("PUPILD", "SUCCESS ${call.request().tag()}")
                     } catch (e: Exception) {
-
-                        progress[galleryID]?.set(i, Float.NaN)
-                        exception[galleryID]?.set(i, e)
-
-                        notify(galleryID)
-
-                        CoroutineScope(Dispatchers.IO).launch {
-                            if (isCompleted(galleryID)) {
-                                with(Cache(this@DownloadWorker)) {
-                                    if (isDownloading(galleryID)) {
-                                        moveToDownload(galleryID)
-                                        setDownloading(galleryID, false)
-                                    }
-                                }
-                            }
+                        FirebaseCrashlytics.getInstance().apply {
+                            setCustomKey("POS", "FAIL ON OK")
+                            recordException(e)
                         }
 
                         File(Cache(this@DownloadWorker).getCachedGallery(galleryID), "%05d.$ext".format(i)).delete()
 
-                        Log.i("PUPILD", "FAIL ON OK ${call.request().tag()} (${e.message})")
+                        cancel(galleryID)
+                        queue.add(galleryID)
                     }
                 }
             }
 
-            if (progress[galleryID]?.get(i)?.isFinite() == true) {
+            if (progress[galleryID]?.get(i)?.isFinite() == true)
                 queueDownload(galleryID, reader, i, callback)
-                Log.i("PUPILD", "$galleryID QUEUED $i")
-            } else {
-                Log.i("PUPILD", "$galleryID SKIPPED $i (${progress[galleryID]?.get(i)})")
-            }
         }
     }
 
     private fun notify(galleryID: Int) {
         val max = progress[galleryID]?.size ?: 0
-        val progress = progress[galleryID]?.count { !it.isFinite() } ?: 0
-
-        Log.i("PUPILD", "NOTIFY $galleryID ${isCompleted(galleryID)} $progress/$max")
+        val progress = progress[galleryID]?.count { it.isInfinite() } ?: 0
 
         if (isCompleted(galleryID)) {
             notification[galleryID]
@@ -433,8 +383,6 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
 
             if (Cache(this@DownloadWorker).isDownloading(galleryID))
                 notificationManager.notify(galleryID, notification[galleryID].build())
-
-            Log.i("PUPILD", "QUEUED $galleryID")
 
             worker.put(galleryID, download(galleryID))
             queue.poll()

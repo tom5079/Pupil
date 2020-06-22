@@ -21,7 +21,6 @@ package xyz.quaver.pupil.util.download
 import android.content.Context
 import android.content.ContextWrapper
 import android.util.Base64
-import android.util.Log
 import android.util.SparseArray
 import androidx.preference.PreferenceManager
 import com.google.firebase.crashlytics.FirebaseCrashlytics
@@ -69,7 +68,7 @@ class Cache(context: Context) : ContextWrapper(context) {
     // Search in this order
     // Download -> Cache
     fun getCachedGallery(galleryID: Int) = getCachedGallery(this, galleryID).also {
-        if (!it.exists() && !preference.getBoolean("cache_disable", false))
+        if (!it.exists())
             it.mkdirs()
     }
 
@@ -289,17 +288,17 @@ class Cache(context: Context) : ContextWrapper(context) {
             if (download.isParentOf(cache))
                 return@launch
 
-            Log.i("PUPILD", "MOVING ${cache.canonicalPath} --> ${download.canonicalPath}")
+            FirebaseCrashlytics.getInstance().log("MOVING ${cache.canonicalPath} --> ${download.canonicalPath}")
 
             cache.copyRecursively(download, true) { file, err ->
-                Log.i("PUPILD", "MOVING ERROR ${file.canonicalPath} ${err.message}")
+                FirebaseCrashlytics.getInstance().log("MOVING ERROR ${file.canonicalPath} ${err.message}")
                 OnErrorAction.SKIP
             }
-            Log.i("PUPILD", "MOVED ${cache.canonicalPath}")
+            FirebaseCrashlytics.getInstance().log("MOVED ${cache.canonicalPath}")
 
-            Log.i("PUPILD", "DELETING ${cache.canonicalPath}")
+            FirebaseCrashlytics.getInstance().log("DELETING ${cache.canonicalPath}")
             cache.deleteRecursively()
-            Log.i("PUPILD", "DELETED ${cache.canonicalPath}")
+            FirebaseCrashlytics.getInstance().log("DELETED ${cache.canonicalPath}")
         }
     }
 
