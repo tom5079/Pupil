@@ -26,6 +26,7 @@ import android.net.Uri
 import android.os.Bundle
 import android.text.*
 import android.text.style.AlignmentSpan
+import android.util.TypedValue
 import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.View
@@ -845,6 +846,9 @@ class MainActivity : AppCompatActivity() {
 
                 val tag = "${item.n}:${item.s.replace(Regex("\\s"), "_")}"
 
+                val color = TypedValue()
+                theme.resolveAttribute(R.attr.colorControlNormal, color, true)
+
                 leftIcon.setImageDrawable(
                     ResourcesCompat.getDrawable(
                         resources,
@@ -858,7 +862,7 @@ class MainActivity : AppCompatActivity() {
                             "artist" -> R.drawable.brush
                             else -> R.drawable.tag
                         },
-                        null)
+                        context.theme)
                 )
 
                 with(suggestionView.findViewById<ImageView>(R.id.right_icon)) {
