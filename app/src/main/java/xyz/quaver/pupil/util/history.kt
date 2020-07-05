@@ -67,6 +67,20 @@ class Histories(private val file: File) : ArrayList<Int>() {
         return true
     }
 
+    override fun addAll(elements: Collection<Int>): Boolean {
+        load()
+
+        for (e in elements) {
+            if (contains(e))
+                super.remove(e)
+            super.add(0, e)
+        }
+
+        save()
+
+        return true
+    }
+
     override fun remove(element: Int): Boolean {
         load()
         val retval = super.remove(element)
