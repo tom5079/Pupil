@@ -41,7 +41,7 @@ class Histories(private val file: File) : ArrayList<Int>() {
     fun load() : Histories {
         return apply {
             super.clear()
-            addAll(
+            super.addAll(
                 json.parse(
                     serializer,
                     file.bufferedReader().use { it.readText() }
