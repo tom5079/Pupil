@@ -19,6 +19,7 @@
 
 <ImageView
     xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:src="@drawable/side_nav_bar"
@@ -27,4 +28,5 @@
     android:paddingLeft="@dimen/activity_horizontal_margin"
     android:paddingRight="@dimen/activity_horizontal_margin"
     android:paddingTop="@dimen/activity_vertical_margin"
-    android:gravity="bottom"/>
+    android:gravity="bottom"
+    tools:ignore="ContentDescription" />
