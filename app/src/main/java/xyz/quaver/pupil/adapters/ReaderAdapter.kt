@@ -18,6 +18,7 @@
 
 package xyz.quaver.pupil.adapters
 
+import android.app.Activity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -28,9 +29,6 @@ import com.bumptech.glide.RequestManager
 import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.load.model.GlideUrl
 import com.bumptech.glide.load.model.LazyHeaders
-import com.google.android.material.snackbar.Snackbar
-import com.google.firebase.crashlytics.FirebaseCrashlytics
-import kotlinx.android.synthetic.main.activity_reader.view.*
 import kotlinx.android.synthetic.main.item_reader.view.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -50,7 +48,8 @@ import kotlin.concurrent.schedule
 import kotlin.math.roundToInt
 
 class ReaderAdapter(private val glide: RequestManager,
-                    private val galleryID: Int) : RecyclerView.Adapter<ReaderAdapter.ViewHolder>() {
+                    private val galleryID: Int,
+                    private val activity: Activity) : RecyclerView.Adapter<ReaderAdapter.ViewHolder>() {
 
     var reader: Reader? = null
     val timer = Timer()
@@ -149,33 +148,13 @@ class ReaderAdapter(private val glide: RequestManager,
 
                 glide.clear(holder.view.image)
 
-                if (progress?.isNaN() == true) {
-                    FirebaseCrashlytics.getInstance().recordException(
-                        DownloadWorker.getInstance(holder.view.context).exception[galleryID]?.get(position)!!
-                    )
+                holder.view.reader_item_progressbar.progress =
+                    if (progress?.isInfinite() == true)
+                        100
+                    else
+                        progress?.roundToInt() ?: 0
 
-                    glide
-                        .load(R.drawable.image_broken_variant)
-                        .into(holder.view.image)
-
-                    Snackbar.make(holder.view.reader_layout, R.string.reader_error_retry, Snackbar.LENGTH_SHORT).apply {
-                        setAction(android.R.string.no) { }
-                        setAction(android.R.string.yes) {
-                            downloadWorker!!.cancel(galleryID)
-                            downloadWorker!!.queue.add(galleryID)
-                        }
-                    }.show()
-
-                    return
-                } else {
-                    holder.view.reader_item_progressbar.progress =
-                        if (progress?.isInfinite() == true)
-                            100
-                        else
-                            progress?.roundToInt() ?: 0
-
-                    holder.view.image.setImageDrawable(null)
-                }
+                holder.view.image.setImageDrawable(null)
 
                 timer.schedule(1000) {
                     CoroutineScope(Dispatchers.Main).launch {

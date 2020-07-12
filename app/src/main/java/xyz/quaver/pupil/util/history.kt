@@ -41,7 +41,7 @@ class Histories(private val file: File) : ArrayList<Int>() {
     fun load() : Histories {
         return apply {
             super.clear()
-            addAll(
+            super.addAll(
                 json.parse(
                     serializer,
                     file.bufferedReader().use { it.readText() }
@@ -61,6 +61,20 @@ class Histories(private val file: File) : ArrayList<Int>() {
             super.remove(element)
 
         super.add(0, element)
+
+        save()
+
+        return true
+    }
+
+    override fun addAll(elements: Collection<Int>): Boolean {
+        load()
+
+        for (e in elements) {
+            if (contains(e))
+                super.remove(e)
+            super.add(0, e)
+        }
 
         save()
 
