@@ -26,14 +26,15 @@ import android.view.LayoutInflater
 import android.view.View
 import android.widget.LinearLayout.LayoutParams
 import androidx.core.content.ContextCompat
-import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import androidx.viewpager2.widget.ViewPager2
 import com.bumptech.glide.RequestManager
 import com.google.android.material.chip.Chip
 import com.google.android.material.snackbar.Snackbar
 import kotlinx.android.synthetic.main.dialog_gallery.*
-import kotlinx.android.synthetic.main.gallery_details.view.*
+import kotlinx.android.synthetic.main.dialog_gallery_details.view.*
+import kotlinx.android.synthetic.main.dialog_gallery_dotindicator.view.*
 import kotlinx.android.synthetic.main.item_gallery_details.view.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -46,7 +47,7 @@ import xyz.quaver.pupil.BuildConfig
 import xyz.quaver.pupil.Pupil
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.adapters.GalleryBlockAdapter
-import xyz.quaver.pupil.adapters.ThumbnailAdapter
+import xyz.quaver.pupil.adapters.ThumbnailPageAdapter
 import xyz.quaver.pupil.types.Tag
 import xyz.quaver.pupil.ui.ReaderActivity
 import xyz.quaver.pupil.util.ItemClickSupport
@@ -130,7 +131,7 @@ class GalleryDialog(context: Context, private val glide: RequestManager, private
     private fun addDetails(gallery: Gallery) {
         val inflater = LayoutInflater.from(context)
         
-        inflater.inflate(R.layout.gallery_details, gallery_contents, false).apply {
+        inflater.inflate(R.layout.dialog_gallery_details, gallery_contents, false).apply {
             gallery_details.setText(R.string.gallery_details)
 
             listOf(
@@ -206,15 +207,21 @@ class GalleryDialog(context: Context, private val glide: RequestManager, private
     private fun addThumbnails(gallery: Gallery) {
         val inflater = LayoutInflater.from(context)
 
-        inflater.inflate(R.layout.gallery_details, gallery_contents, false).apply {
+        inflater.inflate(R.layout.dialog_gallery_details, gallery_contents, false).apply {
             gallery_details.setText(R.string.gallery_thumbnails)
 
-            RecyclerView(context).apply {
-                layoutManager = GridLayoutManager(context, 3)
-                adapter = ThumbnailAdapter(glide, gallery.thumbnails)
-            }.let {
-                gallery_details_contents.addView(it, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT))
+            val pager = ViewPager2(context).apply {
+                adapter = ThumbnailPageAdapter(glide, gallery.thumbnails)
             }
+
+            gallery_details_contents.addView(
+                pager,
+                LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT)
+            )
+
+            LayoutInflater.from(context).inflate(R.layout.dialog_gallery_dotindicator, gallery_details_contents)
+
+            gallery_dotindicator.setViewPager2(pager)
         }.let {
             gallery_contents.addView(it)
         }
@@ -245,7 +252,7 @@ class GalleryDialog(context: Context, private val glide: RequestManager, private
             }
         }
 
-        inflater.inflate(R.layout.gallery_details, gallery_contents, false).apply {
+        inflater.inflate(R.layout.dialog_gallery_details, gallery_contents, false).apply {
             gallery_details.setText(R.string.gallery_related)
 
             RecyclerView(context).apply {
