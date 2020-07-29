@@ -22,9 +22,10 @@ import android.view.ViewGroup
 import android.widget.ImageView
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.RequestManager
+import com.bumptech.glide.load.engine.DiskCacheStrategy
 import xyz.quaver.pupil.BuildConfig
 
-class ThumbnailAdapter(private val glide: RequestManager, private val thumbnails: List<String>) : RecyclerView.Adapter<ThumbnailAdapter.ViewHolder>() {
+class ThumbnailAdapter(private val glide: RequestManager, var thumbnails: List<String>) : RecyclerView.Adapter<ThumbnailAdapter.ViewHolder>() {
 
     class ViewHolder(val view: ImageView) : RecyclerView.ViewHolder(view)
 
@@ -35,6 +36,7 @@ class ThumbnailAdapter(private val glide: RequestManager, private val thumbnails
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         glide
             .load(thumbnails[position])
+            .diskCacheStrategy(DiskCacheStrategy.NONE)
             .apply {
                 if (BuildConfig.CENSOR)
                     override(5, 8)
