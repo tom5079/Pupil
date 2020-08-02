@@ -130,7 +130,7 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
     *  Float.POSITIVE_INFINITY -> Download completed
     */
     val progress = SparseArray<MutableList<Float>?>()
-    val notification = SparseArray<NotificationCompat.Builder>()
+    val notification = SparseArray<NotificationCompat.Builder?>()
 
     private val loop = loop()
     private val worker = SparseArray<Job?>()
@@ -255,7 +255,7 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
         if (notification[galleryID] == null)
             initNotification(galleryID)
 
-        notification[galleryID].setContentTitle(reader.galleryInfo.title)
+        notification[galleryID]?.setContentTitle(reader.galleryInfo.title)
         notify(galleryID)
 
         if (isCompleted(galleryID)) {
@@ -345,7 +345,7 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
                 ?.setContentText("$progress/$max")
 
         if (Cache(this).isDownloading(galleryID) && notification[galleryID] != null)
-            notificationManager.notify(galleryID, notification[galleryID].build())
+            notification[galleryID]?.let { notificationManager.notify(galleryID, it.build()) }
         else
             notificationManager.cancel(galleryID)
     }
@@ -383,7 +383,7 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
                 initNotification(galleryID)
 
             if (Cache(this@DownloadWorker).isDownloading(galleryID))
-                notificationManager.notify(galleryID, notification[galleryID].build())
+                notification[galleryID]?.let { notificationManager.notify(galleryID, it.build()) }
 
             worker.put(galleryID, download(galleryID))
             queue.poll()
