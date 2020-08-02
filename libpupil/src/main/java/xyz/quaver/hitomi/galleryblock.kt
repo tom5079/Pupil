@@ -83,7 +83,7 @@ fun getGalleryBlock(galleryID: Int) : GalleryBlock? {
 
     val galleryUrl = doc.selectFirst(".lillie").attr("href")
 
-    val thumbnails = doc.select("img").map { protocol + it.attr("data-src") }
+    val thumbnails = doc.select(".dj-img-cont img").map { protocol + it.attr("src") }
 
     val title = doc.selectFirst("h1.lillie > a").text()
     val artists = doc.select("div.artist-list a").map{ it.text() }
