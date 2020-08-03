@@ -377,13 +377,24 @@ class MainActivity : AppCompatActivity() {
                     if (it?.isEmpty() == false) {
                         val galleryID = it.random()
 
-                        val intent = Intent(this@MainActivity, ReaderActivity::class.java).apply {
-                            putExtra("galleryID", galleryID)
-                        }
+                        GalleryDialog(
+                            this@MainActivity,
+                            Glide.with(this@MainActivity),
+                            galleryID
+                        ).apply {
+                            onChipClickedHandler.add {
+                                runOnUiThread {
+                                    query = it.toQuery()
+                                    currentPage = 0
 
-                        startActivity(intent)
-
-                        histories.add(galleryID)
+                                    cancelFetch()
+                                    clearGalleries()
+                                    fetchGalleries(query, sortMode)
+                                    loadBlocks()
+                                }
+                                dismiss()
+                            }
+                        }.show()
                     }
                 }
             }
