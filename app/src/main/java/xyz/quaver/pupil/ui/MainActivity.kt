@@ -98,6 +98,7 @@ class MainActivity : AppCompatActivity() {
                 setText(query, TextView.BufferType.EDITABLE)
         }
     }
+    private var queryStack = mutableListOf<String>()
 
     private var mode = Mode.SEARCH
     private var sortMode = SortMode.NEWEST
@@ -159,11 +160,12 @@ class MainActivity : AppCompatActivity() {
         initView()
     }
 
+    @OptIn(ExperimentalStdlibApi::class)
     override fun onBackPressed() {
         when {
             main_drawer_layout.isDrawerOpen(GravityCompat.START) -> main_drawer_layout.closeDrawer(GravityCompat.START)
-            query.isNotEmpty() -> runOnUiThread {
-                query = ""
+            queryStack.removeLastOrNull() != null && queryStack.isNotEmpty() -> runOnUiThread {
+                query = queryStack.last()
 
                 cancelFetch()
                 clearGalleries()
@@ -278,6 +280,7 @@ class MainActivity : AppCompatActivity() {
                         clearGalleries()
                         currentPage = 0
                         query = ""
+                        queryStack.clear()
                         mode = Mode.SEARCH
                         fetchGalleries(query, sortMode)
                         loadBlocks()
@@ -287,6 +290,7 @@ class MainActivity : AppCompatActivity() {
                         clearGalleries()
                         currentPage = 0
                         query = ""
+                        queryStack.clear()
                         mode = Mode.HISTORY
                         fetchGalleries(query, sortMode)
                         loadBlocks()
@@ -296,6 +300,7 @@ class MainActivity : AppCompatActivity() {
                         clearGalleries()
                         currentPage = 0
                         query = ""
+                        queryStack.clear()
                         mode = Mode.DOWNLOAD
                         fetchGalleries(query, sortMode)
                         loadBlocks()
@@ -305,6 +310,7 @@ class MainActivity : AppCompatActivity() {
                         clearGalleries()
                         currentPage = 0
                         query = ""
+                        queryStack.clear()
                         mode = Mode.FAVORITE
                         fetchGalleries(query, sortMode)
                         loadBlocks()
@@ -377,13 +383,24 @@ class MainActivity : AppCompatActivity() {
                     if (it?.isEmpty() == false) {
                         val galleryID = it.random()
 
-                        val intent = Intent(this@MainActivity, ReaderActivity::class.java).apply {
-                            putExtra("galleryID", galleryID)
-                        }
+                        GalleryDialog(
+                            this@MainActivity,
+                            Glide.with(this@MainActivity),
+                            galleryID
+                        ).apply {
+                            onChipClickedHandler.add {
+                                runOnUiThread {
+                                    query = it.toQuery()
+                                    currentPage = 0
 
-                        startActivity(intent)
-
-                        histories.add(galleryID)
+                                    cancelFetch()
+                                    clearGalleries()
+                                    fetchGalleries(query, sortMode)
+                                    loadBlocks()
+                                }
+                                dismiss()
+                            }
+                        }.show()
                     }
                 }
             }
@@ -978,6 +995,11 @@ class MainActivity : AppCompatActivity() {
     private fun fetchGalleries(query: String, sortMode: SortMode) {
         val preference = PreferenceManager.getDefaultSharedPreferences(this)
         val defaultQuery = preference.getString("default_query", "")!!
+
+        if (query != queryStack.lastOrNull()) {
+            queryStack.remove(query)
+            queryStack.add(query)
+        }
 
         galleryIDs = null
 
