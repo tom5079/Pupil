@@ -33,6 +33,9 @@ import androidx.preference.PreferenceCategory
 import androidx.preference.PreferenceFragmentCompat
 import androidx.preference.PreferenceManager
 import com.google.android.material.snackbar.Snackbar
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import net.rdrei.android.dirchooser.DirectoryChooserActivity
 import net.rdrei.android.dirchooser.DirectoryChooserConfig
 import xyz.quaver.pupil.Pupil
@@ -44,7 +47,9 @@ import xyz.quaver.pupil.ui.dialog.DownloadLocationDialog
 import xyz.quaver.pupil.ui.dialog.MirrorDialog
 import xyz.quaver.pupil.ui.dialog.ProxyDialog
 import xyz.quaver.pupil.util.*
+import java.io.BufferedReader
 import java.io.File
+import java.io.InputStreamReader
 
 
 class SettingsFragment :
@@ -74,9 +79,13 @@ class SettingsFragment :
     }
 
     private fun getDirSize(dir: File) : String {
-        val size = dir.walk().map { it.length() }.sum()
-
-        return getString(R.string.settings_clear_summary, byteToString(size))
+        return getString(R.string.settings_storage_usage,
+            Runtime.getRuntime().exec("du -hs " + dir.absolutePath).let {
+                BufferedReader(InputStreamReader(it.inputStream)).use { reader ->
+                    reader.readLine().split('\t').firstOrNull() ?: "0"
+                }
+            }
+        )
     }
 
     override fun onPreferenceClick(preference: Preference?): Boolean {
@@ -97,7 +106,13 @@ class SettingsFragment :
                             if (dir.exists())
                                 dir.deleteRecursively()
 
-                            summary = getDirSize(dir)
+                            CoroutineScope(Dispatchers.IO).launch {
+                                summary = getString(R.string.settings_storage_usage_loading)
+
+                                launch(Dispatchers.Main) {
+                                    this@with.summary = getDirSize(dir)
+                                }
+                            }
                         }
                         setNegativeButton(android.R.string.no) { _, _ -> }
                     }.show()
@@ -112,7 +127,13 @@ class SettingsFragment :
                             if (dir.exists())
                                 dir.deleteRecursively()
 
-                            summary = getDirSize(dir)
+                            CoroutineScope(Dispatchers.IO).launch {
+                                summary = getString(R.string.settings_storage_usage_loading)
+
+                                launch(Dispatchers.Main) {
+                                    this@with.summary = getDirSize(dir)
+                                }
+                            }
                         }
                         setNegativeButton(android.R.string.no) { _, _ -> }
                     }.show()
@@ -276,13 +297,27 @@ class SettingsFragment :
                         }
                         "delete_cache" -> {
                             val dir = File(requireContext().cacheDir, "imageCache")
-                            summary = getDirSize(dir)
+
+                            CoroutineScope(Dispatchers.IO).launch {
+                                summary = getString(R.string.settings_storage_usage_loading)
+
+                                launch(Dispatchers.Main) {
+                                    this@with.summary = getDirSize(dir)
+                                }
+                            }
 
                             onPreferenceClickListener = this@SettingsFragment
                         }
                         "delete_downloads" -> {
                             val dir = getDownloadDirectory(requireContext())
-                            summary = getDirSize(dir)
+
+                            CoroutineScope(Dispatchers.IO).launch {
+                                summary = getString(R.string.settings_storage_usage_loading)
+
+                                launch(Dispatchers.Main) {
+                                    this@with.summary = getDirSize(dir)
+                                }
+                            }
 
                             onPreferenceClickListener = this@SettingsFragment
                         }

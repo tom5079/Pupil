@@ -142,9 +142,10 @@
     <!-- SETTINGS/STORAGE -->
 
     <string name="settings_storage">Storage</string>
+    <string name="settings_storage_usage">Currently using %s</string>
+    <string name="settings_storage_usage_loading">Calculating storage usage…</string>
     <string name="settings_clear_cache">Clear cache</string>
     <string name="settings_clear_cache_alert_message">Deleting cache can affect image loading speed. Do you want to continue?</string>
-    <string name="settings_clear_summary">Currently using %s</string>
     <string name="settings_clear_downloads">Clear downloads</string>
     <string name="settings_clear_downloads_alert_message">Delete all downloaded galleries.\nDo you want to continue?</string>
     <string name="settings_clear_history">Clear history</string>
