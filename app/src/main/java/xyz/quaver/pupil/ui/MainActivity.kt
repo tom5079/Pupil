@@ -42,7 +42,6 @@ import androidx.core.view.GravityCompat
 import androidx.preference.PreferenceManager
 import androidx.vectordrawable.graphics.drawable.AnimatedVectorDrawableCompat
 import com.arlib.floatingsearchview.FloatingSearchView
-import com.arlib.floatingsearchview.FloatingSearchViewDayNight
 import com.arlib.floatingsearchview.suggestions.model.SearchSuggestion
 import com.arlib.floatingsearchview.util.view.SearchInputView
 import com.bumptech.glide.Glide
@@ -98,6 +97,7 @@ class MainActivity : AppCompatActivity() {
                 setText(query, TextView.BufferType.EDITABLE)
         }
     }
+    private var queryStack = mutableListOf<String>()
 
     private var mode = Mode.SEARCH
     private var sortMode = SortMode.NEWEST
@@ -159,11 +159,12 @@ class MainActivity : AppCompatActivity() {
         initView()
     }
 
+    @OptIn(ExperimentalStdlibApi::class)
     override fun onBackPressed() {
         when {
             main_drawer_layout.isDrawerOpen(GravityCompat.START) -> main_drawer_layout.closeDrawer(GravityCompat.START)
-            query.isNotEmpty() -> runOnUiThread {
-                query = ""
+            queryStack.removeLastOrNull() != null && queryStack.isNotEmpty() -> runOnUiThread {
+                query = queryStack.last()
 
                 cancelFetch()
                 clearGalleries()
@@ -278,6 +279,7 @@ class MainActivity : AppCompatActivity() {
                         clearGalleries()
                         currentPage = 0
                         query = ""
+                        queryStack.clear()
                         mode = Mode.SEARCH
                         fetchGalleries(query, sortMode)
                         loadBlocks()
@@ -287,6 +289,7 @@ class MainActivity : AppCompatActivity() {
                         clearGalleries()
                         currentPage = 0
                         query = ""
+                        queryStack.clear()
                         mode = Mode.HISTORY
                         fetchGalleries(query, sortMode)
                         loadBlocks()
@@ -296,6 +299,7 @@ class MainActivity : AppCompatActivity() {
                         clearGalleries()
                         currentPage = 0
                         query = ""
+                        queryStack.clear()
                         mode = Mode.DOWNLOAD
                         fetchGalleries(query, sortMode)
                         loadBlocks()
@@ -305,6 +309,7 @@ class MainActivity : AppCompatActivity() {
                         clearGalleries()
                         currentPage = 0
                         query = ""
+                        queryStack.clear()
                         mode = Mode.FAVORITE
                         fetchGalleries(query, sortMode)
                         loadBlocks()
@@ -989,6 +994,11 @@ class MainActivity : AppCompatActivity() {
     private fun fetchGalleries(query: String, sortMode: SortMode) {
         val preference = PreferenceManager.getDefaultSharedPreferences(this)
         val defaultQuery = preference.getString("default_query", "")!!
+
+        if (query != queryStack.lastOrNull()) {
+            queryStack.remove(query)
+            queryStack.add(query)
+        }
 
         galleryIDs = null
 
