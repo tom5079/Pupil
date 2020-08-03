@@ -21,7 +21,6 @@
 package xyz.quaver.pupil
 
 import android.util.Log
-import androidx.core.content.ContextCompat
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.ActivityTestRule
@@ -36,6 +35,8 @@ import xyz.quaver.hiyobi.user_agent
 import xyz.quaver.pupil.ui.LockActivity
 import xyz.quaver.pupil.util.download.Cache
 import xyz.quaver.pupil.util.download.DownloadWorker
+import xyz.quaver.pupil.util.getDownloadDirectory
+import java.io.InputStreamReader
 import java.net.URL
 import javax.net.ssl.HttpsURLConnection
 
@@ -58,8 +59,10 @@ class ExampleInstrumentedTest {
         val activityTestRule = ActivityTestRule(LockActivity::class.java)
         val appContext = InstrumentationRegistry.getInstrumentation().targetContext
 
-        ContextCompat.getExternalFilesDirs(appContext, null).forEachIndexed { index, file ->
-            Log.i("PUPILD", "$index: ${file?.absolutePath}")
+        Runtime.getRuntime().exec("du -hs " + getDownloadDirectory(appContext)).let {
+            InputStreamReader(it.inputStream).readLines().forEach { res ->
+                Log.i("PUPILD", res)
+            }
         }
     }
 
