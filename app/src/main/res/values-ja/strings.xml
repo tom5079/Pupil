@@ -9,7 +9,8 @@
     <string name="search_hint_with_page">ギャラリー検索</string>
     <string name="settings_clear_cache">キャッシュクリア</string>
     <string name="settings_clear_cache_alert_message">キャッシュをクリアするとイメージのロード速度に影響を与えます。実行しますか？</string>
-    <string name="settings_clear_summary">サイズ: %s</string>
+    <string name="settings_storage_usage">%s使用中</string>
+    <string name="settings_storage_usage_loading">ストレージ使用量読み込み中…</string>
     <string name="settings_default_query">デフォルトキーワード</string>
     <string name="settings_galleries_per_page">一回にロードするギャラリー数</string>
     <string name="settings_search_title">検索設定</string>
