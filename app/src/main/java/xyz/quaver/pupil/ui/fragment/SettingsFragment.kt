@@ -82,7 +82,7 @@ class SettingsFragment :
         return getString(R.string.settings_storage_usage,
             Runtime.getRuntime().exec("du -hs " + dir.absolutePath).let {
                 BufferedReader(InputStreamReader(it.inputStream)).use { reader ->
-                    reader.readLine().split('\t').firstOrNull() ?: "0"
+                    reader.readLine()?.split('\t')?.firstOrNull() ?: "0"
                 }
             }
         )
@@ -106,11 +106,13 @@ class SettingsFragment :
                             if (dir.exists())
                                 dir.deleteRecursively()
 
-                            CoroutineScope(Dispatchers.IO).launch {
-                                summary = getString(R.string.settings_storage_usage_loading)
+                            summary = getString(R.string.settings_storage_usage_loading)
 
-                                launch(Dispatchers.Main) {
-                                    this@with.summary = getDirSize(dir)
+                            CoroutineScope(Dispatchers.IO).launch {
+                                getDirSize(dir).let {
+                                    launch(Dispatchers.Main) {
+                                        this@with.summary = getDirSize(dir)
+                                    }
                                 }
                             }
                         }
@@ -127,11 +129,13 @@ class SettingsFragment :
                             if (dir.exists())
                                 dir.deleteRecursively()
 
-                            CoroutineScope(Dispatchers.IO).launch {
-                                summary = getString(R.string.settings_storage_usage_loading)
+                            summary = getString(R.string.settings_storage_usage_loading)
 
-                                launch(Dispatchers.Main) {
-                                    this@with.summary = getDirSize(dir)
+                            CoroutineScope(Dispatchers.IO).launch {
+                                getDirSize(dir).let {
+                                    launch(Dispatchers.Main) {
+                                        this@with.summary = getDirSize(dir)
+                                    }
                                 }
                             }
                         }
