@@ -111,7 +111,7 @@ class SettingsFragment :
                             CoroutineScope(Dispatchers.IO).launch {
                                 getDirSize(dir).let {
                                     launch(Dispatchers.Main) {
-                                        this@with.summary = getDirSize(dir)
+                                        this@with.summary = it
                                     }
                                 }
                             }
@@ -134,7 +134,7 @@ class SettingsFragment :
                             CoroutineScope(Dispatchers.IO).launch {
                                 getDirSize(dir).let {
                                     launch(Dispatchers.Main) {
-                                        this@with.summary = getDirSize(dir)
+                                        this@with.summary = it
                                     }
                                 }
                             }
@@ -302,11 +302,12 @@ class SettingsFragment :
                         "delete_cache" -> {
                             val dir = File(requireContext().cacheDir, "imageCache")
 
+                            summary = getString(R.string.settings_storage_usage_loading)
                             CoroutineScope(Dispatchers.IO).launch {
-                                summary = getString(R.string.settings_storage_usage_loading)
-
-                                launch(Dispatchers.Main) {
-                                    this@with.summary = getDirSize(dir)
+                                getDirSize(dir).let {
+                                    launch(Dispatchers.Main) {
+                                        this@with.summary = it
+                                    }
                                 }
                             }
 
@@ -315,11 +316,12 @@ class SettingsFragment :
                         "delete_downloads" -> {
                             val dir = getDownloadDirectory(requireContext())
 
+                            summary = getString(R.string.settings_storage_usage_loading)
                             CoroutineScope(Dispatchers.IO).launch {
-                                summary = getString(R.string.settings_storage_usage_loading)
-
-                                launch(Dispatchers.Main) {
-                                    this@with.summary = getDirSize(dir)
+                                getDirSize(dir).let {
+                                    launch(Dispatchers.Main) {
+                                        this@with.summary = it
+                                    }
                                 }
                             }
 
