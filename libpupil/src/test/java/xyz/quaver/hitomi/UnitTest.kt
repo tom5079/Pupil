@@ -81,6 +81,13 @@ class UnitTest {
     }
 
     @Test
+    fun test_getImages() {
+        val reader = getReader(1702206)
+
+        print(urlFromUrlFromHash(1702206, reader.galleryInfo.files.first(), "webp"))
+    }
+
+    @Test
     fun test_hiyobi() {
         val reader = xyz.quaver.hiyobi.getReader(1664762)
 

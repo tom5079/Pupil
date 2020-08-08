@@ -51,6 +51,7 @@ import xyz.quaver.pupil.util.download.Cache
 import xyz.quaver.pupil.util.download.DownloadWorker
 import java.util.*
 import kotlin.concurrent.schedule
+import kotlin.concurrent.timer
 
 class ReaderActivity : AppCompatActivity() {
 
@@ -71,6 +72,7 @@ class ReaderActivity : AppCompatActivity() {
     }
 
     private val timer = Timer()
+    private var autoTimer: Timer? = null
 
     private val snapHelper = PagerSnapHelper()
 
@@ -376,6 +378,30 @@ class ReaderActivity : AppCompatActivity() {
                 DownloadWorker.getInstance(context).let {
                     it.cancel(galleryID)
                     it.queue.add(galleryID)
+                }
+            }
+        }
+
+        with(reader_fab_auto) {
+            setImageResource(R.drawable.clock_start)
+            setOnClickListener {
+                if (autoTimer == null) {
+                    autoTimer = timer(initialDelay = 10000L, period = 10000L) {
+                        CoroutineScope(Dispatchers.Main).launch {
+                            with(this@ReaderActivity.reader_recyclerview) {
+                                val lastItem =
+                                    (layoutManager as LinearLayoutManager).findLastCompletelyVisibleItemPosition()
+
+                                if (lastItem < adapter!!.itemCount - 1)
+                                    (layoutManager as LinearLayoutManager).scrollToPosition(lastItem + 1)
+                            }
+                        }
+                    }
+                    setImageResource(R.drawable.clock_end)
+                } else {
+                    autoTimer?.cancel()
+                    autoTimer = null
+                    setImageResource(R.drawable.clock_start)
                 }
             }
         }
