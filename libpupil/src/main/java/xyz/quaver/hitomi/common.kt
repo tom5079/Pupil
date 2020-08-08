@@ -58,14 +58,16 @@ fun subdomainFromURL(url: String, base: String? = null) : String {
     val r = Regex("""/[0-9a-f]/([0-9a-f]{2})/""")
     val m = r.find(url) ?: return retval
 
-    var g = m.groupValues[1].toIntOrNull(b) ?: return retval
+    var g = m.groupValues[1].toIntOrNull(b)
 
-    when {
-        g < 0x30 -> numberOfFrontends = 2
-        g < 0x09 -> g = 1
+    if (g != null) {
+        if (g < 0x30)
+            numberOfFrontends = 2
+        if (g < 0x09)
+            g = 1
+
+        retval = subdomainFromGalleryID(g, numberOfFrontends) + retval
     }
-
-    retval = subdomainFromGalleryID(g, numberOfFrontends) + retval
 
     return retval
 }
