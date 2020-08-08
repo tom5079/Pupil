@@ -19,6 +19,9 @@
 package xyz.quaver.pupil.adapters
 
 import android.content.Context
+import android.graphics.Color
+import android.graphics.PorterDuff
+import android.graphics.PorterDuffColorFilter
 import android.graphics.drawable.Drawable
 import android.util.Base64
 import android.util.SparseBooleanArray
@@ -221,12 +224,16 @@ class GalleryBlockAdapter(private val glide: RequestManager, private val galleri
                             "male" -> {
                                 setChipBackgroundColorResource(R.color.material_blue_700)
                                 setTextColor(ContextCompat.getColor(context, android.R.color.white))
-                                ContextCompat.getDrawable(context, R.drawable.gender_male)
+                                ContextCompat.getDrawable(context, R.drawable.gender_male)?.apply {
+                                    colorFilter = PorterDuffColorFilter(Color.WHITE, PorterDuff.Mode.SRC_ATOP)
+                                }
                             }
                             "female" -> {
                                 setChipBackgroundColorResource(R.color.material_pink_600)
                                 setTextColor(ContextCompat.getColor(context, android.R.color.white))
-                                ContextCompat.getDrawable(context, R.drawable.gender_female)
+                                ContextCompat.getDrawable(context, R.drawable.gender_female)?.apply {
+                                    colorFilter = PorterDuffColorFilter(Color.WHITE, PorterDuff.Mode.SRC_ATOP)
+                                }
                             }
                             else -> null
                         }

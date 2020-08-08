@@ -151,4 +151,5 @@
     <string name="settings_user_id_toast">ユーザーIDをクリップボードにコピーしました</string>
     <string name="reader_error_retry">ダウンロードエラーが発生しました。リトライしますか？</string>
     <string name="reader_fab_retry">リトライ</string>
+    <string name="reader_fab_auto">自動スクロール</string>
 </resources>

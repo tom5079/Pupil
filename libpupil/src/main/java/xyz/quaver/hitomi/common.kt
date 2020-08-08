@@ -33,12 +33,11 @@ fun getGalleryInfo(galleryID: Int) =
 
 //common.js
 var adapose = false
-const val numberOfFrontends = 3
 const val domain = "ltn.hitomi.la"
 const val galleryblockdir = "galleryblock"
 const val nozomiextension = ".nozomi"
 
-fun subdomainFromGalleryID(g: Int) : String {
+fun subdomainFromGalleryID(g: Int, numberOfFrontends: Int) : String {
     if (adapose)
         return "0"
 
@@ -53,13 +52,20 @@ fun subdomainFromURL(url: String, base: String? = null) : String {
     if (!base.isNullOrBlank())
         retval = base
 
+    var numberOfFrontends = 3
     val b = 16
+
     val r = Regex("""/[0-9a-f]/([0-9a-f]{2})/""")
     val m = r.find(url) ?: return retval
 
-    val g = m.groupValues[1].toIntOrNull(b) ?: return retval
+    var g = m.groupValues[1].toIntOrNull(b) ?: return retval
 
-    retval = subdomainFromGalleryID(g) + retval
+    when {
+        g < 0x30 -> numberOfFrontends = 2
+        g < 0x09 -> g = 1
+    }
+
+    retval = subdomainFromGalleryID(g, numberOfFrontends) + retval
 
     return retval
 }

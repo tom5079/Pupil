@@ -83,6 +83,13 @@
             app:fab_size="mini"/>
 
         <com.github.clans.fab.FloatingActionButton
+            android:id="@+id/reader_fab_auto"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:fab_label="@string/reader_fab_auto"
+            app:fab_size="mini"/>
+
+        <com.github.clans.fab.FloatingActionButton
             android:id="@+id/reader_fab_fullscreen"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
