@@ -79,16 +79,13 @@ class SettingsFragment :
     }
 
     private fun getDirSize(dir: File) : String {
-        return if (activity != null)
-            getString(R.string.settings_storage_usage,
-                Runtime.getRuntime().exec("du -hs " + dir.absolutePath).let {
-                    BufferedReader(InputStreamReader(it.inputStream)).use { reader ->
-                        reader.readLine()?.split('\t')?.firstOrNull() ?: "0"
-                    }
+        return context?.getString(R.string.settings_storage_usage,
+            Runtime.getRuntime().exec("du -hs " + dir.absolutePath).let {
+                BufferedReader(InputStreamReader(it.inputStream)).use { reader ->
+                    reader.readLine()?.split('\t')?.firstOrNull() ?: "0"
                 }
-            )
-        else
-            ""
+            }
+        ) ?: ""
     }
 
     override fun onPreferenceClick(preference: Preference?): Boolean {
