@@ -30,10 +30,8 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.preference.PreferenceManager
 import kotlinx.coroutines.*
-import kotlinx.serialization.json.JsonArray
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.boolean
-import kotlinx.serialization.json.content
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.json.*
 import okhttp3.*
 import ru.noties.markwon.Markwon
 import xyz.quaver.hitomi.GalleryBlock
@@ -55,7 +53,7 @@ import java.util.concurrent.TimeUnit
 fun getReleases(url: String) : JsonArray {
     return try {
         URL(url).readText().let {
-            json.parse(JsonArray.serializer(), it)
+            Json.decodeFromString(it)
         }
     } catch (e: Exception) {
         JsonArray(emptyList())
@@ -72,9 +70,9 @@ fun checkUpdate(context: Context, url: String) : JsonObject? {
         if (PreferenceManager.getDefaultSharedPreferences(context).getBoolean("beta", false))
             true
         else
-            it.jsonObject["prerelease"]?.boolean == false
+            it.jsonObject["prerelease"]?.jsonPrimitive?.booleanOrNull == false
     }?.let {
-        if (it.jsonObject["tag_name"]?.content == BuildConfig.VERSION_NAME)
+        if (it.jsonObject["tag_name"]?.jsonPrimitive?.contentOrNull == BuildConfig.VERSION_NAME)
             null
         else
             it.jsonObject
@@ -83,13 +81,12 @@ fun checkUpdate(context: Context, url: String) : JsonObject? {
 
 fun getApkUrl(releases: JsonObject) : String? {
     return releases["assets"]?.jsonArray?.firstOrNull {
-        Regex("Pupil-v.+\\.apk").matches(it.jsonObject["name"]?.content ?: "")
+        Regex("Pupil-v.+\\.apk").matches(it.jsonObject["name"]?.jsonPrimitive?.contentOrNull ?: "")
     }.let {
-        it?.jsonObject?.get("browser_download_url")?.content
+        it?.jsonObject?.get("browser_download_url")?.jsonPrimitive?.contentOrNull
     }
 }
 
-const val UPDATE_NOTIFICATION_ID = 384823
 fun checkUpdate(context: Context, force: Boolean = false) {
 
     val preferences = PreferenceManager.getDefaultSharedPreferences(context)
@@ -99,7 +96,7 @@ fun checkUpdate(context: Context, force: Boolean = false) {
         return
 
     fun extractReleaseNote(update: JsonObject, locale: Locale) : String {
-        val markdown = update["body"]!!.content
+        val markdown = update["body"]!!.jsonPrimitive.content
 
         val target = when(locale.language) {
             "ko" -> "한국어"
@@ -137,7 +134,7 @@ fun checkUpdate(context: Context, force: Boolean = false) {
             }
         }
 
-        return context.getString(R.string.update_release_note, update["tag_name"]?.content, result.toString())
+        return context.getString(R.string.update_release_note, update["tag_name"]?.jsonPrimitive?.contentOrNull, result.toString())
     }
 
     CoroutineScope(Dispatchers.Default).launch {
@@ -253,14 +250,14 @@ fun importOldGalleries(context: Context, folder: File) = CoroutineScope(Dispatch
 
         val reader = async {
             kotlin.runCatching {
-                json.parse(Reader.serializer(), File(gallery, "reader.json").readText())
+                Json.decodeFromString<Reader>(File(gallery, "reader.json").readText())
             }.getOrElse {
                 getReader(galleryID)
             }
         }
         val galleryBlock = async {
             kotlin.runCatching {
-                json.parse(GalleryBlock.serializer(), File(gallery, "galleryBlock.json").readText())
+                Json.decodeFromString<GalleryBlock>(File(gallery, "galleryBlock.json").readText())
             }.getOrElse {
                 getGalleryBlock(galleryID)
             }

@@ -30,8 +30,8 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.preference.PreferenceManager
 import com.google.android.material.snackbar.Snackbar
 import kotlinx.android.synthetic.main.settings_activity.*
-import kotlinx.serialization.builtins.list
-import kotlinx.serialization.builtins.serializer
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.json.Json
 import net.rdrei.android.dirchooser.DirectoryChooserActivity
 import xyz.quaver.pupil.Pupil
 import xyz.quaver.pupil.R
@@ -80,7 +80,7 @@ class SettingsActivity : AppCompatActivity() {
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         when(requestCode) {
-            REQUEST_LOCK -> {
+            R.id.request_lock -> {
                 if (resultCode == Activity.RESULT_OK) {
                     supportFragmentManager
                         .beginTransaction()
@@ -89,7 +89,7 @@ class SettingsActivity : AppCompatActivity() {
                         .commitAllowingStateLoss()
                 }
             }
-            REQUEST_RESTORE -> {
+            R.id.request_restore -> {
                 if (resultCode == Activity.RESULT_OK) {
                     val uri = data?.data ?: return
 
@@ -100,7 +100,7 @@ class SettingsActivity : AppCompatActivity() {
                             inputStream.readBytes().toString(Charset.defaultCharset())
                         }
 
-                        (application as Pupil).favorites.addAll(json.parse(Int.serializer().list, str).also {
+                        (application as Pupil).favorites.addAll(Json.decodeFromString<List<Int>>(str).also {
                             Snackbar.make(
                                 window.decorView,
                                 getString(R.string.settings_restore_successful, it.size),
@@ -116,7 +116,7 @@ class SettingsActivity : AppCompatActivity() {
                     }
                 }
             }
-            REQUEST_DOWNLOAD_FOLDER -> {
+            R.id.request_download_folder -> {
                 if (resultCode == Activity.RESULT_OK) {
                     data?.data?.also { uri ->
                         val takeFlags: Int =
@@ -140,7 +140,7 @@ class SettingsActivity : AppCompatActivity() {
                     }
                 }
             }
-            REQUEST_DOWNLOAD_FOLDER_OLD -> {
+            R.id.request_download_folder_old -> {
                 if (resultCode == DirectoryChooserActivity.RESULT_CODE_DIR_SELECTED) {
                     val directory = data?.getStringExtra(DirectoryChooserActivity.RESULT_SELECTED_DIR)!!
 
@@ -156,7 +156,7 @@ class SettingsActivity : AppCompatActivity() {
                             .apply()
                 }
             }
-            REQUEST_IMPORT_OLD_GALLERIES -> {
+            R.id.request_import_old_galleries -> {
                 if (resultCode == Activity.RESULT_OK) {
                     data?.data?.also { uri ->
                         val takeFlags: Int =
@@ -178,7 +178,7 @@ class SettingsActivity : AppCompatActivity() {
                     }
                 }
             }
-            REQUEST_IMPORT_OLD_GALLERIES_OLD -> {
+            R.id.request_import_old_galleries_old -> {
                 if (resultCode == DirectoryChooserActivity.RESULT_CODE_DIR_SELECTED) {
                     val directory = data?.getStringExtra(DirectoryChooserActivity.RESULT_SELECTED_DIR)!!
 
@@ -200,13 +200,13 @@ class SettingsActivity : AppCompatActivity() {
     @SuppressLint("InlinedApi")
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         when (requestCode) {
-            REQUEST_WRITE_PERMISSION_AND_SAF -> {
+            R.id.request_write_permission_and_saf -> {
                 if (grantResults.firstOrNull() == PackageManager.PERMISSION_GRANTED) {
                     val intent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).apply {
                         putExtra("android.content.extra.SHOW_ADVANCED", true)
                     }
 
-                    startActivityForResult(intent, REQUEST_DOWNLOAD_FOLDER)
+                    startActivityForResult(intent, R.id.request_download_folder.normalizeID())
                 }
             }
         }

@@ -48,8 +48,7 @@ import kotlin.concurrent.schedule
 import kotlin.math.roundToInt
 
 class ReaderAdapter(private val glide: RequestManager,
-                    private val galleryID: Int,
-                    private val activity: Activity) : RecyclerView.Adapter<ReaderAdapter.ViewHolder>() {
+                    private val galleryID: Int) : RecyclerView.Adapter<ReaderAdapter.ViewHolder>() {
 
     var reader: Reader? = null
     val timer = Timer()

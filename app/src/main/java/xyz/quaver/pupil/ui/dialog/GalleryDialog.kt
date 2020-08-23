@@ -259,14 +259,14 @@ class GalleryDialog(context: Context, private val glide: RequestManager, private
                 layoutManager = LinearLayoutManager(context)
                 this.adapter = adapter
 
-                ItemClickSupport.addTo(this)
-                    .setOnItemClickListener { _, position, _ ->
+                ItemClickSupport.addTo(this).apply {
+                    onItemClickListener = { _, position, _ ->
                         context.startActivity(Intent(context, ReaderActivity::class.java).apply {
                             putExtra("galleryID", galleries[position].id)
                         })
                         (context.applicationContext as Pupil).histories.add(galleries[position].id)
                     }
-                    .setOnItemLongClickListener { _, position, _ ->
+                    onItemLongClickListener = { _, position, _ ->
                         GalleryDialog(
                             context,
                             glide,
@@ -279,6 +279,7 @@ class GalleryDialog(context: Context, private val glide: RequestManager, private
 
                         true
                     }
+                }
             }.let {
                 gallery_details_contents.addView(it, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT))
             }

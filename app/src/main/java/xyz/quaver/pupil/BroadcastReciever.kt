@@ -29,7 +29,6 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.FileProvider
 import androidx.preference.PreferenceManager
-import xyz.quaver.pupil.util.NOTIFICATION_ID_UPDATE
 import xyz.quaver.pupil.util.cancelImport
 import java.io.File
 
@@ -92,7 +91,7 @@ class BroadcastReciever : BroadcastReceiver() {
                     .setContentIntent(pendingIntent)
                     .build()
 
-                notificationManager.notify(NOTIFICATION_ID_UPDATE, notification)
+                notificationManager.notify(R.id.notification_id_update, notification)
             }
             ACTION_CANCEL_IMPORT -> {
                 cancelImport = true

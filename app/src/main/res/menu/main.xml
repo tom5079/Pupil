@@ -23,9 +23,7 @@
 	<item android:id="@+id/main_menu_thin"
 		android:title="@string/main_menu_thin"/>
 
-	<item
-		android:id="@+id/main_menu_sort"
-		android:title="@string/main_menu_sort">
+	<item android:title="@string/main_menu_sort">
 		<menu>
 			<group android:checkableBehavior="single">
 				<item android:id="@+id/main_menu_sort_newest"

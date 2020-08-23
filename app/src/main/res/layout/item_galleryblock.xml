@@ -20,6 +20,7 @@
 <androidx.cardview.widget.CardView
 	xmlns:android="http://schemas.android.com/apk/res/android"
 	xmlns:app="http://schemas.android.com/apk/res-auto"
+	xmlns:tools="http://schemas.android.com/tools"
 	android:layout_width="match_parent"
 	android:layout_height="wrap_content"
 	android:layout_margin="8dp"
@@ -34,8 +35,7 @@
 		app:show_mode="pull_out">
 
 		<LinearLayout
-			android:id="@+id/galleryblock_secondary"
-			android:layout_width="wrap_content"
+            android:layout_width="wrap_content"
 			android:layout_height="match_parent">
 
 			<TextView
@@ -50,7 +50,8 @@
 				android:text="@string/main_download"
 				android:foreground="?attr/selectableItemBackground"
 				android:focusable="true"
-				android:clickable="true"/>
+				android:clickable="true"
+				tools:ignore="UnusedAttribute" />
 
 			<TextView
 				android:id="@+id/galleryblock_delete"
@@ -64,7 +65,8 @@
 				android:text="@string/main_delete"
 				android:foreground="?attr/selectableItemBackground"
 				android:focusable="true"
-				android:clickable="true"/>
+				android:clickable="true"
+				tools:ignore="UnusedAttribute" />
 
 		</LinearLayout>
 
@@ -75,7 +77,8 @@
 			android:orientation="vertical"
 			android:foreground="?attr/selectableItemBackground"
 			android:focusable="true"
-			android:clickable="true">
+			android:clickable="true"
+			tools:ignore="UnusedAttribute">
 
 			<androidx.constraintlayout.widget.ConstraintLayout
 				android:layout_width="match_parent"

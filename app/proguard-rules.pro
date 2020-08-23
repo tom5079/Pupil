@@ -40,9 +40,9 @@
 -keepattributes *Annotation*, InnerClasses
 -dontnote kotlinx.serialization.SerializationKt
 -keep,includedescriptorclasses class xyz.quaver.**$$serializer { *; } # <-- change package name to your app's
--keepclassmembers class xyz.quaver.** { # <-- change package name to your app's
+-keepclassmembers class xyz.quaver.pupil** { # <-- change package name to your app's
     *** Companion;
 }
--keepclasseswithmembers class xyz.quaver.** { # <-- change package name to your app's
+-keepclasseswithmembers class xyz.quaver.pupil** { # <-- change package name to your app's
     kotlinx.serialization.KSerializer serializer(...);
 }

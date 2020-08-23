@@ -319,7 +319,7 @@ class ReaderActivity : AppCompatActivity() {
 
     private fun initView() {
         with(reader_recyclerview) {
-            adapter = ReaderAdapter(Glide.with(this@ReaderActivity), galleryID, this@ReaderActivity).apply {
+            adapter = ReaderAdapter(Glide.with(this@ReaderActivity), galleryID).apply {
                 onItemClickListener = {
                     if (isScroll) {
                         isScroll = false

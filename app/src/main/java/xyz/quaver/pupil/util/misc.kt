@@ -52,3 +52,11 @@ fun byteToString(byte: Long, precision : Int = 1) : String {
     return "%.${precision}f ${suffix[suffixIndex]}".format(size)
 
 }
+
+/*
+ * Convert android generated ID to requestCode
+ * to prevent java.lang.IllegalArgumentException: Can only use lower 16 bits for requestCode
+ *
+ * https://stackoverflow.com/questions/38072322/generate-16-bit-unique-ids-in-android-for-startactivityforresult
+ */
+fun Int.normalizeID() = this.and(0xFFFF)

@@ -29,11 +29,12 @@ import android.widget.AdapterView
 import android.widget.ArrayAdapter
 import androidx.preference.PreferenceManager
 import kotlinx.android.synthetic.main.dialog_proxy.view.*
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import xyz.quaver.proxy
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.util.ProxyInfo
 import xyz.quaver.pupil.util.getProxyInfo
-import xyz.quaver.pupil.util.json
 import java.net.Proxy
 
 class ProxyDialog(context: Context) : Dialog(context) {
@@ -118,7 +119,7 @@ class ProxyDialog(context: Context) : Dialog(context) {
             ProxyInfo(type, addr, port, username, password).let {
 
                 PreferenceManager.getDefaultSharedPreferences(context).edit().putString("proxy",
-                    json.stringify(ProxyInfo.serializer(), it)
+                    Json.encodeToString(it)
                 ).apply()
 
                 proxy = it.proxy()

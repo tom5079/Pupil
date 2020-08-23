@@ -96,13 +96,13 @@ class DownloadLocationDialog(val activity: Activity) : AlertDialog(activity) {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
 
                     if (ContextCompat.checkSelfPermission(context, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED)
-                        ActivityCompat.requestPermissions(activity, arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE), REQUEST_WRITE_PERMISSION_AND_SAF)
+                        ActivityCompat.requestPermissions(activity, arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE), R.id.request_write_permission_and_saf.normalizeID())
                     else {
                         val intent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).apply {
                             putExtra("android.content.extra.SHOW_ADVANCED", true)
                         }
 
-                        activity.startActivityForResult(intent, REQUEST_DOWNLOAD_FOLDER)
+                        activity.startActivityForResult(intent, R.id.request_download_folder.normalizeID())
                     }
 
                     dismiss()
@@ -116,7 +116,7 @@ class DownloadLocationDialog(val activity: Activity) : AlertDialog(activity) {
                         putExtra(DirectoryChooserActivity.EXTRA_CONFIG, config)
                     }
 
-                    activity.startActivityForResult(intent, REQUEST_DOWNLOAD_FOLDER_OLD)
+                    activity.startActivityForResult(intent, R.id.request_download_folder_old.normalizeID())
                     dismiss()
                 }
             }

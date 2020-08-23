@@ -51,7 +51,9 @@ import com.google.firebase.crashlytics.FirebaseCrashlytics
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.activity_main_content.*
 import kotlinx.coroutines.*
-import kotlinx.serialization.builtins.list
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import xyz.quaver.hitomi.GalleryBlock
 import xyz.quaver.hitomi.doSearch
 import xyz.quaver.hitomi.getGalleryIDsFromNozomi
@@ -59,7 +61,6 @@ import xyz.quaver.hitomi.getSuggestionsForQuery
 import xyz.quaver.pupil.Pupil
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.adapters.GalleryBlockAdapter
-import xyz.quaver.pupil.types.Tag
 import xyz.quaver.pupil.types.TagSuggestion
 import xyz.quaver.pupil.types.Tags
 import xyz.quaver.pupil.ui.dialog.GalleryDialog
@@ -103,9 +104,6 @@ class MainActivity : AppCompatActivity() {
     private var mode = Mode.SEARCH
     private var sortMode = SortMode.NEWEST
 
-    private val REQUEST_SETTINGS = 45162
-    private val REQUEST_LOCK = 561
-
     private var galleryIDs: Deferred<List<Int>>? = null
     private var totalItems = 0
     private var loadingJob: Job? = null
@@ -132,7 +130,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         if (lockManager.isNotEmpty())
-            startActivityForResult(Intent(this, LockActivity::class.java), REQUEST_LOCK)
+            startActivityForResult(Intent(this, LockActivity::class.java), R.id.request_lock.normalizeID())
 
         val preference = PreferenceManager.getDefaultSharedPreferences(this)
 
@@ -236,7 +234,7 @@ class MainActivity : AppCompatActivity() {
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         when(requestCode) {
-            REQUEST_SETTINGS -> {
+            R.id.request_settings -> {
                 runOnUiThread {
                     cancelFetch()
                     clearGalleries()
@@ -244,7 +242,7 @@ class MainActivity : AppCompatActivity() {
                     loadBlocks()
                 }
             }
-            REQUEST_LOCK -> {
+            R.id.request_lock -> {
                 if (resultCode != Activity.RESULT_OK)
                     finish()
             }
@@ -496,10 +494,10 @@ class MainActivity : AppCompatActivity() {
                     closeAllItems()
                 }
             }
-            ItemClickSupport.addTo(this)
-                .setOnItemClickListener { _, position, v ->
+            ItemClickSupport.addTo(this).apply {
+                onItemClickListener = listener@{ _, position, v ->
                     if (v !is CardView)
-                        return@setOnItemClickListener
+                        return@listener
 
                     val intent = Intent(this@MainActivity, ReaderActivity::class.java)
                     val gallery = galleries[position]
@@ -509,10 +507,11 @@ class MainActivity : AppCompatActivity() {
                     startActivity(intent)
 
                     histories.add(gallery.id)
-                }.setOnItemLongClickListener { _, position, v ->
+                }
 
+                onItemLongClickListener = listener@{ _, position, v ->
                     if (v !is CardView)
-                        return@setOnItemLongClickListener true
+                        return@listener false
 
                     val galleryID = galleries[position].id
 
@@ -537,6 +536,7 @@ class MainActivity : AppCompatActivity() {
 
                     true
                 }
+            }
 
             var origin = 0f
             var target = -1
@@ -766,11 +766,10 @@ class MainActivity : AppCompatActivity() {
 
         with(main_searchview as FloatingSearchViewDayNight) {
             val favoritesFile = File(ContextCompat.getDataDir(context), "favorites_tags.json")
-            val serializer = Tag.serializer().list
 
             if (!favoritesFile.exists()) {
                 favoritesFile.createNewFile()
-                favoritesFile.writeText(json.stringify(serializer, Tags(listOf())))
+                favoritesFile.writeText(Json.encodeToString(Tags(listOf())))
             }
 
             setOnLeftMenuClickListener(object: FloatingSearchView.OnLeftMenuClickListener {
@@ -785,7 +784,7 @@ class MainActivity : AppCompatActivity() {
 
             setOnMenuItemClickListener {
                 when(it.itemId) {
-                    R.id.main_menu_settings -> startActivityForResult(Intent(this@MainActivity, SettingsActivity::class.java), REQUEST_SETTINGS)
+                    R.id.main_menu_settings -> startActivityForResult(Intent(this@MainActivity, SettingsActivity::class.java), R.id.request_settings.normalizeID())
                     R.id.main_menu_thin -> {
                         main_recyclerview.apply {
                             (adapter as GalleryBlockAdapter).apply {
@@ -832,7 +831,7 @@ class MainActivity : AppCompatActivity() {
                 clearSuggestions()
 
                 if (query.isEmpty() or query.endsWith(' ')) {
-                    swapSuggestions(json.parse(serializer, favoritesFile.readText()).map {
+                    swapSuggestions(Json.decodeFromString<Tags>(favoritesFile.readText()).map {
                         TagSuggestion(it.tag, -1, "", it.area ?: "tag")
                     })
 
@@ -846,7 +845,7 @@ class MainActivity : AppCompatActivity() {
 
                     suggestions.filter {
                         val tag = "${it.n}:${it.s.replace(Regex("\\s"), "_")}"
-                        Tags(json.parse(serializer, favoritesFile.readText())).contains(tag)
+                        Tags(Json.decodeFromString(favoritesFile.readText())).contains(tag)
                     }.reversed().forEach {
                         suggestions.remove(it)
                         suggestions.add(0, it)
@@ -884,7 +883,7 @@ class MainActivity : AppCompatActivity() {
 
                 with(suggestionView.findViewById<ImageView>(R.id.right_icon)) {
 
-                    if (Tags(json.parse(serializer, favoritesFile.readText())).contains(tag))
+                    if (Tags(Json.decodeFromString(favoritesFile.readText())).contains(tag))
                         setImageResource(R.drawable.ic_star_filled)
                     else
                         setImageResource(R.drawable.ic_star_empty)
@@ -895,7 +894,7 @@ class MainActivity : AppCompatActivity() {
 
                     isClickable = true
                     setOnClickListener {
-                        val favorites = Tags(json.parse(serializer, favoritesFile.readText()))
+                        val favorites = Tags(Json.decodeFromString(favoritesFile.readText()))
 
                         if (favorites.contains(tag)) {
                             setImageResource(R.drawable.ic_star_empty)
@@ -910,7 +909,7 @@ class MainActivity : AppCompatActivity() {
                             favorites.add(tag)
                         }
 
-                        favoritesFile.writeText(json.stringify(serializer, favorites))
+                        favoritesFile.writeText(Json.encodeToString(favorites))
                     }
                 }
 
@@ -950,7 +949,7 @@ class MainActivity : AppCompatActivity() {
             setOnFocusChangeListener(object: FloatingSearchView.OnFocusChangeListener {
                 override fun onFocus() {
                     if (query.isEmpty() or query.endsWith(' '))
-                        swapSuggestions(json.parse(serializer, favoritesFile.readText()).map {
+                        swapSuggestions(Json.decodeFromString<Tags>( favoritesFile.readText()).map {
                             TagSuggestion(it.tag, -1, "", it.area ?: "tag")
                         })
                 }
