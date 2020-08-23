@@ -21,6 +21,8 @@ package xyz.quaver.pupil.util
 import android.content.Context
 import androidx.preference.PreferenceManager
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.json.Json
 import okhttp3.Authenticator
 import okhttp3.Credentials
 import java.net.InetSocketAddress
@@ -59,5 +61,5 @@ fun getProxyInfo(context: Context) =
         if (it == null)
             ProxyInfo(Proxy.Type.DIRECT)
         else
-            json.parse(ProxyInfo.serializer(), it)
+            Json.decodeFromString(it)
     }

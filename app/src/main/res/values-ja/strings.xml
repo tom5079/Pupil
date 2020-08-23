@@ -4,9 +4,7 @@
     <string name="galleryblock_series">シリーズ: %1$s</string>
     <string name="galleryblock_type">タイプ: %1$s</string>
     <string name="main_no_result">結果なし</string>
-    <string name="main_search">検索</string>
     <string name="search_hint">ギャラリー検索</string>
-    <string name="search_hint_with_page">ギャラリー検索</string>
     <string name="settings_clear_cache">キャッシュクリア</string>
     <string name="settings_clear_cache_alert_message">キャッシュをクリアするとイメージのロード速度に影響を与えます。実行しますか？</string>
     <string name="settings_storage_usage">%s使用中</string>
@@ -25,7 +23,6 @@
     <string name="settings_clear_history_summary">履歴数: %1$d</string>
     <string name="main_drawer_history">履歴</string>
     <string name="main_drawer_home">トップ</string>
-    <string name="update_download_started">ダウンロード中</string>
     <string name="update_release_note"># リリースノート(v%1$s)\n%2$s</string>
     <string name="settings_security_mode_title">セキュリティーモード</string>
     <string name="settings_security_mode_summary">アプリ履歴でアプリの画面を表示しない</string>
@@ -46,9 +43,7 @@
     <string name="reader_fab_download">バックグラウンドダウンロード</string>
     <string name="reader_notification_text">ダウンロード中…</string>
     <string name="reader_notification_complete">ダウンロード完了</string>
-    <string name="reader_notification_error">ダウンロードエラー</string>
     <string name="reader_fab_download_cancel">バックグラウンドダウンロード中止</string>
-    <string name="main_dialog_delete">このギャラリーを削除</string>
     <string name="main_drawer_downloads">ダウンロード</string>
     <string name="main_jump_title">ページ移動</string>
     <string name="main_jump_message">現ページ番号: %1$d\nページ数: %2$d</string>
@@ -56,10 +51,6 @@
     <string name="main_move">%1$dページへ移動</string>
     <string name="https_block_alert_title">(Korean only)</string>
     <string name="https_block_alert">(Korean only)</string>
-    <string name="main_dialog_export">ギャラリーエクスポート</string>
-    <string name="main_export_complete">エクスポート完了</string>
-    <string name="main_export_open_folder">フォルダを開く</string>
-    <string name="main_export_error">エクスポートエラーが発生しました</string>
     <string name="settings_clear_downloads">ダウンロード削除</string>
     <string name="settings_clear_downloads_alert_message">ダウンロードしたギャラリーを全て削除します。\n実行しますか？</string>
     <string name="settings_mirror_summary">ミラーサーバからイメージをロード</string>
@@ -84,11 +75,8 @@
     <string name="main_menu_sort">ソート</string>
     <string name="main_menu_sort_newest">投稿日時順</string>
     <string name="main_menu_sort_popular">人気順</string>
-    <string name="update_failed">アップデートに失敗しました</string>
-    <string name="update_failed_message">アップデート中エラーが発生しました</string>
     <string name="ignore_update">無視</string>
     <string name="lock_corrupted">ロックファイルが破損されています。Pupilを再再インストールしてください。</string>
-    <string name="update_no_permission">権限がないため自動アップデートを行えません。ホームページで直接ダウンロードしてください。</string>
     <string name="settings_dark_mode_title">ダークモード</string>
     <string name="settings_dark_mode_summary">夜にシコりたい方々へ</string>
     <string name="gallery_details">ギャラリー情報</string>
@@ -101,13 +89,11 @@
     <string name="gallery_thumbnails">サムネイル</string>
     <string name="gallery_related">おすすめ</string>
     <string name="settings_nomedia_title">イメージを隠す</string>
-    <string name="reader_help">ヘルプ</string>
     <string name="main_delete">削除</string>
     <string name="main_download">ダウンロード</string>
     <string name="settings_backup_title">お気に入りバックアップ</string>
     <string name="settings_restore_title">お気に入り復元</string>
     <string name="settings_backup_snackbar">バックアップファイルを作成しました</string>
-    <string name="settings_backup_checkout">確認</string>
     <string name="settings_restore_failed">復元に失敗しました</string>
     <string name="settings_restore_successful">%1$d項目を復元しました</string>
     <string name="settings_dl_location">ダウンロード場所</string>
@@ -134,8 +120,6 @@
     <string name="main_fab_cancel">すべてのダウンロードキャンセル</string>
     <string name="channel_update">アップデート</string>
     <string name="channel_update_description">アップデートの進行状態を表示</string>
-    <string name="channel_import">インポート</string>
-    <string name="channel_import_description">インポート状態を表示</string>
     <string name="settings_import_old_galleries">旧ギャラリーインポート</string>
     <string name="import_old_galleries_folder_not_readable">フォルダを読めません</string>
     <string name="import_old_galleries_notification">旧ギャラリーインポート中…</string>
@@ -149,7 +133,6 @@
     <string name="settings_download_when_cache_disable_warning">キャッシュを使用しないため、ダウンロードできません</string>
     <string name="settings_user_id">ユーザーID</string>
     <string name="settings_user_id_toast">ユーザーIDをクリップボードにコピーしました</string>
-    <string name="reader_error_retry">ダウンロードエラーが発生しました。リトライしますか？</string>
     <string name="reader_fab_retry">リトライ</string>
     <string name="reader_fab_auto">自動スクロール</string>
 </resources>

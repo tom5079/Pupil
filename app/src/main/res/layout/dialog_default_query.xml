@@ -108,7 +108,6 @@
     </LinearLayout>
 
     <LinearLayout
-        android:id="@+id/default_query_dialog_loli_layout"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:orientation="horizontal"

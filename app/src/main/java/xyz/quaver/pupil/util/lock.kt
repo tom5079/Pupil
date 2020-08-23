@@ -22,7 +22,9 @@ import android.content.Context
 import android.content.ContextWrapper
 import androidx.core.content.ContextCompat
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.builtins.list
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import java.io.File
 import java.security.MessageDigest
 
@@ -41,7 +43,7 @@ fun hashWithSalt(password: String): Pair<String, String> {
     return Pair(hash(password+salt), salt)
 }
 
-val source = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
+const val source = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
 
 @Serializable
 data class Lock(val type: Type, val hash: String, val salt: String) {
@@ -80,7 +82,7 @@ class LockManager(base: Context): ContextWrapper(base) {
             lock.writeText("[]")
         }
 
-        locks = ArrayList(json.parse(Lock.serializer().list, lock.readText()))
+        locks = Json.decodeFromString(lock.readText())
     }
 
     private fun save() {
@@ -89,7 +91,7 @@ class LockManager(base: Context): ContextWrapper(base) {
         if (!lock.exists())
             lock.createNewFile()
 
-        lock.writeText(json.stringify(Lock.serializer().list, locks?.toList() ?: listOf()))
+        lock.writeText(Json.encodeToString(locks?.toList() ?: listOf()))
     }
 
     fun add(lock: Lock) {

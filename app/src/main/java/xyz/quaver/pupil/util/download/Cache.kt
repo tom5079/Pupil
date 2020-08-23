@@ -25,6 +25,10 @@ import android.util.SparseArray
 import androidx.preference.PreferenceManager
 import com.google.firebase.crashlytics.FirebaseCrashlytics
 import kotlinx.coroutines.*
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
+import okhttp3.Dispatcher
 import xyz.quaver.Code
 import xyz.quaver.hitomi.GalleryBlock
 import xyz.quaver.hitomi.Reader
@@ -32,35 +36,17 @@ import xyz.quaver.proxy
 import xyz.quaver.pupil.util.getCachedGallery
 import xyz.quaver.pupil.util.getDownloadDirectory
 import xyz.quaver.pupil.util.isParentOf
-import xyz.quaver.pupil.util.json
 import java.io.BufferedInputStream
 import java.io.File
 import java.io.FileOutputStream
 import java.io.InputStream
 import java.net.URL
-import java.util.*
-import java.util.concurrent.locks.Lock
-import java.util.concurrent.locks.ReentrantLock
 
 class Cache(context: Context) : ContextWrapper(context) {
 
     companion object {
         private val moving = mutableListOf<Int>()
         private val readers = SparseArray<Reader?>()
-    }
-
-    private val locks = SparseArray<Lock>()
-    private fun lock(galleryID: Int) {
-        synchronized(locks) {
-            if (locks.indexOfKey(galleryID) < 0)
-                locks.put(galleryID, ReentrantLock())
-        }
-
-        locks[galleryID].lock()
-    }
-
-    private fun unlock(galleryID: Int) {
-        locks[galleryID]?.unlock()
     }
 
     private val preference = PreferenceManager.getDefaultSharedPreferences(this)
@@ -79,7 +65,7 @@ class Cache(context: Context) : ContextWrapper(context) {
             return null
 
         return try {
-            json.parse(Metadata.serializer(), file.readText())
+            Json.decodeFromString(file.readText())
         } catch (e: Exception) {
             //File corrupted
             file.delete()
@@ -96,7 +82,7 @@ class Cache(context: Context) : ContextWrapper(context) {
                 it.createNewFile()
         }
 
-        file.writeText(json.stringify(Metadata.serializer(), metadata))
+        file.writeText(Json.encodeToString(metadata))
     }
 
     suspend fun getThumbnail(galleryID: Int): String? {
@@ -134,7 +120,7 @@ class Cache(context: Context) : ContextWrapper(context) {
         )
 
         val galleryBlock = if (metadata?.galleryBlock == null) {
-            CoroutineScope(Dispatchers.IO).async {
+            withContext(Dispatchers.IO) {
                 var galleryBlock: GalleryBlock? = null
 
                 for (source in sources) {
@@ -149,7 +135,7 @@ class Cache(context: Context) : ContextWrapper(context) {
                 }
 
                 galleryBlock
-            }.await() ?: return null
+            } ?: return null
         }
         else
             metadata.galleryBlock
@@ -175,11 +161,9 @@ class Cache(context: Context) : ContextWrapper(context) {
             Code.HIYOBI to { xyz.quaver.hiyobi.getReader(galleryID) }
         ).let {
             if (mirrors.isNotEmpty())
-                it.toSortedMap(
-                    Comparator { o1, o2 ->
-                        mirrors.indexOf(o1.name) - mirrors.indexOf(o2.name)
-                    }
-                )
+                it.toSortedMap{ o1, o2 ->
+                    mirrors.indexOf(o1.name) - mirrors.indexOf(o2.name)
+                }
             else
                 it
         }

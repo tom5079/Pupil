@@ -168,7 +168,7 @@ class SettingsFragment :
                 }
                 "app_lock" -> {
                     val intent = Intent(requireContext(), LockActivity::class.java)
-                    activity?.startActivityForResult(intent, REQUEST_LOCK)
+                    activity?.startActivityForResult(intent, R.id.request_lock.normalizeID())
                 }
                 "mirrors" -> {
                     MirrorDialog(requireContext())
@@ -196,19 +196,19 @@ class SettingsFragment :
                         type = "*/*"
                     }
 
-                    activity?.startActivityForResult(intent, REQUEST_RESTORE)
+                    activity?.startActivityForResult(intent, R.id.request_restore.normalizeID())
                 }
                 "old_import_galleries" -> {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
 
                         if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED)
-                            ActivityCompat.requestPermissions(requireActivity(), arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE), REQUEST_WRITE_PERMISSION_AND_SAF)
+                            ActivityCompat.requestPermissions(requireActivity(), arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE), R.id.request_write_permission_and_saf.normalizeID())
                         else {
                             val intent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).apply {
                                 putExtra("android.content.extra.SHOW_ADVANCED", true)
                             }
 
-                            activity?.startActivityForResult(intent, REQUEST_IMPORT_OLD_GALLERIES)
+                            activity?.startActivityForResult(intent, R.id.request_import_old_galleries.normalizeID())
                         }
                     } else {    // Can't use SAF on old Androids!
                         val config = DirectoryChooserConfig.builder()
@@ -220,7 +220,7 @@ class SettingsFragment :
                             putExtra(DirectoryChooserActivity.EXTRA_CONFIG, config)
                         }
 
-                        activity?.startActivityForResult(intent, REQUEST_IMPORT_OLD_GALLERIES_OLD)
+                        activity?.startActivityForResult(intent, R.id.request_import_old_galleries_old.normalizeID())
                     }
                 }
                 "user_id" -> {

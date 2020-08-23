@@ -1,1 +1,1 @@
-include ':app', ':libpupil'
+include ':app'

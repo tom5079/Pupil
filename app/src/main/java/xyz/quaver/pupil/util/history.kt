@@ -18,14 +18,12 @@
 
 package xyz.quaver.pupil.util
 
-import kotlinx.serialization.KSerializer
-import kotlinx.serialization.builtins.list
-import kotlinx.serialization.builtins.serializer
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import java.io.File
 
 class Histories(private val file: File) : ArrayList<Int>() {
-
-    val serializer: KSerializer<List<Int>> = Int.serializer().list
 
     init {
         if (!file.exists())
@@ -42,16 +40,13 @@ class Histories(private val file: File) : ArrayList<Int>() {
         return apply {
             super.clear()
             super.addAll(
-                json.parse(
-                    serializer,
-                    file.bufferedReader().use { it.readText() }
-                )
+                Json.decodeFromString(file.bufferedReader().use { it.readText() })
             )
         }
     }
 
     fun save() {
-        file.writeText(json.stringify(serializer, this))
+        file.writeText(Json.encodeToString(toList()))
     }
 
     override fun add(element: Int): Boolean {

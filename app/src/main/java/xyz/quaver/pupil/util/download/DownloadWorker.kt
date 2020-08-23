@@ -151,7 +151,7 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
             }).build()
     }
 
-    val client =
+    val client : OkHttpClient =
         OkHttpClient.Builder()
             .connectTimeout(0, TimeUnit.SECONDS)
             .addInterceptor(interceptor)
