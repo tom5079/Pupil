@@ -435,8 +435,6 @@ class MainActivity : AppCompatActivity() {
                             }
 
                             startActivity(intent)
-
-                            histories.add(galleryID)
                     }
                 }.show()
             }
@@ -518,8 +516,6 @@ class MainActivity : AppCompatActivity() {
 
                     //TODO: Maybe sprinkling some transitions will be nice :D
                     startActivity(intent)
-
-                    histories.add(gallery.id)
                 }
 
                 onItemLongClickListener = listener@{ _, position, v ->
