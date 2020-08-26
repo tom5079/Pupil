@@ -5,8 +5,6 @@
     <item name="request_lock" type="id" />
     <item name="request_restore" type="id" />
 
-    <item name="request_import_old_galleries" type="id" />
-    <item name="request_import_old_galleries_old" type="id" />
     <item name="request_download_folder" type="id" />
     <item name="request_download_folder_old" type="id" />
     <item name="request_write_permission_and_saf" type="id" />

@@ -9,6 +9,8 @@
     <string name="email" translatable="false">mailto:pupil.hentai@gmail.com</string>
     <string name="discord" translatable="false">https://discord.gg/Stj4b5v</string>
 
+    <string name="backup_url" translatable="false">http://ix.io/</string>
+
     <string name="main_settings" translatable="false">Settings</string>
     <string name="galleryblock_thumbnail_description" translatable="false">Thumbnail</string>
 
@@ -154,14 +156,20 @@
     <string name="settings_dark_mode_title">Dark mode</string>
     <string name="settings_dark_mode_summary">Protect yourself against light attacks!</string>
     <string name="settings_nomedia_title">Hide image from gallery</string>
-    <string name="settings_backup_title">Backup favorites</string>
-    <string name="settings_backup_snackbar">Backup file created</string>
-    <string name="settings_restore_title">Restore favorites</string>
-    <string name="settings_restore_failed">Restore failed</string>
-    <string name="settings_restore_successful">%1$d entries restored</string>
     <string name="settings_import_old_galleries">Import old galleries</string>
     <string name="settings_user_id">User ID</string>
     <string name="settings_user_id_toast">User ID is copied to clipboard</string>
+
+    <!-- MANAGE FAVORITES -->
+
+    <string name="settings_manage_favorites">Manage favorites</string>
+    <string name="settings_backup_title">Backup favorites</string>
+    <string name="settings_backup_failed">Upload Failed</string>
+    <string name="settings_backup_share">Share Backup</string>
+    <string name="settings_backup_file_created">Backup file created</string>
+    <string name="settings_restore_title">Restore favorites</string>
+    <string name="settings_restore_failed">Restore failed</string>
+    <string name="settings_restore_success">%1$d entries restored</string>
 
     <!-- SETTINGS/APP LOCK ACTIVITY -->
 

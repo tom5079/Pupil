@@ -18,42 +18,32 @@
 
 package xyz.quaver.pupil.util
 
-import android.annotation.SuppressLint
 import android.app.DownloadManager
-import android.app.PendingIntent
 import android.content.Context
-import android.content.Intent
 import android.net.Uri
-import android.util.Base64
+import android.webkit.URLUtil
 import androidx.appcompat.app.AlertDialog
-import androidx.core.app.NotificationCompat
-import androidx.core.app.NotificationManagerCompat
 import androidx.preference.PreferenceManager
-import kotlinx.coroutines.*
+import com.google.android.material.snackbar.Snackbar
+import kotlinx.android.synthetic.main.activity_main_content.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.*
 import okhttp3.*
 import ru.noties.markwon.Markwon
-import xyz.quaver.hitomi.GalleryBlock
-import xyz.quaver.hitomi.Reader
-import xyz.quaver.hitomi.getGalleryBlock
-import xyz.quaver.hitomi.getReader
-import xyz.quaver.proxy
-import xyz.quaver.pupil.BroadcastReciever
 import xyz.quaver.pupil.BuildConfig
 import xyz.quaver.pupil.R
-import xyz.quaver.pupil.util.download.Cache
-import xyz.quaver.pupil.util.download.Metadata
 import java.io.File
 import java.io.IOException
 import java.net.URL
 import java.util.*
-import java.util.concurrent.TimeUnit
 
 fun getReleases(url: String) : JsonArray {
     return try {
         URL(url).readText().let {
-            Json.decodeFromString(it)
+            Json.parseToJsonElement(it).jsonArray
         }
     } catch (e: Exception) {
         JsonArray(emptyList())
@@ -184,4 +174,29 @@ fun checkUpdate(context: Context, force: Boolean = false) {
             dialog.show()
         }
     }
+}
+
+fun restore(favorites: GalleryList, url: String, onFailure: ((Exception) -> Unit)? = null, onSuccess: ((List<Int>) -> Unit)? = null) {
+    if (!URLUtil.isValidUrl(url)) {
+        onFailure?.invoke(IllegalArgumentException())
+        return
+    }
+
+    val request = Request.Builder()
+        .url(url)
+        .get()
+        .build()
+
+    OkHttpClient().newCall(request).enqueue(object: Callback {
+        override fun onFailure(call: Call, e: IOException) {
+            onFailure?.invoke(e)
+        }
+
+        override fun onResponse(call: Call, response: Response) {
+            Json.decodeFromString<List<Int>>(response.body().use { it?.string() } ?: "[]").let {
+                favorites.addAll(it)
+                onSuccess?.invoke(it)
+            }
+        }
+    })
 }

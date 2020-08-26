@@ -181,23 +181,6 @@ class SettingsFragment :
                 "nomedia" -> {
                     File(getDownloadDirectory(context), ".nomedia").createNewFile()
                 }
-                "backup" -> {
-                    File(ContextCompat.getDataDir(requireContext()), "favorites.json").copyTo(
-                        File(getDownloadDirectory(requireContext()), "favorites.json"),
-                        true
-                    )
-
-                    Snackbar.make(this@SettingsFragment.listView, R.string.settings_backup_snackbar, Snackbar.LENGTH_LONG)
-                        .show()
-                }
-                "restore" -> {
-                    val intent = Intent(Intent.ACTION_GET_CONTENT).apply {
-                        addCategory(Intent.CATEGORY_OPENABLE)
-                        type = "*/*"
-                    }
-
-                    activity?.startActivityForResult(intent, R.id.request_restore.normalizeID())
-                }
                 "user_id" -> {
                     (context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager).setPrimaryClip(
                         ClipData.newPlainText("user_id", sharedPreference.getString("user_id", ""))
@@ -349,10 +332,7 @@ class SettingsFragment :
                         "nomedia" -> {
                             onPreferenceClickListener = this@SettingsFragment
                         }
-                        "backup" -> {
-                            onPreferenceClickListener = this@SettingsFragment
-                        }
-                        "restore" -> {
+                        "old_import_galleries" -> {
                             onPreferenceClickListener = this@SettingsFragment
                         }
                         "user_id" -> {

@@ -31,8 +31,7 @@ import xyz.quaver.pupil.ui.LockActivity
 import xyz.quaver.pupil.util.Lock
 import xyz.quaver.pupil.util.LockManager
 
-class LockSettingsFragment :
-    PreferenceFragmentCompat() {
+class LockSettingsFragment : PreferenceFragmentCompat() {
 
     override fun onResume() {
         super.onResume()
