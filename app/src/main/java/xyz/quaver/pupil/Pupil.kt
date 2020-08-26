@@ -32,6 +32,9 @@ import com.google.android.gms.common.GooglePlayServicesRepairableException
 import com.google.android.gms.security.ProviderInstaller
 import com.google.firebase.analytics.FirebaseAnalytics
 import com.google.firebase.crashlytics.FirebaseCrashlytics
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import xyz.quaver.proxy
 import xyz.quaver.pupil.util.GalleryList
 import xyz.quaver.pupil.util.getProxy
@@ -73,6 +76,16 @@ class Pupil : MultiDexApplication() {
 
         histories = GalleryList(File(ContextCompat.getDataDir(this), "histories.json"))
         favorites = GalleryList(File(ContextCompat.getDataDir(this), "favorites.json"))
+
+        if (preference.getBoolean("old_history", true)) {
+            CoroutineScope(Dispatchers.IO).launch {
+                histories.reversed().let {
+                    histories.clear()
+                    histories.addAll(it)
+                }
+            }
+            preference.edit().putBoolean("old_history", false).apply()
+        }
 
         if (BuildConfig.DEBUG)
             FirebaseAnalytics.getInstance(this).setAnalyticsCollectionEnabled(false)

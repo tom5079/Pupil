@@ -72,6 +72,7 @@
     <string name="update_release_note"># Release Note(v%1$s)\n%2$s</string>
 
     <string name="search_hint">Search galleries</string>
+    <string name="search_all">Search all galleries</string>
 
     <string name="gallery_details">Details</string>
     <string name="gallery_thumbnails">Thumbnails</string>

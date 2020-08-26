@@ -47,6 +47,7 @@ import com.arlib.floatingsearchview.suggestions.model.SearchSuggestion
 import com.arlib.floatingsearchview.util.view.SearchInputView
 import com.bumptech.glide.Glide
 import com.google.android.material.appbar.AppBarLayout
+import com.google.android.material.snackbar.Snackbar
 import com.google.firebase.crashlytics.FirebaseCrashlytics
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.activity_main_content.*
@@ -61,6 +62,7 @@ import xyz.quaver.hitomi.getSuggestionsForQuery
 import xyz.quaver.pupil.Pupil
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.adapters.GalleryBlockAdapter
+import xyz.quaver.pupil.types.Tag
 import xyz.quaver.pupil.types.TagSuggestion
 import xyz.quaver.pupil.types.Tags
 import xyz.quaver.pupil.ui.dialog.GalleryDialog
@@ -949,7 +951,7 @@ class MainActivity : AppCompatActivity() {
             setOnFocusChangeListener(object: FloatingSearchView.OnFocusChangeListener {
                 override fun onFocus() {
                     if (query.isEmpty() or query.endsWith(' '))
-                        swapSuggestions(Json.decodeFromString<Tags>( favoritesFile.readText()).map {
+                        swapSuggestions(Tags(Json.decodeFromString<List<Tag>>(favoritesFile.readText())).map {
                             TagSuggestion(it.tag, -1, "", it.area ?: "tag")
                         })
                 }
@@ -998,6 +1000,20 @@ class MainActivity : AppCompatActivity() {
         if (query != queryStack.lastOrNull()) {
             queryStack.remove(query)
             queryStack.add(query)
+        }
+
+        if (query.isNotEmpty() && mode != Mode.SEARCH) {
+            Snackbar.make(this@MainActivity.main_recyclerview, R.string.search_all, Snackbar.LENGTH_SHORT).apply {
+                setAction(android.R.string.yes) {
+                    cancelFetch()
+                    clearGalleries()
+                    currentPage = 0
+                    mode = Mode.SEARCH
+                    queryStack.clear()
+                    fetchGalleries(query, sortMode)
+                    loadBlocks()
+                }
+            }.show()
         }
 
         galleryIDs = null
