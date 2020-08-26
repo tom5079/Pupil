@@ -109,8 +109,8 @@ class MainActivity : AppCompatActivity() {
     private var loadingJob: Job? = null
     private var currentPage = 0
 
-    private lateinit var histories: Histories
-    private lateinit var favorites: Histories
+    private lateinit var histories: GalleryList
+    private lateinit var favorites: GalleryList
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -1025,13 +1025,13 @@ class MainActivity : AppCompatActivity() {
                 Mode.HISTORY -> {
                     when {
                         query.isEmpty() -> {
-                            histories.toList().also {
+                            histories.reversed().also {
                                 totalItems = it.size
                             }
                         }
                         else -> {
                             val result = doSearch(query).sorted()
-                            histories.filter { result.binarySearch(it) >= 0 }.also {
+                            histories.reversed().filter { result.binarySearch(it) >= 0 }.also {
                                 totalItems = it.size
                             }
                         }

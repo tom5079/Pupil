@@ -53,7 +53,7 @@ import xyz.quaver.pupil.BuildConfig
 import xyz.quaver.pupil.Pupil
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.types.Tag
-import xyz.quaver.pupil.util.Histories
+import xyz.quaver.pupil.util.GalleryList
 import xyz.quaver.pupil.util.download.Cache
 import xyz.quaver.pupil.util.wordCapitalize
 import java.util.*
@@ -68,7 +68,7 @@ class GalleryBlockAdapter(private val glide: RequestManager, private val galleri
         PREV
     }
 
-    private lateinit var favorites: Histories
+    private lateinit var favorites: GalleryList
 
     val timer = Timer()
 

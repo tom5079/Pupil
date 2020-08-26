@@ -2,7 +2,6 @@
   <settings>
     <module2copyright>
       <element module="Pupil" copyright="GPL" />
-      <element module="libpupil" copyright="Apache" />
     </module2copyright>
   </settings>
 </component>

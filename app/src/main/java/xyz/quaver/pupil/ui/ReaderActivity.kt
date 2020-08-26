@@ -46,7 +46,7 @@ import xyz.quaver.Code
 import xyz.quaver.pupil.Pupil
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.adapters.ReaderAdapter
-import xyz.quaver.pupil.util.Histories
+import xyz.quaver.pupil.util.GalleryList
 import xyz.quaver.pupil.util.download.Cache
 import xyz.quaver.pupil.util.download.DownloadWorker
 import java.util.*
@@ -78,7 +78,7 @@ class ReaderActivity : AppCompatActivity() {
 
     private var menu: Menu? = null
 
-    private lateinit var favorites: Histories
+    private lateinit var favorites: GalleryList
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
