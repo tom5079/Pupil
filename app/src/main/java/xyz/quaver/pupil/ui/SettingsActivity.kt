@@ -156,43 +156,6 @@ class SettingsActivity : AppCompatActivity() {
                             .apply()
                 }
             }
-            R.id.request_import_old_galleries -> {
-                if (resultCode == Activity.RESULT_OK) {
-                    data?.data?.also { uri ->
-                        val takeFlags: Int =
-                            intent.flags and (Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
-
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT)
-                            contentResolver.takePersistableUriPermission(uri, takeFlags)
-
-                        val file = uri.toFile(this)
-
-                        if (file?.canRead() != true)
-                            Snackbar.make(
-                                settings,
-                                resources.getText(R.string.import_old_galleries_folder_not_readable),
-                                Snackbar.LENGTH_LONG
-                            ).show()
-                        else
-                            importOldGalleries(this, file)
-                    }
-                }
-            }
-            R.id.request_import_old_galleries_old -> {
-                if (resultCode == DirectoryChooserActivity.RESULT_CODE_DIR_SELECTED) {
-                    val directory = data?.getStringExtra(DirectoryChooserActivity.RESULT_SELECTED_DIR)!!
-
-                    if (!File(directory).canRead())
-                        Snackbar.make(
-                            settings,
-                            resources.getText(R.string.import_old_galleries_folder_not_readable),
-                            Snackbar.LENGTH_LONG
-                        ).show()
-                    else {
-                        importOldGalleries(this, File(directory))
-                    }
-                }
-            }
             else -> super.onActivityResult(requestCode, resultCode, data)
         }
     }
