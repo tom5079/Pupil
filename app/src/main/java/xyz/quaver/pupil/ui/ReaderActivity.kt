@@ -96,6 +96,7 @@ class ReaderActivity : AppCompatActivity() {
 
         handleIntent(intent)
 
+        (application as Pupil).histories.add(galleryID)
         FirebaseCrashlytics.getInstance().setCustomKey("GalleryID", galleryID)
 
         if (galleryID == 0) {
