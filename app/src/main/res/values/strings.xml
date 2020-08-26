@@ -148,6 +148,7 @@
     <string name="settings_miscellaneous_title">Miscellaneous</string>
     <string name="settings_mirror_summary">Load images from mirrors</string>
     <string name="settings_proxy_title">Proxy</string>
+    <string name="settings_rtl">Turn pages Right-to-Left</string>
     <string name="settings_security_mode_title">Enable security mode</string>
     <string name="settings_security_mode_summary">Enable security mode to make the screen invisible on recent app window</string>
     <string name="settings_dark_mode_title">Dark mode</string>

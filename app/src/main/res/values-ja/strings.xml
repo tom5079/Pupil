@@ -136,4 +136,5 @@
     <string name="reader_fab_retry">リトライ</string>
     <string name="reader_fab_auto">自動スクロール</string>
     <string name="search_all">全てのギャラリーを対象に検索</string>
+    <string name="settings_rtl">綴じ方向を左にする</string>
 </resources>

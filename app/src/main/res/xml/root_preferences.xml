@@ -81,6 +81,11 @@
             app:title="@string/settings_proxy_title"/>
 
         <SwitchPreferenceCompat
+            app:key="rtl"
+            app:title="@string/settings_rtl"
+            app:defaultValue="false" />
+
+        <SwitchPreferenceCompat
             app:key="security_mode"
             app:title="@string/settings_security_mode_title"
             app:summary="@string/settings_security_mode_summary"
