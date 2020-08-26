@@ -135,4 +135,5 @@
     <string name="settings_user_id_toast">유저 ID를 클립보드에 복사했습니다</string>
     <string name="reader_fab_retry">재시도</string>
     <string name="reader_fab_auto">자동 스크롤</string>
+    <string name="search_all">모든 갤러리 검색</string>
 </resources>
