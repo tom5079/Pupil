@@ -67,7 +67,7 @@ data class Tag(val area: String?, val tag: String, val isNegative: Boolean = fal
     }
 }
 
-class Tags(tag: List<Tag?>?) : ArrayList<Tag>() {
+class Tags(val tags: MutableSet<Tag> = mutableSetOf()) : MutableSet<Tag> by tags {
 
     companion object {
         fun parse(tags: String) : Tags {
@@ -77,20 +77,13 @@ class Tags(tag: List<Tag?>?) : ArrayList<Tag>() {
                         Tag.parse(it)
                     else
                         null
-                }
+                }.filterNotNull().toMutableSet()
             )
         }
     }
 
-    init {
-        tag?.forEach {
-            if (it != null)
-                add(it)
-        }
-    }
-
     fun contains(element: String): Boolean {
-        forEach {
+        tags.forEach {
             if (it.toString() == element)
                 return true
         }
@@ -99,23 +92,25 @@ class Tags(tag: List<Tag?>?) : ArrayList<Tag>() {
     }
 
     fun add(element: String): Boolean {
-        return super.add(Tag.parse(element))
+        return tags.add(Tag.parse(element))
     }
 
     fun remove(element: String) {
-        filter { it.toString() == element }.forEach {
-            remove(it)
+        tags.filter { it.toString() == element }.forEach {
+            tags.remove(it)
         }
     }
 
     fun removeByArea(area: String, isNegative: Boolean? = null) {
-        filter { it.area == area && (if(isNegative == null) true else (it.isNegative == isNegative)) }.forEach {
-            remove(it)
+        tags.filter { it.area == area && (if(isNegative == null) true else (it.isNegative == isNegative)) }.forEach {
+            tags.remove(it)
         }
     }
 
     override fun toString(): String {
-        return joinToString(" ") { it.toString() }
+        return tags.joinToString(" ") { it.toString() }
     }
+
+
 
 }

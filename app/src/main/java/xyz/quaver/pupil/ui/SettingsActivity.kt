@@ -80,7 +80,7 @@ class SettingsActivity : AppCompatActivity() {
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         when(requestCode) {
-            R.id.request_lock -> {
+            R.id.request_lock.normalizeID() -> {
                 if (resultCode == Activity.RESULT_OK) {
                     supportFragmentManager
                         .beginTransaction()
@@ -89,7 +89,7 @@ class SettingsActivity : AppCompatActivity() {
                         .commitAllowingStateLoss()
                 }
             }
-            R.id.request_restore -> {
+            R.id.request_restore.normalizeID() -> {
                 if (resultCode == Activity.RESULT_OK) {
                     val uri = data?.data ?: return
 
@@ -103,7 +103,7 @@ class SettingsActivity : AppCompatActivity() {
                         (application as Pupil).favorites.addAll(Json.decodeFromString<List<Int>>(str).also {
                             Snackbar.make(
                                 window.decorView,
-                                getString(R.string.settings_restore_successful, it.size),
+                                getString(R.string.settings_restore_success, it.size),
                                 Snackbar.LENGTH_LONG
                             ).show()
                         })
@@ -116,7 +116,7 @@ class SettingsActivity : AppCompatActivity() {
                     }
                 }
             }
-            R.id.request_download_folder -> {
+            R.id.request_download_folder.normalizeID() -> {
                 if (resultCode == Activity.RESULT_OK) {
                     data?.data?.also { uri ->
                         val takeFlags: Int =
@@ -140,7 +140,7 @@ class SettingsActivity : AppCompatActivity() {
                     }
                 }
             }
-            R.id.request_download_folder_old -> {
+            R.id.request_download_folder_old.normalizeID() -> {
                 if (resultCode == DirectoryChooserActivity.RESULT_CODE_DIR_SELECTED) {
                     val directory = data?.getStringExtra(DirectoryChooserActivity.RESULT_SELECTED_DIR)!!
 
@@ -163,7 +163,7 @@ class SettingsActivity : AppCompatActivity() {
     @SuppressLint("InlinedApi")
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         when (requestCode) {
-            R.id.request_write_permission_and_saf -> {
+            R.id.request_write_permission_and_saf.normalizeID() -> {
                 if (grantResults.firstOrNull() == PackageManager.PERMISSION_GRANTED) {
                     val intent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).apply {
                         putExtra("android.content.extra.SHOW_ADVANCED", true)

@@ -54,7 +54,7 @@
     <string name="settings_clear_downloads">ダウンロード削除</string>
     <string name="settings_clear_downloads_alert_message">ダウンロードしたギャラリーを全て削除します。\n実行しますか？</string>
     <string name="settings_mirror_summary">ミラーサーバからイメージをロード</string>
-    <string name="main_drawer_favorite">お気に入り</string>
+    <string name="main_drawer_favorite">ブックマーク</string>
     <string name="main_open_gallery_by_id">ギャラリー番号で見る</string>
     <string name="reader_failed_to_find_gallery">エラーが発生しました</string>
     <string name="settings_storage">ストレージ</string>
@@ -91,11 +91,11 @@
     <string name="settings_nomedia_title">イメージを隠す</string>
     <string name="main_delete">削除</string>
     <string name="main_download">ダウンロード</string>
-    <string name="settings_backup_title">お気に入りバックアップ</string>
-    <string name="settings_restore_title">お気に入り復元</string>
-    <string name="settings_backup_snackbar">バックアップファイルを作成しました</string>
+    <string name="settings_backup_title">ブックマークバックアップ</string>
+    <string name="settings_restore_title">ブックマーク復元</string>
+    <string name="settings_backup_file_created">バックアップファイルを作成しました</string>
     <string name="settings_restore_failed">復元に失敗しました</string>
-    <string name="settings_restore_successful">%1$d項目を復元しました</string>
+    <string name="settings_restore_success">%1$d項目を復元しました</string>
     <string name="settings_dl_location">ダウンロード場所</string>
     <string name="settings_dl_location_internal">内部ストレージ</string>
     <string name="settings_dl_location_removable">外部SDカード</string>
@@ -137,4 +137,7 @@
     <string name="reader_fab_auto">自動スクロール</string>
     <string name="search_all">全てのギャラリーを対象に検索</string>
     <string name="settings_rtl">綴じ方向を左にする</string>
+    <string name="settings_manage_favorites">ブックマーク管理</string>
+    <string name="settings_backup_failed">エラーが発生しました</string>
+    <string name="settings_backup_share">バックアップ共有</string>
 </resources>

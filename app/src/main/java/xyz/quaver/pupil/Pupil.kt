@@ -83,6 +83,10 @@ class Pupil : MultiDexApplication() {
                     histories.clear()
                     histories.addAll(it)
                 }
+                favorites.reversed().let {
+                    favorites.clear()
+                    favorites.addAll(it)
+                }
             }
             preference.edit().putBoolean("old_history", false).apply()
         }

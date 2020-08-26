@@ -91,9 +91,9 @@
     <string name="main_download">다운로드</string>
     <string name="settings_backup_title">즐겨찾기 백업</string>
     <string name="settings_restore_title">즐겨찾기 복원</string>
-    <string name="settings_backup_snackbar">백업 파일을 생성하였습니다</string>
+    <string name="settings_backup_file_created">백업 파일을 생성하였습니다</string>
     <string name="settings_restore_failed">복원에 실패했습니다</string>
-    <string name="settings_restore_successful">%1$d개 항목을 복원했습니다</string>
+    <string name="settings_restore_success">%1$d개 항목을 복원했습니다</string>
     <string name="settings_dl_location">다운로드 위치</string>
     <string name="settings_dl_location_internal">내부 저장공간</string>
     <string name="settings_dl_location_removable">외부 SD카드</string>
@@ -137,4 +137,7 @@
     <string name="reader_fab_auto">자동 스크롤</string>
     <string name="search_all">모든 갤러리 검색</string>
     <string name="settings_rtl">좌측으로 페이지 넘기기</string>
+    <string name="settings_manage_favorites">즐겨찾기 관리</string>
+    <string name="settings_backup_failed">업로드 실패</string>
+    <string name="settings_backup_share">백업 공유</string>
 </resources>

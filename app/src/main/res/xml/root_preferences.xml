@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.preference.PreferenceScreen
+<PreferenceScreen
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <Preference
@@ -101,12 +101,8 @@
             app:title="@string/settings_nomedia_title"/>
 
         <Preference
-            app:key="backup"
-            app:title="@string/settings_backup_title"/>
-
-        <Preference
-            app:key="restore"
-            app:title="@string/settings_restore_title"/>
+            app:fragment="xyz.quaver.pupil.ui.fragment.ManageFavoritesFragment"
+            app:title="@string/settings_manage_favorites"/>
 
         <Preference
             app:key="user_id"
@@ -114,4 +110,4 @@
 
     </PreferenceCategory>
 
-</androidx.preference.PreferenceScreen>
+</PreferenceScreen>

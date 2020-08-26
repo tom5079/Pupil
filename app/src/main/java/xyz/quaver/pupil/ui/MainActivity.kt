@@ -62,7 +62,6 @@ import xyz.quaver.hitomi.getSuggestionsForQuery
 import xyz.quaver.pupil.Pupil
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.adapters.GalleryBlockAdapter
-import xyz.quaver.pupil.types.Tag
 import xyz.quaver.pupil.types.TagSuggestion
 import xyz.quaver.pupil.types.Tags
 import xyz.quaver.pupil.ui.dialog.GalleryDialog
@@ -151,6 +150,18 @@ class MainActivity : AppCompatActivity() {
         with(application as Pupil) {
             this@MainActivity.histories = histories
             this@MainActivity.favorites = favorites
+        }
+
+        if (intent.action == Intent.ACTION_VIEW) {
+            intent.dataString?.let { url ->
+                restore(favorites, url,
+                    onFailure = {
+                        Snackbar.make(this.main_recyclerview, R.string.settings_backup_failed, Snackbar.LENGTH_LONG).show()
+                    }, onSuccess = {
+                        Snackbar.make(this.main_recyclerview, getString(R.string.settings_restore_success, it.size), Snackbar.LENGTH_LONG).show()
+                    }
+                )
+            }
         }
 
         setContentView(R.layout.activity_main)
@@ -771,7 +782,7 @@ class MainActivity : AppCompatActivity() {
 
             if (!favoritesFile.exists()) {
                 favoritesFile.createNewFile()
-                favoritesFile.writeText(Json.encodeToString(Tags(listOf())))
+                favoritesFile.writeText(Json.encodeToString(Tags()))
             }
 
             setOnLeftMenuClickListener(object: FloatingSearchView.OnLeftMenuClickListener {
@@ -833,7 +844,7 @@ class MainActivity : AppCompatActivity() {
                 clearSuggestions()
 
                 if (query.isEmpty() or query.endsWith(' ')) {
-                    swapSuggestions(Json.decodeFromString<Tags>(favoritesFile.readText()).map {
+                    swapSuggestions(Tags(Json.decodeFromString(favoritesFile.readText())).map {
                         TagSuggestion(it.tag, -1, "", it.area ?: "tag")
                     })
 
@@ -911,7 +922,7 @@ class MainActivity : AppCompatActivity() {
                             favorites.add(tag)
                         }
 
-                        favoritesFile.writeText(Json.encodeToString(favorites))
+                        favoritesFile.writeText(Json.encodeToString(favorites.tags))
                     }
                 }
 
@@ -951,7 +962,7 @@ class MainActivity : AppCompatActivity() {
             setOnFocusChangeListener(object: FloatingSearchView.OnFocusChangeListener {
                 override fun onFocus() {
                     if (query.isEmpty() or query.endsWith(' '))
-                        swapSuggestions(Tags(Json.decodeFromString<List<Tag>>(favoritesFile.readText())).map {
+                        swapSuggestions(Tags(Json.decodeFromString(favoritesFile.readText())).map {
                             TagSuggestion(it.tag, -1, "", it.area ?: "tag")
                         })
                 }
@@ -1076,7 +1087,7 @@ class MainActivity : AppCompatActivity() {
                 }
                 Mode.FAVORITE -> {
                     when {
-                        query.isEmpty() -> favorites.toList().also {
+                        query.isEmpty() -> favorites.reversed().also {
                             totalItems = it.size
                         }
                         else -> {

@@ -26,14 +26,15 @@ import java.io.File
 class GalleryList(private val file: File, private val list: MutableSet<Int> = mutableSetOf()) : MutableSet<Int> by list {
 
     init {
+        if (!file.exists()) {
+            file.parentFile?.mkdirs()
+            save()
+        }
         load()
     }
 
     fun load() {
         synchronized(this) {
-            if (!file.exists())
-                file.parentFile?.mkdirs()
-
             list.clear()
             list.addAll(
                 Json.decodeFromString<List<Int>>(file.bufferedReader().use { it.readText() })
