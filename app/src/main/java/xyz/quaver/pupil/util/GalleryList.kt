@@ -23,69 +23,57 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.io.File
 
-class Histories(private val file: File) : ArrayList<Int>() {
+class GalleryList(private val file: File, private val list: MutableSet<Int> = mutableSetOf()) : MutableSet<Int> by list {
 
     init {
-        if (!file.exists())
-            file.parentFile?.mkdirs()
-
-        try {
-            load()
-        } catch (e: Exception) {
-            save()
-        }
+        load()
     }
 
-    fun load() : Histories {
-        return apply {
-            super.clear()
-            super.addAll(
-                Json.decodeFromString(file.bufferedReader().use { it.readText() })
+    fun load() {
+        synchronized(this) {
+            if (!file.exists())
+                file.parentFile?.mkdirs()
+
+            list.clear()
+            list.addAll(
+                Json.decodeFromString<List<Int>>(file.bufferedReader().use { it.readText() })
             )
         }
     }
 
     fun save() {
-        file.writeText(Json.encodeToString(toList()))
+        synchronized(this) {
+            file.writeText(Json.encodeToString(list))
+        }
     }
 
     override fun add(element: Int): Boolean {
         load()
 
-        if (contains(element))
-            super.remove(element)
-
-        super.add(0, element)
-
-        save()
-
-        return true
+        return list.add(element).also {
+            save()
+        }
     }
 
     override fun addAll(elements: Collection<Int>): Boolean {
         load()
 
-        for (e in elements) {
-            if (contains(e))
-                super.remove(e)
-            super.add(0, e)
+        return list.addAll(elements).also {
+            save()
         }
-
-        save()
-
-        return true
     }
 
     override fun remove(element: Int): Boolean {
         load()
-        val retval = super.remove(element)
-        save()
 
-        return retval
+        return list.remove(element).also {
+            save()
+        }
     }
 
     override fun clear() {
-        super.clear()
+        list.clear()
         save()
     }
+
 }

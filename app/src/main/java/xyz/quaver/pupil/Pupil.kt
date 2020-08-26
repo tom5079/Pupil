@@ -33,15 +33,15 @@ import com.google.android.gms.security.ProviderInstaller
 import com.google.firebase.analytics.FirebaseAnalytics
 import com.google.firebase.crashlytics.FirebaseCrashlytics
 import xyz.quaver.proxy
-import xyz.quaver.pupil.util.Histories
+import xyz.quaver.pupil.util.GalleryList
 import xyz.quaver.pupil.util.getProxy
 import java.io.File
 import java.util.*
 
 class Pupil : MultiDexApplication() {
 
-    lateinit var histories: Histories
-    lateinit var favorites: Histories
+    lateinit var histories: GalleryList
+    lateinit var favorites: GalleryList
 
     init {
         AppCompatDelegate.setCompatVectorFromResourcesEnabled(true)
@@ -71,8 +71,8 @@ class Pupil : MultiDexApplication() {
             preference.edit().remove("dl_location").apply()
         }
 
-        histories = Histories(File(ContextCompat.getDataDir(this), "histories.json"))
-        favorites = Histories(File(ContextCompat.getDataDir(this), "favorites.json"))
+        histories = GalleryList(File(ContextCompat.getDataDir(this), "histories.json"))
+        favorites = GalleryList(File(ContextCompat.getDataDir(this), "favorites.json"))
 
         if (BuildConfig.DEBUG)
             FirebaseAnalytics.getInstance(this).setAnalyticsCollectionEnabled(false)
