@@ -179,6 +179,11 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
         }.forEach {
             it.cancel()
         }
+        client.dispatcher().runningCalls().filter {
+            it.request().tag() is Pair<*, *>
+        }.forEach {
+            it.cancel()
+        }
 
         progress.clear()
         notification.clear()
@@ -190,6 +195,11 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
         worker[galleryID]?.cancel()
 
         client.dispatcher().queuedCalls().filter {
+            ((it.request().tag() as Pair<*, *>).first as Int) == galleryID
+        }.forEach {
+            it.cancel()
+        }
+        client.dispatcher().runningCalls().filter {
             ((it.request().tag() as Pair<*, *>).first as Int) == galleryID
         }.forEach {
             it.cancel()
