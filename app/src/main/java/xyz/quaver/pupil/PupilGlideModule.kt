@@ -35,7 +35,7 @@ class PupilGlideModule : AppGlideModule() {
         registry.append(
             GlideUrl::class.java,
             InputStream::class.java,
-            OkHttpUrlLoader.Factory(DownloadWorker.getInstance(context).client)
+            OkHttpUrlLoader.Factory(client)
         )
     }
 

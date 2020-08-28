@@ -40,6 +40,7 @@ import net.rdrei.android.dirchooser.DirectoryChooserActivity
 import net.rdrei.android.dirchooser.DirectoryChooserConfig
 import xyz.quaver.pupil.Pupil
 import xyz.quaver.pupil.R
+import xyz.quaver.pupil.histories
 import xyz.quaver.pupil.ui.LockActivity
 import xyz.quaver.pupil.ui.SettingsActivity
 import xyz.quaver.pupil.ui.dialog.DefaultQueryDialog
@@ -143,8 +144,6 @@ class SettingsFragment :
                     }.show()
                 }
                 "clear_history" -> {
-                    val histories = (requireContext().applicationContext as Pupil).histories
-
                     AlertDialog.Builder(requireContext()).apply {
                         setTitle(R.string.warning)
                         setMessage(R.string.settings_clear_history_alert_message)
@@ -220,10 +219,10 @@ class SettingsFragment :
 
             when (key) {
                 "proxy" -> {
-                    summary = getProxyInfo(requireContext()).type.name
+                    summary = context?.let { getProxyInfo(it).type.name }
                 }
                 "dl_location" -> {
-                    summary = getDownloadDirectory(requireContext()).canonicalPath
+                    summary = context?.let { getDownloadDirectory(it).canonicalPath }
                 }
             }
         }
@@ -286,7 +285,6 @@ class SettingsFragment :
                             onPreferenceClickListener = this@SettingsFragment
                         }
                         "clear_history" -> {
-                            val histories = (requireActivity().application as Pupil).histories
                             summary = getString(R.string.settings_clear_history_summary, histories.size)
 
                             onPreferenceClickListener = this@SettingsFragment

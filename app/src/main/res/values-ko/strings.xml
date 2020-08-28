@@ -140,4 +140,7 @@
     <string name="settings_manage_favorites">즐겨찾기 관리</string>
     <string name="settings_backup_failed">업로드 실패</string>
     <string name="settings_backup_share">백업 공유</string>
+    <string name="channel_downloader">다운로더</string>
+    <string name="channel_downloader_description">다운로더 작동 여부 표시</string>
+    <string name="downloader_running">다운로더 작동중…</string>
 </resources>

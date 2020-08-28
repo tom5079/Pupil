@@ -18,6 +18,7 @@
 
 package xyz.quaver.pupil
 
+import android.app.Application
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -25,7 +26,6 @@ import android.content.Context
 import android.os.Build
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.content.ContextCompat
-import androidx.multidex.MultiDexApplication
 import androidx.preference.PreferenceManager
 import com.google.android.gms.common.GooglePlayServicesNotAvailableException
 import com.google.android.gms.common.GooglePlayServicesRepairableException
@@ -35,16 +35,37 @@ import com.google.firebase.crashlytics.FirebaseCrashlytics
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import xyz.quaver.proxy
+import okhttp3.Dispatcher
+import okhttp3.Interceptor
+import okhttp3.OkHttpClient
+import okhttp3.Response
 import xyz.quaver.pupil.util.GalleryList
-import xyz.quaver.pupil.util.getProxy
+import xyz.quaver.pupil.util.getProxyInfo
+import xyz.quaver.setClient
 import java.io.File
 import java.util.*
+import java.util.concurrent.TimeUnit
+import kotlin.reflect.KClass
 
-class Pupil : MultiDexApplication() {
+typealias PupilInterceptor = (Interceptor.Chain) -> Response
 
-    lateinit var histories: GalleryList
-    lateinit var favorites: GalleryList
+lateinit var histories: GalleryList
+    private set
+lateinit var favorites: GalleryList
+    private set
+
+val interceptors = mutableMapOf<KClass<out Any>, PupilInterceptor>()
+
+lateinit var clientBuilder: OkHttpClient.Builder
+
+var clientHolder: OkHttpClient? = null
+val client: OkHttpClient
+    get() = clientHolder ?: clientBuilder.build().also {
+        clientHolder = it
+        setClient(it)
+    }
+
+class Pupil : Application() {
 
     init {
         AppCompatDelegate.setCompatVectorFromResourcesEnabled(true)
@@ -63,7 +84,19 @@ class Pupil : MultiDexApplication() {
 
         FirebaseCrashlytics.getInstance().setUserId(userID)
 
-        proxy = getProxy(this)
+        val proxyInfo = getProxyInfo(this)
+
+        clientBuilder = OkHttpClient.Builder()
+            .connectTimeout(0, TimeUnit.SECONDS)
+            .readTimeout(0, TimeUnit.SECONDS)
+            .proxy(proxyInfo.proxy())
+            .proxyAuthenticator(proxyInfo.authenticator())
+            .addInterceptor { chain ->
+                val request = chain.request()
+                val tag = request.tag() ?: return@addInterceptor chain.proceed(request)
+
+                interceptors[tag::class]?.invoke(chain) ?: chain.proceed(request)
+            }
 
         try {
             preference.getString("dl_location", null).also {
@@ -112,6 +145,13 @@ class Pupil : MultiDexApplication() {
                 lockscreenVisibility = Notification.VISIBILITY_SECRET
             })
 
+            manager.createNotificationChannel(NotificationChannel("downloader", getString(R.string.channel_downloader), NotificationManager.IMPORTANCE_LOW).apply {
+                description = getString(R.string.channel_downloader_description)
+                enableLights(false)
+                enableVibration(false)
+                lockscreenVisibility = Notification.VISIBILITY_SECRET
+            })
+
             manager.createNotificationChannel(NotificationChannel("update", getString(R.string.channel_update), NotificationManager.IMPORTANCE_HIGH).apply {
                 description = getString(R.string.channel_update_description)
                 enableLights(true)
@@ -127,7 +167,6 @@ class Pupil : MultiDexApplication() {
             })
         }
 
-        AppCompatDelegate.setCompatVectorFromResourcesEnabled(true)
         AppCompatDelegate.setDefaultNightMode(when (preference.getBoolean("dark_mode", false)) {
             true -> AppCompatDelegate.MODE_NIGHT_YES
             false -> AppCompatDelegate.MODE_NIGHT_NO

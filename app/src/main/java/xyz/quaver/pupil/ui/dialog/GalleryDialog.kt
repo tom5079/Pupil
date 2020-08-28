@@ -48,6 +48,7 @@ import xyz.quaver.pupil.Pupil
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.adapters.GalleryBlockAdapter
 import xyz.quaver.pupil.adapters.ThumbnailPageAdapter
+import xyz.quaver.pupil.histories
 import xyz.quaver.pupil.types.Tag
 import xyz.quaver.pupil.ui.ReaderActivity
 import xyz.quaver.pupil.util.ItemClickSupport
@@ -81,7 +82,7 @@ class GalleryDialog(context: Context, private val glide: RequestManager, private
                 context.startActivity(Intent(context, ReaderActivity::class.java).apply {
                     putExtra("galleryID", galleryID)
                 })
-                (context.applicationContext as Pupil).histories.add(galleryID)
+                histories.add(galleryID)
             }
         }
 
@@ -264,7 +265,7 @@ class GalleryDialog(context: Context, private val glide: RequestManager, private
                         context.startActivity(Intent(context, ReaderActivity::class.java).apply {
                             putExtra("galleryID", galleries[position].id)
                         })
-                        (context.applicationContext as Pupil).histories.add(galleries[position].id)
+                        histories.add(galleries[position].id)
                     }
                     onItemLongClickListener = { _, position, _ ->
                         GalleryDialog(

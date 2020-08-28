@@ -23,8 +23,7 @@ import androidx.preference.PreferenceManager
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
-import okhttp3.Authenticator
-import okhttp3.Credentials
+import okhttp3.*
 import java.net.InetSocketAddress
 import java.net.Proxy
 

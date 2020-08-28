@@ -37,8 +37,11 @@
 
         </provider>
 
+        <service android:name=".services.DownloadService"
+            android:exported="false"/>
+
         <receiver
-            android:name=".BroadcastReciever"
+            android:name=".reciever.UpdateBroadcastReciever"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.DOWNLOAD_COMPLETE" />

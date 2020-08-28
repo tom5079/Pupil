@@ -53,7 +53,7 @@ fun byteToString(byte: Long, precision : Int = 1) : String {
 
 }
 
-/*
+/**
  * Convert android generated ID to requestCode
  * to prevent java.lang.IllegalArgumentException: Can only use lower 16 bits for requestCode
  *

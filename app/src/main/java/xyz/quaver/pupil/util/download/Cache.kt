@@ -28,14 +28,13 @@ import kotlinx.coroutines.*
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import okhttp3.Dispatcher
 import xyz.quaver.Code
 import xyz.quaver.hitomi.GalleryBlock
 import xyz.quaver.hitomi.Reader
-import xyz.quaver.proxy
 import xyz.quaver.pupil.util.getCachedGallery
 import xyz.quaver.pupil.util.getDownloadDirectory
 import xyz.quaver.pupil.util.isParentOf
+import xyz.quaver.readBytes
 import java.io.BufferedInputStream
 import java.io.File
 import java.io.FileOutputStream
@@ -91,11 +90,12 @@ class Cache(context: Context) : ContextWrapper(context) {
         @Suppress("BlockingMethodInNonBlockingContext")
         val thumbnail = if (metadata?.thumbnail == null)
             withContext(Dispatchers.IO) {
-                val thumbnails = getGalleryBlock(galleryID)?.thumbnails
+                val thumbnail = getGalleryBlock(galleryID)?.thumbnails?.firstOrNull() ?: return@withContext null
                 try {
-                    Base64.encodeToString(URL(thumbnails?.firstOrNull()).openConnection(proxy).getInputStream().use {
-                        it.readBytes()
-                    }, Base64.DEFAULT)
+                    val data = URL(thumbnail).readBytes().apply {
+                        if (isEmpty()) return@withContext null
+                    }
+                    Base64.encodeToString(data, Base64.DEFAULT)
                 } catch (e: Exception) {
                     null
                 }
@@ -178,7 +178,7 @@ class Cache(context: Context) : ContextWrapper(context) {
                     retval = try {
                         withContext(Dispatchers.IO) {
                             withTimeoutOrNull(1000) {
-                                    source.value.invoke()
+                                source.value.invoke()
                             }
                         }
                     } catch (e: Exception) {

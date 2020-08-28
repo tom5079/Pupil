@@ -46,6 +46,8 @@ import xyz.quaver.Code
 import xyz.quaver.pupil.Pupil
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.adapters.ReaderAdapter
+import xyz.quaver.pupil.favorites
+import xyz.quaver.pupil.histories
 import xyz.quaver.pupil.util.GalleryList
 import xyz.quaver.pupil.util.download.Cache
 import xyz.quaver.pupil.util.download.DownloadWorker
@@ -78,15 +80,11 @@ class ReaderActivity : AppCompatActivity() {
 
     private var menu: Menu? = null
 
-    private lateinit var favorites: GalleryList
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         title = getString(R.string.reader_loading)
         supportActionBar?.setDisplayHomeAsUpEnabled(false)
-
-        favorites = (application as Pupil).favorites
 
         window.setFlags(
             WindowManager.LayoutParams.FLAG_SECURE,
@@ -96,7 +94,7 @@ class ReaderActivity : AppCompatActivity() {
 
         handleIntent(intent)
 
-        (application as Pupil).histories.add(galleryID)
+        histories.add(galleryID)
         FirebaseCrashlytics.getInstance().setCustomKey("GalleryID", galleryID)
 
         if (galleryID == 0) {

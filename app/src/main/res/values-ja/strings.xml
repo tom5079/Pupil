@@ -140,4 +140,7 @@
     <string name="settings_manage_favorites">ブックマーク管理</string>
     <string name="settings_backup_failed">エラーが発生しました</string>
     <string name="settings_backup_share">バックアップ共有</string>
+    <string name="channel_downloader">ダウンローダ</string>
+    <string name="channel_downloader_description">ダウンローダの状態を表示</string>
+    <string name="downloader_running">ダウンローダー起動中</string>
 </resources>
