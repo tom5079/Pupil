@@ -16,7 +16,7 @@
  *     along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package xyz.quaver.pupil
+package xyz.quaver.pupil.reciever
 
 import android.app.DownloadManager
 import android.app.PendingIntent
@@ -29,15 +29,10 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.FileProvider
 import androidx.preference.PreferenceManager
+import xyz.quaver.pupil.R
 import java.io.File
 
-class BroadcastReciever : BroadcastReceiver() {
-
-    companion object {
-        const val ACTION_CANCEL_IMPORT = "ACTION_CANCEL_IMPORT"
-
-        const val EXTRA_IMPORT_NOTIFICATION_ID = "EXTRA_IMPORT_NOTIFICATION_ID"
-    }
+class UpdateBroadcastReciever : BroadcastReceiver() {
 
     override fun onReceive(context: Context?, intent: Intent?) {
         context ?: return

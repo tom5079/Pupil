@@ -29,6 +29,9 @@
     <string name="channel_download">Download</string>
     <string name="channel_download_description">Shows download status</string>
 
+    <string name="channel_downloader">Downloader</string>
+    <string name="channel_downloader_description">Shows downloader status</string>
+
     <string name="channel_update">Update</string>
     <string name="channel_update_description">Shows update progress</string>
 
@@ -102,6 +105,9 @@
     <string name="reader_fab_download_cancel">Cancel background download</string>
     <string name="reader_notification_text">Downloading&#8230;</string>
     <string name="reader_notification_complete">Download complete</string>
+
+    <!-- DOWNLOADER -->
+    <string name="downloader_running">Downloader running…</string>
 
     <!-- SETTINGS -->
 

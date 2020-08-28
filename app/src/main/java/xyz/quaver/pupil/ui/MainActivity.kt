@@ -22,7 +22,9 @@ import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Intent
 import android.graphics.drawable.Animatable
+import android.net.Proxy
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.text.*
 import android.text.style.AlignmentSpan
@@ -59,9 +61,11 @@ import xyz.quaver.hitomi.GalleryBlock
 import xyz.quaver.hitomi.doSearch
 import xyz.quaver.hitomi.getGalleryIDsFromNozomi
 import xyz.quaver.hitomi.getSuggestionsForQuery
-import xyz.quaver.pupil.Pupil
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.adapters.GalleryBlockAdapter
+import xyz.quaver.pupil.favorites
+import xyz.quaver.pupil.histories
+import xyz.quaver.pupil.services.DownloadService
 import xyz.quaver.pupil.types.TagSuggestion
 import xyz.quaver.pupil.types.Tags
 import xyz.quaver.pupil.ui.dialog.GalleryDialog
@@ -110,9 +114,6 @@ class MainActivity : AppCompatActivity() {
     private var loadingJob: Job? = null
     private var currentPage = 0
 
-    private lateinit var histories: GalleryList
-    private lateinit var favorites: GalleryList
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -147,11 +148,6 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        with(application as Pupil) {
-            this@MainActivity.histories = histories
-            this@MainActivity.favorites = favorites
-        }
-
         if (intent.action == Intent.ACTION_VIEW) {
             intent.dataString?.let { url ->
                 restore(favorites, url,
@@ -165,6 +161,15 @@ class MainActivity : AppCompatActivity() {
         }
 
         setContentView(R.layout.activity_main)
+
+        Intent(this, DownloadService::class.java).let {
+            when {
+                Build.VERSION.SDK_INT >= Build.VERSION_CODES.O ->
+                    startForegroundService(it)
+                else ->
+                    startService(it)
+            }
+        }
 
         checkUpdate(this)
 

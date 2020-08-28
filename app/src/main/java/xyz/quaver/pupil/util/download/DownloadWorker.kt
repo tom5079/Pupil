@@ -40,13 +40,13 @@ import xyz.quaver.hitomi.imageUrlFromImage
 import xyz.quaver.hiyobi.cookie
 import xyz.quaver.hiyobi.createImgList
 import xyz.quaver.hiyobi.user_agent
-import xyz.quaver.proxy
 import xyz.quaver.pupil.R
+import xyz.quaver.pupil.client
+import xyz.quaver.pupil.interceptors
 import xyz.quaver.pupil.ui.ReaderActivity
 import java.io.File
 import java.io.IOException
 import java.util.concurrent.LinkedBlockingQueue
-import java.util.concurrent.TimeUnit
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class DownloadWorker private constructor(context: Context) : ContextWrapper(context) {
@@ -86,7 +86,6 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
         }
 
         private fun source(source: Source) = object: ForwardingSource(source) {
-
             var totalBytesRead = 0L
 
             override fun read(sink: Buffer, byteCount: Long): Long {
@@ -98,6 +97,24 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
                 return bytesRead
             }
 
+        }
+    }
+
+    init {
+        interceptors[Pair::class] =  { chain ->
+            val request = chain.request()
+            var response = chain.proceed(request)
+
+            var retry = 5
+            while (!response.isSuccessful && retry > 0) {
+                response = chain.proceed(request)
+                retry--
+            }
+
+            response.newBuilder()
+                .body(response.body()?.let {
+                    ProgressResponseBody(request.tag(), it, progressListener)
+                }).build()
         }
     }
     //endregion
@@ -134,34 +151,6 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
 
     private val loop = loop()
     private val worker = SparseArray<Job?>()
-
-    val interceptor = Interceptor { chain ->
-        val request = chain.request()
-        var response = chain.proceed(request)
-
-        var retry = 5
-        while (!response.isSuccessful && retry > 0) {
-            response = chain.proceed(request)
-            retry--
-        }
-
-        response.newBuilder()
-            .body(response.body()?.let {
-                ProgressResponseBody(request.tag(), it, progressListener)
-            }).build()
-    }
-
-    val client : OkHttpClient =
-        OkHttpClient.Builder()
-            .connectTimeout(0, TimeUnit.SECONDS)
-            .addInterceptor(interceptor)
-            .readTimeout(0, TimeUnit.SECONDS)
-            .dispatcher(Dispatcher().apply {
-                maxRequests = 4
-                maxRequestsPerHost = 4
-            })
-            .proxy(proxy)
-            .build()
 
     fun stop() {
         queue.clear()
@@ -300,8 +289,8 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
                     val ext = call.request().url().encodedPath().split('.').last()
 
                     try {
-                        response.body().use {
-                            Cache(this@DownloadWorker).putImage(galleryID, i, ext, it!!.byteStream())
+                        response.body()!!.use {
+                            Cache(this@DownloadWorker).putImage(galleryID, i, ext, it.byteStream())
                         }
                         progress[galleryID]?.set(i, Float.POSITIVE_INFINITY)
 

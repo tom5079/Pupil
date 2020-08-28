@@ -35,6 +35,7 @@ import okhttp3.*
 import ru.noties.markwon.Markwon
 import xyz.quaver.pupil.BuildConfig
 import xyz.quaver.pupil.R
+import xyz.quaver.pupil.client
 import java.io.File
 import java.io.IOException
 import java.net.URL
@@ -187,7 +188,7 @@ fun restore(favorites: GalleryList, url: String, onFailure: ((Exception) -> Unit
         .get()
         .build()
 
-    OkHttpClient().newCall(request).enqueue(object: Callback {
+    client.newCall(request).enqueue(object: Callback {
         override fun onFailure(call: Call, e: IOException) {
             onFailure?.invoke(e)
         }

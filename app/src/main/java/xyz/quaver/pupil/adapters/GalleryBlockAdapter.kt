@@ -52,6 +52,7 @@ import xyz.quaver.hitomi.getReader
 import xyz.quaver.pupil.BuildConfig
 import xyz.quaver.pupil.Pupil
 import xyz.quaver.pupil.R
+import xyz.quaver.pupil.favorites
 import xyz.quaver.pupil.types.Tag
 import xyz.quaver.pupil.util.GalleryList
 import xyz.quaver.pupil.util.download.Cache
@@ -67,8 +68,6 @@ class GalleryBlockAdapter(private val glide: RequestManager, private val galleri
         GALLERY,
         PREV
     }
-
-    private lateinit var favorites: GalleryList
 
     val timer = Timer()
 
@@ -256,9 +255,6 @@ class GalleryBlockAdapter(private val glide: RequestManager, private val galleri
                         galleryblock_pagecount.text = context.getString(R.string.galleryblock_pagecount, pageCount)
                     }
                 }
-
-                if (!::favorites.isInitialized)
-                    favorites = (context.applicationContext as Pupil).favorites
 
                 with(galleryblock_favorite) {
                     setImageResource(if (favorites.contains(galleryBlock.id)) R.drawable.ic_star_filled else R.drawable.ic_star_empty)

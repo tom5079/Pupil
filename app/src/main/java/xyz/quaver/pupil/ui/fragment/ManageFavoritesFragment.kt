@@ -30,6 +30,8 @@ import com.google.android.material.snackbar.Snackbar
 import okhttp3.*
 import xyz.quaver.pupil.Pupil
 import xyz.quaver.pupil.R
+import xyz.quaver.pupil.client
+import xyz.quaver.pupil.favorites
 import xyz.quaver.pupil.util.restore
 import java.io.File
 import java.io.IOException
@@ -52,7 +54,7 @@ class ManageFavoritesFragment : PreferenceFragmentCompat() {
                         .build()
                 ).build()
 
-            OkHttpClient().newCall(request).enqueue(object: Callback {
+            client.newCall(request).enqueue(object: Callback {
                 override fun onFailure(call: Call, e: IOException) {
                     val view = view ?: return
                     Snackbar.make(view, R.string.settings_backup_failed, Snackbar.LENGTH_LONG).show()
@@ -79,7 +81,6 @@ class ManageFavoritesFragment : PreferenceFragmentCompat() {
                 .setTitle(R.string.settings_restore_title)
                 .setView(editText)
                 .setPositiveButton(android.R.string.ok) { _, _ ->
-                    val favorites = (activity?.application as? Pupil)?.favorites ?: return@setPositiveButton
                     restore(favorites, editText.text.toString(),
                         onFailure = onFailure@{
                             val view = view ?: return@onFailure

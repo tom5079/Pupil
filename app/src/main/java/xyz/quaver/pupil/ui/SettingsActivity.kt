@@ -35,6 +35,7 @@ import kotlinx.serialization.json.Json
 import net.rdrei.android.dirchooser.DirectoryChooserActivity
 import xyz.quaver.pupil.Pupil
 import xyz.quaver.pupil.R
+import xyz.quaver.pupil.favorites
 import xyz.quaver.pupil.ui.fragment.LockSettingsFragment
 import xyz.quaver.pupil.ui.fragment.SettingsFragment
 import xyz.quaver.pupil.util.*
@@ -100,7 +101,7 @@ class SettingsActivity : AppCompatActivity() {
                             inputStream.readBytes().toString(Charset.defaultCharset())
                         }
 
-                        (application as Pupil).favorites.addAll(Json.decodeFromString<List<Int>>(str).also {
+                        favorites.addAll(Json.decodeFromString<List<Int>>(str).also {
                             Snackbar.make(
                                 window.decorView,
                                 getString(R.string.settings_restore_success, it.size),
