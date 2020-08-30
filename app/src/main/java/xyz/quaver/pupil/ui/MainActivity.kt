@@ -132,18 +132,6 @@ class MainActivity : AppCompatActivity() {
         if (lockManager.isNotEmpty())
             startActivityForResult(Intent(this, LockActivity::class.java), R.id.request_lock.normalizeID())
 
-        if (Locale.getDefault().language == "ko") {
-            if (Preferences["https_block_alert"]) {
-                android.app.AlertDialog.Builder(this).apply {
-                    setTitle(R.string.https_block_alert_title)
-                    setMessage(R.string.https_block_alert)
-                    setPositiveButton(android.R.string.ok) { _, _ -> }
-                }.show()
-
-                Preferences["https_block_alert"] = false
-            }
-        }
-
         if (intent.action == Intent.ACTION_VIEW) {
             intent.dataString?.let { url ->
                 restore(favorites, url,
