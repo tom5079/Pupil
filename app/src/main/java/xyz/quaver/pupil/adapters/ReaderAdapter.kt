@@ -18,12 +18,10 @@
 
 package xyz.quaver.pupil.adapters
 
-import android.app.Activity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.constraintlayout.widget.ConstraintLayout
-import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.RequestManager
 import com.bumptech.glide.load.engine.DiskCacheStrategy
@@ -41,6 +39,7 @@ import xyz.quaver.hiyobi.cookie
 import xyz.quaver.hiyobi.createImgList
 import xyz.quaver.hiyobi.user_agent
 import xyz.quaver.pupil.R
+import xyz.quaver.pupil.util.Preferences
 import xyz.quaver.pupil.util.download.Cache
 import xyz.quaver.pupil.util.download.DownloadWorker
 import java.util.*
@@ -96,9 +95,8 @@ class ReaderAdapter(private val glide: RequestManager,
 
         holder.view.reader_index.text = (position+1).toString()
 
-        val preferences = PreferenceManager.getDefaultSharedPreferences(holder.view.context)
-        if (preferences.getBoolean("cache_disable", false)) {
-            val lowQuality = preferences.getBoolean("low_quality", false)
+        if (Preferences["cache_disable"]) {
+            val lowQuality: Boolean = Preferences["low_quality"]
 
             val url = when (reader!!.code) {
                 Code.HITOMI ->

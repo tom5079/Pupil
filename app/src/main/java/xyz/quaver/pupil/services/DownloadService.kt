@@ -33,9 +33,11 @@ import kotlinx.coroutines.launch
 import okhttp3.Interceptor
 import okhttp3.ResponseBody
 import okio.*
+import xyz.quaver.pupil.PupilInterceptor
 import xyz.quaver.pupil.R
+import xyz.quaver.pupil.interceptors
 
-private typealias ProgressListener = (Any?, Long, Long, Boolean) -> Unit
+private typealias ProgressListener = (DownloadService.Tag, Long, Long, Boolean) -> Unit
 
 class Cache(context: Context) : ContextWrapper(context) {
 
@@ -44,6 +46,8 @@ class Cache(context: Context) : ContextWrapper(context) {
 }
 
 class DownloadService : Service() {
+
+    data class Tag(val galleryID: Int, val index: Int)
 
     //region Notification
     private val notificationManager by lazy {
@@ -61,9 +65,7 @@ class DownloadService : Service() {
 
     //region ProgressListener
     @Suppress("UNCHECKED_CAST")
-    private val progressListener: ProgressListener = listener@{ tag, bytesRead, contentLength, done ->
-            val (galleryID, index) = (tag as? Pair<Int, Int>) ?: return@listener
-
+    private val progressListener: ProgressListener = { (galleryID, index), bytesRead, contentLength, done ->
             if (!done && progress[galleryID]?.get(index)?.isFinite() == true)
                 progress[galleryID]?.set(index, bytesRead * 100F / contentLength)
     }
@@ -92,14 +94,14 @@ class DownloadService : Service() {
                 val bytesRead = super.read(sink, byteCount)
 
                 totalBytesRead += if (bytesRead == -1L) 0L else bytesRead
-                progressListener.invoke(tag, totalBytesRead, responseBody.contentLength(), bytesRead == -1L)
+                progressListener.invoke(tag as Tag, totalBytesRead, responseBody.contentLength(), bytesRead == -1L)
 
                 return bytesRead
             }
         }
     }
 
-    val interceptor = Interceptor { chain ->
+    private val interceptor: PupilInterceptor = { chain ->
         val request = chain.request()
         var response = chain.proceed(request)
 
@@ -131,10 +133,7 @@ class DownloadService : Service() {
 
     override fun onCreate() {
         startForeground(R.id.downloader_notification_id, serviceNotification.build())
-    }
-
-    override fun onDestroy() {
-
+        interceptors[Tag::class] = interceptor
     }
 
 
@@ -146,7 +145,7 @@ class DownloadService : Service() {
     override fun onBind(p0: Intent?) = binder
 
     fun load(galleryID: Int) {
-        
+
     }
 
     fun download(galleryID: Int) = CoroutineScope(Dispatchers.IO).launch {

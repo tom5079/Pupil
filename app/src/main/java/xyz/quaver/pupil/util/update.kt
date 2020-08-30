@@ -24,14 +24,15 @@ import android.net.Uri
 import android.webkit.URLUtil
 import androidx.appcompat.app.AlertDialog
 import androidx.preference.PreferenceManager
-import com.google.android.material.snackbar.Snackbar
-import kotlinx.android.synthetic.main.activity_main_content.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.*
-import okhttp3.*
+import okhttp3.Call
+import okhttp3.Callback
+import okhttp3.Request
+import okhttp3.Response
 import ru.noties.markwon.Markwon
 import xyz.quaver.pupil.BuildConfig
 import xyz.quaver.pupil.R
@@ -51,17 +52,14 @@ fun getReleases(url: String) : JsonArray {
     }
 }
 
-fun checkUpdate(context: Context, url: String) : JsonObject? {
+fun checkUpdate(url: String) : JsonObject? {
     val releases = getReleases(url)
 
     if (releases.isEmpty())
         return null
 
     return releases.firstOrNull {
-        if (PreferenceManager.getDefaultSharedPreferences(context).getBoolean("beta", false))
-            true
-        else
-            it.jsonObject["prerelease"]?.jsonPrimitive?.booleanOrNull == false
+        Preferences["beta"] || it.jsonObject["prerelease"]?.jsonPrimitive?.booleanOrNull == false
     }?.let {
         if (it.jsonObject["tag_name"]?.jsonPrimitive?.contentOrNull == BuildConfig.VERSION_NAME)
             null
@@ -130,7 +128,7 @@ fun checkUpdate(context: Context, force: Boolean = false) {
 
     CoroutineScope(Dispatchers.Default).launch {
         val update =
-            checkUpdate(context, context.getString(R.string.release_url)) ?: return@launch
+            checkUpdate(context.getString(R.string.release_url)) ?: return@launch
 
         val url = getApkUrl(update) ?: return@launch
 

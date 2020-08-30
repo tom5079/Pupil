@@ -22,7 +22,6 @@ import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Intent
 import android.graphics.drawable.Animatable
-import android.net.Proxy
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -41,7 +40,6 @@ import androidx.cardview.widget.CardView
 import androidx.core.content.ContextCompat
 import androidx.core.content.res.ResourcesCompat
 import androidx.core.view.GravityCompat
-import androidx.preference.PreferenceManager
 import androidx.vectordrawable.graphics.drawable.AnimatedVectorDrawableCompat
 import com.arlib.floatingsearchview.FloatingSearchView
 import com.arlib.floatingsearchview.FloatingSearchViewDayNight
@@ -88,7 +86,7 @@ class MainActivity : AppCompatActivity() {
         DOWNLOAD,
         FAVORITE
     }
-    
+
     enum class SortMode {
         NEWEST,
         POPULAR
@@ -134,17 +132,15 @@ class MainActivity : AppCompatActivity() {
         if (lockManager.isNotEmpty())
             startActivityForResult(Intent(this, LockActivity::class.java), R.id.request_lock.normalizeID())
 
-        val preference = PreferenceManager.getDefaultSharedPreferences(this)
-
         if (Locale.getDefault().language == "ko") {
-            if (!preference.getBoolean("https_block_alert", false)) {
+            if (Preferences["https_block_alert"]) {
                 android.app.AlertDialog.Builder(this).apply {
                     setTitle(R.string.https_block_alert_title)
                     setMessage(R.string.https_block_alert)
                     setPositiveButton(android.R.string.ok) { _, _ -> }
                 }.show()
 
-                preference.edit().putBoolean("https_block_alert", true).apply()
+                Preferences["https_block_alert"] = false
             }
         }
 
@@ -199,9 +195,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onResume() {
-        val preferences = PreferenceManager.getDefaultSharedPreferences(this)
-
-        if (preferences.getBoolean("security_mode", false))
+        if (Preferences["security_mode"])
             window.setFlags(
                 WindowManager.LayoutParams.FLAG_SECURE,
                 WindowManager.LayoutParams.FLAG_SECURE)
@@ -212,8 +206,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
-        val preference = PreferenceManager.getDefaultSharedPreferences(this)
-        val perPage = preference.getString("per_page", "25")!!.toIntOrNull() ?: 25
+        val perPage = Preferences["per_page", "25"].toInt()
         val maxPage = ceil(totalItems / perPage.toDouble()).roundToInt()
 
         return when(keyCode) {
@@ -362,8 +355,7 @@ class MainActivity : AppCompatActivity() {
         with(main_fab_jump) {
             setImageResource(R.drawable.ic_jump)
             setOnClickListener {
-                val preference = PreferenceManager.getDefaultSharedPreferences(context)
-                val perPage = preference.getString("per_page", "25")!!.toIntOrNull() ?: 25
+                val perPage = Preferences["per_page", "25"].toInt()
                 val editText = EditText(context)
 
                 AlertDialog.Builder(context).apply {
@@ -469,7 +461,7 @@ class MainActivity : AppCompatActivity() {
                 onDownloadClickedHandler = { position ->
                     val galleryID = galleries[position].id
                     val worker = DownloadWorker.getInstance(context)
-                    if (PreferenceManager.getDefaultSharedPreferences(context).getBoolean("cache_disable", false))
+                    if (Preferences["cache_disable"])
                         Toast.makeText(context, R.string.settings_download_when_cache_disable_warning, Toast.LENGTH_SHORT).show()
                     else {
                         if (worker.progress.indexOfKey(galleryID) >= 0 && Cache(context).isDownloading(galleryID)) {     //download in progress
@@ -554,8 +546,7 @@ class MainActivity : AppCompatActivity() {
 
             var origin = 0f
             var target = -1
-            val preferences = PreferenceManager.getDefaultSharedPreferences(context)
-            val perPage = preferences.getString("per_page", "25")!!.toInt()
+            val perPage = Preferences["per_page", "25"].toInt()
             setOnTouchListener { _, event ->
                 when(event.action) {
                     MotionEvent.ACTION_UP -> {
@@ -1006,8 +997,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun fetchGalleries(query: String, sortMode: SortMode) {
-        val preference = PreferenceManager.getDefaultSharedPreferences(this)
-        val defaultQuery = preference.getString("default_query", "")!!
+        val defaultQuery: String = Preferences["default_query"]
 
         if (query != queryStack.lastOrNull()) {
             queryStack.remove(query)
@@ -1104,8 +1094,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun loadBlocks() {
-        val preference = PreferenceManager.getDefaultSharedPreferences(this)
-        val perPage = preference.getString("per_page", "25")?.toInt() ?: 25
+        val perPage = Preferences["per_page", "25"].toInt()
 
         loadingJob = CoroutineScope(Dispatchers.IO).launch {
             val galleryIDs = try {

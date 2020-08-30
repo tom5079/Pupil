@@ -19,6 +19,7 @@
 package xyz.quaver.pupil.util
 
 import android.annotation.SuppressLint
+import okhttp3.OkHttpClient
 import java.util.*
 import kotlin.collections.ArrayList
 
@@ -60,3 +61,10 @@ fun byteToString(byte: Long, precision : Int = 1) : String {
  * https://stackoverflow.com/questions/38072322/generate-16-bit-unique-ids-in-android-for-startactivityforresult
  */
 fun Int.normalizeID() = this.and(0xFFFF)
+
+fun OkHttpClient.Builder.proxyInfo(proxyInfo: ProxyInfo) = this.apply {
+    proxy(proxyInfo.proxy())
+    proxyInfo.authenticator()?.let {
+        proxyAuthenticator(it)
+    }
+}

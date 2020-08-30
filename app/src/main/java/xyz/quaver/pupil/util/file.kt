@@ -25,7 +25,6 @@ import android.os.Build
 import android.os.storage.StorageManager
 import android.provider.DocumentsContract
 import androidx.core.content.ContextCompat
-import androidx.preference.PreferenceManager
 import java.io.File
 import java.io.FileOutputStream
 import java.lang.reflect.Array
@@ -41,8 +40,8 @@ fun getCachedGallery(context: Context, galleryID: Int) =
     }
 
 fun getDownloadDirectory(context: Context) =
-    PreferenceManager.getDefaultSharedPreferences(context).getString("dl_location", null).let {
-        if (it != null && !it.startsWith("content"))
+    Preferences.get<String>("dl_location").let {
+        if (it.isNotEmpty() && !it.startsWith("content"))
             File(it)
         else
             context.getExternalFilesDir(null)!!
@@ -122,95 +121,6 @@ fun getVolumePath(context: Context, volumeID: String?): String? {
         }
         return@runCatching null
     }.getOrNull()
-}
-
-// Credits go to https://stackoverflow.com/questions/34927748/android-5-0-documentfile-from-tree-uri/36162691#36162691
-@TargetApi(Build.VERSION_CODES.LOLLIPOP)
-fun getVolumeIdFromTreeUri(uri: Uri) =
-    DocumentsContract.getTreeDocumentId(uri).split(':').let {
-        if (it.isNotEmpty())
-            it[0]
-        else
-            null
-    }
-
-@TargetApi(Build.VERSION_CODES.LOLLIPOP)
-fun getDocumentPathFromTreeUri(uri: Uri) =
-    DocumentsContract.getTreeDocumentId(uri).split(':').let {
-        if (it.size >= 2)
-            it[1]
-        else
-            File.separator
-    }
-
-fun getFullPathFromTreeUri(context: Context, uri: Uri) : String? {
-    val volumePath = getVolumePath(context, getVolumeIdFromTreeUri(uri) ?: return null).let {
-        it ?: return File.separator
-
-        if (it.endsWith(File.separator))
-            it.dropLast(1)
-        else
-            it
-    }
-
-    val documentPath = getDocumentPathFromTreeUri(uri).let {
-        if (it.endsWith(File.separator))
-            it.dropLast(1)
-        else
-            it
-    }
-
-    return if (documentPath.isNotEmpty()) {
-        if (documentPath.startsWith(File.separator))
-            volumePath + documentPath
-        else
-            volumePath + File.separator + documentPath
-    } else
-        volumePath
-}
-
-// Huge thanks to avluis(https://github.com/avluis)
-// This code is originated from Hentoid(https://github.com/avluis/Hentoid) under Apache-2.0 license.
-fun Uri.toFile(context: Context): File? {
-    val path = this.path ?: return null
-
-    val pathSeparator = path.indexOf(':')
-    val folderName = path.substring(pathSeparator+1)
-
-    // Determine whether the designated file is
-    // - on a removable media (e.g. SD card, OTG)
-    // or
-    // - on the internal phone memory
-    val removableMediaFolderRoots = getExtSdCardPaths(context)
-
-    /* First test is to compare root names with known roots of removable media
-     * In many cases, the SD card root name is shared between pre-SAF (File) and SAF (DocumentFile) frameworks
-     * (e.g. /storage/3437-3934 vs. /tree/3437-3934)
-     * This is what the following block is trying to do
-     */
-    for (s in removableMediaFolderRoots) {
-        val sRoot = s.substring(s.lastIndexOf(File.separatorChar))
-        val root = path.substring(0, pathSeparator).let {
-            it.substring(it.lastIndexOf(File.separatorChar))
-        }
-
-        if (sRoot.equals(root, true)) {
-            return File(s + File.separatorChar + folderName)
-        }
-    }
-    /* In some other cases, there is no common name (e.g. /storage/sdcard1 vs. /tree/3437-3934)
-     * We can use a slower method to translate the Uri obtained with SAF into a pre-SAF path
-     * and compare it to the known removable media volume names
-     */
-    val root = getFullPathFromTreeUri(context, this)
-
-    for (s in removableMediaFolderRoots) {
-        if (root?.startsWith(s) == true) {
-            return File(root)
-        }
-    }
-
-    return File(context.getExternalFilesDir(null)?.canonicalPath?.substringBeforeLast("/Android/data") ?: return null, folderName)
 }
 
 fun File.isParentOf(another: File) =

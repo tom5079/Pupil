@@ -27,12 +27,14 @@ import android.os.Bundle
 import android.view.MenuItem
 import android.view.WindowManager
 import androidx.appcompat.app.AppCompatActivity
+import androidx.preference.Preference
 import androidx.preference.PreferenceManager
 import com.google.android.material.snackbar.Snackbar
 import kotlinx.android.synthetic.main.settings_activity.*
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import net.rdrei.android.dirchooser.DirectoryChooserActivity
+import xyz.quaver.io.util.toFile
 import xyz.quaver.pupil.Pupil
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.favorites
@@ -60,9 +62,7 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     override fun onResume() {
-        val preferences = PreferenceManager.getDefaultSharedPreferences(this)
-
-        if (preferences.getBoolean("security_mode", false))
+        if (Preferences["security_mode"])
             window.setFlags(
                 WindowManager.LayoutParams.FLAG_SECURE,
                 WindowManager.LayoutParams.FLAG_SECURE)
@@ -135,9 +135,7 @@ class SettingsActivity : AppCompatActivity() {
                                 Snackbar.LENGTH_LONG
                             ).show()
                         else
-                            PreferenceManager.getDefaultSharedPreferences(this).edit()
-                                .putString("dl_location", file.canonicalPath)
-                                .apply()
+                            Preferences["dl_location"] = file.canonicalPath
                     }
                 }
             }
@@ -152,9 +150,7 @@ class SettingsActivity : AppCompatActivity() {
                             Snackbar.LENGTH_LONG
                         ).show()
                     else
-                        PreferenceManager.getDefaultSharedPreferences(this).edit()
-                            .putString("dl_location", File(directory).canonicalPath)
-                            .apply()
+                        Preferences["dl_location"] = File(directory).canonicalPath
                 }
             }
             else -> super.onActivityResult(requestCode, resultCode, data)

@@ -19,11 +19,12 @@
 package xyz.quaver.pupil.util
 
 import android.content.Context
-import androidx.preference.PreferenceManager
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import okhttp3.*
+import okhttp3.Authenticator
+import okhttp3.Credentials
 import java.net.InetSocketAddress
 import java.net.Proxy
 
@@ -36,29 +37,22 @@ data class ProxyInfo(
     val password: String? = null
 ) {
     fun proxy() : Proxy {
-        return if (host == null || port == null)
+        return if (host.isNullOrBlank() || port == null)
             return Proxy.NO_PROXY
         else
             Proxy(type, InetSocketAddress.createUnresolved(host, port))
     }
 
-    fun authenticator() = Authenticator { _, response ->
-        val credential = Credentials.basic(username ?: "", password ?: "")
+    fun authenticator(): Authenticator? = if (username.isNullOrBlank() || password.isNullOrBlank()) null else
+            Authenticator { _, response ->
+                val credential = Credentials.basic(username, password)
 
-        response.request().newBuilder()
-            .header("Proxy-Authorization", credential)
-            .build()
-    }
+                response.request().newBuilder()
+                    .header("Proxy-Authorization", credential)
+                    .build()
+            }
 
 }
 
-fun getProxy(context: Context) =
-    getProxyInfo(context).proxy()
-
-fun getProxyInfo(context: Context) =
-    PreferenceManager.getDefaultSharedPreferences(context).getString("proxy", null).let {
-        if (it == null)
-            ProxyInfo(Proxy.Type.DIRECT)
-        else
-            Json.decodeFromString(it)
-    }
+fun getProxyInfo(): ProxyInfo =
+    Json.decodeFromString(Preferences["proxy", Json.encodeToString(ProxyInfo(Proxy.Type.DIRECT))])

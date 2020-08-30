@@ -43,12 +43,11 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import xyz.quaver.Code
-import xyz.quaver.pupil.Pupil
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.adapters.ReaderAdapter
 import xyz.quaver.pupil.favorites
 import xyz.quaver.pupil.histories
-import xyz.quaver.pupil.util.GalleryList
+import xyz.quaver.pupil.util.Preferences
 import xyz.quaver.pupil.util.download.Cache
 import xyz.quaver.pupil.util.download.DownloadWorker
 import java.util.*
@@ -103,7 +102,7 @@ class ReaderActivity : AppCompatActivity() {
         }
 
         initView()
-        if (PreferenceManager.getDefaultSharedPreferences(this).getBoolean("cache_disable", false)) {
+        if (Preferences["cache_disable"]) {
             reader_download_progressbar.visibility = View.GONE
             CoroutineScope(Dispatchers.IO).launch {
                 val reader = Cache(this@ReaderActivity).getReader(galleryID)
@@ -159,9 +158,7 @@ class ReaderActivity : AppCompatActivity() {
     }
 
     override fun onResume() {
-        val preferences = PreferenceManager.getDefaultSharedPreferences(this)
-
-        if (preferences.getBoolean("security_mode", false))
+        if (Preferences["security_mode"])
             window.setFlags(
                 WindowManager.LayoutParams.FLAG_SECURE,
                 WindowManager.LayoutParams.FLAG_SECURE)

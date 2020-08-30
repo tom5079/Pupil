@@ -18,27 +18,17 @@
 
 package xyz.quaver.pupil.ui.fragment
 
-import android.Manifest
 import android.content.*
-import android.content.pm.PackageManager
-import android.os.Build
 import android.os.Bundle
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatDelegate
-import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
 import androidx.preference.Preference
 import androidx.preference.PreferenceCategory
 import androidx.preference.PreferenceFragmentCompat
-import androidx.preference.PreferenceManager
-import com.google.android.material.snackbar.Snackbar
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import net.rdrei.android.dirchooser.DirectoryChooserActivity
-import net.rdrei.android.dirchooser.DirectoryChooserConfig
-import xyz.quaver.pupil.Pupil
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.histories
 import xyz.quaver.pupil.ui.LockActivity
@@ -52,14 +42,11 @@ import java.io.BufferedReader
 import java.io.File
 import java.io.InputStreamReader
 
-
 class SettingsFragment :
     PreferenceFragmentCompat(),
     Preference.OnPreferenceClickListener,
     Preference.OnPreferenceChangeListener,
     SharedPreferences.OnSharedPreferenceChangeListener {
-
-    lateinit var sharedPreference: SharedPreferences
 
     override fun onResume() {
         super.onResume()
@@ -160,7 +147,7 @@ class SettingsFragment :
                 "default_query" -> {
                     DefaultQueryDialog(requireContext()).apply {
                         onPositiveButtonClickListener = { newTags ->
-                            sharedPreferences.edit().putString("default_query", newTags.toString()).apply()
+                            Preferences["default_query"] = newTags.toString()
                             summary = newTags.toString()
                         }
                     }.show()
@@ -182,7 +169,7 @@ class SettingsFragment :
                 }
                 "user_id" -> {
                     (context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager).setPrimaryClip(
-                        ClipData.newPlainText("user_id", sharedPreference.getString("user_id", ""))
+                        ClipData.newPlainText("user_id", Preferences.get<String>("user_id"))
                     )
                     Toast.makeText(context, R.string.settings_user_id_toast, Toast.LENGTH_SHORT).show()
                 }
@@ -219,7 +206,7 @@ class SettingsFragment :
 
             when (key) {
                 "proxy" -> {
-                    summary = context?.let { getProxyInfo(it).type.name }
+                    summary = context?.let { getProxyInfo().type.name }
                 }
                 "dl_location" -> {
                     summary = context?.let { getDownloadDirectory(it).canonicalPath }
@@ -231,8 +218,7 @@ class SettingsFragment :
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
         setPreferencesFromResource(R.xml.root_preferences, rootKey)
 
-        sharedPreference = PreferenceManager.getDefaultSharedPreferences(requireContext())
-        sharedPreference.registerOnSharedPreferenceChangeListener(this)
+        Preferences.registerOnSharedPreferenceChangeListener(this)
 
         initPreferences()
     }
@@ -295,7 +281,7 @@ class SettingsFragment :
                             onPreferenceClickListener = this@SettingsFragment
                         }
                         "default_query" -> {
-                            summary = sharedPreference.getString("default_query", "") ?: ""
+                            summary = Preferences.get<String>("default_query")
 
                             onPreferenceClickListener = this@SettingsFragment
                         }
@@ -320,7 +306,7 @@ class SettingsFragment :
                             onPreferenceClickListener = this@SettingsFragment
                         }
                         "proxy" -> {
-                            summary = getProxyInfo(requireContext()).type.name
+                            summary = getProxyInfo().type.name
 
                             onPreferenceClickListener = this@SettingsFragment
                         }
@@ -334,7 +320,7 @@ class SettingsFragment :
                             onPreferenceClickListener = this@SettingsFragment
                         }
                         "user_id" -> {
-                            summary = sharedPreference.getString("user_id", "")
+                            summary = Preferences.get<String>("user_id")
                             onPreferenceClickListener = this@SettingsFragment
                         }
                     }

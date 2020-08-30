@@ -88,8 +88,7 @@
         <SwitchPreferenceCompat
             app:key="security_mode"
             app:title="@string/settings_security_mode_title"
-            app:summary="@string/settings_security_mode_summary"
-            app:defaultValue="true"/>
+            app:summary="@string/settings_security_mode_summary"/>
 
         <SwitchPreferenceCompat
             app:key="dark_mode"

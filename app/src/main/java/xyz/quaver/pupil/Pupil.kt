@@ -35,12 +35,10 @@ import com.google.firebase.crashlytics.FirebaseCrashlytics
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import okhttp3.Dispatcher
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
 import okhttp3.Response
-import xyz.quaver.pupil.util.GalleryList
-import xyz.quaver.pupil.util.getProxyInfo
+import xyz.quaver.pupil.util.*
 import xyz.quaver.setClient
 import java.io.File
 import java.util.*
@@ -72,25 +70,18 @@ class Pupil : Application() {
     }
 
     override fun onCreate() {
-        val preference = PreferenceManager.getDefaultSharedPreferences(this)
+        preferences = PreferenceManager.getDefaultSharedPreferences(this)
 
-        val userID =
-            if (preference.getString("user_id", "").isNullOrEmpty()) {
-                UUID.randomUUID().toString().also {
-                    preference.edit().putString("user_id", it).apply()
-                }
-            } else
-                preference.getString("user_id", "") ?: ""
+        val userID = Preferences["user_id", UUID.randomUUID().toString(), true]
 
         FirebaseCrashlytics.getInstance().setUserId(userID)
 
-        val proxyInfo = getProxyInfo(this)
+        val proxyInfo = getProxyInfo()
 
         clientBuilder = OkHttpClient.Builder()
             .connectTimeout(0, TimeUnit.SECONDS)
             .readTimeout(0, TimeUnit.SECONDS)
-            .proxy(proxyInfo.proxy())
-            .proxyAuthenticator(proxyInfo.authenticator())
+            .proxyInfo(proxyInfo)
             .addInterceptor { chain ->
                 val request = chain.request()
                 val tag = request.tag() ?: return@addInterceptor chain.proceed(request)
@@ -99,18 +90,18 @@ class Pupil : Application() {
             }
 
         try {
-            preference.getString("dl_location", null).also {
-                if (!File(it!!).canWrite())
+            Preferences.get<String>("dl_location").also {
+                if (!File(it).canWrite())
                     throw Exception()
             }
         } catch (e: Exception) {
-            preference.edit().remove("dl_location").apply()
+            Preferences.remove("dl_location")
         }
 
         histories = GalleryList(File(ContextCompat.getDataDir(this), "histories.json"))
         favorites = GalleryList(File(ContextCompat.getDataDir(this), "favorites.json"))
 
-        if (preference.getBoolean("old_history", true)) {
+        if (Preferences["new_history"]) {
             CoroutineScope(Dispatchers.IO).launch {
                 histories.reversed().let {
                     histories.clear()
@@ -121,7 +112,7 @@ class Pupil : Application() {
                     favorites.addAll(it)
                 }
             }
-            preference.edit().putBoolean("old_history", false).apply()
+            Preferences["new_history"] = true
         }
 
         if (BuildConfig.DEBUG)
@@ -167,7 +158,7 @@ class Pupil : Application() {
             })
         }
 
-        AppCompatDelegate.setDefaultNightMode(when (preference.getBoolean("dark_mode", false)) {
+        AppCompatDelegate.setDefaultNightMode(when (Preferences.get<Boolean>("dark_mode")) {
             true -> AppCompatDelegate.MODE_NIGHT_YES
             false -> AppCompatDelegate.MODE_NIGHT_NO
         })

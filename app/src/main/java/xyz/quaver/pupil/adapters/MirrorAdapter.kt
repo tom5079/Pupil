@@ -24,10 +24,10 @@ import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
-import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.RecyclerView
 import kotlinx.android.synthetic.main.item_mirrors.view.*
 import xyz.quaver.pupil.R
+import xyz.quaver.pupil.util.Preferences
 import java.util.*
 
 class MirrorAdapter(context: Context) : RecyclerView.Adapter<MirrorAdapter.ViewHolder>() {
@@ -41,8 +41,7 @@ class MirrorAdapter(context: Context) : RecyclerView.Adapter<MirrorAdapter.ViewH
     }.toMap()
 
     val list = mirrors.keys.toMutableList().apply {
-        PreferenceManager.getDefaultSharedPreferences(context)
-            .getString("mirrors", "")!!
+        Preferences.get<String>("mirrors")
             .split(">")
             .reversed()
             .forEach {
