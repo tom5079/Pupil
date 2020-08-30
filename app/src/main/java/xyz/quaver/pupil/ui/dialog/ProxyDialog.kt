@@ -27,7 +27,6 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
-import androidx.preference.PreferenceManager
 import kotlinx.android.synthetic.main.dialog_proxy.view.*
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -35,8 +34,10 @@ import xyz.quaver.pupil.R
 import xyz.quaver.pupil.client
 import xyz.quaver.pupil.clientBuilder
 import xyz.quaver.pupil.clientHolder
+import xyz.quaver.pupil.util.Preferences
 import xyz.quaver.pupil.util.ProxyInfo
 import xyz.quaver.pupil.util.getProxyInfo
+import xyz.quaver.pupil.util.proxyInfo
 import java.net.Proxy
 
 class ProxyDialog(context: Context) : Dialog(context) {
@@ -54,7 +55,7 @@ class ProxyDialog(context: Context) : Dialog(context) {
 
     @SuppressLint("InflateParams")
     private fun build() : View {
-        val proxyInfo = getProxyInfo(context)
+        val proxyInfo = getProxyInfo()
 
         val view = LayoutInflater.from(context).inflate(R.layout.dialog_proxy, null)
 
@@ -119,13 +120,10 @@ class ProxyDialog(context: Context) : Dialog(context) {
             }
 
             ProxyInfo(type, addr, port, username, password).let {
-                PreferenceManager.getDefaultSharedPreferences(context).edit().putString("proxy",
-                    Json.encodeToString(it)
-                ).apply()
+                Preferences["proxy"] = Json.encodeToString(it)
 
                 clientBuilder
-                    .proxy(it.proxy())
-                    .proxyAuthenticator(it.authenticator())
+                    .proxyInfo(it)
                 clientHolder = null
                 client
             }

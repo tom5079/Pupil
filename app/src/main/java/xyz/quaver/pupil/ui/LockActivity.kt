@@ -27,7 +27,6 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricPrompt
 import androidx.core.content.ContextCompat
-import androidx.preference.PreferenceManager
 import com.andrognito.patternlockview.PatternLockView
 import com.google.android.material.snackbar.Snackbar
 import kotlinx.android.synthetic.main.activity_lock.*
@@ -38,6 +37,7 @@ import xyz.quaver.pupil.ui.fragment.PINLockFragment
 import xyz.quaver.pupil.ui.fragment.PatternLockFragment
 import xyz.quaver.pupil.util.Lock
 import xyz.quaver.pupil.util.LockManager
+import xyz.quaver.pupil.util.Preferences
 
 class LockActivity : AppCompatActivity() {
 
@@ -195,7 +195,7 @@ class LockActivity : AppCompatActivity() {
                 }
 
                 if (
-                    PreferenceManager.getDefaultSharedPreferences(this).getBoolean("lock_fingerprint", false)
+                    Preferences["lock_fingerprint"]
                     && BiometricManager.from(this).canAuthenticate() == BiometricManager.BIOMETRIC_SUCCESS
                 ) {
                     lock_fingerprint.apply {

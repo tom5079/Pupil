@@ -24,12 +24,12 @@ import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
-import androidx.preference.PreferenceManager
 import androidx.preference.SwitchPreferenceCompat
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.ui.LockActivity
 import xyz.quaver.pupil.util.Lock
 import xyz.quaver.pupil.util.LockManager
+import xyz.quaver.pupil.util.Preferences
 
 class LockSettingsFragment : PreferenceFragmentCompat() {
 
@@ -53,7 +53,7 @@ class LockSettingsFragment : PreferenceFragmentCompat() {
         if (lockManager.isEmpty()) {
             (findPreference<Preference>("lock_fingerprint") as SwitchPreferenceCompat).isChecked = false
 
-            PreferenceManager.getDefaultSharedPreferences(context).edit().putBoolean("lock_fingerprint", false).apply()
+            Preferences["lock_fingerprint"] = false
         }
     }
 

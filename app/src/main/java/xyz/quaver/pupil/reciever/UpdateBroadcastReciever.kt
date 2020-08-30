@@ -28,8 +28,8 @@ import android.webkit.MimeTypeMap
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.FileProvider
-import androidx.preference.PreferenceManager
 import xyz.quaver.pupil.R
+import xyz.quaver.pupil.util.Preferences
 import java.io.File
 
 class UpdateBroadcastReciever : BroadcastReceiver() {
@@ -41,9 +41,7 @@ class UpdateBroadcastReciever : BroadcastReceiver() {
             DownloadManager.ACTION_DOWNLOAD_COMPLETE -> {
 
                 // Validate download
-
-                val preference = PreferenceManager.getDefaultSharedPreferences(context)
-                val downloadID = preference.getLong("update_download_id", -1)
+                val downloadID: Long = Preferences["update_download_id"]
                 val downloadManager = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
 
                 if (intent.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1) != downloadID)

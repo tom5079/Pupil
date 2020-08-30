@@ -28,11 +28,11 @@ import android.view.LayoutInflater
 import android.view.View
 import android.widget.ArrayAdapter
 import androidx.appcompat.app.AlertDialog
-import androidx.preference.PreferenceManager
 import kotlinx.android.synthetic.main.dialog_default_query.*
 import kotlinx.android.synthetic.main.dialog_default_query.view.*
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.types.Tags
+import xyz.quaver.pupil.util.Preferences
 
 class DefaultQueryDialog(context : Context) : AlertDialog(context) {
 
@@ -82,9 +82,8 @@ class DefaultQueryDialog(context : Context) : AlertDialog(context) {
 
     @SuppressLint("InflateParams")
     private fun build() : View {
-        val preferences = PreferenceManager.getDefaultSharedPreferences(context)
         val tags = Tags.parse(
-            preferences.getString("default_query", "") ?: ""
+            Preferences["default_query"]
         )
 
         val view = LayoutInflater.from(context).inflate(R.layout.dialog_default_query, null)

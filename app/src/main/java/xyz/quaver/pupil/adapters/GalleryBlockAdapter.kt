@@ -31,7 +31,6 @@ import android.view.ViewGroup
 import android.widget.LinearLayout
 import androidx.cardview.widget.CardView
 import androidx.core.content.ContextCompat
-import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.CircularProgressDrawable
 import androidx.vectordrawable.graphics.drawable.Animatable2Compat
@@ -55,6 +54,7 @@ import xyz.quaver.pupil.R
 import xyz.quaver.pupil.favorites
 import xyz.quaver.pupil.types.Tag
 import xyz.quaver.pupil.util.GalleryList
+import xyz.quaver.pupil.util.Preferences
 import xyz.quaver.pupil.util.download.Cache
 import xyz.quaver.pupil.util.wordCapitalize
 import java.util.*
@@ -80,7 +80,7 @@ class GalleryBlockAdapter(private val glide: RequestManager, private val galleri
             val reader = Cache(context).getReaderOrNull(galleryID)
 
             CoroutineScope(Dispatchers.Main).launch {
-                if (reader == null || PreferenceManager.getDefaultSharedPreferences(context).getBoolean("cache_disable", false)) {
+                if (reader == null || Preferences["cache_disable"]) {
                     view.galleryblock_progressbar.visibility = View.GONE
                     view.galleryblock_progress_complete.visibility = View.GONE
                     return@launch

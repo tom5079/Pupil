@@ -32,7 +32,6 @@ import android.widget.RadioButton
 import androidx.appcompat.app.AlertDialog
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import androidx.preference.PreferenceManager
 import kotlinx.android.synthetic.main.item_dl_location.view.*
 import net.rdrei.android.dirchooser.DirectoryChooserActivity
 import net.rdrei.android.dirchooser.DirectoryChooserConfig
@@ -42,8 +41,6 @@ import java.io.File
 
 @SuppressLint("InflateParams")
 class DownloadLocationDialog(val activity: Activity) : AlertDialog(activity) {
-
-    private val preference = PreferenceManager.getDefaultSharedPreferences(context)
     private val buttons = mutableListOf<Pair<RadioButton, File?>>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -79,7 +76,7 @@ class DownloadLocationDialog(val activity: Activity) : AlertDialog(activity) {
                         pair.first.isChecked = false
                     }
                     button.performClick()
-                    preference.edit().putString("dl_location", dir.canonicalPath).apply()
+                    Preferences["dl_location"] = dir.canonicalPath
                 }
                 buttons.add(button to dir)
             })

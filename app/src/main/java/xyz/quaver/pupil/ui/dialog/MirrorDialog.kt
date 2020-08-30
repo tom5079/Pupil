@@ -24,13 +24,13 @@ import android.content.Context
 import android.os.Bundle
 import android.view.View
 import androidx.appcompat.app.AlertDialog
-import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.adapters.MirrorAdapter
+import xyz.quaver.pupil.util.Preferences
 
 class MirrorDialog(context: Context) : AlertDialog(context) {
 
@@ -82,10 +82,7 @@ class MirrorDialog(context: Context) : AlertDialog(context) {
                 }
 
                 onItemMoved = {
-                    PreferenceManager.getDefaultSharedPreferences(context)
-                        .edit()
-                        .putString("mirrors", it.joinToString(">"))
-                        .apply()
+                    Preferences["mirrors", it.joinToString(">")]
                 }
             }
         }
