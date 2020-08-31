@@ -22,12 +22,13 @@ import kotlinx.serialization.Serializable
 import xyz.quaver.hitomi.GalleryBlock
 import xyz.quaver.hitomi.Reader
 
+@Deprecated("Use downloader.Cache.Metadata instead")
 @Serializable
 data class Metadata(
-    val thumbnail: String? = null,
-    val galleryBlock: GalleryBlock? = null,
-    val reader: Reader? = null,
-    val isDownloading: Boolean? = null
+    var thumbnail: String? = null,
+    var galleryBlock: GalleryBlock? = null,
+    var reader: Reader? = null,
+    var isDownloading: Boolean? = null
 ) {
     constructor(
         metadata: Metadata?,
