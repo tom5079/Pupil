@@ -18,18 +18,14 @@
 
 package xyz.quaver.pupil.util
 
-import android.annotation.TargetApi
 import android.content.Context
-import android.net.Uri
-import android.os.Build
 import android.os.storage.StorageManager
-import android.provider.DocumentsContract
 import androidx.core.content.ContextCompat
+import androidx.core.net.toUri
 import java.io.File
 import java.io.FileOutputStream
 import java.lang.reflect.Array
 import java.net.URL
-
 
 fun getCachedGallery(context: Context, galleryID: Int) =
     File(getDownloadDirectory(context), galleryID.toString()).let {

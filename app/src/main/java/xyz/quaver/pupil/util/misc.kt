@@ -19,7 +19,14 @@
 package xyz.quaver.pupil.util
 
 import android.annotation.SuppressLint
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import okhttp3.OkHttpClient
+import xyz.quaver.pupil.util.downloader.Cache
+import xyz.quaver.pupil.util.downloader.Metadata
 import java.util.*
 import kotlin.collections.ArrayList
 
@@ -66,5 +73,21 @@ fun OkHttpClient.Builder.proxyInfo(proxyInfo: ProxyInfo) = this.apply {
     proxy(proxyInfo.proxy())
     proxyInfo.authenticator()?.let {
         proxyAuthenticator(it)
+    }
+}
+
+val formatMap = mapOf<String, (Cache) -> (String)>(
+    "\$ID" to { runBlocking { it.getGalleryBlock()?.id.toString() } },
+    "\$TITLE" to { runBlocking { it.getGalleryBlock()?.title.toString() } },
+    // TODO
+)
+/**
+ * Formats download folder name with given Metadata
+ */
+fun Cache.formatDownloadFolder(): String {
+    return Preferences["download_folder_format", "\$ID"].apply {
+        formatMap.entries.forEach { (key, lambda) ->
+            this.replace(key, lambda.invoke(this@formatDownloadFolder))
+        }
     }
 }

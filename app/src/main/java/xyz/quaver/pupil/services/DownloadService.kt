@@ -19,32 +19,21 @@
 package xyz.quaver.pupil.services
 
 import android.app.Service
-import android.content.Context
-import android.content.ContextWrapper
 import android.content.Intent
-import android.os.Binder
-import android.os.IBinder
 import android.util.SparseArray
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import okhttp3.Interceptor
 import okhttp3.ResponseBody
 import okio.*
 import xyz.quaver.pupil.PupilInterceptor
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.interceptors
+import xyz.quaver.pupil.util.downloader.Cache
 
 private typealias ProgressListener = (DownloadService.Tag, Long, Long, Boolean) -> Unit
-
-class Cache(context: Context) : ContextWrapper(context) {
-
-
-
-}
-
 class DownloadService : Service() {
 
     data class Tag(val galleryID: Int, val index: Int)
@@ -144,8 +133,17 @@ class DownloadService : Service() {
     private val binder = Binder()
     override fun onBind(p0: Intent?) = binder
 
+    val cache = SparseArray<Cache>()
     fun load(galleryID: Int) {
+        if (progress.indexOfKey(galleryID) < 0)
+            progress.put(galleryID, mutableListOf())
 
+        if (cache.indexOfKey(galleryID) < 0)
+            cache.put(galleryID, Cache.getInstance(this, galleryID))
+
+        cache[galleryID].metadata.imageList?.forEach {
+            progress[galleryID]?.add(if (it == null) Float.POSITIVE_INFINITY else 0F)
+        }
     }
 
     fun download(galleryID: Int) = CoroutineScope(Dispatchers.IO).launch {

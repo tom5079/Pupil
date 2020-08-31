@@ -90,7 +90,7 @@ class Pupil : Application() {
             }
 
         try {
-            Preferences.get<String>("dl_location").also {
+            Preferences.get<String>("download_folder").also {
                 if (!File(it).canWrite())
                     throw Exception()
             }

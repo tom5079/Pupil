@@ -25,6 +25,8 @@ import android.util.SparseArray
 import androidx.preference.PreferenceManager
 import com.google.firebase.crashlytics.FirebaseCrashlytics
 import kotlinx.coroutines.*
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -41,6 +43,7 @@ import java.io.FileOutputStream
 import java.io.InputStream
 import java.net.URL
 
+@Deprecated("Use downloader.Cache instead")
 class Cache(context: Context) : ContextWrapper(context) {
 
     companion object {
