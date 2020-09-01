@@ -55,7 +55,6 @@ import kotlinx.coroutines.*
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import xyz.quaver.hitomi.GalleryBlock
 import xyz.quaver.hitomi.doSearch
 import xyz.quaver.hitomi.getGalleryIDsFromNozomi
 import xyz.quaver.hitomi.getSuggestionsForQuery
@@ -68,8 +67,8 @@ import xyz.quaver.pupil.types.TagSuggestion
 import xyz.quaver.pupil.types.Tags
 import xyz.quaver.pupil.ui.dialog.GalleryDialog
 import xyz.quaver.pupil.util.*
-import xyz.quaver.pupil.util.download.Cache
-import xyz.quaver.pupil.util.download.DownloadWorker
+import xyz.quaver.pupil.util.downloader.Cache
+import xyz.quaver.pupil.util.downloader.DownloadFolderManager
 import java.io.File
 import java.util.*
 import kotlin.collections.ArrayList
@@ -92,7 +91,7 @@ class MainActivity : AppCompatActivity() {
         POPULAR
     }
 
-    private val galleries = ArrayList<GalleryBlock>()
+    private val galleries = ArrayList<Int>()
 
     private var query = ""
     set(value) {
@@ -111,6 +110,8 @@ class MainActivity : AppCompatActivity() {
     private var totalItems = 0
     private var loadingJob: Job? = null
     private var currentPage = 0
+
+    private lateinit var downloadFolderManager: DownloadFolderManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -146,15 +147,7 @@ class MainActivity : AppCompatActivity() {
 
         setContentView(R.layout.activity_main)
 
-        Intent(this, DownloadService::class.java).let {
-            when {
-                Build.VERSION.SDK_INT >= Build.VERSION_CODES.O ->
-                    startForegroundService(it)
-                else ->
-                    startService(it)
-            }
-        }
-
+        downloadFolderManager = DownloadFolderManager.getInstance(this)
         checkUpdate(this)
 
         initView()
@@ -336,7 +329,7 @@ class MainActivity : AppCompatActivity() {
         with(main_fab_cancel) {
             setImageResource(R.drawable.cancel)
             setOnClickListener {
-                DownloadWorker.getInstance(context).stop()
+                DownloadService.cancel(this@MainActivity)
             }
         }
 
@@ -447,19 +440,15 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
                 onDownloadClickedHandler = { position ->
-                    val galleryID = galleries[position].id
-                    val worker = DownloadWorker.getInstance(context)
+                    val galleryID = galleries[position]
                     if (Preferences["cache_disable"])
                         Toast.makeText(context, R.string.settings_download_when_cache_disable_warning, Toast.LENGTH_SHORT).show()
                     else {
-                        if (worker.progress.indexOfKey(galleryID) >= 0 && Cache(context).isDownloading(galleryID)) {     //download in progress
-                            Cache(context).setDownloading(galleryID, false)
-                            worker.cancel(galleryID)
+                        if (downloadFolderManager.isDownloading(galleryID)) {     //download in progress
+                            DownloadService.cancel(this@MainActivity, galleryID)
                         }
                         else {
-                            Cache(context).setDownloading(galleryID, true)
-
-                            worker.queue.add(galleryID)
+                            DownloadService.download(this@MainActivity, galleryID)
                         }
                     }
 
@@ -467,25 +456,20 @@ class MainActivity : AppCompatActivity() {
                 }
 
                 onDeleteClickedHandler = { position ->
-                    val galleryID = galleries[position].id
+                    val galleryID = galleries[position]
+                    DownloadService.delete(this@MainActivity, galleryID)
 
-                    CoroutineScope(Dispatchers.Default).launch {
-                        DownloadWorker.getInstance(context).cancel(galleryID)
+                    histories.remove(galleryID)
 
-                        Cache(context).getCachedGallery(galleryID).deleteRecursively()
+                    if (this@MainActivity.mode != Mode.SEARCH)
+                        runOnUiThread {
+                            cancelFetch()
+                            clearGalleries()
+                            fetchGalleries(query, sortMode)
+                            loadBlocks()
+                        }
 
-                        histories.remove(galleryID)
-
-                        if (this@MainActivity.mode != Mode.SEARCH)
-                            runOnUiThread {
-                                cancelFetch()
-                                clearGalleries()
-                                fetchGalleries(query, sortMode)
-                                loadBlocks()
-                            }
-
-                        completeFlag.put(galleryID, false)
-                    }
+                    completeFlag.put(galleryID, false)
 
                     closeAllItems()
                 }
@@ -496,8 +480,7 @@ class MainActivity : AppCompatActivity() {
                         return@listener
 
                     val intent = Intent(this@MainActivity, ReaderActivity::class.java)
-                    val gallery = galleries[position]
-                    intent.putExtra("galleryID", gallery.id)
+                    intent.putExtra("galleryID", galleries[position])
 
                     //TODO: Maybe sprinkling some transitions will be nice :D
                     startActivity(intent)
@@ -507,7 +490,7 @@ class MainActivity : AppCompatActivity() {
                     if (v !is CardView)
                         return@listener false
 
-                    val galleryID = galleries[position].id
+                    val galleryID = galleries[position]
 
                     GalleryDialog(
                         this@MainActivity,
@@ -762,7 +745,7 @@ class MainActivity : AppCompatActivity() {
 
             if (!favoritesFile.exists()) {
                 favoritesFile.createNewFile()
-                favoritesFile.writeText(Json.encodeToString(Tags()))
+                favoritesFile.writeText("[]")
             }
 
             setOnLeftMenuClickListener(object: FloatingSearchView.OnLeftMenuClickListener {
@@ -788,7 +771,7 @@ class MainActivity : AppCompatActivity() {
                         }
                     }
                     R.id.main_menu_sort_newest -> {
-                        sortMode = SortMode.NEWEST
+                        sortMode = MainActivity.SortMode.NEWEST
                         it.isChecked = true
 
                         runOnUiThread {
@@ -1023,7 +1006,7 @@ class MainActivity : AppCompatActivity() {
                                 totalItems = it.size
                             }
                         }
-                        else -> doSearch("$defaultQuery $query", sortMode == SortMode.POPULAR).also {
+                        else -> doSearch("$defaultQuery $query", sortMode == MainActivity.SortMode.POPULAR).also {
                             totalItems = it.size
                         }
                     }
@@ -1107,16 +1090,16 @@ class MainActivity : AppCompatActivity() {
                 for (chunk in chunks)
                     chunk.map { galleryID ->
                         async {
-                            Cache(this@MainActivity).getGalleryBlock(galleryID)
+                            Cache.getInstance(this@MainActivity, galleryID).getGalleryBlock()?.let {
+                                galleryID
+                            }
                         }
                     }.forEach {
-                        val galleryBlock = it.await()
+                        it.await()?.also {
+                            withContext(Dispatchers.Main) {
+                                main_progressbar.hide()
 
-                        withContext(Dispatchers.Main) {
-                            main_progressbar.hide()
-
-                            if (galleryBlock != null) {
-                                galleries.add(galleryBlock)
+                                galleries.add(it)
                                 main_recyclerview.adapter!!.notifyItemInserted(galleries.size - 1)
                             }
                         }

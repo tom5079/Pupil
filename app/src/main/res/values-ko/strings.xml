@@ -94,10 +94,10 @@
     <string name="settings_backup_file_created">백업 파일을 생성하였습니다</string>
     <string name="settings_restore_failed">복원에 실패했습니다</string>
     <string name="settings_restore_success">%1$d개 항목을 복원했습니다</string>
-    <string name="settings_dl_location">다운로드 위치</string>
-    <string name="settings_dl_location_internal">내부 저장공간</string>
-    <string name="settings_dl_location_removable">외부 SD카드</string>
-    <string name="settings_dl_location_available">%s 사용 가능</string>
+    <string name="settings_download_folder">다운로드 위치</string>
+    <string name="settings_download_folder_internal">내부 저장공간</string>
+    <string name="settings_download_folder_removable">외부 SD카드</string>
+    <string name="settings_download_folder_available">%s 사용 가능</string>
     <string name="update_download_completed">다운로드가 완료되었습니다</string>
     <string name="update_download_completed_description">여기를 클릭해서 업데이트를 진행할 수 있습니다</string>
     <string name="settings_beta">베타 채널에서 업데이트</string>
@@ -106,8 +106,8 @@
     <string name="settings_low_quality_summary">로드 속도와 데이터 사용량을 줄이기 위해 저해상도 이미지를 로드</string>
     <string name="settings_mirror_summary">미러 서버에서 이미지 로드</string>
     <string name="settings_mirror_title">미러 설정</string>
-    <string name="settings_dl_location_custom">직접 설정</string>
-    <string name="settings_dl_location_not_writable">이 폴더에 접근할 수 없습니다. 다른 폴더를 선택해주세요.</string>
+    <string name="settings_download_folder_custom">직접 설정</string>
+    <string name="settings_download_folder_not_writable">이 폴더에 접근할 수 없습니다. 다른 폴더를 선택해주세요.</string>
     <string name="settings_proxy_title">프록시</string>
     <string name="proxy_dialog_username_hint">ID</string>
     <string name="proxy_dialog_type">프록시 타입</string>

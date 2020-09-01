@@ -19,6 +19,7 @@
 package xyz.quaver.pupil.types
 
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 
 @Serializable
 data class Tag(val area: String?, val tag: String, val isNegative: Boolean = false) {

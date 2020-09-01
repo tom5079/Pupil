@@ -20,50 +20,58 @@ package xyz.quaver.pupil.util.downloader
 
 import android.content.Context
 import android.content.ContextWrapper
-import android.util.Base64
+import android.util.Log
 import android.util.SparseArray
 import kotlinx.coroutines.*
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import okhttp3.Request
 import xyz.quaver.Code
-import xyz.quaver.hitomi.Gallery
 import xyz.quaver.hitomi.GalleryBlock
 import xyz.quaver.hitomi.Reader
-import xyz.quaver.hitomi.getGallery
 import xyz.quaver.io.FileX
-import xyz.quaver.io.util.getChild
-import xyz.quaver.io.util.readBytes
-import xyz.quaver.io.util.readText
-import xyz.quaver.io.util.writeBytes
+import xyz.quaver.io.util.*
 import xyz.quaver.pupil.client
 import xyz.quaver.pupil.util.Preferences
 import xyz.quaver.pupil.util.formatDownloadFolder
+import kotlin.io.deleteRecursively
+import kotlin.io.writeText
 
 @Serializable
 data class Metadata(
     var galleryBlock: GalleryBlock? = null,
-    var gallery: Gallery? = null,
-    var thumbnail: String? = null,
     var reader: Reader? = null,
     var imageList: MutableList<String?>? = null
 ) {
-    fun copy(): Metadata = Metadata(galleryBlock, gallery, thumbnail, reader, imageList?.let { MutableList(it.size) { i -> it[i] } })
+    fun copy(): Metadata = Metadata(galleryBlock, reader, imageList?.let { MutableList(it.size) { i -> it[i] } })
 }
 
 class Cache private constructor(context: Context, val galleryID: Int) : ContextWrapper(context) {
 
     companion object {
+        private val mutex = Mutex()
         private val instances = SparseArray<Cache>()
 
         fun getInstance(context: Context, galleryID: Int) =
-            instances[galleryID] ?: synchronized(this) {
+            instances[galleryID] ?: runBlocking { mutex.withLock {
                 instances[galleryID] ?: Cache(context, galleryID).also { instances.put(galleryID, it) }
-            }
+            } }
+
+        fun delete(galleryID: Int) { runBlocking { mutex.withLock {
+            instances[galleryID]?.galleryFolder?.deleteRecursively()
+            instances.delete(galleryID)
+        } } }
     }
 
+    init {
+        galleryFolder.mkdirs()
+    }
+
+    private val mutex = Mutex()
     var metadata = kotlin.runCatching {
         findFile(".metadata")?.readText()?.let {
             Json.decodeFromString<Metadata>(it)
@@ -76,7 +84,7 @@ class Cache private constructor(context: Context, val galleryID: Int) : ContextW
     val cacheFolder: FileX
         get() = FileX(this, cacheDir, "imageCache/$galleryID")
 
-    val cachedGallery: FileX
+    val galleryFolder: FileX
         get() = DownloadFolderManager.getInstance(this).getDownloadFolder(galleryID)
             ?: FileX(this, cacheDir, "imageCache/$galleryID")
 
@@ -87,16 +95,19 @@ class Cache private constructor(context: Context, val galleryID: Int) : ContextW
             if (it.exists()) it else null
         } }
 
-    @Synchronized
-    fun setMetadata(change: (Metadata) -> Unit) {
+    @Suppress("BlockingMethodInNonBlockingContext")
+    suspend fun setMetadata(change: (Metadata) -> Unit) { mutex.withLock {
         change.invoke(metadata)
 
-        val file = cachedGallery.getChild(".metadata")
+        val file = galleryFolder.getChild(".metadata")
 
         CoroutineScope(Dispatchers.IO).launch {
-            file.writeText(Json.encodeToString(Metadata))
+            kotlin.runCatching {
+                file.createNewFile()
+                file.writeText(Json.encodeToString(metadata))
+            }
         }
-    }
+    } }
 
     suspend fun getGalleryBlock(): GalleryBlock? {
         val sources = listOf(
@@ -123,59 +134,47 @@ class Cache private constructor(context: Context, val galleryID: Int) : ContextW
             }
     }
 
-    suspend fun getGallery(): Gallery? =
-        metadata.gallery
-            ?: withContext(Dispatchers.IO) {
-                kotlin.runCatching {
-                    getGallery(galleryID)
-                }.getOrNull()?.also {
-                    launch { setMetadata { metadata ->
-                        metadata.gallery = it
-
-                        if (metadata.imageList == null)
-                            metadata.imageList = MutableList(it.thumbnails.size) { null }
-                    } }
-                }
-            }
-
     @Suppress("BlockingMethodInNonBlockingContext")
-    suspend fun getThumbnail(): String? =
-        metadata.thumbnail
-            ?: withContext(Dispatchers.IO) {
-                getGalleryBlock()?.thumbnails?.firstOrNull()?.let { thumbnail ->
-                    kotlin.runCatching {
-                        val request = Request.Builder()
-                            .url(thumbnail)
-                            .build()
+    suspend fun getThumbnail(): ByteArray? =
+        findFile(".thumbnail")?.readBytes()
+            ?: getGalleryBlock()?.thumbnails?.firstOrNull()?.let { withContext(Dispatchers.IO) {
+                val request = Request.Builder()
+                    .url(it)
+                    .build()
 
-                        val image = client.newCall(request).execute().body()?.use { it.bytes() }
+                kotlin.runCatching {
+                    client.newCall(request).execute().body()?.use { it.bytes() }
+                }.getOrNull()?.also { kotlin.run {
+                    galleryFolder.getChild(".thumbnail").writeBytes(it)
+                } }
+            } }
 
-                        Base64.encodeToString(image, Base64.DEFAULT)
-                    }.getOrNull()
-                }?.also {
-                    launch { setMetadata { metadata -> metadata.thumbnail = it } }
-                }
-            }
-
-    suspend fun getReader(galleryID: Int): Reader? {
-        val mirrors = Preferences.get<String>("mirrors").split('>')
+    suspend fun getReader(): Reader? {
+        val mirrors = Preferences.get<String>("mirrors").let { if (it.isEmpty()) emptyList() else it.split('>') }
 
         val sources = mapOf(
             Code.HITOMI to { xyz.quaver.hitomi.getReader(galleryID) },
             Code.HIYOBI to { xyz.quaver.hiyobi.getReader(galleryID) }
-        ).toSortedMap { o1, o2 -> mirrors.indexOf(o1.name) - mirrors.indexOf(o2.name) }
+        ).let {
+            if (mirrors.isNotEmpty())
+                it.toSortedMap{ o1, o2 -> mirrors.indexOf(o1.name) - mirrors.indexOf(o2.name) }
+            else
+                it
+        }
 
         return metadata.reader
             ?: withContext(Dispatchers.IO) {
                 var reader: Reader? = null
 
                 for (source in sources) {
-                    reader = try { withTimeoutOrNull(1000) {
+                    reader = try {
                         source.value.invoke()
-                    } } catch (e: Exception) { null }
+                    } catch (e: Exception) {
+                        null
+                    }
 
-                    if (reader != null)
-                        break
+                   if (reader != null)
+                       break
                 }
 
                 reader?.also {
@@ -193,13 +192,11 @@ class Cache private constructor(context: Context, val galleryID: Int) : ContextW
         metadata.imageList?.get(index)?.let { findFile(it) }
 
     @Suppress("BlockingMethodInNonBlockingContext")
-    fun putImage(index: Int, fileName: String, data: ByteArray) = CoroutineScope(Dispatchers.IO).launch {
-        val file = FileX(this@Cache, cachedGallery, fileName).also {
-            it.createNewFile()
-        }
+    suspend fun putImage(index: Int, fileName: String, data: ByteArray) {
+        val file = galleryFolder.getChild(fileName)
 
+        file.createNewFile()
         file.writeBytes(data)
-
         setMetadata { metadata -> metadata.imageList!![index] = fileName }
     }
 
@@ -208,11 +205,12 @@ class Cache private constructor(context: Context, val galleryID: Int) : ContextW
         if (downloadFolder == null)
             DownloadFolderManager.getInstance(this@Cache).addDownloadFolder(galleryID, this@Cache.formatDownloadFolder())
 
-        metadata.imageList?.forEach {
-            it ?: return@forEach
+        metadata.imageList?.forEach { imageName ->
+            imageName ?: return@forEach
 
-            val target = downloadFolder!!.getChild(it)
-            val source = cacheFolder.getChild(it)
+            Log.i("PUPIL", downloadFolder?.uri.toString())
+            val target = downloadFolder!!.getChild(imageName)
+            val source = cacheFolder.getChild(imageName)
 
             if (!source.exists())
                 return@forEach
@@ -223,6 +221,7 @@ class Cache private constructor(context: Context, val galleryID: Int) : ContextW
             }
         }
 
+        Log.i("PUPIL", downloadFolder?.uri.toString())
         val cacheMetadata = cacheFolder.getChild(".metadata")
         val downloadMetadata = downloadFolder!!.getChild(".metadata")
 

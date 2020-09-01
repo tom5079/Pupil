@@ -44,8 +44,8 @@
             app:title="@string/settings_clear_history"/>
 
         <Preference
-            app:key="dl_location"
-            app:title="@string/settings_dl_location"/>
+            app:key="download_folder"
+            app:title="@string/settings_download_folder"/>
 
         <SwitchPreferenceCompat
             app:key="cache_disable"

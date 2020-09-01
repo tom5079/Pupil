@@ -27,15 +27,12 @@ import android.os.Bundle
 import android.view.MenuItem
 import android.view.WindowManager
 import androidx.appcompat.app.AppCompatActivity
-import androidx.preference.Preference
-import androidx.preference.PreferenceManager
 import com.google.android.material.snackbar.Snackbar
 import kotlinx.android.synthetic.main.settings_activity.*
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import net.rdrei.android.dirchooser.DirectoryChooserActivity
-import xyz.quaver.io.util.toFile
-import xyz.quaver.pupil.Pupil
+import xyz.quaver.io.FileX
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.favorites
 import xyz.quaver.pupil.ui.fragment.LockSettingsFragment
@@ -126,16 +123,14 @@ class SettingsActivity : AppCompatActivity() {
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT)
                             contentResolver.takePersistableUriPermission(uri, takeFlags)
 
-                        val file = uri.toFile(this)
-
-                        if (file?.canWrite() != true)
+                        if (FileX(this, uri).canWrite())
+                            Preferences["download_folder"] = uri.toString()
+                        else
                             Snackbar.make(
                                 settings,
-                                R.string.settings_dl_location_not_writable,
+                                R.string.settings_download_folder_not_writable,
                                 Snackbar.LENGTH_LONG
                             ).show()
-                        else
-                            Preferences["dl_location"] = file.canonicalPath
                     }
                 }
             }
@@ -146,11 +141,11 @@ class SettingsActivity : AppCompatActivity() {
                     if (!File(directory).canWrite())
                         Snackbar.make(
                             settings,
-                            R.string.settings_dl_location_not_writable,
+                            R.string.settings_download_folder_not_writable,
                             Snackbar.LENGTH_LONG
                         ).show()
                     else
-                        Preferences["dl_location"] = File(directory).canonicalPath
+                        Preferences["download_folder"] = File(directory).canonicalPath
                 }
             }
             else -> super.onActivityResult(requestCode, resultCode, data)

@@ -18,10 +18,14 @@
 
 package xyz.quaver.pupil.ui
 
+import android.content.ComponentName
 import android.content.Intent
+import android.content.ServiceConnection
 import android.graphics.drawable.Animatable
 import android.graphics.drawable.Drawable
 import android.os.Bundle
+import android.os.IBinder
+import android.util.Log
 import android.view.*
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
@@ -47,9 +51,10 @@ import xyz.quaver.pupil.R
 import xyz.quaver.pupil.adapters.ReaderAdapter
 import xyz.quaver.pupil.favorites
 import xyz.quaver.pupil.histories
+import xyz.quaver.pupil.services.DownloadService
 import xyz.quaver.pupil.util.Preferences
-import xyz.quaver.pupil.util.download.Cache
-import xyz.quaver.pupil.util.download.DownloadWorker
+import xyz.quaver.pupil.util.downloader.Cache
+import xyz.quaver.pupil.util.downloader.DownloadFolderManager
 import java.util.*
 import kotlin.concurrent.schedule
 import kotlin.concurrent.timer
@@ -72,6 +77,22 @@ class ReaderActivity : AppCompatActivity() {
         }
     }
 
+    private lateinit var cache: Cache
+    var downloader: DownloadService? = null
+    private val conn = object: ServiceConnection {
+        override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
+            downloader = (service as DownloadService.Binder).service
+            Log.i("PUPILD", "CON")
+        }
+
+        override fun onServiceDisconnected(name: ComponentName?) {
+            downloader = null
+            Log.i("PUPILD", "DIS")
+        }
+    }
+
+    private var deleteOnExit = true
+
     private val timer = Timer()
     private var autoTimer: Timer? = null
 
@@ -81,6 +102,7 @@ class ReaderActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_reader)
 
         title = getString(R.string.reader_loading)
         supportActionBar?.setDisplayHomeAsUpEnabled(false)
@@ -89,23 +111,18 @@ class ReaderActivity : AppCompatActivity() {
             WindowManager.LayoutParams.FLAG_SECURE,
             WindowManager.LayoutParams.FLAG_SECURE)
 
-        setContentView(R.layout.activity_reader)
-
         handleIntent(intent)
-
-        histories.add(galleryID)
+        cache = Cache.getInstance(this, galleryID)
         FirebaseCrashlytics.getInstance().setCustomKey("GalleryID", galleryID)
 
         if (galleryID == 0) {
             onBackPressed()
             return
         }
-
-        initView()
         if (Preferences["cache_disable"]) {
             reader_download_progressbar.visibility = View.GONE
             CoroutineScope(Dispatchers.IO).launch {
-                val reader = Cache(this@ReaderActivity).getReader(galleryID)
+                val reader = cache.getReader()
 
                 launch(Dispatchers.Main) initDownloader@{
                     if (reader == null) {
@@ -115,6 +132,7 @@ class ReaderActivity : AppCompatActivity() {
                         return@initDownloader
                     }
 
+                    histories.add(galleryID)
                     (reader_recyclerview.adapter as ReaderAdapter).apply {
                         this.reader = reader
                         notifyDataSetChanged()
@@ -132,6 +150,8 @@ class ReaderActivity : AppCompatActivity() {
             }
         } else
             initDownloader()
+
+        initView()
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -187,9 +207,9 @@ class ReaderActivity : AppCompatActivity() {
             R.id.reader_menu_page_indicator -> {
                 val view = LayoutInflater.from(this).inflate(R.layout.dialog_numberpicker, reader_layout, false)
                 with(view.dialog_number_picker) {
-                    minValue=1
-                    maxValue=Cache(context).getReaderOrNull(galleryID)?.galleryInfo?.files?.size ?: 0
-                    value=currentPage
+                    minValue = 1
+                    maxValue = cache.metadata.reader?.galleryInfo?.files?.size ?: 0
+                    value = currentPage
                 }
                 val dialog = AlertDialog.Builder(this).apply {
                     setView(view)
@@ -224,8 +244,12 @@ class ReaderActivity : AppCompatActivity() {
         timer.cancel()
         (reader_recyclerview?.adapter as? ReaderAdapter)?.timer?.cancel()
 
-        if (!Cache(this).isDownloading(galleryID))
-            DownloadWorker.getInstance(this@ReaderActivity).cancel(galleryID)
+        if (deleteOnExit) {
+            downloader?.cancel(galleryID)
+            DownloadFolderManager.getInstance(this).deleteDownloadFolder(galleryID)
+        }
+
+        unbindService(conn)
     }
 
     override fun onBackPressed() {
@@ -261,16 +285,16 @@ class ReaderActivity : AppCompatActivity() {
     }
 
     private fun initDownloader() {
-        val worker = DownloadWorker.getInstance(this).apply {
-            cancel(galleryID)
-            queue.add(galleryID)
-        }
+        DownloadService.download(this, galleryID)
+        bindService(Intent(this, DownloadService::class.java), conn, BIND_AUTO_CREATE)
 
         timer.schedule(1000, 1000) {
-            if (worker.progress.indexOfKey(galleryID) < 0)  //loading
+            val downloader = downloader ?: return@schedule
+
+            if (downloader.progress.indexOfKey(galleryID) < 0)  //loading
                 return@schedule
 
-            if (worker.progress[galleryID] == null) {      //Gallery not found
+            if (downloader.progress[galleryID] == null) {      //Gallery not found
                 timer.cancel()
                 Snackbar
                     .make(reader_layout, R.string.reader_failed_to_find_gallery, Snackbar.LENGTH_INDEFINITE)
@@ -279,14 +303,13 @@ class ReaderActivity : AppCompatActivity() {
 
             runOnUiThread {
                 reader_download_progressbar.max = reader_recyclerview.adapter?.itemCount ?: 0
-                reader_download_progressbar.progress = worker.progress[galleryID]?.count { it.isInfinite() } ?: 0
+                reader_download_progressbar.progress = downloader.progress[galleryID]?.count { it.isInfinite() } ?: 0
                 reader_progressbar.max = reader_recyclerview.adapter?.itemCount ?: 0
 
                 if (title == getString(R.string.reader_loading)) {
-                    val reader = Cache(this@ReaderActivity).getReaderOrNull(galleryID)
+                    val reader = cache.metadata.reader
 
                     if (reader != null) {
-
                         with (reader_recyclerview.adapter as ReaderAdapter) {
                             this.reader = reader
                             notifyDataSetChanged()
@@ -304,7 +327,7 @@ class ReaderActivity : AppCompatActivity() {
                     }
                 }
 
-                if (worker.progress[galleryID]?.all { it.isInfinite() } == true) {   //Download finished
+                if (downloader.isCompleted(galleryID)) {   //Download finished
                     reader_download_progressbar.visibility = View.GONE
 
                     animateDownloadFAB(false)
@@ -315,7 +338,7 @@ class ReaderActivity : AppCompatActivity() {
 
     private fun initView() {
         with(reader_recyclerview) {
-            adapter = ReaderAdapter(Glide.with(this@ReaderActivity), galleryID).apply {
+            adapter = ReaderAdapter(this@ReaderActivity, galleryID).apply {
                 onItemClickListener = {
                     if (isScroll) {
                         isScroll = false
@@ -350,19 +373,18 @@ class ReaderActivity : AppCompatActivity() {
         }
 
         with(reader_fab_download) {
-            animateDownloadFAB(Cache(context).isDownloading(galleryID)) //If download in progress, animate button
+            animateDownloadFAB(DownloadFolderManager.getInstance(this@ReaderActivity).getDownloadFolder(galleryID) != null) //If download in progress, animate button
 
             setOnClickListener {
                 if (PreferenceManager.getDefaultSharedPreferences(context).getBoolean("cache_disable", false))
                     Toast.makeText(context, R.string.settings_download_when_cache_disable_warning, Toast.LENGTH_SHORT).show()
                 else {
-                    if (Cache(context).isDownloading(galleryID)) {
-                        Cache(context).setDownloading(galleryID, false)
-
-                        animateDownloadFAB(false)
-                    } else {
-                        Cache(context).setDownloading(galleryID, true)
+                    if (deleteOnExit) {
+                        deleteOnExit = false
+                        cache.moveToDownload()
                         animateDownloadFAB(true)
+                    } else {
+                        animateDownloadFAB(false)
                     }
                 }
             }
@@ -371,10 +393,8 @@ class ReaderActivity : AppCompatActivity() {
         with(reader_fab_retry) {
             setImageResource(R.drawable.refresh)
             setOnClickListener {
-                DownloadWorker.getInstance(context).let {
-                    it.cancel(galleryID)
-                    it.queue.add(galleryID)
-                }
+                downloader?.cancel(galleryID)
+                downloader?.download(galleryID)
             }
         }
 
@@ -450,8 +470,7 @@ class ReaderActivity : AppCompatActivity() {
 
                 icon?.registerAnimationCallback(object : Animatable2Compat.AnimationCallback() {
                     override fun onAnimationEnd(drawable: Drawable?) {
-                        val worker = DownloadWorker.getInstance(context)
-                        if (worker.progress[galleryID]?.all { it.isInfinite() } == true) // If download is finished, stop animating
+                        if (downloader?.isCompleted(galleryID) == true) // If download is finished, stop animating
                             post {
                                 setImageResource(R.drawable.ic_download)
                                 labelText = getString(R.string.reader_fab_download_cancel)

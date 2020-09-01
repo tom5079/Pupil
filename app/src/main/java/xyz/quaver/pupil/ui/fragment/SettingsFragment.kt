@@ -29,6 +29,7 @@ import androidx.preference.PreferenceFragmentCompat
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import xyz.quaver.io.FileX
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.histories
 import xyz.quaver.pupil.ui.LockActivity
@@ -141,7 +142,7 @@ class SettingsFragment :
                         setNegativeButton(android.R.string.no) { _, _ -> }
                     }.show()
                 }
-                "dl_location" -> {
+                "download_folder" -> {
                     DownloadLocationDialog(requireActivity()).show()
                 }
                 "default_query" -> {
@@ -208,9 +209,6 @@ class SettingsFragment :
                 "proxy" -> {
                     summary = context?.let { getProxyInfo().type.name }
                 }
-                "dl_location" -> {
-                    summary = context?.let { getDownloadDirectory(it).canonicalPath }
-                }
             }
         }
     }
@@ -275,8 +273,14 @@ class SettingsFragment :
 
                             onPreferenceClickListener = this@SettingsFragment
                         }
-                        "dl_location" -> {
-                            summary = getDownloadDirectory(requireContext()).canonicalPath
+                        "download_folder" -> {
+                            setSummaryProvider {
+                                val uri: String = Preferences[it.key]
+
+                                kotlin.runCatching {
+                                    FileX(context, uri).canonicalPath
+                                }.getOrElse { "" }
+                            }
 
                             onPreferenceClickListener = this@SettingsFragment
                         }

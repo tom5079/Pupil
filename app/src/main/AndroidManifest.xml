@@ -22,7 +22,6 @@
         android:theme="@style/AppTheme"
         android:networkSecurityConfig="@xml/network_security_config"
         tools:replace="android:theme"
-        android:requestLegacyExternalStorage="true"
         tools:ignore="UnusedAttribute">
 
         <provider
