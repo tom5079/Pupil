@@ -24,13 +24,18 @@ import android.webkit.URLUtil
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import okhttp3.Call
 import xyz.quaver.io.FileX
+import xyz.quaver.io.util.getChild
 import xyz.quaver.io.util.readText
+import xyz.quaver.pupil.client
+import xyz.quaver.pupil.services.DownloadService
 import xyz.quaver.pupil.util.Preferences
 
 class DownloadFolderManager private constructor(context: Context) : ContextWrapper(context) {
@@ -46,59 +51,70 @@ class DownloadFolderManager private constructor(context: Context) : ContextWrapp
 
     val defaultDownloadFolder = FileX(this, getExternalFilesDir(null)!!)
 
-    val downloadFolder = {
-        val uri: String = Preferences["download_directory"]
+    val downloadFolder: FileX
+        get() = {
+            kotlin.runCatching {
+                FileX(this, Preferences.get<String>("download_folder"))
+            }.getOrElse {
+                Preferences["download_folder"] = defaultDownloadFolder.uri.toString()
+                defaultDownloadFolder
+            }
+        }.invoke()
 
-        if (!URLUtil.isValidUrl(uri))
-            Preferences["download_directory"] = defaultDownloadFolder
-
+    private val downloadFolderMapMutex = Mutex()
+    private val downloadFolderMap: MutableMap<Int, String> = runBlocking { downloadFolderMapMutex.withLock {
         kotlin.runCatching {
-            FileX(this, uri)
-        }.getOrElse {
-            Preferences["download_directory"] = defaultDownloadFolder
-            FileX(this, defaultDownloadFolder)
-        }
-    }.invoke()
-
-    private val downloadFolderMap: MutableMap<Int, String> =
-        kotlin.runCatching {
-            FileX(this@DownloadFolderManager, downloadFolder, ".download").readText()?.let {
+            downloadFolder.getChild(".download").readText()?.let {
                 Json.decodeFromString<MutableMap<Int, String>>(it)
             }
         }.getOrNull() ?: mutableMapOf()
-    private val downloadFolderMapMutex = Mutex()
+    } }
 
-    @Synchronized
-    fun getDownloadFolder(galleryID: Int): FileX? =
-        downloadFolderMap[galleryID]?.let { FileX(this, downloadFolder, it) }
+    fun isDownloading(galleryID: Int): Boolean {
+        val isThisGallery: (Call) -> Boolean = { (it.request().tag() as? DownloadService.Tag)?.galleryID == galleryID }
 
-    @Synchronized
-    fun addDownloadFolder(galleryID: Int, name: String) {
-        if (downloadFolderMap.containsKey(galleryID))
-            return
-
-        if (FileX(this@DownloadFolderManager, downloadFolder, name).mkdir()) {
-            downloadFolderMap[galleryID] = name
-
-            CoroutineScope(Dispatchers.IO).launch { downloadFolderMapMutex.withLock {
-                FileX(this@DownloadFolderManager, downloadFolder, ".download").writeText(Json.encodeToString(downloadFolderMap))
-            } }
-        }
+        return downloadFolderMap.containsKey(galleryID)
+                && client.dispatcher().let { it.queuedCalls().any(isThisGallery) || it.runningCalls().any(isThisGallery) }
     }
 
-    @Synchronized
-    fun removeDownloadFolder(galleryID: Int) {
+    fun getDownloadFolder(galleryID: Int): FileX? = runBlocking { downloadFolderMapMutex.withLock {
+        downloadFolderMap[galleryID]?.let { downloadFolder.getChild(it) }
+    } }
+
+    fun addDownloadFolder(galleryID: Int, name: String) { runBlocking { downloadFolderMapMutex.withLock {
+        if (downloadFolderMap.containsKey(galleryID))
+            return@withLock
+
+        val folder = downloadFolder.getChild(name)
+
+        if (!folder.exists())
+            folder.mkdirs()
+
+        downloadFolderMap[galleryID] = name
+
+        CoroutineScope(Dispatchers.IO).launch { downloadFolderMapMutex.withLock {
+           downloadFolder.getChild(".download").let {
+               it.createNewFile()
+               it.writeText(Json.encodeToString(downloadFolderMap))
+           }
+        } }
+    } } }
+
+    fun deleteDownloadFolder(galleryID: Int) { runBlocking { downloadFolderMapMutex.withLock {
         if (!downloadFolderMap.containsKey(galleryID))
-            return
+            return@withLock
 
         downloadFolderMap[galleryID]?.let {
-            if (FileX(this@DownloadFolderManager, downloadFolder, it).delete()) {
+            if (downloadFolder.getChild(it).delete()) {
                 downloadFolderMap.remove(galleryID)
 
                 CoroutineScope(Dispatchers.IO).launch { downloadFolderMapMutex.withLock {
-                    FileX(this@DownloadFolderManager, downloadFolder, ".download").writeText(Json.encodeToString(downloadFolderMap))
+                    downloadFolder.getChild(".download").let {
+                        it.createNewFile()
+                        it.writeText(Json.encodeToString(downloadFolderMap))
+                    }
                 } }
             }
         }
-    }
+    } } }
 }

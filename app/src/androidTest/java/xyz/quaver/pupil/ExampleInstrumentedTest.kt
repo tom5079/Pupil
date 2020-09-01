@@ -28,6 +28,7 @@ import kotlinx.coroutines.runBlocking
 import org.junit.Test
 import org.junit.runner.RunWith
 import xyz.quaver.hitomi.getGalleryIDsFromNozomi
+import xyz.quaver.hitomi.getSuggestionsForQuery
 import xyz.quaver.hiyobi.cookie
 import xyz.quaver.hiyobi.createImgList
 import xyz.quaver.hiyobi.getReader
@@ -120,5 +121,10 @@ class ExampleInstrumentedTest {
         }
 
         Log.i("PUPILD", Cache(context).getReaderOrNull(galleryID)?.galleryInfo?.title ?: "null")
+    }
+
+    @Test
+    fun test_suggestion() {
+        getSuggestionsForQuery("female:l")
     }
 }

@@ -22,6 +22,7 @@ import android.app.Dialog
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.widget.LinearLayout.LayoutParams
@@ -36,15 +37,10 @@ import kotlinx.android.synthetic.main.dialog_gallery.*
 import kotlinx.android.synthetic.main.dialog_gallery_details.view.*
 import kotlinx.android.synthetic.main.dialog_gallery_dotindicator.view.*
 import kotlinx.android.synthetic.main.item_gallery_details.view.*
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 import xyz.quaver.hitomi.Gallery
-import xyz.quaver.hitomi.GalleryBlock
 import xyz.quaver.hitomi.getGallery
 import xyz.quaver.pupil.BuildConfig
-import xyz.quaver.pupil.Pupil
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.adapters.GalleryBlockAdapter
 import xyz.quaver.pupil.adapters.ThumbnailPageAdapter
@@ -52,7 +48,7 @@ import xyz.quaver.pupil.histories
 import xyz.quaver.pupil.types.Tag
 import xyz.quaver.pupil.ui.ReaderActivity
 import xyz.quaver.pupil.util.ItemClickSupport
-import xyz.quaver.pupil.util.download.Cache
+import xyz.quaver.pupil.util.downloader.Cache
 import xyz.quaver.pupil.util.wordCapitalize
 
 class GalleryDialog(context: Context, private val glide: RequestManager, private val galleryID: Int) : Dialog(context) {
@@ -131,7 +127,7 @@ class GalleryDialog(context: Context, private val glide: RequestManager, private
 
     private fun addDetails(gallery: Gallery) {
         val inflater = LayoutInflater.from(context)
-        
+
         inflater.inflate(R.layout.dialog_gallery_details, gallery_contents, false).apply {
             gallery_details.setText(R.string.gallery_details)
 
@@ -230,25 +226,12 @@ class GalleryDialog(context: Context, private val glide: RequestManager, private
 
     private fun addRelated(gallery: Gallery) {
         val inflater = LayoutInflater.from(context)
-        val galleries = ArrayList<GalleryBlock>()
+        val galleries = ArrayList<Int>()
 
         val adapter = GalleryBlockAdapter(glide, galleries).apply {
             onChipClickedHandler.add { tag ->
                 this@GalleryDialog.onChipClickedHandler.forEach { handler ->
                     handler.invoke(tag)
-                }
-            }
-        }
-
-        CoroutineScope(Dispatchers.Main).launch {
-            gallery.related.forEachIndexed { i, galleryID ->
-                async(Dispatchers.IO) {
-                    Cache(context).getGalleryBlock(galleryID)
-                }.let {
-                    val galleryBlock = it.await() ?: return@let
-
-                    galleries.add(galleryBlock)
-                    adapter.notifyItemInserted(i)
                 }
             }
         }
@@ -263,15 +246,15 @@ class GalleryDialog(context: Context, private val glide: RequestManager, private
                 ItemClickSupport.addTo(this).apply {
                     onItemClickListener = { _, position, _ ->
                         context.startActivity(Intent(context, ReaderActivity::class.java).apply {
-                            putExtra("galleryID", galleries[position].id)
+                            putExtra("galleryID", galleries[position])
                         })
-                        histories.add(galleries[position].id)
+                        histories.add(galleries[position])
                     }
                     onItemLongClickListener = { _, position, _ ->
                         GalleryDialog(
                             context,
                             glide,
-                            galleries[position].id
+                            galleries[position]
                         ).apply {
                             onChipClickedHandler.add { tag ->
                                 this@GalleryDialog.onChipClickedHandler.forEach { it.invoke(tag) }
@@ -286,6 +269,18 @@ class GalleryDialog(context: Context, private val glide: RequestManager, private
             }
         }.let {
             gallery_contents.addView(it)
+        }
+
+        CoroutineScope(Dispatchers.IO).launch {
+            gallery.related.forEach { galleryID ->
+                Cache.getInstance(context, galleryID).getGalleryBlock()?.let {
+                    galleries.add(galleryID)
+
+                    withContext(Dispatchers.Main) {
+                        adapter.notifyItemInserted(galleries.size-1)
+                    }
+                }
+            }
         }
     }
 

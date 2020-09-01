@@ -36,7 +36,7 @@
     <string name="channel_update_description">Shows update progress</string>
 
     <string name="unable_to_connect">Unable to connect to hitomi.la</string>
-    
+
     <string name="lock_corrupted">Lock file corrupted! Please re-install Pupil</string>
 
     <string name="main_no_result">No result</string>
@@ -135,12 +135,12 @@
     <string name="settings_clear_history">Clear history</string>
     <string name="settings_clear_history_alert_message">Do you want to clear histories?</string>
     <string name="settings_clear_history_summary">%1$d histories saved</string>
-    <string name="settings_dl_location">Download directory</string>
-    <string name="settings_dl_location_removable">Removable Storage</string>
-    <string name="settings_dl_location_internal">Internal Storage</string>
-    <string name="settings_dl_location_available">%s available</string>
-    <string name="settings_dl_location_custom">Custom Location</string>
-    <string name="settings_dl_location_not_writable">This folder is not writable. Please select another folder.</string>
+    <string name="settings_download_folder">Download directory</string>
+    <string name="settings_download_folder_removable">Removable Storage</string>
+    <string name="settings_download_folder_internal">Internal Storage</string>
+    <string name="settings_download_folder_available">%s available</string>
+    <string name="settings_download_folder_custom">Custom Location</string>
+    <string name="settings_download_folder_not_writable">This folder is not writable. Please select another folder.</string>
     <string name="settings_cache_disable">Disable Cache</string>
     <string name="settings_download_when_cache_disable_warning">Download is disabled when the cache is disabled</string>
     <string name="settings_low_quality">Low quality images</string>

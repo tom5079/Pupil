@@ -23,7 +23,7 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.recyclerview.widget.RecyclerView
-import com.bumptech.glide.RequestManager
+import com.bumptech.glide.Glide
 import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.load.model.GlideUrl
 import com.bumptech.glide.load.model.LazyHeaders
@@ -38,27 +38,28 @@ import xyz.quaver.hitomi.imageUrlFromImage
 import xyz.quaver.hiyobi.cookie
 import xyz.quaver.hiyobi.createImgList
 import xyz.quaver.hiyobi.user_agent
+import xyz.quaver.io.util.readBytes
 import xyz.quaver.pupil.R
+import xyz.quaver.pupil.ui.ReaderActivity
 import xyz.quaver.pupil.util.Preferences
-import xyz.quaver.pupil.util.download.Cache
-import xyz.quaver.pupil.util.download.DownloadWorker
+import xyz.quaver.pupil.util.downloader.Cache
 import java.util.*
 import kotlin.concurrent.schedule
 import kotlin.math.roundToInt
 
-class ReaderAdapter(private val glide: RequestManager,
+class ReaderAdapter(private val activity: ReaderActivity,
                     private val galleryID: Int) : RecyclerView.Adapter<ReaderAdapter.ViewHolder>() {
 
     var reader: Reader? = null
     val timer = Timer()
+
+    private val glide = Glide.with(activity)
 
     var isFullScreen = false
 
     var onItemClickListener : ((Int) -> (Unit))? = null
 
     class ViewHolder(val view: View) : RecyclerView.ViewHolder(view)
-
-    var downloadWorker: DownloadWorker? = null
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         return LayoutInflater.from(parent.context).inflate(
@@ -68,11 +69,12 @@ class ReaderAdapter(private val glide: RequestManager,
         }
     }
 
+    private var cache: Cache? = null
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         holder.view as ConstraintLayout
 
-        if (downloadWorker == null)
-            downloadWorker = DownloadWorker.getInstance(holder.view.context)
+        if (cache == null)
+            cache = Cache.getInstance(holder.view.context, galleryID)
 
         if (isFullScreen) {
             holder.view.layoutParams.height = RecyclerView.LayoutParams.MATCH_PARENT
@@ -124,15 +126,15 @@ class ReaderAdapter(private val glide: RequestManager,
                     .into(holder.view.image)
             }
         } else {
-            val image = Cache(holder.view.context).getImage(galleryID, position)
-            val progress = downloadWorker!!.progress[galleryID]?.get(position)
+            val image = cache!!.getImage(position)
+            val progress = activity.downloader?.progress?.get(galleryID)?.get(position)
 
             if (progress?.isInfinite() == true && image != null) {
                 holder.view.reader_item_progressbar.visibility = View.INVISIBLE
 
                 holder.view.image.post {
                     glide
-                        .load(image)
+                        .load(image.readBytes())
                         .diskCacheStrategy(DiskCacheStrategy.NONE)
                         .skipMemoryCache(true)
                         .fitCenter()

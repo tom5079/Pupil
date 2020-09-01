@@ -18,21 +18,19 @@
 
 package xyz.quaver.pupil.ui.dialog
 
-import android.Manifest
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.Dialog
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.view.View
 import android.widget.LinearLayout
 import android.widget.RadioButton
 import androidx.appcompat.app.AlertDialog
-import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import kotlinx.android.synthetic.main.item_dl_location.view.*
+import androidx.core.net.toUri
+import kotlinx.android.synthetic.main.item_download_folder.view.*
 import net.rdrei.android.dirchooser.DirectoryChooserActivity
 import net.rdrei.android.dirchooser.DirectoryChooserConfig
 import xyz.quaver.pupil.R
@@ -44,7 +42,7 @@ class DownloadLocationDialog(val activity: Activity) : AlertDialog(activity) {
     private val buttons = mutableListOf<Pair<RadioButton, File?>>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        setTitle(R.string.settings_dl_location)
+        setTitle(R.string.settings_download_folder)
 
         setView(build())
 
@@ -54,7 +52,7 @@ class DownloadLocationDialog(val activity: Activity) : AlertDialog(activity) {
     }
 
     private fun build() : View {
-        val view = layoutInflater.inflate(R.layout.dialog_dl_location, null) as LinearLayout
+        val view = layoutInflater.inflate(R.layout.dialog_download_folder, null) as LinearLayout
 
         val externalFilesDirs = ContextCompat.getExternalFilesDirs(context, null)
 
@@ -62,13 +60,13 @@ class DownloadLocationDialog(val activity: Activity) : AlertDialog(activity) {
 
             dir ?: return@forEachIndexed
 
-            view.addView(layoutInflater.inflate(R.layout.item_dl_location, view, false).apply {
+            view.addView(layoutInflater.inflate(R.layout.item_download_folder, view, false).apply {
                 location_type.text = context.getString(when (index) {
-                    0 -> R.string.settings_dl_location_internal
-                    else -> R.string.settings_dl_location_removable
+                    0 -> R.string.settings_download_folder_internal
+                    else -> R.string.settings_download_folder_removable
                 })
                 location_available.text = context.getString(
-                    R.string.settings_dl_location_available,
+                    R.string.settings_download_folder_available,
                     byteToString(dir.freeSpace)
                 )
                 setOnClickListener {
@@ -76,14 +74,14 @@ class DownloadLocationDialog(val activity: Activity) : AlertDialog(activity) {
                         pair.first.isChecked = false
                     }
                     button.performClick()
-                    Preferences["dl_location"] = dir.canonicalPath
+                    Preferences["download_folder"] = dir.toUri().toString()
                 }
                 buttons.add(button to dir)
             })
         }
 
-        view.addView(layoutInflater.inflate(R.layout.item_dl_location, view, false).apply {
-            location_type.text = context.getString(R.string.settings_dl_location_custom)
+        view.addView(layoutInflater.inflate(R.layout.item_download_folder, view, false).apply {
+            location_type.text = context.getString(R.string.settings_download_folder_custom)
             setOnClickListener {
                 buttons.forEach { pair ->
                     pair.first.isChecked = false
@@ -91,16 +89,11 @@ class DownloadLocationDialog(val activity: Activity) : AlertDialog(activity) {
                 button.performClick()
 
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-
-                    if (ContextCompat.checkSelfPermission(context, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED)
-                        ActivityCompat.requestPermissions(activity, arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE), R.id.request_write_permission_and_saf.normalizeID())
-                    else {
-                        val intent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).apply {
-                            putExtra("android.content.extra.SHOW_ADVANCED", true)
-                        }
-
-                        activity.startActivityForResult(intent, R.id.request_download_folder.normalizeID())
+                    val intent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).apply {
+                        putExtra("android.content.extra.SHOW_ADVANCED", true)
                     }
+
+                    activity.startActivityForResult(intent, R.id.request_download_folder.normalizeID())
 
                     dismiss()
                 } else {    // Can't use SAF on old Androids!

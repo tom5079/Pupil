@@ -23,7 +23,6 @@ import android.graphics.Color
 import android.graphics.PorterDuff
 import android.graphics.PorterDuffColorFilter
 import android.graphics.drawable.Drawable
-import android.util.Base64
 import android.util.SparseBooleanArray
 import android.view.LayoutInflater
 import android.view.View
@@ -46,22 +45,20 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import xyz.quaver.hitomi.GalleryBlock
 import xyz.quaver.hitomi.getReader
 import xyz.quaver.pupil.BuildConfig
-import xyz.quaver.pupil.Pupil
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.favorites
 import xyz.quaver.pupil.types.Tag
-import xyz.quaver.pupil.util.GalleryList
 import xyz.quaver.pupil.util.Preferences
-import xyz.quaver.pupil.util.download.Cache
+import xyz.quaver.pupil.util.downloader.Cache
+import xyz.quaver.pupil.util.downloader.DownloadFolderManager
 import xyz.quaver.pupil.util.wordCapitalize
 import java.util.*
 import kotlin.collections.ArrayList
 import kotlin.concurrent.schedule
 
-class GalleryBlockAdapter(private val glide: RequestManager, private val galleries: List<GalleryBlock>) : RecyclerSwipeAdapter<RecyclerView.ViewHolder>(), SwipeAdapterInterface {
+class GalleryBlockAdapter(private val glide: RequestManager, private val galleries: List<Int>) : RecyclerSwipeAdapter<RecyclerView.ViewHolder>(), SwipeAdapterInterface {
 
     enum class ViewType {
         NEXT,
@@ -77,22 +74,23 @@ class GalleryBlockAdapter(private val glide: RequestManager, private val galleri
         var timerTask: TimerTask? = null
 
         private fun updateProgress(context: Context, galleryID: Int) {
-            val reader = Cache(context).getReaderOrNull(galleryID)
+            val cache = Cache.getInstance(context, galleryID)
 
             CoroutineScope(Dispatchers.Main).launch {
-                if (reader == null || Preferences["cache_disable"]) {
+                if (cache.metadata.reader == null || Preferences["cache_disable"]) {
                     view.galleryblock_progressbar.visibility = View.GONE
                     view.galleryblock_progress_complete.visibility = View.GONE
                     return@launch
                 }
 
                 with(view.galleryblock_progressbar) {
+                    val imageList = cache.metadata.imageList!!
 
-                    progress = Cache(context).getImages(galleryID)?.size ?: 0
+                    progress = imageList.filterNotNull().size
 
                     if (visibility == View.GONE) {
                         visibility = View.VISIBLE
-                        max = reader.galleryInfo.files.size
+                        max = imageList.size
                     }
 
                     if (progress == max) {
@@ -116,7 +114,11 @@ class GalleryBlockAdapter(private val glide: RequestManager, private val galleri
             }
         }
 
-        fun bind(galleryBlock: GalleryBlock) {
+        fun bind(galleryID: Int) {
+            val cache = Cache.getInstance(view.context, galleryID)
+
+            val galleryBlock = cache.metadata.galleryBlock!!
+
             with(view) {
                 val resources = context.resources
                 val languages = resources.getStringArray(R.array.languages).map {
@@ -136,13 +138,8 @@ class GalleryBlockAdapter(private val glide: RequestManager, private val galleri
                     it.start()
                 })
 
-                CoroutineScope(Dispatchers.Main).launch {
-                    val thumbnail = Cache(context).getThumbnail(galleryBlock.id).let {
-                        if (it != null)
-                            Base64.decode(it, Base64.DEFAULT)
-                        else
-                            null
-                    }
+                CoroutineScope(Dispatchers.IO).launch {
+                    val thumbnail = cache.getThumbnail()
 
                     galleryblock_thumbnail.post {
                         glide
@@ -158,27 +155,9 @@ class GalleryBlockAdapter(private val glide: RequestManager, private val galleri
                     }
                 }
 
-                //Check cache
-                val cache = Cache(context).getCachedGallery(galleryBlock.id)
-                val reader = Cache(context).getReaderOrNull(galleryBlock.id)
-
-                if (reader != null) {
-                    val count = cache.listFiles()?.count {
-                        Regex("^[0-9]+.+\$").matches(it.name)
-                    } ?: 0
-
-                    with(galleryblock_progressbar) {
-                        max = reader.galleryInfo.files.size
-                        progress = count
-
-                        visibility = View.VISIBLE
-                    }
-                } else
-                    galleryblock_progressbar.visibility = View.GONE
-
                 if (timerTask == null)
                     timerTask = timer.schedule(0, 1000) {
-                        updateProgress(context, galleryBlock.id)
+                        updateProgress(context, galleryID)
                     }
 
                 galleryblock_title.text = galleryBlock.title
@@ -339,9 +318,9 @@ class GalleryBlockAdapter(private val glide: RequestManager, private val galleri
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
         if (holder is GalleryViewHolder) {
-            val gallery = galleries[position-(if (showPrev) 1 else 0)]
+            val galleryID = galleries[position-(if (showPrev) 1 else 0)]
 
-            holder.bind(gallery)
+            holder.bind(galleryID)
 
             with(holder.view.galleryblock_primary) {
                 setOnClickListener {
@@ -367,7 +346,7 @@ class GalleryBlockAdapter(private val glide: RequestManager, private val galleri
                     mItemManger.closeAllExcept(layout)
 
                     holder.view.galleryblock_download.text =
-                        if (Cache(holder.view.context).isDownloading(gallery.id))
+                        if (DownloadFolderManager.getInstance(holder.view.context).isDownloading(galleryID))
                             holder.view.context.getString(android.R.string.cancel)
                         else
                             holder.view.context.getString(R.string.main_download)
@@ -392,8 +371,8 @@ class GalleryBlockAdapter(private val glide: RequestManager, private val galleri
     }
 
     override fun getItemCount() =
-        (if (galleries.isEmpty()) 0 else galleries.size)+
-        (if (showNext) 1 else 0)+
+        galleries.size +
+        (if (showNext) 1 else 0) +
         (if (showPrev) 1 else 0)
 
     override fun getItemViewType(position: Int): Int {

@@ -19,12 +19,23 @@
 package xyz.quaver.pupil.util
 
 import android.annotation.SuppressLint
+import android.content.Context
+import android.content.Intent
+import android.os.Build
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import okhttp3.OkHttpClient
+import okhttp3.Request
+import xyz.quaver.Code
+import xyz.quaver.hitomi.Reader
+import xyz.quaver.hitomi.getReferer
+import xyz.quaver.hitomi.imageUrlFromImage
+import xyz.quaver.hiyobi.cookie
+import xyz.quaver.hiyobi.createImgList
+import xyz.quaver.hiyobi.user_agent
 import xyz.quaver.pupil.util.downloader.Cache
 import xyz.quaver.pupil.util.downloader.Metadata
 import java.util.*
@@ -77,17 +88,47 @@ fun OkHttpClient.Builder.proxyInfo(proxyInfo: ProxyInfo) = this.apply {
 }
 
 val formatMap = mapOf<String, (Cache) -> (String)>(
-    "\$ID" to { runBlocking { it.getGalleryBlock()?.id.toString() } },
-    "\$TITLE" to { runBlocking { it.getGalleryBlock()?.title.toString() } },
+    "-id-" to { runBlocking { it.getGalleryBlock()?.id.toString() } },
+    "-title-" to { runBlocking { it.getGalleryBlock()?.title.toString() } },
     // TODO
 )
 /**
  * Formats download folder name with given Metadata
  */
-fun Cache.formatDownloadFolder(): String {
-    return Preferences["download_folder_format", "\$ID"].apply {
-        formatMap.entries.forEach { (key, lambda) ->
-            this.replace(key, lambda.invoke(this@formatDownloadFolder))
+fun Cache.formatDownloadFolder(): String =
+    Preferences["download_folder_format", "-id-"].let {
+        formatMap.entries.fold(it) { str, (k, v) ->
+            str.replace(k, v.invoke(this), true)
         }
     }
+
+fun Context.startForegroundServiceCompat(service: Intent) {
+    if (Build.VERSION.SDK_INT >= 26)
+        startForegroundService(service)
+    else
+        startService(service)
 }
+
+val Reader.requestBuilders: List<Request.Builder>
+    get() {
+        val galleryID = this.galleryInfo.id ?: 0
+        val lowQuality = Preferences["low_quality", true]
+
+        return when(code) {
+            Code.HITOMI -> {
+                this.galleryInfo.files.map {
+                    Request.Builder()
+                        .url(imageUrlFromImage(galleryID, it, !lowQuality))
+                        .header("Referer", getReferer(galleryID))
+                }
+            }
+            Code.HIYOBI -> {
+                createImgList(galleryID, this, lowQuality).map {
+                    Request.Builder()
+                        .url(it.path)
+                        .header("User-Agent", user_agent)
+                        .header("Cookie", cookie)
+                }
+            }
+        }
+    }

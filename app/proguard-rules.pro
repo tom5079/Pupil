@@ -21,6 +21,7 @@
 #-renamesourcefileattribute SourceFile
 
 -dontobfuscate
+-dontoptimize
 
 -keep public class * implements com.bumptech.glide.module.GlideModule
 -keep class * extends com.bumptech.glide.module.AppGlideModule {
@@ -47,3 +48,4 @@
     kotlinx.serialization.KSerializer serializer(...);
 }
 -keep class xyz.quaver.pupil.ui.fragment.ManageFavoritesFragment
+-keep class xyz.quaver.pupil.util.Preferences
