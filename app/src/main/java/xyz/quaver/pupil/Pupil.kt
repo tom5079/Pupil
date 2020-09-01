@@ -23,7 +23,6 @@ import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
-import android.content.Intent
 import android.os.Build
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.content.ContextCompat
@@ -74,7 +73,10 @@ class Pupil : Application() {
     override fun onCreate() {
         preferences = PreferenceManager.getDefaultSharedPreferences(this)
 
-        val userID = Preferences["user_id", UUID.randomUUID().toString(), true]
+        val userID = Preferences["user_id", ""].let {  userID ->
+            if (userID.isEmpty()) UUID.randomUUID().toString().also { Preferences["user_id"] = it }
+            else userID
+        }
 
         FirebaseCrashlytics.getInstance().setUserId(userID)
 

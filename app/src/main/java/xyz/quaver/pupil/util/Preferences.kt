@@ -25,15 +25,6 @@ lateinit var preferences: SharedPreferences
 
 object Preferences: SharedPreferences by preferences {
 
-    @Suppress("UNCHECKED_CAST")
-    val putMap = mapOf<KClass<out Any>, (String, Any) -> Unit>(
-        String::class to { k, v -> edit().putString(k, v as String).apply() },
-        Int::class to { k, v -> edit().putBoolean(k, v as Boolean).apply() },
-        Long::class to { k, v -> edit().putLong(k, v as Long).apply() },
-        Boolean::class to { k, v -> edit().putBoolean(k, v as Boolean).apply() },
-        Set::class to { k, v -> edit().putStringSet(k, v as Set<String>).apply() }
-    )
-
     val defMap = mapOf(
         String::class to "",
         Int::class to -1,
@@ -42,12 +33,14 @@ object Preferences: SharedPreferences by preferences {
         Set::class to emptySet<Any>()
     )
 
-    inline operator fun <reified T: Any> set(key: String, value: T) {
-        putMap[T::class]?.invoke(key, value)
-    }
+    operator fun set(key: String, value: String) = edit().putString(key, value).apply()
+    operator fun set(key: String, value: Int) = edit().putInt(key, value).apply()
+    operator fun set(key: String, value: Long) = edit().putLong(key, value).apply()
+    operator fun set(key: String, value: Boolean) = edit().putBoolean(key, value).apply()
+    operator fun set(key: String, value: Set<String>) = edit().putStringSet(key, value).apply()
 
-    inline operator fun <reified T: Any> get(key: String, defaultVal: T = defMap[T::class] as T, setIfNull: Boolean = false): T =
-        (all[key] as? T) ?: defaultVal.also { if (setIfNull) set(key, defaultVal) }
+    @Suppress("UNCHECKED_CAST")
+    inline operator fun <reified T: Any> get(key: String, defaultVal: T = defMap[T::class] as T): T = (all[key] as? T) ?: defaultVal
 
     fun remove(key: String) {
         edit().remove(key).apply()

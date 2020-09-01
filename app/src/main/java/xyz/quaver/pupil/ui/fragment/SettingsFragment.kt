@@ -209,6 +209,9 @@ class SettingsFragment :
                 "proxy" -> {
                     summary = context?.let { getProxyInfo().type.name }
                 }
+                "download_folder" -> {
+                    summary = FileX(context, Preferences.get<String>("download_folder")).canonicalPath
+                }
             }
         }
     }
@@ -219,6 +222,11 @@ class SettingsFragment :
         Preferences.registerOnSharedPreferenceChangeListener(this)
 
         initPreferences()
+    }
+
+    override fun onDestroy() {
+        Preferences.unregisterOnSharedPreferenceChangeListener(this)
+        super.onDestroy()
     }
 
     private fun initPreferences() {
@@ -274,13 +282,7 @@ class SettingsFragment :
                             onPreferenceClickListener = this@SettingsFragment
                         }
                         "download_folder" -> {
-                            setSummaryProvider {
-                                val uri: String = Preferences[it.key]
-
-                                kotlin.runCatching {
-                                    FileX(context, uri).canonicalPath
-                                }.getOrElse { "" }
-                            }
+                            summary = FileX(context, Preferences.get<String>("download_folder")).canonicalPath
 
                             onPreferenceClickListener = this@SettingsFragment
                         }

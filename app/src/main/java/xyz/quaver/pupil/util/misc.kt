@@ -30,6 +30,7 @@ import kotlinx.coroutines.sync.withLock
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import xyz.quaver.Code
+import xyz.quaver.hitomi.GalleryBlock
 import xyz.quaver.hitomi.Reader
 import xyz.quaver.hitomi.getReferer
 import xyz.quaver.hitomi.imageUrlFromImage
@@ -87,15 +88,15 @@ fun OkHttpClient.Builder.proxyInfo(proxyInfo: ProxyInfo) = this.apply {
     }
 }
 
-val formatMap = mapOf<String, (Cache) -> (String)>(
-    "-id-" to { runBlocking { it.getGalleryBlock()?.id.toString() } },
-    "-title-" to { runBlocking { it.getGalleryBlock()?.title.toString() } },
+val formatMap = mapOf<String, GalleryBlock.() -> (String)>(
+    "-id-" to { id.toString() },
+    "-title-" to { title },
     // TODO
 )
 /**
  * Formats download folder name with given Metadata
  */
-fun Cache.formatDownloadFolder(): String =
+fun GalleryBlock.formatDownloadFolder(): String =
     Preferences["download_folder_format", "-id-"].let {
         formatMap.entries.fold(it) { str, (k, v) ->
             str.replace(k, v.invoke(this), true)
@@ -132,3 +133,9 @@ val Reader.requestBuilders: List<Request.Builder>
             }
         }
     }
+
+fun String.ellipsize(n: Int): String =
+    if (this.length > n)
+        this.slice(0 until n) + "…"
+    else
+        this

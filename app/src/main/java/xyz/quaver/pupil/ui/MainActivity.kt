@@ -23,7 +23,6 @@ import android.app.Activity
 import android.content.Intent
 import android.graphics.drawable.Animatable
 import android.net.Uri
-import android.os.Build
 import android.os.Bundle
 import android.text.*
 import android.text.style.AlignmentSpan
@@ -448,6 +447,7 @@ class MainActivity : AppCompatActivity() {
                             DownloadService.cancel(this@MainActivity, galleryID)
                         }
                         else {
+                            downloadFolderManager.addDownloadFolder(galleryID)
                             DownloadService.download(this@MainActivity, galleryID)
                         }
                     }
@@ -771,7 +771,7 @@ class MainActivity : AppCompatActivity() {
                         }
                     }
                     R.id.main_menu_sort_newest -> {
-                        sortMode = MainActivity.SortMode.NEWEST
+                        sortMode = SortMode.NEWEST
                         it.isChecked = true
 
                         runOnUiThread {
@@ -1006,7 +1006,7 @@ class MainActivity : AppCompatActivity() {
                                 totalItems = it.size
                             }
                         }
-                        else -> doSearch("$defaultQuery $query", sortMode == MainActivity.SortMode.POPULAR).also {
+                        else -> doSearch("$defaultQuery $query", sortMode == SortMode.POPULAR).also {
                             totalItems = it.size
                         }
                     }
@@ -1027,13 +1027,7 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
                 Mode.DOWNLOAD -> {
-                    val downloads = getDownloadDirectory(this@MainActivity).listFiles()?.filter { file ->
-                        file.isDirectory && file.name.toIntOrNull() != null
-                    }?.sortedByDescending {
-                        it.lastModified()
-                    }?.map {
-                        it.name.toInt()
-                    } ?: emptyList()
+                    val downloads = downloadFolderManager.downloadFolderMap.keys.toList()
 
                     when {
                         query.isEmpty() -> downloads.also {

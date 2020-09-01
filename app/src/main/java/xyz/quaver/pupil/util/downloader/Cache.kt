@@ -22,9 +22,10 @@ import android.content.Context
 import android.content.ContextWrapper
 import android.util.Log
 import android.util.SparseArray
-import kotlinx.coroutines.*
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
@@ -34,12 +35,12 @@ import xyz.quaver.Code
 import xyz.quaver.hitomi.GalleryBlock
 import xyz.quaver.hitomi.Reader
 import xyz.quaver.io.FileX
-import xyz.quaver.io.util.*
+import xyz.quaver.io.util.getChild
+import xyz.quaver.io.util.readBytes
+import xyz.quaver.io.util.readText
+import xyz.quaver.io.util.writeBytes
 import xyz.quaver.pupil.client
 import xyz.quaver.pupil.util.Preferences
-import xyz.quaver.pupil.util.formatDownloadFolder
-import kotlin.io.deleteRecursively
-import kotlin.io.writeText
 
 @Serializable
 data class Metadata(
@@ -53,25 +54,23 @@ data class Metadata(
 class Cache private constructor(context: Context, val galleryID: Int) : ContextWrapper(context) {
 
     companion object {
-        private val mutex = Mutex()
         private val instances = SparseArray<Cache>()
 
         fun getInstance(context: Context, galleryID: Int) =
-            instances[galleryID] ?: runBlocking { mutex.withLock {
+            instances[galleryID] ?: synchronized(this) {
                 instances[galleryID] ?: Cache(context, galleryID).also { instances.put(galleryID, it) }
-            } }
+            }
 
-        fun delete(galleryID: Int) { runBlocking { mutex.withLock {
-            instances[galleryID]?.galleryFolder?.deleteRecursively()
+        fun delete(galleryID: Int) {
+            instances[galleryID]?.cacheFolder?.deleteRecursively()
             instances.delete(galleryID)
-        } } }
+        }
     }
 
     init {
-        galleryFolder.mkdirs()
+        cacheFolder.mkdirs()
     }
 
-    private val mutex = Mutex()
     var metadata = kotlin.runCatching {
         findFile(".metadata")?.readText()?.let {
             Json.decodeFromString<Metadata>(it)
@@ -82,11 +81,10 @@ class Cache private constructor(context: Context, val galleryID: Int) : ContextW
         get() = DownloadFolderManager.getInstance(this).getDownloadFolder(galleryID)
 
     val cacheFolder: FileX
-        get() = FileX(this, cacheDir, "imageCache/$galleryID")
-
-    val galleryFolder: FileX
-        get() = DownloadFolderManager.getInstance(this).getDownloadFolder(galleryID)
-            ?: FileX(this, cacheDir, "imageCache/$galleryID")
+        get() = FileX(this, cacheDir, "imageCache/$galleryID").also {
+            if (!it.exists())
+                it.mkdirs()
+        }
 
     fun findFile(fileName: String): FileX? =
         cacheFolder.getChild(fileName).let {
@@ -96,18 +94,19 @@ class Cache private constructor(context: Context, val galleryID: Int) : ContextW
         } }
 
     @Suppress("BlockingMethodInNonBlockingContext")
-    suspend fun setMetadata(change: (Metadata) -> Unit) { mutex.withLock {
+    fun setMetadata(change: (Metadata) -> Unit) {
         change.invoke(metadata)
 
-        val file = galleryFolder.getChild(".metadata")
+        val file = cacheFolder.getChild(".metadata")
 
-        CoroutineScope(Dispatchers.IO).launch {
-            kotlin.runCatching {
+        kotlin.runCatching {
+            if (!file.exists()) {
+                Log.i("PUPILD", "$file")
                 file.createNewFile()
-                file.writeText(Json.encodeToString(metadata))
             }
+            file.writeText(Json.encodeToString(metadata))
         }
-    } }
+    }
 
     suspend fun getGalleryBlock(): GalleryBlock? {
         val sources = listOf(
@@ -129,7 +128,7 @@ class Cache private constructor(context: Context, val galleryID: Int) : ContextW
                 }
 
                 galleryBlock?.also {
-                    launch { setMetadata { metadata -> metadata.galleryBlock = it } }
+                    setMetadata { metadata -> metadata.galleryBlock = it }
                 }
             }
     }
@@ -145,7 +144,7 @@ class Cache private constructor(context: Context, val galleryID: Int) : ContextW
                 kotlin.runCatching {
                     client.newCall(request).execute().body()?.use { it.bytes() }
                 }.getOrNull()?.also { kotlin.run {
-                    galleryFolder.getChild(".thumbnail").writeBytes(it)
+                    cacheFolder.getChild(".thumbnail").writeBytes(it)
                 } }
             } }
 
@@ -178,12 +177,12 @@ class Cache private constructor(context: Context, val galleryID: Int) : ContextW
                 }
 
                 reader?.also {
-                    launch { setMetadata { metadata ->
+                    setMetadata { metadata ->
                         metadata.reader = it
 
                         if (metadata.imageList == null)
                             metadata.imageList = MutableList(reader.galleryInfo.files.size) { null }
-                    } }
+                    }
                 }
             }
     }
@@ -192,8 +191,8 @@ class Cache private constructor(context: Context, val galleryID: Int) : ContextW
         metadata.imageList?.get(index)?.let { findFile(it) }
 
     @Suppress("BlockingMethodInNonBlockingContext")
-    suspend fun putImage(index: Int, fileName: String, data: ByteArray) {
-        val file = galleryFolder.getChild(fileName)
+    fun putImage(index: Int, fileName: String, data: ByteArray) {
+        val file = cacheFolder.getChild(fileName)
 
         file.createNewFile()
         file.writeBytes(data)
@@ -202,14 +201,12 @@ class Cache private constructor(context: Context, val galleryID: Int) : ContextW
 
     @Suppress("BlockingMethodInNonBlockingContext")
     fun moveToDownload() = CoroutineScope(Dispatchers.IO).launch {
-        if (downloadFolder == null)
-            DownloadFolderManager.getInstance(this@Cache).addDownloadFolder(galleryID, this@Cache.formatDownloadFolder())
+        val downloadFolder = downloadFolder ?: return@launch
+        Log.i("PUPILD", "MOVING $galleryID")
 
         metadata.imageList?.forEach { imageName ->
             imageName ?: return@forEach
-
-            Log.i("PUPIL", downloadFolder?.uri.toString())
-            val target = downloadFolder!!.getChild(imageName)
+            val target = downloadFolder.getChild(imageName)
             val source = cacheFolder.getChild(imageName)
 
             if (!source.exists())
@@ -221,14 +218,13 @@ class Cache private constructor(context: Context, val galleryID: Int) : ContextW
             }
         }
 
-        Log.i("PUPIL", downloadFolder?.uri.toString())
         val cacheMetadata = cacheFolder.getChild(".metadata")
-        val downloadMetadata = downloadFolder!!.getChild(".metadata")
+        val downloadMetadata = downloadFolder.getChild(".metadata")
 
         if (cacheMetadata.exists()) {
             kotlin.runCatching {
                 downloadMetadata.createNewFile()
-                cacheMetadata.readBytes()?.let { downloadMetadata.writeBytes(it) }
+                downloadMetadata.writeText(Json.encodeToString(metadata))
                 cacheMetadata.delete()
             }
         }
