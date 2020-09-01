@@ -94,14 +94,24 @@ class GalleryBlockAdapter(private val glide: RequestManager, private val galleri
                     }
 
                     if (progress == max) {
+                        val downloadManager = DownloadFolderManager.getInstance(context)
+
                         if (completeFlag.get(galleryID, false)) {
                             with(view.galleryblock_progress_complete) {
-                                setImageResource(R.drawable.ic_progressbar)
+                                setImageResource(
+                                    if (downloadManager.getDownloadFolder(galleryID) != null)
+                                        R.drawable.ic_progressbar
+                                    else R.drawable.ic_progressbar_cache
+                                )
                                 visibility = View.VISIBLE
                             }
                         } else {
                             with(view.galleryblock_progress_complete) {
-                                setImageDrawable(AnimatedVectorDrawableCompat.create(context, R.drawable.ic_progressbar_complete).apply {
+                                setImageDrawable(AnimatedVectorDrawableCompat.create(context,
+                                    if (downloadManager.getDownloadFolder(galleryID) != null)
+                                        R.drawable.ic_progressbar_complete
+                                    else R.drawable.ic_progressbar_complete_cache
+                                ).apply {
                                     this?.start()
                                 })
                                 visibility = View.VISIBLE

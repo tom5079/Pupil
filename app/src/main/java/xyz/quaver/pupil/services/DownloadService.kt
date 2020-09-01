@@ -43,6 +43,7 @@ import xyz.quaver.pupil.interceptors
 import xyz.quaver.pupil.ui.ReaderActivity
 import xyz.quaver.pupil.util.downloader.Cache
 import xyz.quaver.pupil.util.downloader.DownloadFolderManager
+import xyz.quaver.pupil.util.ellipsize
 import xyz.quaver.pupil.util.requestBuilders
 import xyz.quaver.pupil.util.startForegroundServiceCompat
 import java.io.IOException
@@ -208,8 +209,12 @@ class DownloadService : Service() {
                     kotlin.runCatching {
                         Cache.getInstance(this@DownloadService, galleryID).putImage(index, "$index.$ext", image)
                     }.onSuccess {
-                        notify(galleryID)
                         progress[galleryID]?.set(index, Float.POSITIVE_INFINITY)
+                        notify(galleryID)
+
+                        if (isCompleted(galleryID))
+                            if (DownloadFolderManager.getInstance(this@DownloadService).getDownloadFolder(galleryID) != null)
+                                Cache.getInstance(this@DownloadService, galleryID).moveToDownload()
                     }.onFailure {
                         Log.i("PUPILD", "$galleryID-$index DLERR-RETRYING $it ${it.message}")
 
@@ -240,12 +245,12 @@ class DownloadService : Service() {
 
     fun cancel(galleryID: Int) {
         client.dispatcher().queuedCalls().filter {
-            (it.request().tag() as Tag).galleryID == galleryID
+            (it.request().tag() as? Tag)?.galleryID == galleryID
         }.forEach {
             it.cancel()
         }
         client.dispatcher().runningCalls().filter {
-            (it.request().tag() as Tag).galleryID == galleryID
+            (it.request().tag() as? Tag)?.galleryID == galleryID
         }.forEach {
             it.cancel()
         }
@@ -257,11 +262,11 @@ class DownloadService : Service() {
 
     fun delete(galleryID: Int) = CoroutineScope(Dispatchers.IO).launch {
         cancel(galleryID)
-        Cache.delete(galleryID)
         DownloadFolderManager.getInstance(this@DownloadService).deleteDownloadFolder(galleryID)
+        Cache.delete(galleryID)
     }
 
-    fun download(galleryID: Int): Job = CoroutineScope(Dispatchers.IO).launch {
+    fun download(galleryID: Int, priority: Boolean = false): Job = CoroutineScope(Dispatchers.IO).launch {
         if (progress.indexOfKey(galleryID) >= 0)
             cancel(galleryID)
 
@@ -271,12 +276,16 @@ class DownloadService : Service() {
 
         val reader = cache.getReader()
 
+        Log.i("PUPILD", "READER")
+
         // Gallery doesn't exist
         if (reader == null) {
             delete(galleryID)
             progress.put(galleryID, null)
             return@launch
         }
+
+        Log.i("PUPILD", "READER OK")
 
         if (progress.indexOfKey(galleryID) < 0)
             progress.put(galleryID, mutableListOf())
@@ -285,19 +294,39 @@ class DownloadService : Service() {
             progress[galleryID]?.add(if (it != null) Float.POSITIVE_INFINITY else 0F)
         }
 
-        notification[galleryID]?.setContentTitle(reader.galleryInfo.title)
+        Log.i("PUPILD", "LOADED")
+
+        notification[galleryID]?.setContentTitle(reader.galleryInfo.title?.ellipsize(30))
         notify(galleryID)
+
+        Log.i("PUPILD", "NOTIFY")
+
+        val queued = mutableSetOf<Int>()
+
+        if (priority) {
+            client.dispatcher().queuedCalls().forEach {
+                val queuedID = (it.request().tag() as? Tag)?.galleryID ?: return@forEach
+
+                if (queued.add(queuedID))
+                    cancel(queuedID)
+            }
+        }
 
         reader.requestBuilders.filterIndexed { index, _ -> !progress[galleryID]!![index].isInfinite() }.forEachIndexed { index, it ->
             val request = it.tag(Tag(galleryID, index)).build()
             client.newCall(request).enqueue(callback)
         }
+
+        queued.forEach { download(it) }
+
+        Log.i("PUPILD", "OK")
     }
     //endregion
 
     companion object {
         const val KEY_COMMAND = "COMMAND"   // String
         const val KEY_ID = "ID"             // Int
+        const val KEY_PRIORITY = "PRIORITY" // Boolean
 
         const val COMMAND_DOWNLOAD = "DOWNLOAD"
         const val COMMAND_CANCEL = "CANCEL"
@@ -307,9 +336,10 @@ class DownloadService : Service() {
             context.startForegroundServiceCompat(Intent(context, DownloadService::class.java).apply(extras))
         }
 
-        fun download(context: Context, galleryID: Int) {
+        fun download(context: Context, galleryID: Int, priority: Boolean = false) {
             command(context) {
                 putExtra(KEY_COMMAND, COMMAND_DOWNLOAD)
+                putExtra(KEY_PRIORITY, priority)
                 putExtra(KEY_ID, galleryID)
             }
         }
@@ -331,7 +361,9 @@ class DownloadService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         when (intent?.getStringExtra(KEY_COMMAND)) {
-            COMMAND_DOWNLOAD -> intent.getIntExtra(KEY_ID, -1).let { if (it > 0) download(it) }
+            COMMAND_DOWNLOAD -> intent.getIntExtra(KEY_ID, -1).let { if (it > 0)
+                download(it, intent.getBooleanExtra(KEY_PRIORITY, false))
+            }
             COMMAND_CANCEL -> intent.getIntExtra(KEY_ID, -1).let { if (it > 0) cancel(it) else cancel() }
             COMMAND_DELETE -> intent.getIntExtra(KEY_ID, -1).let { if (it > 0) delete(it) }
         }

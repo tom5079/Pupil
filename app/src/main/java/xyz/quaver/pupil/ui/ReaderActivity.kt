@@ -18,6 +18,7 @@
 
 package xyz.quaver.pupil.ui
 
+import android.app.DownloadManager
 import android.content.ComponentName
 import android.content.Intent
 import android.content.ServiceConnection
@@ -90,8 +91,6 @@ class ReaderActivity : AppCompatActivity() {
             Log.i("PUPILD", "DIS")
         }
     }
-
-    private var deleteOnExit = true
 
     private val timer = Timer()
     private var autoTimer: Timer? = null
@@ -244,12 +243,13 @@ class ReaderActivity : AppCompatActivity() {
         timer.cancel()
         (reader_recyclerview?.adapter as? ReaderAdapter)?.timer?.cancel()
 
-        if (deleteOnExit) {
+        if (!DownloadFolderManager.getInstance(this).isDownloading(galleryID)) {
             downloader?.cancel(galleryID)
             DownloadFolderManager.getInstance(this).deleteDownloadFolder(galleryID)
         }
 
-        unbindService(conn)
+        if (downloader != null)
+            unbindService(conn)
     }
 
     override fun onBackPressed() {
@@ -285,7 +285,7 @@ class ReaderActivity : AppCompatActivity() {
     }
 
     private fun initDownloader() {
-        DownloadService.download(this, galleryID)
+        DownloadService.download(this, galleryID, true)
         bindService(Intent(this, DownloadService::class.java), conn, BIND_AUTO_CREATE)
 
         timer.schedule(1000, 1000) {
@@ -379,12 +379,14 @@ class ReaderActivity : AppCompatActivity() {
                 if (PreferenceManager.getDefaultSharedPreferences(context).getBoolean("cache_disable", false))
                     Toast.makeText(context, R.string.settings_download_when_cache_disable_warning, Toast.LENGTH_SHORT).show()
                 else {
-                    if (deleteOnExit) {
-                        deleteOnExit = false
-                        cache.moveToDownload()
-                        animateDownloadFAB(true)
-                    } else {
+                    val downloadManager = DownloadFolderManager.getInstance(this@ReaderActivity)
+
+                    if (downloadManager.isDownloading(galleryID)) {
+                        downloadManager.deleteDownloadFolder(galleryID)
                         animateDownloadFAB(false)
+                    } else {
+                        downloadManager.addDownloadFolder(galleryID)
+                        animateDownloadFAB(true)
                     }
                 }
             }
