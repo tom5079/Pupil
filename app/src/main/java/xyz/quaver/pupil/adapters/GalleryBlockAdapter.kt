@@ -50,6 +50,7 @@ import xyz.quaver.pupil.BuildConfig
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.favorites
 import xyz.quaver.pupil.types.Tag
+import xyz.quaver.pupil.ui.view.TagChip
 import xyz.quaver.pupil.util.Preferences
 import xyz.quaver.pupil.util.downloader.Cache
 import xyz.quaver.pupil.util.downloader.DownloadManager
@@ -201,36 +202,10 @@ class GalleryBlockAdapter(private val glide: RequestManager, private val galleri
 
                 galleryblock_tag_group.removeAllViews()
                 galleryBlock.relatedTags.forEach {
-                    galleryblock_tag_group.addView(Chip(context).apply {
-                        val tag = Tag.parse(it).let {  tag ->
-                            when {
-                                tag.area != null -> tag
-                                else -> Tag("tag", it)
-                            }
-                        }
-
-                        chipIcon = when(tag.area) {
-                            "male" -> {
-                                setChipBackgroundColorResource(R.color.material_blue_700)
-                                setTextColor(ContextCompat.getColor(context, android.R.color.white))
-                                ContextCompat.getDrawable(context, R.drawable.gender_male)?.apply {
-                                    colorFilter = PorterDuffColorFilter(Color.WHITE, PorterDuff.Mode.SRC_ATOP)
-                                }
-                            }
-                            "female" -> {
-                                setChipBackgroundColorResource(R.color.material_pink_600)
-                                setTextColor(ContextCompat.getColor(context, android.R.color.white))
-                                ContextCompat.getDrawable(context, R.drawable.gender_female)?.apply {
-                                    colorFilter = PorterDuffColorFilter(Color.WHITE, PorterDuff.Mode.SRC_ATOP)
-                                }
-                            }
-                            else -> null
-                        }
-                        text = tag.tag.wordCapitalize()
-                        setEnsureMinTouchTargetSize(false)
-                        setOnClickListener {
+                    galleryblock_tag_group.addView(TagChip(context, Tag.parse(it)).apply {
+                        setOnClickListener { view ->
                             for (callback in onChipClickedHandler)
-                                callback.invoke(tag)
+                                callback.invoke((view as TagChip).tag)
                         }
                     })
                 }

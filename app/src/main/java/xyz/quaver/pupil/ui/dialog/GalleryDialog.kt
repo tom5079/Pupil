@@ -22,7 +22,6 @@ import android.app.Dialog
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.widget.LinearLayout.LayoutParams
@@ -31,13 +30,15 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.widget.ViewPager2
 import com.bumptech.glide.RequestManager
-import com.google.android.material.chip.Chip
 import com.google.android.material.snackbar.Snackbar
 import kotlinx.android.synthetic.main.dialog_gallery.*
 import kotlinx.android.synthetic.main.dialog_gallery_details.view.*
 import kotlinx.android.synthetic.main.dialog_gallery_dotindicator.view.*
 import kotlinx.android.synthetic.main.item_gallery_details.view.*
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import xyz.quaver.hitomi.Gallery
 import xyz.quaver.hitomi.getGallery
 import xyz.quaver.pupil.BuildConfig
@@ -47,17 +48,12 @@ import xyz.quaver.pupil.adapters.ThumbnailPageAdapter
 import xyz.quaver.pupil.histories
 import xyz.quaver.pupil.types.Tag
 import xyz.quaver.pupil.ui.ReaderActivity
+import xyz.quaver.pupil.ui.view.TagChip
 import xyz.quaver.pupil.util.ItemClickSupport
 import xyz.quaver.pupil.util.downloader.Cache
 import xyz.quaver.pupil.util.wordCapitalize
 
 class GalleryDialog(context: Context, private val glide: RequestManager, private val galleryID: Int) : Dialog(context) {
-
-    private val languages = context.resources.getStringArray(R.array.languages).map {
-        it.split("|").let { split ->
-            Pair(split[0], split[1])
-        }
-    }.toMap()
 
     val onChipClickedHandler = ArrayList<((Tag) -> (Unit))>()
 
@@ -162,28 +158,7 @@ class GalleryDialog(context: Context, private val glide: RequestManager, private
 
                     content.forEach { tag ->
                         gallery_details_tags.addView(
-                            Chip(context).apply {
-                                chipIcon = when(tag.area) {
-                                    "male" -> {
-                                        setChipBackgroundColorResource(R.color.material_blue_700)
-                                        setTextColor(ContextCompat.getColor(context, android.R.color.white))
-                                        ContextCompat.getDrawable(context, R.drawable.gender_male)
-                                    }
-                                    "female" -> {
-                                        setChipBackgroundColorResource(R.color.material_pink_600)
-                                        setTextColor(ContextCompat.getColor(context, android.R.color.white))
-                                        ContextCompat.getDrawable(context, R.drawable.gender_female)
-                                    }
-                                    else -> null
-                                }
-
-                                text = when (tag.area) {
-                                    "language" -> languages[tag.tag]
-                                    else -> tag.tag.wordCapitalize()
-                                }
-
-                                setEnsureMinTouchTargetSize(false)
-
+                            TagChip(context, tag).apply {
                                 setOnClickListener {
                                     onChipClickedHandler.forEach { handler ->
                                         handler.invoke(tag)
@@ -275,11 +250,11 @@ class GalleryDialog(context: Context, private val glide: RequestManager, private
             gallery.related.forEach { galleryID ->
                 Cache.getInstance(context, galleryID).getGalleryBlock()?.let {
                     galleries.add(galleryID)
-
-                    withContext(Dispatchers.Main) {
-                        adapter.notifyItemInserted(galleries.size-1)
-                    }
                 }
+            }
+
+            withContext(Dispatchers.Main) {
+                adapter.notifyDataSetChanged()
             }
         }
     }
