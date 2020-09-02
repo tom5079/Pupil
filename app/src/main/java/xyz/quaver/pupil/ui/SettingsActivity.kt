@@ -114,40 +114,6 @@ class SettingsActivity : AppCompatActivity() {
                     }
                 }
             }
-            R.id.request_download_folder.normalizeID() -> {
-                if (resultCode == Activity.RESULT_OK) {
-                    data?.data?.also { uri ->
-                        val takeFlags: Int =
-                            intent.flags and (Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
-
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT)
-                            contentResolver.takePersistableUriPermission(uri, takeFlags)
-
-                        if (FileX(this, uri).canWrite())
-                            Preferences["download_folder"] = uri.toString()
-                        else
-                            Snackbar.make(
-                                settings,
-                                R.string.settings_download_folder_not_writable,
-                                Snackbar.LENGTH_LONG
-                            ).show()
-                    }
-                }
-            }
-            R.id.request_download_folder_old.normalizeID() -> {
-                if (resultCode == DirectoryChooserActivity.RESULT_CODE_DIR_SELECTED) {
-                    val directory = data?.getStringExtra(DirectoryChooserActivity.RESULT_SELECTED_DIR)!!
-
-                    if (!File(directory).canWrite())
-                        Snackbar.make(
-                            settings,
-                            R.string.settings_download_folder_not_writable,
-                            Snackbar.LENGTH_LONG
-                        ).show()
-                    else
-                        Preferences["download_folder"] = File(directory).canonicalPath
-                }
-            }
             else -> super.onActivityResult(requestCode, resultCode, data)
         }
     }

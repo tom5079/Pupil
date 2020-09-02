@@ -53,7 +53,7 @@ data class Metadata(
 class Cache private constructor(context: Context, val galleryID: Int) : ContextWrapper(context) {
 
     companion object {
-        private val instances = SparseArray<Cache>()
+        val instances = SparseArray<Cache>()
 
         fun getInstance(context: Context, galleryID: Int) =
             instances[galleryID] ?: synchronized(this) {

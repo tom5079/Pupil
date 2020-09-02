@@ -97,7 +97,14 @@ val formatMap = mapOf<String, GalleryBlock.() -> (String)>(
  * Formats download folder name with given Metadata
  */
 fun GalleryBlock.formatDownloadFolder(): String =
-    Preferences["download_folder_name", "-id-"].let {
+    Preferences["download_folder_name", "[-id-] -title-"].let {
+        formatMap.entries.fold(it) { str, (k, v) ->
+            str.replace(k, v.invoke(this), true)
+        }
+    }
+
+fun GalleryBlock.formatDownloadFolderTest(format: String): String =
+    format.let {
         formatMap.entries.fold(it) { str, (k, v) ->
             str.replace(k, v.invoke(this), true)
         }
