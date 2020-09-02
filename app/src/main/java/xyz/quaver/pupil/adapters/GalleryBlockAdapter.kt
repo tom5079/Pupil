@@ -144,6 +144,7 @@ class GalleryBlockAdapter(private val glide: RequestManager, private val galleri
                     galleryblock_thumbnail.layoutParams.width = context.resources.getDimensionPixelSize(
                         R.dimen.galleryblock_thumbnail_thin
                     )
+
                 galleryblock_thumbnail.setImageDrawable(CircularProgressDrawable(context).also {
                     it.start()
                 })

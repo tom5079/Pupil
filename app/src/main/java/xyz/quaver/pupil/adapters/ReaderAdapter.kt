@@ -18,15 +18,20 @@
 
 package xyz.quaver.pupil.adapters
 
+import android.graphics.drawable.Drawable
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
+import com.bumptech.glide.load.DataSource
 import com.bumptech.glide.load.engine.DiskCacheStrategy
+import com.bumptech.glide.load.engine.GlideException
 import com.bumptech.glide.load.model.GlideUrl
 import com.bumptech.glide.load.model.LazyHeaders
+import com.bumptech.glide.request.RequestListener
+import com.bumptech.glide.request.target.Target
 import kotlinx.android.synthetic.main.item_reader.view.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -40,6 +45,7 @@ import xyz.quaver.hiyobi.createImgList
 import xyz.quaver.hiyobi.user_agent
 import xyz.quaver.io.util.readBytes
 import xyz.quaver.pupil.R
+import xyz.quaver.pupil.services.DownloadService
 import xyz.quaver.pupil.ui.ReaderActivity
 import xyz.quaver.pupil.util.Preferences
 import xyz.quaver.pupil.util.downloader.Cache
@@ -139,6 +145,23 @@ class ReaderAdapter(private val activity: ReaderActivity,
                         .skipMemoryCache(true)
                         .fitCenter()
                         .error(R.drawable.image_broken_variant)
+                        .listener(object: RequestListener<Drawable> {
+                            override fun onLoadFailed(
+                                e: GlideException?,
+                                model: Any?,
+                                target: Target<Drawable>?,
+                                isFirstResource: Boolean
+                            ): Boolean {
+                                cache!!.metadata.imageList?.set(position, null)
+                                image.delete()
+                                DownloadService.cancel(holder.view.context, galleryID)
+                                DownloadService.delete(holder.view.context, galleryID)
+                                return true
+                            }
+
+                            override fun onResourceReady(resource: Drawable?, model: Any?, target: Target<Drawable>?, dataSource: DataSource?, isFirstResource: Boolean) =
+                                false
+                        })
                         .into(holder.view.image)
                 }
 
