@@ -91,13 +91,14 @@ fun OkHttpClient.Builder.proxyInfo(proxyInfo: ProxyInfo) = this.apply {
 val formatMap = mapOf<String, GalleryBlock.() -> (String)>(
     "-id-" to { id.toString() },
     "-title-" to { title },
+    "-artist-" to { artists.joinToString() }
     // TODO
 )
 /**
  * Formats download folder name with given Metadata
  */
 fun GalleryBlock.formatDownloadFolder(): String =
-    Preferences["download_folder_format", "-id-"].let {
+    Preferences["download_folder_name", "-id-"].let {
         formatMap.entries.fold(it) { str, (k, v) ->
             str.replace(k, v.invoke(this), true)
         }

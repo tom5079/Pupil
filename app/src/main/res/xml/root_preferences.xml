@@ -43,6 +43,12 @@
             app:key="clear_history"
             app:title="@string/settings_clear_history"/>
 
+        <EditTextPreference
+            app:key="download_folder_name"
+            app:title="@string/settings_download_folder_name"
+            app:defaultValue="-id-"
+            app:useSimpleSummaryProvider="true"/>
+
         <Preference
             app:key="download_folder"
             app:title="@string/settings_download_folder"/>
