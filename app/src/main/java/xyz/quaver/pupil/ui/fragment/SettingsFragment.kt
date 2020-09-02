@@ -23,15 +23,13 @@ import android.os.Bundle
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatDelegate
-import androidx.preference.EditTextPreference
-import androidx.preference.Preference
-import androidx.preference.PreferenceCategory
-import androidx.preference.PreferenceFragmentCompat
+import androidx.preference.*
 import com.google.android.material.snackbar.Snackbar
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import xyz.quaver.io.FileX
+import xyz.quaver.io.util.getChild
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.histories
 import xyz.quaver.pupil.ui.LockActivity
@@ -197,6 +195,18 @@ class SettingsFragment :
                         return false
                     }
                 }
+                "nomedia" -> {
+                    val create = (newValue as? Boolean) ?: return false
+
+                    return kotlin.runCatching {
+                        val nomedia = DownloadManager.getInstance(context).downloadFolder.getChild(".nomedia")
+
+                        if (create)
+                            nomedia.createNewFile()
+                        else
+                            nomedia.delete()
+                    }.getOrDefault(false)
+                }
                 "dark_mode" -> {
                     AppCompatDelegate.setDefaultNightMode(when (newValue as Boolean) {
                         true -> AppCompatDelegate.MODE_NIGHT_YES
@@ -301,6 +311,13 @@ class SettingsFragment :
 
                             onPreferenceClickListener = this@SettingsFragment
                         }
+                        "nomedia" -> {
+                            (this as SwitchPreferenceCompat).isChecked = kotlin.runCatching {
+                                DownloadManager.getInstance(context).downloadFolder.getChild(".nomedia").exists()
+                            }.getOrDefault(false)
+
+                            onPreferenceChangeListener = this@SettingsFragment
+                        }
                         "default_query" -> {
                             summary = Preferences.get<String>("default_query")
 
@@ -333,9 +350,6 @@ class SettingsFragment :
                         }
                         "dark_mode" -> {
                             onPreferenceChangeListener = this@SettingsFragment
-                        }
-                        "nomedia" -> {
-                            onPreferenceClickListener = this@SettingsFragment
                         }
                         "old_import_galleries" -> {
                             onPreferenceClickListener = this@SettingsFragment

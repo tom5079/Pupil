@@ -58,6 +58,10 @@
             app:title="@string/settings_cache_disable"/>
 
         <SwitchPreferenceCompat
+            app:key="nomedia"
+            app:title="@string/settings_nomedia_title"/>
+
+        <SwitchPreferenceCompat
             app:key="low_quality"
             app:title="@string/settings_low_quality"
             app:summary="@string/settings_low_quality_summary"
@@ -100,10 +104,6 @@
             app:key="dark_mode"
             app:title="@string/settings_dark_mode_title"
             app:summary="@string/settings_dark_mode_summary"/>
-
-        <Preference
-            app:key="nomedia"
-            app:title="@string/settings_nomedia_title"/>
 
         <Preference
             app:fragment="xyz.quaver.pupil.ui.fragment.ManageFavoritesFragment"
