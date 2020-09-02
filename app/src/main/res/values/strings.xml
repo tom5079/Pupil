@@ -126,6 +126,10 @@
     <!-- SETTINGS/STORAGE -->
 
     <string name="settings_storage">Storage</string>
+
+    <!-- SETTINGS/STORAGE / MANAGE STORAGE -->
+
+    <string name="settings_manage_storage">Manage Storage</string>
     <string name="settings_storage_usage">Currently using %s</string>
     <string name="settings_storage_usage_loading">Calculating storage usage…</string>
     <string name="settings_clear_cache">Clear cache</string>
