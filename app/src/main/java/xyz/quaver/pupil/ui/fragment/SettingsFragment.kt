@@ -21,28 +21,19 @@ package xyz.quaver.pupil.ui.fragment
 import android.content.*
 import android.os.Bundle
 import android.widget.Toast
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatDelegate
-import androidx.preference.*
-import com.google.android.material.snackbar.Snackbar
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
+import androidx.preference.Preference
+import androidx.preference.PreferenceCategory
+import androidx.preference.PreferenceFragmentCompat
+import androidx.preference.SwitchPreferenceCompat
 import xyz.quaver.io.FileX
 import xyz.quaver.io.util.getChild
 import xyz.quaver.pupil.R
-import xyz.quaver.pupil.histories
 import xyz.quaver.pupil.ui.LockActivity
 import xyz.quaver.pupil.ui.SettingsActivity
-import xyz.quaver.pupil.ui.dialog.DefaultQueryDialog
-import xyz.quaver.pupil.ui.dialog.DownloadLocationDialog
-import xyz.quaver.pupil.ui.dialog.MirrorDialog
-import xyz.quaver.pupil.ui.dialog.ProxyDialog
+import xyz.quaver.pupil.ui.dialog.*
 import xyz.quaver.pupil.util.*
 import xyz.quaver.pupil.util.downloader.DownloadManager
-import java.io.BufferedReader
-import java.io.File
-import java.io.InputStreamReader
 
 class SettingsFragment :
     PreferenceFragmentCompat(),
@@ -77,7 +68,7 @@ class SettingsFragment :
                     checkUpdate(activity as SettingsActivity, true)
                 }
                 "download_folder" -> {
-                    DownloadLocationDialog(requireActivity()).show()
+                    DownloadLocationDialogFragment().show(requireActivity().supportFragmentManager, "Download Location Dialog")
                 }
                 "default_query" -> {
                     DefaultQueryDialog(requireContext()).apply {
@@ -117,14 +108,6 @@ class SettingsFragment :
             this ?: return false
 
             when (key) {
-                "download_folder_name" -> {
-
-                    if ((newValue as? String)?.contains("/") != false) {
-                        val view = view ?: return false
-                        Snackbar.make(view, R.string.settings_invalid_download_folder_name, Snackbar.LENGTH_SHORT).show()
-                        return false
-                    }
-                }
                 "nomedia" -> {
                     val create = (newValue as? Boolean) ?: return false
 
@@ -163,6 +146,9 @@ class SettingsFragment :
                 "download_folder" -> {
                     summary = FileX(context, Preferences.get<String>("download_folder")).canonicalPath
                 }
+                "download_folder_name" -> {
+                    summary = Preferences.get<String>("download_folder_name")
+                }
             }
         }
     }
@@ -189,7 +175,7 @@ class SettingsFragment :
                 else
                     listOf(this)
             }.forEach { preference ->
-                with (preference) {
+                with (preference) with@{
 
                     when (key) {
                         "app_version" -> {
@@ -200,8 +186,13 @@ class SettingsFragment :
                             onPreferenceClickListener = this@SettingsFragment
                         }
                         "download_folder_name" -> {
-                            (this as EditTextPreference).dialogMessage = getString(R.string.settings_download_folder_name_message, formatMap.keys.toString())
-                            onPreferenceChangeListener = this@SettingsFragment
+                            summary = Preferences.get<String>("download_folder_name")
+
+                            setOnPreferenceClickListener {
+                                DownloadFolderNameDialogFragment().show(requireActivity().supportFragmentManager, "Download Location Dialog")
+
+                                true
+                            }
                         }
                         "download_folder" -> {
                             summary = FileX(context, Preferences.get<String>("download_folder")).canonicalPath

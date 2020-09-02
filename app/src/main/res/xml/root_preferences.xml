@@ -35,11 +35,10 @@
             app:fragment="xyz.quaver.pupil.ui.fragment.ManageStorageFragment"
             app:title="@string/settings_manage_storage" />
 
-        <EditTextPreference
+        <Preference
             app:key="download_folder_name"
             app:title="@string/settings_download_folder_name"
-            app:defaultValue="-id-"
-            app:useSimpleSummaryProvider="true"/>
+            app:defaultValue="[-id-] -title-"/>
 
         <Preference
             app:key="download_folder"

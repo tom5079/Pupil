@@ -136,9 +136,12 @@
     <string name="settings_clear_history">Clear history</string>
     <string name="settings_clear_history_alert_message">Do you want to clear histories?</string>
     <string name="settings_clear_history_summary">%1$d histories saved</string>
+
+    <!-- SETTINGS/STORAGE / MISCELLANEOUS -->
+
     <string name="settings_download_folder_name">Folder naming pattern</string>
     <string name="settings_invalid_download_folder_name">Folder naming pattern is containing invalid characters</string>
-    <string name="settings_download_folder_name_message">Text %s will be replaced to its corresponding value</string>
+    <string name="settings_download_folder_name_message">%s will be replaced to its corresponding value\n\n%s</string>
     <string name="settings_download_folder">Download folder</string>
     <string name="settings_download_folder_removable">Removable Storage</string>
     <string name="settings_download_folder_internal">Internal Storage</string>

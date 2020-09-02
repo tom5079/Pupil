@@ -43,11 +43,7 @@ import java.net.Proxy
 class ProxyDialog(context: Context) : Dialog(context) {
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        val view = build()
-
-        setTitle(R.string.settings_proxy_title)
-        setContentView(view)
-
+        setContentView(build())
         window?.attributes?.width = ViewGroup.LayoutParams.MATCH_PARENT
 
         super.onCreate(savedInstanceState)

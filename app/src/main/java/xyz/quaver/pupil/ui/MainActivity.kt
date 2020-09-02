@@ -23,7 +23,6 @@ import android.app.Activity
 import android.content.Intent
 import android.graphics.drawable.Animatable
 import android.net.Uri
-import android.os.Build
 import android.os.Bundle
 import android.text.*
 import android.text.style.AlignmentSpan
@@ -51,16 +50,13 @@ import com.google.android.material.snackbar.Snackbar
 import com.google.firebase.crashlytics.FirebaseCrashlytics
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.activity_main_content.*
-import kotlinx.android.synthetic.main.settings_activity.*
 import kotlinx.coroutines.*
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import net.rdrei.android.dirchooser.DirectoryChooserActivity
 import xyz.quaver.hitomi.doSearch
 import xyz.quaver.hitomi.getGalleryIDsFromNozomi
 import xyz.quaver.hitomi.getSuggestionsForQuery
-import xyz.quaver.io.FileX
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.adapters.GalleryBlockAdapter
 import xyz.quaver.pupil.favorites
@@ -68,7 +64,7 @@ import xyz.quaver.pupil.histories
 import xyz.quaver.pupil.services.DownloadService
 import xyz.quaver.pupil.types.TagSuggestion
 import xyz.quaver.pupil.types.Tags
-import xyz.quaver.pupil.ui.dialog.DownloadLocationDialog
+import xyz.quaver.pupil.ui.dialog.DownloadLocationDialogFragment
 import xyz.quaver.pupil.ui.dialog.GalleryDialog
 import xyz.quaver.pupil.util.*
 import xyz.quaver.pupil.util.downloader.Cache
@@ -151,7 +147,7 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         if (Preferences["download_folder", ""].isEmpty())
-            DownloadLocationDialog(this).show()
+            DownloadLocationDialogFragment().show(supportFragmentManager, "Download Location Dialog")
 
         checkUpdate(this)
 
@@ -229,7 +225,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
         when(requestCode) {
             R.id.request_settings.normalizeID() -> {
                 runOnUiThread {
@@ -243,40 +238,7 @@ class MainActivity : AppCompatActivity() {
                 if (resultCode != Activity.RESULT_OK)
                     finish()
             }
-            R.id.request_download_folder.normalizeID() -> {
-                if (resultCode == Activity.RESULT_OK) {
-                    data?.data?.also { uri ->
-                        val takeFlags: Int =
-                            intent.flags and (Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
-
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT)
-                            contentResolver.takePersistableUriPermission(uri, takeFlags)
-
-                        if (FileX(this, uri).canWrite())
-                            Preferences["download_folder"] = uri.toString()
-                        else
-                            Snackbar.make(
-                                settings,
-                                R.string.settings_download_folder_not_writable,
-                                Snackbar.LENGTH_LONG
-                            ).show()
-                    }
-                }
-            }
-            R.id.request_download_folder_old.normalizeID() -> {
-                if (resultCode == DirectoryChooserActivity.RESULT_CODE_DIR_SELECTED) {
-                    val directory = data?.getStringExtra(DirectoryChooserActivity.RESULT_SELECTED_DIR)!!
-
-                    if (!File(directory).canWrite())
-                        Snackbar.make(
-                            settings,
-                            R.string.settings_download_folder_not_writable,
-                            Snackbar.LENGTH_LONG
-                        ).show()
-                    else
-                        Preferences["download_folder"] = File(directory).canonicalPath
-                }
-            }
+            else -> super.onActivityResult(requestCode, resultCode, data)
         }
     }
 
