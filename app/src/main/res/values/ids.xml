@@ -13,4 +13,6 @@
 
     <item name="downloader_notification_id" type="id" />
     <item name="downloader_notification_request" type="id" />
+
+    <item name="notification_download_cancel_action" type="id" />
 </resources>

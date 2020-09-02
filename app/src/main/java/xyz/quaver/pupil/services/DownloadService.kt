@@ -18,6 +18,7 @@
 
 package xyz.quaver.pupil.services
 
+import android.annotation.SuppressLint
 import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
@@ -44,13 +45,14 @@ import xyz.quaver.pupil.ui.ReaderActivity
 import xyz.quaver.pupil.util.downloader.Cache
 import xyz.quaver.pupil.util.downloader.DownloadFolderManager
 import xyz.quaver.pupil.util.ellipsize
+import xyz.quaver.pupil.util.normalizeID
 import xyz.quaver.pupil.util.requestBuilders
 import xyz.quaver.pupil.util.startForegroundServiceCompat
 import java.io.IOException
 
 private typealias ProgressListener = (DownloadService.Tag, Long, Long, Boolean) -> Unit
 class DownloadService : Service() {
-    data class Tag(val galleryID: Int, val index: Int)
+    data class Tag(val galleryID: Int, val index: Int, val startId: Int? = null)
 
     //region Notification
     private val notificationManager by lazy {
@@ -68,19 +70,30 @@ class DownloadService : Service() {
     private val notification = SparseArray<NotificationCompat.Builder?>()
 
     private fun initNotification(galleryID: Int) {
-        val intent = Intent(this, ReaderActivity::class.java).apply {
-            putExtra("galleryID", galleryID)
-        }
+        val intent = Intent(this, ReaderActivity::class.java)
+            .putExtra("galleryID", galleryID)
+
         val pendingIntent = TaskStackBuilder.create(this).run {
             addNextIntentWithParentStack(intent)
             getPendingIntent(galleryID, PendingIntent.FLAG_UPDATE_CURRENT)
         }
+        val action =
+            NotificationCompat.Action.Builder(0, getText(android.R.string.cancel),
+                PendingIntent.getService(
+                    this,
+                    R.id.notification_download_cancel_action.normalizeID(),
+                    Intent(this, DownloadService::class.java)
+                        .putExtra(KEY_COMMAND, COMMAND_CANCEL)
+                        .putExtra(KEY_ID, galleryID),
+                    PendingIntent.FLAG_UPDATE_CURRENT),
+            ).build()
 
         notification.put(galleryID, NotificationCompat.Builder(this, "download").apply {
             setContentTitle(getString(R.string.reader_loading))
             setContentText(getString(R.string.reader_notification_text))
-            setSmallIcon(R.drawable.ic_notification)                                  // had to use this because old android doesn't support VectorDrawable on Notification :P
+            setSmallIcon(R.drawable.ic_notification)
             setContentIntent(pendingIntent)
+            addAction(action)
             setProgress(0, 0, true)
             setOngoing(true)
         })
@@ -88,6 +101,7 @@ class DownloadService : Service() {
         notify(galleryID)
     }
 
+    @SuppressLint("RestrictedApi")
     private fun notify(galleryID: Int) {
         val max = progress[galleryID]?.size ?: 0
         val progress = progress[galleryID]?.count { it.isInfinite() } ?: 0
@@ -99,6 +113,7 @@ class DownloadService : Service() {
                 .setContentText(getString(R.string.reader_notification_complete))
                 .setProgress(0, 0, false)
                 .setOngoing(false)
+                .mActions.clear()
 
             notificationManager.cancel(galleryID)
         } else
@@ -190,8 +205,6 @@ class DownloadService : Service() {
             if (e.message?.contains("cancel", true) == false) {
                 val galleryID = (call.request().tag() as Tag).galleryID
 
-                Log.i("PUPILD", "$galleryID ERR-RETRYING $e ${e.message}")
-
                 // Retry
                 cancel(galleryID)
                 download(galleryID)
@@ -199,7 +212,7 @@ class DownloadService : Service() {
         }
 
         override fun onResponse(call: Call, response: Response) {
-            val (galleryID, index) = call.request().tag() as Tag
+            val (galleryID, index, startId) = call.request().tag() as Tag
             val ext = call.request().url().encodedPath().split('.').last()
 
             kotlin.runCatching {
@@ -212,12 +225,14 @@ class DownloadService : Service() {
                         progress[galleryID]?.set(index, Float.POSITIVE_INFINITY)
                         notify(galleryID)
 
-                        if (isCompleted(galleryID))
-                            if (DownloadFolderManager.getInstance(this@DownloadService).getDownloadFolder(galleryID) != null)
+                        if (isCompleted(galleryID)) {
+                            if (DownloadFolderManager.getInstance(this@DownloadService)
+                                    .getDownloadFolder(galleryID) != null)
                                 Cache.getInstance(this@DownloadService, galleryID).moveToDownload()
-                    }.onFailure {
-                        Log.i("PUPILD", "$galleryID-$index DLERR-RETRYING $it ${it.message}")
 
+                            startId?.let { stopSelf(it) }
+                        }
+                    }.onFailure {
                         cancel(galleryID)
                         download(galleryID)
                     }
@@ -243,7 +258,7 @@ class DownloadService : Service() {
         notificationManager.cancelAll()
     }
 
-    fun cancel(galleryID: Int) {
+    fun cancel(galleryID: Int, startId: Int? = null) {
         client.dispatcher().queuedCalls().filter {
             (it.request().tag() as? Tag)?.galleryID == galleryID
         }.forEach {
@@ -258,15 +273,19 @@ class DownloadService : Service() {
         progress.remove(galleryID)
         notification.remove(galleryID)
         notificationManager.cancel(galleryID)
+
+        startId?.let { stopSelf(it) }
     }
 
-    fun delete(galleryID: Int) = CoroutineScope(Dispatchers.IO).launch {
+    fun delete(galleryID: Int, startId: Int? = null) = CoroutineScope(Dispatchers.IO).launch {
         cancel(galleryID)
         DownloadFolderManager.getInstance(this@DownloadService).deleteDownloadFolder(galleryID)
         Cache.delete(galleryID)
+
+        startId?.let { stopSelf(it) }
     }
 
-    fun download(galleryID: Int, priority: Boolean = false): Job = CoroutineScope(Dispatchers.IO).launch {
+    fun download(galleryID: Int, priority: Boolean = false, startId: Int? = null): Job = CoroutineScope(Dispatchers.IO).launch {
         if (progress.indexOfKey(galleryID) >= 0)
             cancel(galleryID)
 
@@ -276,16 +295,12 @@ class DownloadService : Service() {
 
         val reader = cache.getReader()
 
-        Log.i("PUPILD", "READER")
-
         // Gallery doesn't exist
         if (reader == null) {
             delete(galleryID)
             progress.put(galleryID, null)
             return@launch
         }
-
-        Log.i("PUPILD", "READER OK")
 
         if (progress.indexOfKey(galleryID) < 0)
             progress.put(galleryID, mutableListOf())
@@ -294,12 +309,8 @@ class DownloadService : Service() {
             progress[galleryID]?.add(if (it != null) Float.POSITIVE_INFINITY else 0F)
         }
 
-        Log.i("PUPILD", "LOADED")
-
         notification[galleryID]?.setContentTitle(reader.galleryInfo.title?.ellipsize(30))
         notify(galleryID)
-
-        Log.i("PUPILD", "NOTIFY")
 
         val queued = mutableSetOf<Int>()
 
@@ -313,13 +324,11 @@ class DownloadService : Service() {
         }
 
         reader.requestBuilders.filterIndexed { index, _ -> !progress[galleryID]!![index].isInfinite() }.forEachIndexed { index, it ->
-            val request = it.tag(Tag(galleryID, index)).build()
+            val request = it.tag(Tag(galleryID, index, startId)).build()
             client.newCall(request).enqueue(callback)
         }
 
         queued.forEach { download(it) }
-
-        Log.i("PUPILD", "OK")
     }
     //endregion
 
@@ -362,10 +371,10 @@ class DownloadService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         when (intent?.getStringExtra(KEY_COMMAND)) {
             COMMAND_DOWNLOAD -> intent.getIntExtra(KEY_ID, -1).let { if (it > 0)
-                download(it, intent.getBooleanExtra(KEY_PRIORITY, false))
+                download(it, intent.getBooleanExtra(KEY_PRIORITY, false), startId)
             }
-            COMMAND_CANCEL -> intent.getIntExtra(KEY_ID, -1).let { if (it > 0) cancel(it) else cancel() }
-            COMMAND_DELETE -> intent.getIntExtra(KEY_ID, -1).let { if (it > 0) delete(it) }
+            COMMAND_CANCEL -> intent.getIntExtra(KEY_ID, -1).let { if (it > 0) cancel(it, startId) else cancel() }
+            COMMAND_DELETE -> intent.getIntExtra(KEY_ID, -1).let { if (it > 0) delete(it, startId) }
         }
 
         return START_NOT_STICKY
@@ -385,6 +394,5 @@ class DownloadService : Service() {
 
     override fun onDestroy() {
         interceptors.remove(Tag::class)
-        cancel()
     }
 }
