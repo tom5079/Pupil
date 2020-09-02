@@ -138,13 +138,11 @@ fun checkUpdate(context: Context, force: Boolean = false) {
             setMessage(Markwon.create(context).toMarkdown(msg))
             setPositiveButton(android.R.string.yes) { _, _ ->
 
-                val preference = PreferenceManager.getDefaultSharedPreferences(context)
-
                 val downloadManager = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
 
                 //Cancel any download queued before
 
-                val id = preference.getLong("update_download_id", -1)
+                val id: Long = Preferences["update_download_id"]
 
                 if (id != -1L)
                     downloadManager.remove(id)
@@ -158,7 +156,7 @@ fun checkUpdate(context: Context, force: Boolean = false) {
                     .setDestinationUri(Uri.fromFile(target))
 
                 downloadManager.enqueue(request).also {
-                    preference.edit().putLong("update_download_id", it).apply()
+                    Preferences["update_download_id"] = it
                 }
             }
             setNegativeButton(if (force) android.R.string.no else R.string.ignore_update) { _, _ ->

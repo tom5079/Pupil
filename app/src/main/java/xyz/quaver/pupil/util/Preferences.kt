@@ -28,7 +28,7 @@ object Preferences: SharedPreferences by preferences {
     val defMap = mapOf(
         String::class to "",
         Int::class to -1,
-        Long::class to -1,
+        Long::class to -1L,
         Boolean::class to false,
         Set::class to emptySet<Any>()
     )

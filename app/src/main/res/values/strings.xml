@@ -21,9 +21,6 @@
 
     <string name="warning">Warning</string>
 
-    <string name="https_block_alert_title">(Korean only)</string>
-    <string name="https_block_alert">(Korean only)</string>
-
     <string name="ignore_update">Ignore</string>
 
     <string name="channel_download">Download</string>

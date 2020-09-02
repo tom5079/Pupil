@@ -53,15 +53,15 @@ fun String.wordCapitalize() : String {
     return result.joinToString(" ")
 }
 
-fun byteToString(byte: Long, precision : Int = 1) : String {
+private val suffix = listOf(
+    "B",
+    "kB",
+    "MB",
+    "GB",
+    "TB" //really?
+)
 
-    val suffix = listOf(
-        "B",
-        "kB",
-        "MB",
-        "GB",
-        "TB" //really?
-    )
+fun byteToString(byte: Long, precision : Int = 1) : String {
     var size = byte.toDouble(); var suffixIndex = 0
 
     while (size >= 1024) {
@@ -70,7 +70,6 @@ fun byteToString(byte: Long, precision : Int = 1) : String {
     }
 
     return "%.${precision}f ${suffix[suffixIndex]}".format(size)
-
 }
 
 /**
