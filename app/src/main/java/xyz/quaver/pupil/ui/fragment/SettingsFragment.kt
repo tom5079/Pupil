@@ -68,16 +68,6 @@ class SettingsFragment :
         }
     }
 
-    private fun getDirSize(dir: File) : String {
-        return context?.getString(R.string.settings_storage_usage,
-            Runtime.getRuntime().exec("du -hs " + dir.absolutePath).let {
-                BufferedReader(InputStreamReader(it.inputStream)).use { reader ->
-                    reader.readLine()?.split('\t')?.firstOrNull() ?: "0"
-                }
-            }
-        ) ?: ""
-    }
-
     override fun onPreferenceClick(preference: Preference?): Boolean {
         with (preference) {
             this ?: return false
@@ -85,63 +75,6 @@ class SettingsFragment :
             when (key) {
                 "app_version" -> {
                     checkUpdate(activity as SettingsActivity, true)
-                }
-                "delete_cache" -> {
-                    val dir = File(requireContext().cacheDir, "imageCache")
-
-                    AlertDialog.Builder(requireContext()).apply {
-                        setTitle(R.string.warning)
-                        setMessage(R.string.settings_clear_cache_alert_message)
-                        setPositiveButton(android.R.string.yes) { _, _ ->
-                            if (dir.exists())
-                                dir.deleteRecursively()
-
-                            summary = getString(R.string.settings_storage_usage_loading)
-
-                            CoroutineScope(Dispatchers.IO).launch {
-                                getDirSize(dir).let {
-                                    launch(Dispatchers.Main) {
-                                        this@with.summary = it
-                                    }
-                                }
-                            }
-                        }
-                        setNegativeButton(android.R.string.no) { _, _ -> }
-                    }.show()
-                }
-                "delete_downloads" -> {
-                    val dir = getDownloadDirectory(requireContext())
-
-                    AlertDialog.Builder(requireContext()).apply {
-                        setTitle(R.string.warning)
-                        setMessage(R.string.settings_clear_downloads_alert_message)
-                        setPositiveButton(android.R.string.yes) { _, _ ->
-                            if (dir.exists())
-                                dir.deleteRecursively()
-
-                            summary = getString(R.string.settings_storage_usage_loading)
-
-                            CoroutineScope(Dispatchers.IO).launch {
-                                getDirSize(dir).let {
-                                    launch(Dispatchers.Main) {
-                                        this@with.summary = it
-                                    }
-                                }
-                            }
-                        }
-                        setNegativeButton(android.R.string.no) { _, _ -> }
-                    }.show()
-                }
-                "clear_history" -> {
-                    AlertDialog.Builder(requireContext()).apply {
-                        setTitle(R.string.warning)
-                        setMessage(R.string.settings_clear_history_alert_message)
-                        setPositiveButton(android.R.string.yes) { _, _ ->
-                            histories.clear()
-                            summary = getString(R.string.settings_clear_history_summary, histories.size)
-                        }
-                        setNegativeButton(android.R.string.no) { _, _ -> }
-                    }.show()
                 }
                 "download_folder" -> {
                     DownloadLocationDialog(requireActivity()).show()
@@ -165,9 +98,6 @@ class SettingsFragment :
                 "proxy" -> {
                     ProxyDialog(requireContext())
                         .show()
-                }
-                "nomedia" -> {
-                    File(getDownloadDirectory(context), ".nomedia").createNewFile()
                 }
                 "user_id" -> {
                     (context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager).setPrimaryClip(
@@ -266,39 +196,6 @@ class SettingsFragment :
                             val manager = requireContext().packageManager
                             val info = manager.getPackageInfo(requireContext().packageName, 0)
                             summary = requireContext().getString(R.string.settings_app_version_description, info.versionName)
-
-                            onPreferenceClickListener = this@SettingsFragment
-                        }
-                        "delete_cache" -> {
-                            val dir = File(requireContext().cacheDir, "imageCache")
-
-                            summary = getString(R.string.settings_storage_usage_loading)
-                            CoroutineScope(Dispatchers.IO).launch {
-                                getDirSize(dir).let {
-                                    launch(Dispatchers.Main) {
-                                        this@with.summary = it
-                                    }
-                                }
-                            }
-
-                            onPreferenceClickListener = this@SettingsFragment
-                        }
-                        "delete_downloads" -> {
-                            val dir = getDownloadDirectory(requireContext())
-
-                            summary = getString(R.string.settings_storage_usage_loading)
-                            CoroutineScope(Dispatchers.IO).launch {
-                                getDirSize(dir).let {
-                                    launch(Dispatchers.Main) {
-                                        this@with.summary = it
-                                    }
-                                }
-                            }
-
-                            onPreferenceClickListener = this@SettingsFragment
-                        }
-                        "clear_history" -> {
-                            summary = getString(R.string.settings_clear_history_summary, histories.size)
 
                             onPreferenceClickListener = this@SettingsFragment
                         }

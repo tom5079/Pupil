@@ -32,16 +32,8 @@
         app:title="@string/settings_storage">
 
         <Preference
-            app:key="delete_cache"
-            app:title="@string/settings_clear_cache"/>
-
-        <Preference
-            app:key="delete_downloads"
-            app:title="@string/settings_clear_downloads"/>
-
-        <Preference
-            app:key="clear_history"
-            app:title="@string/settings_clear_history"/>
+            app:fragment="xyz.quaver.pupil.ui.fragment.ManageStorageFragment"
+            app:title="@string/settings_manage_storage" />
 
         <EditTextPreference
             app:key="download_folder_name"
