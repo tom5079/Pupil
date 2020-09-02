@@ -23,9 +23,11 @@ import android.os.Bundle
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatDelegate
+import androidx.preference.EditTextPreference
 import androidx.preference.Preference
 import androidx.preference.PreferenceCategory
 import androidx.preference.PreferenceFragmentCompat
+import com.google.android.material.snackbar.Snackbar
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -187,6 +189,14 @@ class SettingsFragment :
             this ?: return false
 
             when (key) {
+                "download_folder_name" -> {
+
+                    if ((newValue as? String)?.contains("/") != false) {
+                        val view = view ?: return false
+                        Snackbar.make(view, R.string.settings_invalid_download_folder_name, Snackbar.LENGTH_SHORT).show()
+                        return false
+                    }
+                }
                 "dark_mode" -> {
                     AppCompatDelegate.setDefaultNightMode(when (newValue as Boolean) {
                         true -> AppCompatDelegate.MODE_NIGHT_YES
@@ -281,6 +291,10 @@ class SettingsFragment :
                             summary = getString(R.string.settings_clear_history_summary, histories.size)
 
                             onPreferenceClickListener = this@SettingsFragment
+                        }
+                        "download_folder_name" -> {
+                            (this as EditTextPreference).dialogMessage = getString(R.string.settings_download_folder_name_message, formatMap.keys.toString())
+                            onPreferenceChangeListener = this@SettingsFragment
                         }
                         "download_folder" -> {
                             summary = FileX(context, Preferences.get<String>("download_folder")).canonicalPath

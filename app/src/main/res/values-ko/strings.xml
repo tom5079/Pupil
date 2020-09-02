@@ -143,4 +143,7 @@
     <string name="channel_downloader">다운로더</string>
     <string name="channel_downloader_description">다운로더 작동 여부 표시</string>
     <string name="downloader_running">다운로더 작동중…</string>
+    <string name="settings_download_folder_name">폴더명 패턴</string>
+    <string name="settings_invalid_download_folder_name">폴더 패턴에 사용할 수 없는 문자가 포함되어 있습니다</string>
+    <string name="settings_download_folder_name_message">지원되는 변수는 %s 입니다</string>
 </resources>

@@ -143,4 +143,7 @@
     <string name="channel_downloader">ダウンローダ</string>
     <string name="channel_downloader_description">ダウンローダの状態を表示</string>
     <string name="downloader_running">ダウンローダー起動中</string>
+    <string name="settings_download_folder_name">フォルダ名パターン</string>
+    <string name="settings_invalid_download_folder_name">フォルダ名に使用できない文字が含まれています</string>
+    <string name="settings_download_folder_name_message">%sに含まれている文字列を対応する変数に置換します</string>
 </resources>
