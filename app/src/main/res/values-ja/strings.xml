@@ -49,8 +49,6 @@
     <string name="main_jump_message">現ページ番号: %1$d\nページ数: %2$d</string>
     <string name="unable_to_connect">hitomi.laに接続できません</string>
     <string name="main_move">%1$dページへ移動</string>
-    <string name="https_block_alert_title">(Korean only)</string>
-    <string name="https_block_alert">(Korean only)</string>
     <string name="settings_clear_downloads">ダウンロード削除</string>
     <string name="settings_clear_downloads_alert_message">ダウンロードしたギャラリーを全て削除します。\n実行しますか？</string>
     <string name="settings_mirror_summary">ミラーサーバからイメージをロード</string>

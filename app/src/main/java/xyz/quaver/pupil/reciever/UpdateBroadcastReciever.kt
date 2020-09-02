@@ -44,7 +44,7 @@ class UpdateBroadcastReciever : BroadcastReceiver() {
                 val downloadID: Long = Preferences["update_download_id"]
                 val downloadManager = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
 
-                if (intent.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1) != downloadID)
+                if (intent.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -2) != downloadID)
                     return
 
                 // Get target uri

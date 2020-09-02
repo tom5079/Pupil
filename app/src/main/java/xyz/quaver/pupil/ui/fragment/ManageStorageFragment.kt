@@ -24,9 +24,13 @@ import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import xyz.quaver.io.FileX
+import xyz.quaver.io.util.deleteRecursively
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.histories
+import xyz.quaver.pupil.util.byteToString
 import xyz.quaver.pupil.util.downloader.DownloadManager
 import xyz.quaver.pupil.util.getDownloadDirectory
 import java.io.BufferedReader
@@ -35,20 +39,12 @@ import java.io.InputStreamReader
 
 class ManageStorageFragment : PreferenceFragmentCompat(), Preference.OnPreferenceClickListener {
 
+    private var job: Job? = null
+
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
         setPreferencesFromResource(R.xml.manage_storage_preferences, rootKey)
 
         initPreferences()
-    }
-
-    private fun getDirSize(dir: File) : String {
-        return context?.getString(R.string.settings_storage_usage,
-            Runtime.getRuntime().exec("du -hs " + dir.canonicalPath).let {
-                BufferedReader(InputStreamReader(it.inputStream)).use { reader ->
-                    reader.readLine()?.split('\t')?.firstOrNull() ?: "0"
-                }
-            }
-        ) ?: ""
     }
 
     override fun onPreferenceClick(preference: Preference?): Boolean {
@@ -66,12 +62,15 @@ class ManageStorageFragment : PreferenceFragmentCompat(), Preference.OnPreferenc
                             if (dir.exists())
                                 dir.deleteRecursively()
 
-                            summary = getString(R.string.settings_storage_usage_loading)
-
+                            summary = getString(R.string.settings_storage_usage, byteToString(0))
                             CoroutineScope(Dispatchers.IO).launch {
-                                getDirSize(dir).let {
+                                var size = 0L
+
+                                dir.walk().forEach {
+                                    size += it.length()
+
                                     launch(Dispatchers.Main) {
-                                        this@with.summary = it
+                                        summary = getString(R.string.settings_storage_usage, byteToString(size))
                                     }
                                 }
                             }
@@ -86,15 +85,27 @@ class ManageStorageFragment : PreferenceFragmentCompat(), Preference.OnPreferenc
                         setTitle(R.string.warning)
                         setMessage(R.string.settings_clear_downloads_alert_message)
                         setPositiveButton(android.R.string.yes) { _, _ ->
-                            if (dir.exists())
-                                dir.deleteRecursively()
-
-                            summary = getString(R.string.settings_storage_usage_loading)
-
                             CoroutineScope(Dispatchers.IO).launch {
-                                getDirSize(dir).let {
+                                job?.cancel()
+                                launch(Dispatchers.Main) {
+                                    summary = getString(R.string.settings_storage_usage_loading)
+                                }
+
+                                if (dir.exists())
+                                    dir.listFiles()?.forEach { (it as FileX).deleteRecursively() }
+
+                                job = launch {
+                                    var size = 0L
+
                                     launch(Dispatchers.Main) {
-                                        this@with.summary = it
+                                        summary = getString(R.string.settings_storage_usage, byteToString(size))
+                                    }
+                                    dir.walk().forEach {
+                                        size += it.length()
+
+                                        launch(Dispatchers.Main) {
+                                            summary = getString(R.string.settings_storage_usage, byteToString(size))
+                                        }
                                     }
                                 }
                             }
@@ -126,11 +137,15 @@ class ManageStorageFragment : PreferenceFragmentCompat(), Preference.OnPreferenc
 
             val dir = File(requireContext().cacheDir, "imageCache")
 
-            summary = getString(R.string.settings_storage_usage_loading)
+            summary = getString(R.string.settings_storage_usage, byteToString(0))
             CoroutineScope(Dispatchers.IO).launch {
-                getDirSize(dir).let {
+                var size = 0L
+
+                dir.walk().forEach {
+                    size += it.length()
+
                     launch(Dispatchers.Main) {
-                        this@with.summary = it
+                        summary = getString(R.string.settings_storage_usage, byteToString(size))
                     }
                 }
             }
@@ -143,12 +158,17 @@ class ManageStorageFragment : PreferenceFragmentCompat(), Preference.OnPreferenc
 
             val dir = DownloadManager.getInstance(context).downloadFolder
 
-            summary = getString(R.string.settings_storage_usage_loading)
-            CoroutineScope(Dispatchers.IO).launch {
-                getDirSize(dir).let {
+            summary = getString(R.string.settings_storage_usage, byteToString(0))
+            job?.cancel()
+            job = CoroutineScope(Dispatchers.IO).launch {
+                var size = 0L
+
+                dir.walk().forEach {
                     launch(Dispatchers.Main) {
-                        this@with.summary = it
+                        summary = getString(R.string.settings_storage_usage, byteToString(size))
                     }
+
+                    size += it.length()
                 }
             }
 
@@ -162,6 +182,11 @@ class ManageStorageFragment : PreferenceFragmentCompat(), Preference.OnPreferenc
 
             onPreferenceClickListener = this@ManageStorageFragment
         }
+    }
+
+    override fun onDestroy() {
+        job?.cancel()
+        super.onDestroy()
     }
 
 }
