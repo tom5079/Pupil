@@ -39,6 +39,7 @@ import xyz.quaver.pupil.ui.dialog.DownloadLocationDialog
 import xyz.quaver.pupil.ui.dialog.MirrorDialog
 import xyz.quaver.pupil.ui.dialog.ProxyDialog
 import xyz.quaver.pupil.util.*
+import xyz.quaver.pupil.util.downloader.DownloadManager
 import java.io.BufferedReader
 import java.io.File
 import java.io.InputStreamReader

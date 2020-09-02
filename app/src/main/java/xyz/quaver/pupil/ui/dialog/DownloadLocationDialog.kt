@@ -35,7 +35,7 @@ import net.rdrei.android.dirchooser.DirectoryChooserActivity
 import net.rdrei.android.dirchooser.DirectoryChooserConfig
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.util.*
-import xyz.quaver.pupil.util.downloader.DownloadFolderManager
+import xyz.quaver.pupil.util.downloader.DownloadManager
 import java.io.File
 
 @SuppressLint("InflateParams")
@@ -115,7 +115,7 @@ class DownloadLocationDialog(val activity: Activity) : AlertDialog(activity) {
         })
 
         externalFilesDirs.indexOfFirst {
-            it.canonicalPath == DownloadFolderManager.getInstance(context).downloadFolder.canonicalPath
+            it.canonicalPath == DownloadManager.getInstance(context).downloadFolder.canonicalPath
         }.let { index ->
             if (index < 0)
                 buttons.last().first.isChecked = true

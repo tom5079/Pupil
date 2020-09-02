@@ -18,7 +18,6 @@
 
 package xyz.quaver.pupil.ui
 
-import android.app.DownloadManager
 import android.content.ComponentName
 import android.content.Intent
 import android.content.ServiceConnection
@@ -26,7 +25,6 @@ import android.graphics.drawable.Animatable
 import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.os.IBinder
-import android.util.Log
 import android.view.*
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
@@ -38,7 +36,6 @@ import androidx.recyclerview.widget.PagerSnapHelper
 import androidx.recyclerview.widget.RecyclerView
 import androidx.vectordrawable.graphics.drawable.Animatable2Compat
 import androidx.vectordrawable.graphics.drawable.AnimatedVectorDrawableCompat
-import com.bumptech.glide.Glide
 import com.google.android.material.snackbar.Snackbar
 import com.google.firebase.crashlytics.FirebaseCrashlytics
 import kotlinx.android.synthetic.main.activity_reader.*
@@ -55,7 +52,7 @@ import xyz.quaver.pupil.histories
 import xyz.quaver.pupil.services.DownloadService
 import xyz.quaver.pupil.util.Preferences
 import xyz.quaver.pupil.util.downloader.Cache
-import xyz.quaver.pupil.util.downloader.DownloadFolderManager
+import xyz.quaver.pupil.util.downloader.DownloadManager
 import java.util.*
 import kotlin.concurrent.schedule
 import kotlin.concurrent.timer
@@ -83,12 +80,10 @@ class ReaderActivity : AppCompatActivity() {
     private val conn = object: ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
             downloader = (service as DownloadService.Binder).service
-            Log.i("PUPILD", "CON")
         }
 
         override fun onServiceDisconnected(name: ComponentName?) {
             downloader = null
-            Log.i("PUPILD", "DIS")
         }
     }
 
@@ -243,9 +238,9 @@ class ReaderActivity : AppCompatActivity() {
         timer.cancel()
         (reader_recyclerview?.adapter as? ReaderAdapter)?.timer?.cancel()
 
-        if (!DownloadFolderManager.getInstance(this).isDownloading(galleryID)) {
+        if (!DownloadManager.getInstance(this).isDownloading(galleryID)) {
             downloader?.cancel(galleryID)
-            DownloadFolderManager.getInstance(this).deleteDownloadFolder(galleryID)
+            DownloadManager.getInstance(this).deleteDownloadFolder(galleryID)
         }
 
         if (downloader != null)
@@ -373,13 +368,13 @@ class ReaderActivity : AppCompatActivity() {
         }
 
         with(reader_fab_download) {
-            animateDownloadFAB(DownloadFolderManager.getInstance(this@ReaderActivity).getDownloadFolder(galleryID) != null) //If download in progress, animate button
+            animateDownloadFAB(DownloadManager.getInstance(this@ReaderActivity).getDownloadFolder(galleryID) != null) //If download in progress, animate button
 
             setOnClickListener {
                 if (PreferenceManager.getDefaultSharedPreferences(context).getBoolean("cache_disable", false))
                     Toast.makeText(context, R.string.settings_download_when_cache_disable_warning, Toast.LENGTH_SHORT).show()
                 else {
-                    val downloadManager = DownloadFolderManager.getInstance(this@ReaderActivity)
+                    val downloadManager = DownloadManager.getInstance(this@ReaderActivity)
 
                     if (downloadManager.isDownloading(galleryID)) {
                         downloadManager.deleteDownloadFolder(galleryID)

@@ -23,6 +23,7 @@ import android.app.Activity
 import android.content.Intent
 import android.graphics.drawable.Animatable
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.text.*
 import android.text.style.AlignmentSpan
@@ -50,13 +51,16 @@ import com.google.android.material.snackbar.Snackbar
 import com.google.firebase.crashlytics.FirebaseCrashlytics
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.activity_main_content.*
+import kotlinx.android.synthetic.main.settings_activity.*
 import kotlinx.coroutines.*
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import net.rdrei.android.dirchooser.DirectoryChooserActivity
 import xyz.quaver.hitomi.doSearch
 import xyz.quaver.hitomi.getGalleryIDsFromNozomi
 import xyz.quaver.hitomi.getSuggestionsForQuery
+import xyz.quaver.io.FileX
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.adapters.GalleryBlockAdapter
 import xyz.quaver.pupil.favorites
@@ -64,10 +68,11 @@ import xyz.quaver.pupil.histories
 import xyz.quaver.pupil.services.DownloadService
 import xyz.quaver.pupil.types.TagSuggestion
 import xyz.quaver.pupil.types.Tags
+import xyz.quaver.pupil.ui.dialog.DownloadLocationDialog
 import xyz.quaver.pupil.ui.dialog.GalleryDialog
 import xyz.quaver.pupil.util.*
 import xyz.quaver.pupil.util.downloader.Cache
-import xyz.quaver.pupil.util.downloader.DownloadFolderManager
+import xyz.quaver.pupil.util.downloader.DownloadManager
 import java.io.File
 import java.util.*
 import kotlin.collections.ArrayList
@@ -110,7 +115,6 @@ class MainActivity : AppCompatActivity() {
     private var loadingJob: Job? = null
     private var currentPage = 0
 
-    private lateinit var downloadFolderManager: DownloadFolderManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -146,7 +150,9 @@ class MainActivity : AppCompatActivity() {
 
         setContentView(R.layout.activity_main)
 
-        downloadFolderManager = DownloadFolderManager.getInstance(this)
+        if (Preferences["download_folder", ""].isEmpty())
+            DownloadLocationDialog(this).show()
+
         checkUpdate(this)
 
         initView()
@@ -225,7 +231,7 @@ class MainActivity : AppCompatActivity() {
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         when(requestCode) {
-            R.id.request_settings -> {
+            R.id.request_settings.normalizeID() -> {
                 runOnUiThread {
                     cancelFetch()
                     clearGalleries()
@@ -233,9 +239,43 @@ class MainActivity : AppCompatActivity() {
                     loadBlocks()
                 }
             }
-            R.id.request_lock -> {
+            R.id.request_lock.normalizeID() -> {
                 if (resultCode != Activity.RESULT_OK)
                     finish()
+            }
+            R.id.request_download_folder.normalizeID() -> {
+                if (resultCode == Activity.RESULT_OK) {
+                    data?.data?.also { uri ->
+                        val takeFlags: Int =
+                            intent.flags and (Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT)
+                            contentResolver.takePersistableUriPermission(uri, takeFlags)
+
+                        if (FileX(this, uri).canWrite())
+                            Preferences["download_folder"] = uri.toString()
+                        else
+                            Snackbar.make(
+                                settings,
+                                R.string.settings_download_folder_not_writable,
+                                Snackbar.LENGTH_LONG
+                            ).show()
+                    }
+                }
+            }
+            R.id.request_download_folder_old.normalizeID() -> {
+                if (resultCode == DirectoryChooserActivity.RESULT_CODE_DIR_SELECTED) {
+                    val directory = data?.getStringExtra(DirectoryChooserActivity.RESULT_SELECTED_DIR)!!
+
+                    if (!File(directory).canWrite())
+                        Snackbar.make(
+                            settings,
+                            R.string.settings_download_folder_not_writable,
+                            Snackbar.LENGTH_LONG
+                        ).show()
+                    else
+                        Preferences["download_folder"] = File(directory).canonicalPath
+                }
             }
         }
     }
@@ -443,11 +483,11 @@ class MainActivity : AppCompatActivity() {
                     if (Preferences["cache_disable"])
                         Toast.makeText(context, R.string.settings_download_when_cache_disable_warning, Toast.LENGTH_SHORT).show()
                     else {
-                        if (downloadFolderManager.isDownloading(galleryID)) {     //download in progress
+                        if (DownloadManager.getInstance(context).isDownloading(galleryID)) {     //download in progress
                             DownloadService.cancel(this@MainActivity, galleryID)
                         }
                         else {
-                            downloadFolderManager.addDownloadFolder(galleryID)
+                            DownloadManager.getInstance(context).addDownloadFolder(galleryID)
                             DownloadService.download(this@MainActivity, galleryID)
                         }
                     }
@@ -1027,7 +1067,7 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
                 Mode.DOWNLOAD -> {
-                    val downloads = downloadFolderManager.downloadFolderMap.keys.toList()
+                    val downloads = DownloadManager.getInstance(this@MainActivity).downloadFolderMap.keys.toList()
 
                     when {
                         query.isEmpty() -> downloads.also {

@@ -32,14 +32,14 @@ import xyz.quaver.pupil.services.DownloadService
 import xyz.quaver.pupil.util.Preferences
 import xyz.quaver.pupil.util.formatDownloadFolder
 
-class DownloadFolderManager private constructor(context: Context) : ContextWrapper(context) {
+class DownloadManager private constructor(context: Context) : ContextWrapper(context) {
 
     companion object {
-        @Volatile private var instance: DownloadFolderManager? = null
+        @Volatile private var instance: DownloadManager? = null
 
         fun getInstance(context: Context) =
             instance ?: synchronized(this) {
-                instance ?: DownloadFolderManager(context).also { instance = it }
+                instance ?: DownloadManager(context).also { instance = it }
             }
     }
 
@@ -55,22 +55,34 @@ class DownloadFolderManager private constructor(context: Context) : ContextWrapp
             }
         }.invoke()
 
-    val downloadFolderMap: MutableMap<Int, String> = {
-        val file = downloadFolder.getChild(".download")
+    private var prevDownloadFolder: FileX? = null
+    private var downloadFolderMapInstance: MutableMap<Int, String>? = null
+    val downloadFolderMap: MutableMap<Int, String>
+        @Synchronized
+        get() {
+            if (prevDownloadFolder != downloadFolder) {
+                prevDownloadFolder = downloadFolder
+                downloadFolderMapInstance = {
+                    val file = downloadFolder.getChild(".download")
 
-        val data = if (file.exists())
-            kotlin.runCatching {
-                file.readText()?.let { Json.decodeFromString<MutableMap<Int, String>>(it) }
-            }.onFailure { file.delete() }.getOrNull()
-        else
-            null
+                    val data = if (file.exists())
+                        kotlin.runCatching {
+                            file.readText()?.let { Json.decodeFromString<MutableMap<Int, String>>(it) }
+                        }.onFailure { file.delete() }.getOrNull()
+                    else
+                        null
 
-        data ?:  {
-            file.createNewFile()
-            file.writeText("{}")
-            mutableMapOf<Int, String>()
-        }.invoke()
-    }.invoke()
+                    data ?: {
+                        file.createNewFile()
+                        file.writeText("{}")
+                        mutableMapOf<Int, String>()
+                    }.invoke()
+                }.invoke()
+            }
+
+            return downloadFolderMapInstance!!
+        }
+
 
     @Synchronized
     fun isDownloading(galleryID: Int): Boolean {
@@ -90,7 +102,7 @@ class DownloadFolderManager private constructor(context: Context) : ContextWrapp
             return
 
         val name = runBlocking {
-            Cache.getInstance(this@DownloadFolderManager, galleryID).getGalleryBlock()
+            Cache.getInstance(this@DownloadManager, galleryID).getGalleryBlock()
         }?.formatDownloadFolder() ?: return
 
         val folder = downloadFolder.getChild(name)
@@ -98,7 +110,7 @@ class DownloadFolderManager private constructor(context: Context) : ContextWrapp
         if (!folder.exists())
             folder.mkdirs()
 
-        downloadFolderMap[galleryID] = name
+        downloadFolderMap[galleryID] = folder.name
 
         downloadFolder.getChild(".download").writeText(Json.encodeToString(downloadFolderMap))
     }
