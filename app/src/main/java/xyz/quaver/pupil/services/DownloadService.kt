@@ -23,7 +23,6 @@ import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
 import android.content.Intent
-import android.util.Log
 import android.util.SparseArray
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
@@ -43,7 +42,7 @@ import xyz.quaver.pupil.client
 import xyz.quaver.pupil.interceptors
 import xyz.quaver.pupil.ui.ReaderActivity
 import xyz.quaver.pupil.util.downloader.Cache
-import xyz.quaver.pupil.util.downloader.DownloadFolderManager
+import xyz.quaver.pupil.util.downloader.DownloadManager
 import xyz.quaver.pupil.util.ellipsize
 import xyz.quaver.pupil.util.normalizeID
 import xyz.quaver.pupil.util.requestBuilders
@@ -121,7 +120,7 @@ class DownloadService : Service() {
                 .setProgress(max, progress, false)
                 .setContentText("$progress/$max")
 
-        if (DownloadFolderManager.getInstance(this).getDownloadFolder(galleryID) != null)
+        if (DownloadManager.getInstance(this).getDownloadFolder(galleryID) != null)
             notification.let { notificationManager.notify(galleryID, it.build()) }
         else
             notificationManager.cancel(galleryID)
@@ -226,7 +225,7 @@ class DownloadService : Service() {
                         notify(galleryID)
 
                         if (isCompleted(galleryID)) {
-                            if (DownloadFolderManager.getInstance(this@DownloadService)
+                            if (DownloadManager.getInstance(this@DownloadService)
                                     .getDownloadFolder(galleryID) != null)
                                 Cache.getInstance(this@DownloadService, galleryID).moveToDownload()
 
@@ -279,7 +278,7 @@ class DownloadService : Service() {
 
     fun delete(galleryID: Int, startId: Int? = null) = CoroutineScope(Dispatchers.IO).launch {
         cancel(galleryID)
-        DownloadFolderManager.getInstance(this@DownloadService).deleteDownloadFolder(galleryID)
+        DownloadManager.getInstance(this@DownloadService).deleteDownloadFolder(galleryID)
         Cache.delete(galleryID)
 
         startId?.let { stopSelf(it) }

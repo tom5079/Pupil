@@ -275,13 +275,6 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
                     if (e.message?.contains("cancel", true) != false)
                         return
 
-                    Log.i("PUPILD", "FAIL ${call.request().tag()} (${e.message})")
-                    FirebaseCrashlytics.getInstance().apply {
-                        log("FAIL ${call.request().tag()} (${e.message})")
-                        setCustomKey("POS", "FAIL")
-                        recordException(e)
-                    }
-
                     cancel(galleryID)
                     queue.add(galleryID)
                 }

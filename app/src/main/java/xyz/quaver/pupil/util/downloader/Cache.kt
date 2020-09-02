@@ -20,7 +20,6 @@ package xyz.quaver.pupil.util.downloader
 
 import android.content.Context
 import android.content.ContextWrapper
-import android.util.Log
 import android.util.SparseArray
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -78,7 +77,7 @@ class Cache private constructor(context: Context, val galleryID: Int) : ContextW
     }.getOrNull() ?: Metadata()
 
     val downloadFolder: FileX?
-        get() = DownloadFolderManager.getInstance(this).getDownloadFolder(galleryID)
+        get() = DownloadManager.getInstance(this).getDownloadFolder(galleryID)
 
     val cacheFolder: FileX
         get() = FileX(this, cacheDir, "imageCache/$galleryID").also {
@@ -101,7 +100,6 @@ class Cache private constructor(context: Context, val galleryID: Int) : ContextW
 
         kotlin.runCatching {
             if (!file.exists()) {
-                Log.i("PUPILD", "$file")
                 file.createNewFile()
             }
             file.writeText(Json.encodeToString(metadata))
@@ -202,7 +200,6 @@ class Cache private constructor(context: Context, val galleryID: Int) : ContextW
     @Suppress("BlockingMethodInNonBlockingContext")
     fun moveToDownload() = CoroutineScope(Dispatchers.IO).launch {
         val downloadFolder = downloadFolder ?: return@launch
-        Log.i("PUPILD", "MOVING $galleryID")
 
         metadata.imageList?.forEach { imageName ->
             imageName ?: return@forEach

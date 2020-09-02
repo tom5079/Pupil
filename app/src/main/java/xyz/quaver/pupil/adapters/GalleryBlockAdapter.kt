@@ -52,7 +52,7 @@ import xyz.quaver.pupil.favorites
 import xyz.quaver.pupil.types.Tag
 import xyz.quaver.pupil.util.Preferences
 import xyz.quaver.pupil.util.downloader.Cache
-import xyz.quaver.pupil.util.downloader.DownloadFolderManager
+import xyz.quaver.pupil.util.downloader.DownloadManager
 import xyz.quaver.pupil.util.wordCapitalize
 import java.util.*
 import kotlin.collections.ArrayList
@@ -94,7 +94,7 @@ class GalleryBlockAdapter(private val glide: RequestManager, private val galleri
                     }
 
                     if (progress == max) {
-                        val downloadManager = DownloadFolderManager.getInstance(context)
+                        val downloadManager = DownloadManager.getInstance(context)
 
                         if (completeFlag.get(galleryID, false)) {
                             with(view.galleryblock_progress_complete) {
@@ -357,7 +357,7 @@ class GalleryBlockAdapter(private val glide: RequestManager, private val galleri
                     mItemManger.closeAllExcept(layout)
 
                     holder.view.galleryblock_download.text =
-                        if (DownloadFolderManager.getInstance(holder.view.context).isDownloading(galleryID))
+                        if (DownloadManager.getInstance(holder.view.context).isDownloading(galleryID))
                             holder.view.context.getString(android.R.string.cancel)
                         else
                             holder.view.context.getString(R.string.main_download)
