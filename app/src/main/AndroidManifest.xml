@@ -40,7 +40,7 @@
             android:exported="false"/>
 
         <receiver
-            android:name=".reciever.UpdateBroadcastReciever"
+            android:name=".receiver.UpdateBroadcastReceiver"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.DOWNLOAD_COMPLETE" />
