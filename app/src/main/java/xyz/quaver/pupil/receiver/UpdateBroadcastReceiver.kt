@@ -53,19 +53,21 @@ class UpdateBroadcastReceiver : BroadcastReceiver() {
                     .setFilterById(downloadID)
 
                 val uri = downloadManager.query(query).use { cursor ->
-                    cursor.moveToFirst()
+                    if (cursor.moveToFirst()) {
+                        cursor.getString(cursor.getColumnIndex(DownloadManager.COLUMN_LOCAL_URI)).let {
+                            val uri = Uri.parse(it)
 
-                    cursor.getString(cursor.getColumnIndex(DownloadManager.COLUMN_LOCAL_URI)).let {
-                        val uri = Uri.parse(it)
-
-                        when (uri.scheme) {
-                            "file" ->
-                                FileProvider.getUriForFile(context, context.applicationContext.packageName + ".provider", File(uri.path!!))
-                            "content" -> uri
-                            else -> return
+                            when (uri.scheme) {
+                                "file" ->
+                                    FileProvider.getUriForFile(context, context.applicationContext.packageName + ".provider", File(uri.path!!)
+                                    )
+                                "content" -> uri
+                                else -> null
+                            }
                         }
-                    }
-                }
+                    } else
+                        null
+                } ?: return
 
                 // Build Notification
 

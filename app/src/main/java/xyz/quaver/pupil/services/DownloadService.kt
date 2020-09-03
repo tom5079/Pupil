@@ -240,21 +240,25 @@ class DownloadService : Service() {
         }
     }
 
-    fun cancel() {
+    fun cancel(startId: Int? = null) {
         client.dispatcher().queuedCalls().filter {
             it.request().tag() is Tag
         }.forEach {
+            (it.request().tag() as? Tag)?.startId?.let { stopSelf(it) }
             it.cancel()
         }
         client.dispatcher().runningCalls().filter {
             it.request().tag() is Tag
         }.forEach {
+            (it.request().tag() as? Tag)?.startId?.let { stopSelf(it) }
             it.cancel()
         }
 
         progress.clear()
         notification.clear()
         notificationManager.cancelAll()
+
+        startId?.let { stopSelf(it) }
     }
 
     fun cancel(galleryID: Int, startId: Int? = null) {
@@ -324,7 +328,7 @@ class DownloadService : Service() {
             }
         }
 
-        reader.requestBuilders.filterIndexed { index, _ -> !progress[galleryID]!![index].isInfinite() }.forEachIndexed { index, it ->
+        reader.requestBuilders.filterIndexed { index, _ -> progress[galleryID]?.get(index)?.isInfinite() != true }.forEachIndexed { index, it ->
             val request = it.tag(Tag(galleryID, index, startId)).build()
             client.newCall(request).enqueue(callback)
         }
@@ -374,7 +378,7 @@ class DownloadService : Service() {
             COMMAND_DOWNLOAD -> intent.getIntExtra(KEY_ID, -1).let { if (it > 0)
                 download(it, intent.getBooleanExtra(KEY_PRIORITY, false), startId)
             }
-            COMMAND_CANCEL -> intent.getIntExtra(KEY_ID, -1).let { if (it > 0) cancel(it, startId) else cancel() }
+            COMMAND_CANCEL -> intent.getIntExtra(KEY_ID, -1).let { if (it > 0) cancel(it, startId) else cancel(startId = startId) }
             COMMAND_DELETE -> intent.getIntExtra(KEY_ID, -1).let { if (it > 0) delete(it, startId) }
         }
 

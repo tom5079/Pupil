@@ -28,7 +28,6 @@ import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
 import com.google.android.material.snackbar.Snackbar
 import okhttp3.*
-import xyz.quaver.pupil.Pupil
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.client
 import xyz.quaver.pupil.favorites
@@ -45,12 +44,14 @@ class ManageFavoritesFragment : PreferenceFragmentCompat() {
     }
 
     private fun initPreferences() {
+        val context = context ?: return
+
         findPreference<Preference>("backup")?.setOnPreferenceClickListener {
             val request = Request.Builder()
                 .url(getString(R.string.backup_url))
                 .post(
                     FormBody.Builder()
-                        .add("f:1", File(ContextCompat.getDataDir(requireContext()), "favorites.json").readText())
+                        .add("f:1", File(ContextCompat.getDataDir(context), "favorites.json").readText())
                         .build()
                 ).build()
 
@@ -65,7 +66,7 @@ class ManageFavoritesFragment : PreferenceFragmentCompat() {
                         type = "text/plain"
                         putExtra(Intent.EXTRA_TEXT, response.body()?.use { it.string() }?.replace("\n", ""))
                     }.let {
-                        context?.startActivity(Intent.createChooser(it, getString(R.string.settings_backup_share)))
+                        context.startActivity(Intent.createChooser(it, getString(R.string.settings_backup_share)))
                     }
                 }
             })
@@ -73,11 +74,11 @@ class ManageFavoritesFragment : PreferenceFragmentCompat() {
             true
         }
         findPreference<Preference>("restore")?.setOnPreferenceClickListener {
-            val editText = EditText(requireContext()).apply {
+            val editText = EditText(context).apply {
                 setText(getString(R.string.backup_url), TextView.BufferType.EDITABLE)
             }
 
-            AlertDialog.Builder(requireContext())
+            AlertDialog.Builder(context)
                 .setTitle(R.string.settings_restore_title)
                 .setView(editText)
                 .setPositiveButton(android.R.string.ok) { _, _ ->

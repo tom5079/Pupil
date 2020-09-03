@@ -32,10 +32,7 @@ import xyz.quaver.pupil.R
 import xyz.quaver.pupil.histories
 import xyz.quaver.pupil.util.byteToString
 import xyz.quaver.pupil.util.downloader.DownloadManager
-import xyz.quaver.pupil.util.getDownloadDirectory
-import java.io.BufferedReader
 import java.io.File
-import java.io.InputStreamReader
 
 class ManageStorageFragment : PreferenceFragmentCompat(), Preference.OnPreferenceClickListener {
 
@@ -48,14 +45,16 @@ class ManageStorageFragment : PreferenceFragmentCompat(), Preference.OnPreferenc
     }
 
     override fun onPreferenceClick(preference: Preference?): Boolean {
+        val context = context ?: return false
+
         with(preference) {
             this ?: return false
 
             when (key) {
                 "delete_cache" -> {
-                    val dir = File(requireContext().cacheDir, "imageCache")
+                    val dir = File(context.cacheDir, "imageCache")
 
-                    AlertDialog.Builder(requireContext()).apply {
+                    AlertDialog.Builder(context).apply {
                         setTitle(R.string.warning)
                         setMessage(R.string.settings_clear_cache_alert_message)
                         setPositiveButton(android.R.string.yes) { _, _ ->
@@ -81,7 +80,7 @@ class ManageStorageFragment : PreferenceFragmentCompat(), Preference.OnPreferenc
                 "delete_downloads" -> {
                     val dir = DownloadManager.getInstance(context).downloadFolder
 
-                    AlertDialog.Builder(requireContext()).apply {
+                    AlertDialog.Builder(context).apply {
                         setTitle(R.string.warning)
                         setMessage(R.string.settings_clear_downloads_alert_message)
                         setPositiveButton(android.R.string.yes) { _, _ ->
@@ -114,7 +113,7 @@ class ManageStorageFragment : PreferenceFragmentCompat(), Preference.OnPreferenc
                     }.show()
                 }
                 "clear_history" -> {
-                    AlertDialog.Builder(requireContext()).apply {
+                    AlertDialog.Builder(context).apply {
                         setTitle(R.string.warning)
                         setMessage(R.string.settings_clear_history_alert_message)
                         setPositiveButton(android.R.string.yes) { _, _ ->
@@ -132,10 +131,12 @@ class ManageStorageFragment : PreferenceFragmentCompat(), Preference.OnPreferenc
     }
 
     private fun initPreferences() {
+        val context = context ?: return
+
         with(findPreference<Preference>("delete_cache")) {
             this ?: return@with
 
-            val dir = File(requireContext().cacheDir, "imageCache")
+            val dir = File(context.cacheDir, "imageCache")
 
             summary = getString(R.string.settings_storage_usage, byteToString(0))
             CoroutineScope(Dispatchers.IO).launch {
