@@ -39,6 +39,7 @@ import xyz.quaver.pupil.R
 import xyz.quaver.pupil.util.Preferences
 import xyz.quaver.pupil.util.byteToString
 import xyz.quaver.pupil.util.downloader.DownloadManager
+import xyz.quaver.pupil.util.migrate
 import xyz.quaver.pupil.util.normalizeID
 import java.io.File
 
@@ -119,7 +120,11 @@ class DownloadLocationDialogFragment : DialogFragment() {
         builder
             .setTitle(R.string.settings_download_folder)
             .setView(build())
-            .setPositiveButton(requireContext().getText(android.R.string.ok)) { _, _ -> }
+            .setPositiveButton(requireContext().getText(android.R.string.ok)) { _, _ ->
+                DownloadManager.getInstance(requireContext()).migrate()
+            }
+
+        isCancelable = false
 
         return builder.create()
     }

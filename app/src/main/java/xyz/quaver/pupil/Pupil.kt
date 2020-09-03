@@ -162,7 +162,7 @@ class Pupil : Application() {
                 lockscreenVisibility = Notification.VISIBILITY_SECRET
             })
 
-            manager.createNotificationChannel(NotificationChannel("import", getString(R.string.channel_update), NotificationManager.IMPORTANCE_HIGH).apply {
+            manager.createNotificationChannel(NotificationChannel("import", getString(R.string.channel_update), NotificationManager.IMPORTANCE_LOW).apply {
                 description = getString(R.string.channel_update_description)
                 enableLights(false)
                 enableVibration(false)
