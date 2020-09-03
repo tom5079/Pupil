@@ -147,7 +147,7 @@ class SettingsFragment :
                     summary = FileX(context, Preferences.get<String>("download_folder")).canonicalPath
                 }
                 "download_folder_name" -> {
-                    summary = Preferences.get<String>("download_folder_name")
+                    summary = Preferences["download_folder_name", "[-id-] -title-"]
                 }
             }
         }
@@ -186,7 +186,7 @@ class SettingsFragment :
                             onPreferenceClickListener = this@SettingsFragment
                         }
                         "download_folder_name" -> {
-                            summary = Preferences.get<String>("download_folder_name")
+                            summary = Preferences["download_folder_name", "[-id-] -title-"]
 
                             setOnPreferenceClickListener {
                                 DownloadFolderNameDialogFragment().show(requireActivity().supportFragmentManager, "Download Location Dialog")

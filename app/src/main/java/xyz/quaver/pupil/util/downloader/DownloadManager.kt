@@ -109,7 +109,7 @@ class DownloadManager private constructor(context: Context) : ContextWrapper(con
         val folder = downloadFolder.getChild(name)
 
         if (!folder.exists())
-            folder.mkdirs()
+            folder.mkdir()
 
         downloadFolderMap[galleryID] = folder.name
 

@@ -153,7 +153,7 @@ class GalleryBlockAdapter(private val glide: RequestManager, private val galleri
                 CoroutineScope(Dispatchers.IO).launch {
                     val thumbnail = cache.getThumbnail()
 
-                    galleryblock_thumbnail.post {
+                    launch(Dispatchers.Main) {
                         glide
                             .load(thumbnail)
                             .skipMemoryCache(true)
