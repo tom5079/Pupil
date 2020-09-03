@@ -46,7 +46,7 @@ class DownloadFolderNameDialogFragment : DialogFragment() {
 
         return layoutInflater.inflate(R.layout.dialog_download_folder_name, null).apply {
             message.text = getString(R.string.settings_download_folder_name_message, formatMap.keys.toString(), galleryBlock?.formatDownloadFolder() ?: "")
-            edittext.setText(Preferences.get<String>("download_folder_name"))
+            edittext.setText(Preferences["download_folder_name", "[-id-] -title-"])
             edittext.addTextChangedListener {
                 message.text = getString(R.string.settings_download_folder_name_message, formatMap.keys.toString(), galleryBlock?.formatDownloadFolderTest(it.toString()) ?: "")
             }
