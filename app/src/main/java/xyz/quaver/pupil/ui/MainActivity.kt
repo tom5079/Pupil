@@ -819,7 +819,9 @@ class MainActivity : AppCompatActivity() {
                 val currentQuery = query.split(" ").last().replace('_', ' ')
 
                 suggestionJob = CoroutineScope(Dispatchers.IO).launch {
-                    val suggestions = ArrayList(getSuggestionsForQuery(currentQuery).map { TagSuggestion(it) })
+                    val suggestions = kotlin.runCatching {
+                        getSuggestionsForQuery(currentQuery).map { TagSuggestion(it) }.toMutableList()
+                    }.getOrElse { mutableListOf() }
 
                     suggestions.filter {
                         val tag = "${it.n}:${it.s.replace(Regex("\\s"), "_")}"

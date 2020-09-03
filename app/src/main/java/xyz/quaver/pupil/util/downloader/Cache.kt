@@ -135,11 +135,11 @@ class Cache private constructor(context: Context, val galleryID: Int) : ContextW
     suspend fun getThumbnail(): ByteArray? =
         findFile(".thumbnail")?.readBytes()
             ?: getGalleryBlock()?.thumbnails?.firstOrNull()?.let { withContext(Dispatchers.IO) {
-                val request = Request.Builder()
-                    .url(it)
-                    .build()
-
                 kotlin.runCatching {
+                    val request = Request.Builder()
+                        .url(it)
+                        .build()
+
                     client.newCall(request).execute().body()?.use { it.bytes() }
                 }.getOrNull()?.also { kotlin.run {
                     cacheFolder.getChild(".thumbnail").writeBytes(it)
