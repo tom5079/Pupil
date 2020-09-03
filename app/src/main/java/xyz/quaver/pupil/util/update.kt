@@ -19,13 +19,20 @@
 package xyz.quaver.pupil.util
 
 import android.app.DownloadManager
+import android.app.PendingIntent
+import android.content.BroadcastReceiver
 import android.content.Context
+import android.content.Intent
 import android.net.Uri
+import android.util.Base64
 import android.webkit.URLUtil
 import androidx.appcompat.app.AlertDialog
+import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
 import androidx.preference.PreferenceManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.*
@@ -34,9 +41,16 @@ import okhttp3.Callback
 import okhttp3.Request
 import okhttp3.Response
 import ru.noties.markwon.Markwon
+import xyz.quaver.hitomi.GalleryBlock
+import xyz.quaver.hitomi.Reader
+import xyz.quaver.io.FileX
+import xyz.quaver.io.util.FilenameFilterX
+import xyz.quaver.io.util.getChild
 import xyz.quaver.pupil.BuildConfig
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.client
+import xyz.quaver.pupil.services.DownloadService
+import xyz.quaver.pupil.util.downloader.Cache
 import java.io.File
 import java.io.IOException
 import java.net.URL
@@ -196,4 +210,92 @@ fun restore(favorites: GalleryList, url: String, onFailure: ((Exception) -> Unit
             }
         }
     })
+}
+
+private var job: Job? = null
+private val receiver = object: BroadcastReceiver() {
+    val ACTION_CANCEL = "ACTION_IMPORT_CANCEL"
+    override fun onReceive(context: Context?, intent: Intent?) {
+        context ?: return
+
+        when (intent?.action) {
+            ACTION_CANCEL -> {
+                job?.cancel()
+                NotificationManagerCompat.from(context).cancel(R.id.notification_id_import)
+            }
+        }
+    }
+}
+fun xyz.quaver.pupil.util.downloader.DownloadManager.migrate() {
+    val notificationManager = NotificationManagerCompat.from(this)
+    val action = NotificationCompat.Action.Builder(0, getText(android.R.string.cancel),
+        PendingIntent.getBroadcast(this, R.id.notification_import_cancel_action.normalizeID(), Intent(receiver.ACTION_CANCEL), PendingIntent.FLAG_UPDATE_CURRENT)
+    ).build()
+    val notification = NotificationCompat.Builder(this, "import")
+        .setContentTitle(getText(R.string.import_old_galleries_notification))
+        .setProgress(0, 0, true)
+        .addAction(action)
+        .setSmallIcon(R.drawable.ic_notification)
+        .setOngoing(true)
+
+    DownloadService.cancel(this)
+
+    job?.cancel()
+    job = CoroutineScope(Dispatchers.IO).launch {
+        val folders = downloadFolder.listFiles() ?: return@launch
+        folders.forEachIndexed { index, folder ->
+            notification
+                .setContentText(getString(R.string.import_old_galleries_notification_text, index, folders.size))
+                .setProgress(index, folders.size, false)
+            notificationManager.notify(R.id.notification_id_import, notification.build())
+
+            kotlin.runCatching {
+                val folder = (folder as? FileX) ?: return@runCatching
+
+                val metadata = Json.parseToJsonElement(folder.getChild(".metadata").readText()).jsonObject
+
+                val galleryBlock: GalleryBlock? =
+                    metadata["galleryBlock"]?.let { Json.decodeFromJsonElement(it) }
+                val reader: Reader? =
+                    metadata["reader"]?.let { Json.decodeFromJsonElement(it) }
+
+                val galleryID = galleryBlock?.id ?: reader?.galleryInfo?.id ?: folder.name.toIntOrNull() ?: return@runCatching
+
+                if (downloadFolderMap.containsKey(galleryID)) return@runCatching
+
+                metadata["thumbnail"]?.jsonPrimitive?.contentOrNull.let { thumbnail ->
+                    val file = folder.getChild(".thumbnail").also {
+                        if (!it.exists())
+                            it.createNewFile()
+                    }
+
+                    file.writeBytes(Base64.decode(thumbnail, Base64.DEFAULT))
+                }
+
+                downloadFolderMap[galleryID] = folder.name
+
+                val cache = Cache.getInstance(this@migrate, galleryID)
+                cache.metadata.galleryBlock = galleryBlock
+                cache.metadata.reader = reader
+
+                val list: MutableList<String?> =
+                    MutableList(cache.getReader()!!.galleryInfo.files.size) { null }
+
+                folder.listFiles(object: FilenameFilterX() {
+                    override fun accept(dir: File?, name: String?): Boolean =
+                        dir?.nameWithoutExtension?.toIntOrNull() != null
+                })?.forEach {
+                    list[it.nameWithoutExtension.toInt()] = it.name
+                }
+
+                cache.metadata.imageList = list
+            }
+        }
+
+        notification
+            .setContentText(getText(R.string.import_old_galleries_notification_done))
+            .setProgress(0, 0, false)
+            .setOngoing(false)
+        notificationManager.notify(R.id.notification_id_import, notification.build())
+    }
 }

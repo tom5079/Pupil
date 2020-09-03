@@ -16,7 +16,7 @@
  *     along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package xyz.quaver.pupil.reciever
+package xyz.quaver.pupil.receiver
 
 import android.app.DownloadManager
 import android.app.PendingIntent
@@ -32,7 +32,7 @@ import xyz.quaver.pupil.R
 import xyz.quaver.pupil.util.Preferences
 import java.io.File
 
-class UpdateBroadcastReciever : BroadcastReceiver() {
+class UpdateBroadcastReceiver : BroadcastReceiver() {
 
     override fun onReceive(context: Context?, intent: Intent?) {
         context ?: return
