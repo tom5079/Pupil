@@ -240,7 +240,7 @@ class DownloadService : Service() {
         }
     }
 
-    fun cancel() {
+    fun cancel(startId: Int? = null) {
         client.dispatcher().queuedCalls().filter {
             it.request().tag() is Tag
         }.forEach {
@@ -255,6 +255,8 @@ class DownloadService : Service() {
         progress.clear()
         notification.clear()
         notificationManager.cancelAll()
+
+        startId?.let { stopSelf(it) }
     }
 
     fun cancel(galleryID: Int, startId: Int? = null) {
@@ -370,10 +372,10 @@ class DownloadService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         when (intent?.getStringExtra(KEY_COMMAND)) {
             COMMAND_DOWNLOAD -> intent.getIntExtra(KEY_ID, -1).let { if (it > 0)
-                download(it, intent.getBooleanExtra(KEY_PRIORITY, false), startId)
+                download(it, intent.getBooleanExtra(KEY_PRIORITY, false), startId = startId)
             }
-            COMMAND_CANCEL -> intent.getIntExtra(KEY_ID, -1).let { if (it > 0) cancel(it, startId) else cancel() }
-            COMMAND_DELETE -> intent.getIntExtra(KEY_ID, -1).let { if (it > 0) delete(it, startId) }
+            COMMAND_CANCEL -> intent.getIntExtra(KEY_ID, -1).let { if (it > 0) cancel(it, startId = startId) else cancel(startId = startId) }
+            COMMAND_DELETE -> intent.getIntExtra(KEY_ID, -1).let { if (it > 0) delete(it, startId = startId) }
         }
 
         return START_NOT_STICKY

@@ -18,6 +18,7 @@
 
 package xyz.quaver.pupil.util
 
+import android.annotation.SuppressLint
 import android.app.DownloadManager
 import android.app.PendingIntent
 import android.content.BroadcastReceiver
@@ -25,6 +26,7 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.util.Base64
+import android.util.Log
 import android.webkit.URLUtil
 import androidx.appcompat.app.AlertDialog
 import androidx.core.app.NotificationCompat
@@ -44,8 +46,8 @@ import ru.noties.markwon.Markwon
 import xyz.quaver.hitomi.GalleryBlock
 import xyz.quaver.hitomi.Reader
 import xyz.quaver.io.FileX
-import xyz.quaver.io.util.FilenameFilterX
 import xyz.quaver.io.util.getChild
+import xyz.quaver.io.util.*
 import xyz.quaver.pupil.BuildConfig
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.client
@@ -226,6 +228,7 @@ private val receiver = object: BroadcastReceiver() {
         }
     }
 }
+@SuppressLint("RestrictedApi")
 fun xyz.quaver.pupil.util.downloader.DownloadManager.migrate() {
     val notificationManager = NotificationManagerCompat.from(this)
     val action = NotificationCompat.Action.Builder(0, getText(android.R.string.cancel),
@@ -242,7 +245,10 @@ fun xyz.quaver.pupil.util.downloader.DownloadManager.migrate() {
 
     job?.cancel()
     job = CoroutineScope(Dispatchers.IO).launch {
-        val folders = downloadFolder.listFiles() ?: return@launch
+        val folders = downloadFolder.listFiles { folder ->
+            (folder as? FileX)?.isDirectory == true && !downloadFolderMap.values.contains(folder.name)
+        }
+        if (folders.isNullOrEmpty()) return@launch
         folders.forEachIndexed { index, folder ->
             notification
                 .setContentText(getString(R.string.import_old_galleries_notification_text, index, folders.size))
@@ -252,16 +258,14 @@ fun xyz.quaver.pupil.util.downloader.DownloadManager.migrate() {
             kotlin.runCatching {
                 val folder = (folder as? FileX) ?: return@runCatching
 
-                val metadata = Json.parseToJsonElement(folder.getChild(".metadata").readText()).jsonObject
+                val metadata = folder.getChild(".metadata").readText()?.let { Json.parseToJsonElement(it).jsonObject } ?: return@runCatching
 
                 val galleryBlock: GalleryBlock? =
-                    metadata["galleryBlock"]?.let { Json.decodeFromJsonElement(it) }
+                    metadata["galleryBlock"]?.let { Json.decodeFromJsonElement<GalleryBlock>(it) }
                 val reader: Reader? =
-                    metadata["reader"]?.let { Json.decodeFromJsonElement(it) }
+                    metadata["reader"]?.let { Json.decodeFromJsonElement<Reader>(it) }
 
                 val galleryID = galleryBlock?.id ?: reader?.galleryInfo?.id ?: folder.name.toIntOrNull() ?: return@runCatching
-
-                if (downloadFolderMap.containsKey(galleryID)) return@runCatching
 
                 metadata["thumbnail"]?.jsonPrimitive?.contentOrNull.let { thumbnail ->
                     val file = folder.getChild(".thumbnail").also {
@@ -275,20 +279,21 @@ fun xyz.quaver.pupil.util.downloader.DownloadManager.migrate() {
                 downloadFolderMap[galleryID] = folder.name
 
                 val cache = Cache.getInstance(this@migrate, galleryID)
-                cache.metadata.galleryBlock = galleryBlock
-                cache.metadata.reader = reader
 
                 val list: MutableList<String?> =
                     MutableList(cache.getReader()!!.galleryInfo.files.size) { null }
 
-                folder.listFiles(object: FilenameFilterX() {
-                    override fun accept(dir: File?, name: String?): Boolean =
-                        dir?.nameWithoutExtension?.toIntOrNull() != null
-                })?.forEach {
+                folder.listFiles { dir ->
+                    dir?.nameWithoutExtension?.toIntOrNull() != null
+                }?.forEach {
                     list[it.nameWithoutExtension.toInt()] = it.name
                 }
 
-                cache.metadata.imageList = list
+                cache.setMetadata {
+                    it.galleryBlock = galleryBlock
+                    it.reader = reader
+                    it.imageList = list
+                }
             }
         }
 
@@ -296,6 +301,7 @@ fun xyz.quaver.pupil.util.downloader.DownloadManager.migrate() {
             .setContentText(getText(R.string.import_old_galleries_notification_done))
             .setProgress(0, 0, false)
             .setOngoing(false)
+            .mActions.clear()
         notificationManager.notify(R.id.notification_id_import, notification.build())
     }
 }
