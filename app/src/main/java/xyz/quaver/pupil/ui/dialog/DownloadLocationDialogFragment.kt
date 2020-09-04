@@ -47,13 +47,14 @@ class DownloadLocationDialogFragment : DialogFragment() {
     private val entries = mutableMapOf<File?, View>()
 
     @SuppressLint("InflateParams")
-    private fun build() : View {
+    private fun build() : View? {
+        val context = context ?: return null
+
         val view = layoutInflater.inflate(R.layout.dialog_download_folder, null) as LinearLayout
 
-        val externalFilesDirs = ContextCompat.getExternalFilesDirs(requireContext(), null)
+        val externalFilesDirs = ContextCompat.getExternalFilesDirs(context, null)
 
         externalFilesDirs.forEachIndexed { index, dir ->
-
             dir ?: return@forEachIndexed
 
             view.addView(layoutInflater.inflate(R.layout.item_download_folder, view, false).apply {
@@ -106,7 +107,7 @@ class DownloadLocationDialogFragment : DialogFragment() {
             entries[null] = this
         })
 
-        val downloadFolder = DownloadManager.getInstance(requireContext()).downloadFolder.canonicalPath
+        val downloadFolder = DownloadManager.getInstance(context).downloadFolder.canonicalPath
         val key = entries.keys.firstOrNull { it?.canonicalPath == downloadFolder }
         entries[key]!!.button.isChecked = true
         if (key == null) entries[key]!!.location_available.text = downloadFolder
@@ -133,24 +134,28 @@ class DownloadLocationDialogFragment : DialogFragment() {
         when (requestCode) {
             R.id.request_download_folder.normalizeID() -> {
                 if (resultCode == Activity.RESULT_OK) {
+                    val activity = activity ?: return
+                    val context = context ?: return
+                    val dialog = dialog ?: return
+
                     data?.data?.also { uri ->
                         val takeFlags: Int =
-                            requireActivity().intent.flags and
+                            activity.intent.flags and
                                     (Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
 
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT)
-                            requireContext().contentResolver.takePersistableUriPermission(uri, takeFlags)
+                            context.contentResolver.takePersistableUriPermission(uri, takeFlags)
 
-                        if (FileX(requireContext(), uri).canWrite())
+                        if (FileX(context, uri).canWrite())
                             Preferences["download_folder"] = uri.toString()
                         else {
                             Snackbar.make(
-                                requireDialog().window!!.decorView.rootView,
+                                dialog.window!!.decorView.rootView,
                                 R.string.settings_download_folder_not_writable,
                                 Snackbar.LENGTH_LONG
                             ).show()
 
-                            val downloadFolder = DownloadManager.getInstance(requireContext()).downloadFolder.canonicalPath
+                            val downloadFolder = DownloadManager.getInstance(context).downloadFolder.canonicalPath
                             val key = entries.keys.firstOrNull { it?.canonicalPath == downloadFolder }
                             entries[key]!!.button.isChecked = true
                             if (key == null) entries[key]!!.location_available.text = downloadFolder
@@ -159,17 +164,20 @@ class DownloadLocationDialogFragment : DialogFragment() {
                 }
             }
             R.id.request_download_folder_old.normalizeID() -> {
+                val context = context ?: return
+                val dialog = dialog ?: return
+
                 if (resultCode == DirectoryChooserActivity.RESULT_CODE_DIR_SELECTED) {
                     val directory = data?.getStringExtra(DirectoryChooserActivity.RESULT_SELECTED_DIR)!!
 
                     if (!File(directory).canWrite()) {
                         Snackbar.make(
-                            requireDialog().window!!.decorView.rootView,
+                            dialog.window!!.decorView.rootView,
                             R.string.settings_download_folder_not_writable,
                             Snackbar.LENGTH_LONG
                         ).show()
 
-                        val downloadFolder = DownloadManager.getInstance(requireContext()).downloadFolder.canonicalPath
+                        val downloadFolder = DownloadManager.getInstance(context).downloadFolder.canonicalPath
                         val key = entries.keys.firstOrNull { it?.canonicalPath == downloadFolder }
                         entries[key]!!.button.isChecked = true
                         if (key == null) entries[key]!!.location_available.text = downloadFolder

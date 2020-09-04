@@ -61,7 +61,7 @@ class ManageStorageFragment : PreferenceFragmentCompat(), Preference.OnPreferenc
                             if (dir.exists())
                                 dir.deleteRecursively()
 
-                            summary = getString(R.string.settings_storage_usage, byteToString(0))
+                            summary = context.getString(R.string.settings_storage_usage, byteToString(0))
                             CoroutineScope(Dispatchers.IO).launch {
                                 var size = 0L
 
@@ -69,7 +69,7 @@ class ManageStorageFragment : PreferenceFragmentCompat(), Preference.OnPreferenc
                                     size += it.length()
 
                                     launch(Dispatchers.Main) {
-                                        summary = getString(R.string.settings_storage_usage, byteToString(size))
+                                        summary = context.getString(R.string.settings_storage_usage, byteToString(size))
                                     }
                                 }
                             }
@@ -87,7 +87,7 @@ class ManageStorageFragment : PreferenceFragmentCompat(), Preference.OnPreferenc
                             CoroutineScope(Dispatchers.IO).launch {
                                 job?.cancel()
                                 launch(Dispatchers.Main) {
-                                    summary = getString(R.string.settings_storage_usage_loading)
+                                    summary = context.getString(R.string.settings_storage_usage_loading)
                                 }
 
                                 if (dir.exists())
@@ -97,13 +97,13 @@ class ManageStorageFragment : PreferenceFragmentCompat(), Preference.OnPreferenc
                                     var size = 0L
 
                                     launch(Dispatchers.Main) {
-                                        summary = getString(R.string.settings_storage_usage, byteToString(size))
+                                        summary = context.getString(R.string.settings_storage_usage, byteToString(size))
                                     }
                                     dir.walk().forEach {
                                         size += it.length()
 
                                         launch(Dispatchers.Main) {
-                                            summary = getString(R.string.settings_storage_usage, byteToString(size))
+                                            summary = context.getString(R.string.settings_storage_usage, byteToString(size))
                                         }
                                     }
                                 }
@@ -118,7 +118,7 @@ class ManageStorageFragment : PreferenceFragmentCompat(), Preference.OnPreferenc
                         setMessage(R.string.settings_clear_history_alert_message)
                         setPositiveButton(android.R.string.yes) { _, _ ->
                             histories.clear()
-                            summary = getString(R.string.settings_clear_history_summary, histories.size)
+                            summary = context.getString(R.string.settings_clear_history_summary, histories.size)
                         }
                         setNegativeButton(android.R.string.no) { _, _ -> }
                     }.show()
@@ -138,7 +138,7 @@ class ManageStorageFragment : PreferenceFragmentCompat(), Preference.OnPreferenc
 
             val dir = File(context.cacheDir, "imageCache")
 
-            summary = getString(R.string.settings_storage_usage, byteToString(0))
+            summary = context.getString(R.string.settings_storage_usage, byteToString(0))
             CoroutineScope(Dispatchers.IO).launch {
                 var size = 0L
 
@@ -146,7 +146,7 @@ class ManageStorageFragment : PreferenceFragmentCompat(), Preference.OnPreferenc
                     size += it.length()
 
                     launch(Dispatchers.Main) {
-                        summary = getString(R.string.settings_storage_usage, byteToString(size))
+                        summary = context.getString(R.string.settings_storage_usage, byteToString(size))
                     }
                 }
             }
@@ -159,14 +159,14 @@ class ManageStorageFragment : PreferenceFragmentCompat(), Preference.OnPreferenc
 
             val dir = DownloadManager.getInstance(context).downloadFolder
 
-            summary = getString(R.string.settings_storage_usage, byteToString(0))
+            summary = context.getString(R.string.settings_storage_usage, byteToString(0))
             job?.cancel()
             job = CoroutineScope(Dispatchers.IO).launch {
                 var size = 0L
 
                 dir.walk().forEach {
                     launch(Dispatchers.Main) {
-                        summary = getString(R.string.settings_storage_usage, byteToString(size))
+                        summary = context.getString(R.string.settings_storage_usage, byteToString(size))
                     }
 
                     size += it.length()
@@ -179,7 +179,7 @@ class ManageStorageFragment : PreferenceFragmentCompat(), Preference.OnPreferenc
         with(findPreference<Preference>("clear_history")) {
             this ?: return@with
 
-            summary = getString(R.string.settings_clear_history_summary, histories.size)
+            summary = context.getString(R.string.settings_clear_history_summary, histories.size)
 
             onPreferenceClickListener = this@ManageStorageFragment
         }

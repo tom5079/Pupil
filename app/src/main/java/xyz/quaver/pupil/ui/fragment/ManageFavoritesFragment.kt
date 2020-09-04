@@ -48,7 +48,7 @@ class ManageFavoritesFragment : PreferenceFragmentCompat() {
 
         findPreference<Preference>("backup")?.setOnPreferenceClickListener {
             val request = Request.Builder()
-                .url(getString(R.string.backup_url))
+                .url(context.getString(R.string.backup_url))
                 .post(
                     FormBody.Builder()
                         .add("f:1", File(ContextCompat.getDataDir(context), "favorites.json").readText())
@@ -75,7 +75,7 @@ class ManageFavoritesFragment : PreferenceFragmentCompat() {
         }
         findPreference<Preference>("restore")?.setOnPreferenceClickListener {
             val editText = EditText(context).apply {
-                setText(getString(R.string.backup_url), TextView.BufferType.EDITABLE)
+                setText(context.getString(R.string.backup_url), TextView.BufferType.EDITABLE)
             }
 
             AlertDialog.Builder(context)
@@ -88,7 +88,7 @@ class ManageFavoritesFragment : PreferenceFragmentCompat() {
                             Snackbar.make(view, R.string.settings_restore_failed, Snackbar.LENGTH_LONG).show()
                         }, onSuccess = onSuccess@{
                             val view = view ?: return@onSuccess
-                            Snackbar.make(view, getString(R.string.settings_restore_success, it.size), Snackbar.LENGTH_LONG).show()
+                            Snackbar.make(view, context.getString(R.string.settings_restore_success, it.size), Snackbar.LENGTH_LONG).show()
                         })
                 }.setNegativeButton(android.R.string.cancel) { _, _ ->
                     // Do Nothing
