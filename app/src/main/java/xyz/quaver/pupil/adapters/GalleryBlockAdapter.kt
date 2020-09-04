@@ -128,7 +128,7 @@ class GalleryBlockAdapter(private val glide: RequestManager, private val galleri
         fun bind(galleryID: Int) {
             val cache = Cache.getInstance(view.context, galleryID)
 
-            val galleryBlock = cache.metadata.galleryBlock!!
+            val galleryBlock = cache.metadata.galleryBlock ?: return
 
             with(view) {
                 val resources = context.resources
@@ -153,18 +153,15 @@ class GalleryBlockAdapter(private val glide: RequestManager, private val galleri
                 CoroutineScope(Dispatchers.IO).launch {
                     val thumbnail = cache.getThumbnail()
 
-                    launch(Dispatchers.Main) {
-                        glide
-                            .load(thumbnail)
-                            .skipMemoryCache(true)
-                            .diskCacheStrategy(DiskCacheStrategy.NONE)
-                            .error(R.drawable.image_broken_variant)
-                            .apply {
-                                if (BuildConfig.CENSOR)
-                                    override(5, 8)
-                            }
-                            .into(galleryblock_thumbnail)
-                    }
+                    glide
+                        .load(thumbnail)
+                        .skipMemoryCache(true)
+                        .diskCacheStrategy(DiskCacheStrategy.NONE)
+                        .error(R.drawable.image_broken_variant)
+                        .apply {
+                            if (BuildConfig.CENSOR)
+                                override(5, 8)
+                        }.let { launch(Dispatchers.Main) { it.into(galleryblock_thumbnail) } }
                 }
 
                 if (timerTask == null)
