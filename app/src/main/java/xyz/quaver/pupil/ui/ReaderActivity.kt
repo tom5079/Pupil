@@ -238,10 +238,8 @@ class ReaderActivity : AppCompatActivity() {
         timer.cancel()
         (reader_recyclerview?.adapter as? ReaderAdapter)?.timer?.cancel()
 
-        if (!DownloadManager.getInstance(this).isDownloading(galleryID)) {
-            downloader?.cancel(galleryID)
-            DownloadManager.getInstance(this).deleteDownloadFolder(galleryID)
-        }
+        if (!DownloadManager.getInstance(this).isDownloading(galleryID))
+            DownloadService.cancel(this, galleryID)
 
         if (downloader != null)
             unbindService(conn)
@@ -295,6 +293,8 @@ class ReaderActivity : AppCompatActivity() {
                     .make(reader_layout, R.string.reader_failed_to_find_gallery, Snackbar.LENGTH_INDEFINITE)
                     .show()
             }
+
+            histories.add(galleryID)
 
             runOnUiThread {
                 reader_download_progressbar.max = reader_recyclerview.adapter?.itemCount ?: 0
