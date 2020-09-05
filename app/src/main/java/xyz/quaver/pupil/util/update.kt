@@ -310,14 +310,13 @@ fun xyz.quaver.pupil.util.downloader.DownloadManager.migrate() {
                 )
 
                 synchronized(Cache) {
-                    Cache.instances.delete(galleryID)
+                    Cache.delete(galleryID)
                 }
                 downloadFolderMap[galleryID] = folder.name
+
+                downloadFolder.getChild(".download").let { if (!it.exists()) it.createNewFile(); it.writeText(Json.encodeToString(downloadFolderMap)) }
             }
         }
-
-        downloadFolder.getChild(".download").let { if (!it.exists()) it.createNewFile() }
-        downloadFolder.getChild(".download").writeText(Json.encodeToString(downloadFolderMap))
 
         notification
             .setContentText(getText(R.string.import_old_galleries_notification_done))
