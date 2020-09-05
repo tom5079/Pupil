@@ -454,7 +454,7 @@ class ReaderActivity : AppCompatActivity() {
             reader_recyclerview.layoutManager = LinearLayoutManager(this)
         } else {
             snapHelper.attachToRecyclerView(reader_recyclerview)
-            reader_recyclerview.layoutManager = LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, PreferenceManager.getDefaultSharedPreferences(this).getBoolean("rtl", false))
+            reader_recyclerview.layoutManager = LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, Preferences["rtl", false])
         }
 
         (reader_recyclerview.layoutManager as LinearLayoutManager).scrollToPositionWithOffset(currentPage-1, 0)
