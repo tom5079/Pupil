@@ -66,7 +66,7 @@ class ManageFavoritesFragment : PreferenceFragmentCompat() {
                         type = "text/plain"
                         putExtra(Intent.EXTRA_TEXT, response.body()?.use { it.string() }?.replace("\n", ""))
                     }.let {
-                        context.startActivity(Intent.createChooser(it, getString(R.string.settings_backup_share)))
+                        getContext()?.startActivity(Intent.createChooser(it, getString(R.string.settings_backup_share)))
                     }
                 }
             })

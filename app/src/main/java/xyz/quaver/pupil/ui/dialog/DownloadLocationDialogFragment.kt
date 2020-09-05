@@ -146,7 +146,7 @@ class DownloadLocationDialogFragment : DialogFragment() {
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT)
                             context.contentResolver.takePersistableUriPermission(uri, takeFlags)
 
-                        if (FileX(context, uri).canWrite())
+                        if (kotlin.runCatching { FileX(context, uri).canWrite() }.getOrDefault(false))
                             Preferences["download_folder"] = uri.toString()
                         else {
                             Snackbar.make(

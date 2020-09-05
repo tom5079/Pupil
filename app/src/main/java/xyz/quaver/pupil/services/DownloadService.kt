@@ -103,7 +103,7 @@ class DownloadService : Service() {
     @SuppressLint("RestrictedApi")
     private fun notify(galleryID: Int) {
         val max = progress[galleryID]?.size ?: 0
-        val progress = progress[galleryID]?.count { it.isInfinite() } ?: 0
+        val progress = progress[galleryID]?.count { it == Float.POSITIVE_INFINITY } ?: 0
 
         val notification = notification[galleryID] ?: return
 
@@ -196,7 +196,7 @@ class DownloadService : Service() {
     */
     val progress = SparseArray<MutableList<Float>?>()
 
-    fun isCompleted(galleryID: Int) = progress[galleryID]?.toList()?.all { it.isInfinite() } == true
+    fun isCompleted(galleryID: Int) = progress[galleryID]?.toList()?.all { it == Float.POSITIVE_INFINITY } == true
 
     private val callback = object: Callback {
 
@@ -308,10 +308,10 @@ class DownloadService : Service() {
         }
 
         if (progress.indexOfKey(galleryID) < 0)
-            progress.put(galleryID, mutableListOf())
+            progress.put(galleryID, MutableList(reader.galleryInfo.files.size) { 0F })
 
-        cache.metadata.imageList?.forEach {
-            progress[galleryID]?.add(if (it != null) Float.POSITIVE_INFINITY else 0F)
+        cache.metadata.imageList?.forEachIndexed { index, image ->
+            progress[galleryID]?.set(index, if (image != null) Float.POSITIVE_INFINITY else 0F)
         }
 
         notification[galleryID]?.setContentTitle(reader.galleryInfo.title?.ellipsize(30))

@@ -138,7 +138,7 @@ class ReaderAdapter(private val activity: ReaderActivity,
             if (progress?.isInfinite() == true && image != null) {
                 holder.view.reader_item_progressbar.visibility = View.INVISIBLE
 
-                holder.view.image.post {
+                CoroutineScope(Dispatchers.IO).launch {
                     glide
                         .load(image.readBytes())
                         .diskCacheStrategy(DiskCacheStrategy.NONE)
@@ -155,16 +155,14 @@ class ReaderAdapter(private val activity: ReaderActivity,
                                 cache!!.metadata.imageList?.set(position, null)
                                 image.delete()
                                 DownloadService.cancel(holder.view.context, galleryID)
-                                DownloadService.delete(holder.view.context, galleryID)
+                                DownloadService.download(holder.view.context, galleryID, true)
                                 return true
                             }
 
                             override fun onResourceReady(resource: Drawable?, model: Any?, target: Target<Drawable>?, dataSource: DataSource?, isFirstResource: Boolean) =
                                 false
-                        })
-                        .into(holder.view.image)
+                        }).let { launch(Dispatchers.Main) { it.into(holder.view.image) } }
                 }
-
             } else {
                 holder.view.reader_item_progressbar.visibility = View.VISIBLE
 

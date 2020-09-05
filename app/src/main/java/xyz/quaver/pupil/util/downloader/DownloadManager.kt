@@ -113,6 +113,7 @@ class DownloadManager private constructor(context: Context) : ContextWrapper(con
 
         downloadFolderMap[galleryID] = folder.name
 
+        downloadFolder.getChild(".download").let { if (!it.exists()) it.createNewFile() }
         downloadFolder.getChild(".download").writeText(Json.encodeToString(downloadFolderMap))
     }
 
@@ -126,6 +127,7 @@ class DownloadManager private constructor(context: Context) : ContextWrapper(con
                 downloadFolder.getChild(it).delete()
                 downloadFolderMap.remove(galleryID)
 
+                downloadFolder.getChild(".download").let { if (!it.exists()) it.createNewFile() }
                 downloadFolder.getChild(".download").writeText(Json.encodeToString(downloadFolderMap))
             }
         }
