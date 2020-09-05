@@ -50,6 +50,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import xyz.quaver.hitomi.getReader
+import xyz.quaver.io.util.getChild
 import xyz.quaver.pupil.BuildConfig
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.favorites
@@ -169,7 +170,10 @@ class GalleryBlockAdapter(private val glide: RequestManager, private val galleri
                                 target: Target<Drawable>?,
                                 isFirstResource: Boolean
                             ): Boolean {
-                                Cache.getInstance(context, galleryID).findFile(".thumbnail")?.let { if (it.exists()) it.delete() }
+                                Cache.getInstance(context, galleryID).let {
+                                    it.cacheFolder.getChild(".thumbnail").let { if (it.exists()) it.delete() }
+                                    it.downloadFolder?.getChild(".thumbnail")?.let { if (it.exists()) it.delete() }
+                                }
                                 return false
                             }
 
