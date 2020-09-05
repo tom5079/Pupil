@@ -189,7 +189,7 @@ fun checkUpdate(context: Context, force: Boolean = false) {
     }
 }
 
-fun restore(favorites: GalleryList, url: String, onFailure: ((Exception) -> Unit)? = null, onSuccess: ((List<Int>) -> Unit)? = null) {
+fun restore(favorites: GalleryList, url: String, onFailure: ((Throwable) -> Unit)? = null, onSuccess: ((List<Int>) -> Unit)? = null) {
     if (!URLUtil.isValidUrl(url)) {
         onFailure?.invoke(IllegalArgumentException())
         return
@@ -206,10 +206,12 @@ fun restore(favorites: GalleryList, url: String, onFailure: ((Exception) -> Unit
         }
 
         override fun onResponse(call: Call, response: Response) {
-            Json.decodeFromString<List<Int>>(response.body().use { it?.string() } ?: "[]").let {
-                favorites.addAll(it)
-                onSuccess?.invoke(it)
-            }
+            kotlin.runCatching {
+                Json.decodeFromString<List<Int>>(response.body().use { it?.string() } ?: "[]").let {
+                    favorites.addAll(it)
+                    onSuccess?.invoke(it)
+                }
+            }.onFailure { onFailure?.invoke(it) }
         }
     })
 }
