@@ -60,6 +60,7 @@ class Cache private constructor(context: Context, val galleryID: Int) : ContextW
                 instances[galleryID] ?: Cache(context, galleryID).also { instances.put(galleryID, it) }
             }
 
+        @Synchronized
         fun delete(galleryID: Int) {
             instances[galleryID]?.cacheFolder?.deleteRecursively()
             instances.delete(galleryID)
@@ -86,11 +87,11 @@ class Cache private constructor(context: Context, val galleryID: Int) : ContextW
         }
 
     fun findFile(fileName: String): FileX? =
-        cacheFolder.getChild(fileName).let {
+         downloadFolder?.let { downloadFolder -> downloadFolder.getChild(fileName).let {
             if (it.exists()) it else null
-        } ?: downloadFolder?.let { downloadFolder -> downloadFolder.getChild(fileName).let {
+        } } ?: cacheFolder.getChild(fileName).let {
             if (it.exists()) it else null
-        } }
+        }
 
     @Suppress("BlockingMethodInNonBlockingContext")
     fun setMetadata(change: (Metadata) -> Unit) {
