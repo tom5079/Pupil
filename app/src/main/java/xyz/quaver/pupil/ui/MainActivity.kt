@@ -1034,7 +1034,7 @@ class MainActivity : AppCompatActivity() {
                     val downloads = DownloadManager.getInstance(this@MainActivity).downloadFolderMap.keys.toList()
 
                     when {
-                        query.isEmpty() -> downloads.also {
+                        query.isEmpty() -> downloads.reversed().also {
                             totalItems = it.size
                         }
                         else -> {

@@ -328,9 +328,11 @@ class DownloadService : Service() {
             }
         }
 
-        reader.requestBuilders.filterIndexed { index, _ -> progress[galleryID]?.get(index)?.isInfinite() != true }.forEachIndexed { index, it ->
-            val request = it.tag(Tag(galleryID, index, startId)).build()
-            client.newCall(request).enqueue(callback)
+        reader.requestBuilders.forEachIndexed { index, it ->
+            if (progress[galleryID]?.get(index)?.isInfinite() != true) {
+                val request = it.tag(Tag(galleryID, index, startId)).build()
+                client.newCall(request).enqueue(callback)
+            }
         }
 
         queued.forEach { download(it) }
