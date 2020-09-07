@@ -82,7 +82,7 @@ class MirrorDialog(context: Context) : AlertDialog(context) {
                 }
 
                 onItemMoved = {
-                    Preferences["mirrors", it.joinToString(">")]
+                    Preferences["mirrors"] = it.joinToString(">")
                 }
             }
         }

@@ -93,11 +93,10 @@ class GalleryBlockAdapter(private val glide: RequestManager, private val galleri
                     val imageList = cache.metadata.imageList!!
 
                     progress = imageList.filterNotNull().size
+                    max = imageList.size
 
-                    if (visibility == View.GONE) {
+                    if (visibility == View.GONE)
                         visibility = View.VISIBLE
-                        max = imageList.size
-                    }
 
                     if (progress == max) {
                         val downloadManager = DownloadManager.getInstance(context)
