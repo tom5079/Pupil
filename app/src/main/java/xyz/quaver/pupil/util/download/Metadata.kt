@@ -22,6 +22,7 @@ import kotlinx.serialization.Serializable
 import xyz.quaver.hitomi.GalleryBlock
 import xyz.quaver.hitomi.Reader
 
+@Suppress("DEPRECATION")
 @Deprecated("Use downloader.Cache.Metadata instead")
 @Serializable
 data class Metadata(

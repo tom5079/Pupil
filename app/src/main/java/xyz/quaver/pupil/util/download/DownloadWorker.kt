@@ -48,6 +48,7 @@ import java.io.File
 import java.io.IOException
 import java.util.concurrent.LinkedBlockingQueue
 
+@Suppress("DEPRECATION")
 @Deprecated("Use DownloadService instead")
 @OptIn(ExperimentalCoroutinesApi::class)
 class DownloadWorker private constructor(context: Context) : ContextWrapper(context) {

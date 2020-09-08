@@ -74,11 +74,11 @@ class LockSettingsFragment : PreferenceFragmentCompat() {
                         setTitle(R.string.warning)
                         setMessage(R.string.settings_lock_remove_message)
 
-                        setPositiveButton(android.R.string.yes) { _, _ ->
+                        setPositiveButton(android.R.string.ok) { _, _ ->
                             lockManager.remove(Lock.Type.PATTERN)
                             onResume()
                         }
-                        setNegativeButton(android.R.string.no) { _, _ -> }
+                        setNegativeButton(android.R.string.cancel) { _, _ -> }
                     }.show()
                 } else {
                     val intent = Intent(requireContext(), LockActivity::class.java).apply {
@@ -107,11 +107,11 @@ class LockSettingsFragment : PreferenceFragmentCompat() {
                         setTitle(R.string.warning)
                         setMessage(R.string.settings_lock_remove_message)
 
-                        setPositiveButton(android.R.string.yes) { _, _ ->
+                        setPositiveButton(android.R.string.ok) { _, _ ->
                             lockManager.remove(Lock.Type.PIN)
                             onResume()
                         }
-                        setNegativeButton(android.R.string.no) { _, _ -> }
+                        setNegativeButton(android.R.string.cancel) { _, _ -> }
                     }.show()
                 } else {
                     val intent = Intent(requireContext(), LockActivity::class.java).apply {

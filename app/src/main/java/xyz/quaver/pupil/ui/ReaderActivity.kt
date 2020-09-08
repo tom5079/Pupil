@@ -196,8 +196,8 @@ class ReaderActivity : AppCompatActivity() {
         return true
     }
 
-    override fun onOptionsItemSelected(item: MenuItem?): Boolean {
-        when(item?.itemId) {
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        when(item.itemId) {
             R.id.reader_menu_page_indicator -> {
                 val view = LayoutInflater.from(this).inflate(R.layout.dialog_numberpicker, reader_layout, false)
                 with(view.dialog_number_picker) {

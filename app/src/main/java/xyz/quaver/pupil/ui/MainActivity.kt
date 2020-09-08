@@ -981,7 +981,7 @@ class MainActivity : AppCompatActivity() {
 
         if (query.isNotEmpty() && mode != Mode.SEARCH) {
             Snackbar.make(this@MainActivity.main_recyclerview, R.string.search_all, Snackbar.LENGTH_SHORT).apply {
-                setAction(android.R.string.yes) {
+                setAction(android.R.string.ok) {
                     cancelFetch()
                     clearGalleries()
                     currentPage = 0
