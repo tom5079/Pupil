@@ -37,9 +37,7 @@ import xyz.quaver.Code
 import xyz.quaver.hitomi.Reader
 import xyz.quaver.hitomi.getReferer
 import xyz.quaver.hitomi.imageUrlFromImage
-import xyz.quaver.hiyobi.cookie
 import xyz.quaver.hiyobi.createImgList
-import xyz.quaver.hiyobi.user_agent
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.client
 import xyz.quaver.pupil.interceptors
@@ -220,8 +218,6 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
                 }
                 Code.HIYOBI -> {
                     url(createImgList(galleryID, reader, lowQuality)[index].path)
-                    addHeader("User-Agent", user_agent)
-                    addHeader("Cookie", cookie)
                 }
                 else -> {
                     //shouldn't be called anyway

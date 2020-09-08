@@ -36,15 +36,17 @@ class GalleryList(private val file: File, private val list: MutableSet<Int> = mu
     fun load() {
         synchronized(this) {
             list.clear()
-            list.addAll(
+            kotlin.runCatching {
                 Json.decodeFromString<List<Int>>(file.bufferedReader().use { it.readText() })
-            )
+            }.onSuccess {
+                list.addAll(it)
+            }
         }
     }
 
     fun save() {
         synchronized(this) {
-            file.writeText(Json.encodeToString(list))
+            file.writeText(Json.encodeToString(list.toList()))
         }
     }
 
