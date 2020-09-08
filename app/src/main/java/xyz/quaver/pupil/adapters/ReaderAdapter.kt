@@ -40,9 +40,7 @@ import xyz.quaver.Code
 import xyz.quaver.hitomi.Reader
 import xyz.quaver.hitomi.getReferer
 import xyz.quaver.hitomi.imageUrlFromImage
-import xyz.quaver.hiyobi.cookie
 import xyz.quaver.hiyobi.createImgList
-import xyz.quaver.hiyobi.user_agent
 import xyz.quaver.io.util.readBytes
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.services.DownloadService
@@ -116,10 +114,7 @@ class ReaderAdapter(private val activity: ReaderActivity,
                         )
                     , LazyHeaders.Builder().addHeader("Referer", getReferer(galleryID)).build())
                 Code.HIYOBI ->
-                    GlideUrl(createImgList(galleryID, reader!!, lowQuality)[position].path, LazyHeaders.Builder()
-                        .addHeader("User-Agent", user_agent)
-                        .addHeader("Cookie", cookie)
-                        .build())
+                    GlideUrl(createImgList(galleryID, reader!!, lowQuality)[position].path)
                 else -> null
             }
             holder.view.image.post {

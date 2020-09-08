@@ -325,6 +325,8 @@ fun xyz.quaver.pupil.util.downloader.DownloadManager.migrate() {
             .mActions.clear()
         notificationManager.notify(R.id.notification_id_import, notification.build())
 
-        unregisterReceiver(receiver)
+        kotlin.runCatching {
+            unregisterReceiver(receiver)
+        }
     }
 }

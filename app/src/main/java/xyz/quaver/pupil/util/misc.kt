@@ -22,11 +22,6 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.os.Build
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import xyz.quaver.Code
@@ -34,11 +29,7 @@ import xyz.quaver.hitomi.GalleryBlock
 import xyz.quaver.hitomi.Reader
 import xyz.quaver.hitomi.getReferer
 import xyz.quaver.hitomi.imageUrlFromImage
-import xyz.quaver.hiyobi.cookie
 import xyz.quaver.hiyobi.createImgList
-import xyz.quaver.hiyobi.user_agent
-import xyz.quaver.pupil.util.downloader.Cache
-import xyz.quaver.pupil.util.downloader.Metadata
 import java.util.*
 import kotlin.collections.ArrayList
 
@@ -134,8 +125,6 @@ val Reader.requestBuilders: List<Request.Builder>
                 createImgList(galleryID, this, lowQuality).map {
                     Request.Builder()
                         .url(it.path)
-                        .header("User-Agent", user_agent)
-                        .header("Cookie", cookie)
                 }
             }
         }

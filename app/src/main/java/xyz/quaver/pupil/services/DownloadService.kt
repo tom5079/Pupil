@@ -307,8 +307,7 @@ class DownloadService : Service() {
             return@launch
         }
 
-        if (progress.indexOfKey(galleryID) < 0)
-            progress.put(galleryID, MutableList(reader.galleryInfo.files.size) { 0F })
+        progress.put(galleryID, MutableList(reader.galleryInfo.files.size) { 0F })
 
         cache.metadata.imageList?.forEachIndexed { index, image ->
             progress[galleryID]?.set(index, if (image != null) Float.POSITIVE_INFINITY else 0F)
@@ -390,6 +389,8 @@ class DownloadService : Service() {
             COMMAND_DELETE -> intent.getIntExtra(KEY_ID, -1).let { if (it > 0) delete(it, startId) }
         }
 
+        startForeground(R.id.downloader_notification_id, serviceNotification.build())
+
         return START_NOT_STICKY
     }
 
@@ -401,7 +402,6 @@ class DownloadService : Service() {
     override fun onBind(p0: Intent?) = binder
 
     override fun onCreate() {
-        startForeground(R.id.downloader_notification_id, serviceNotification.build())
         interceptors[Tag::class] = interceptor
     }
 

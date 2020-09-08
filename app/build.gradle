@@ -14,13 +14,13 @@ if (file("google-services.json").exists() && file("src/debug/google-services.jso
 }
 
 android {
-    compileSdkVersion 29
+    compileSdkVersion 30
     defaultConfig {
         applicationId "xyz.quaver.pupil"
         minSdkVersion 16
-        targetSdkVersion 29
+        targetSdkVersion 30
         versionCode 57
-        versionName "5.0-beta5"
+        versionName "5.0-beta6"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
     }
@@ -64,7 +64,6 @@ dependencies {
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.9"
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.3.9"
     //implementation "org.jetbrains.kotlinx:kotlinx-serialization-core:1.0.0-RC"
-    implementation 'androidx.core:core:1.3.1'
     implementation 'androidx.appcompat:appcompat:1.2.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.0.1'
     implementation 'androidx.preference:preference:1.1.1'
@@ -97,7 +96,7 @@ dependencies {
     implementation 'com.andrognito.patternlockview:patternlockview:1.0.0'
     //implementation 'com.andrognito.pinlockview:pinlockview:2.1.0'
     implementation "ru.noties.markwon:core:3.1.0"
-    implementation ("xyz.quaver:libpupil:1.4") {
+    implementation ("xyz.quaver:libpupil:1.5") {
         exclude group: 'org.jetbrains.kotlinx', module: 'kotlinx-serialization-core-jvm'
     }
     implementation "xyz.quaver:documentfilex:0.2.14"
