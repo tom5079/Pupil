@@ -97,7 +97,7 @@ class Pupil : Application() {
 
         try {
             Preferences.get<String>("download_folder").also {
-                if (Build.VERSION.SDK_INT > 19)
+                if (it.startsWith("content") && Build.VERSION.SDK_INT > 19)
                     contentResolver.takePersistableUriPermission(
                         Uri.parse(it),
                         Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION

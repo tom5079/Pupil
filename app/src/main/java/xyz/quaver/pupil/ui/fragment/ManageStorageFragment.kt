@@ -57,7 +57,7 @@ class ManageStorageFragment : PreferenceFragmentCompat(), Preference.OnPreferenc
                     AlertDialog.Builder(context).apply {
                         setTitle(R.string.warning)
                         setMessage(R.string.settings_clear_cache_alert_message)
-                        setPositiveButton(android.R.string.yes) { _, _ ->
+                        setPositiveButton(android.R.string.ok) { _, _ ->
                             if (dir.exists())
                                 dir.deleteRecursively()
 
@@ -74,7 +74,7 @@ class ManageStorageFragment : PreferenceFragmentCompat(), Preference.OnPreferenc
                                 }
                             }
                         }
-                        setNegativeButton(android.R.string.no) { _, _ -> }
+                        setNegativeButton(android.R.string.cancel) { _, _ -> }
                     }.show()
                 }
                 "delete_downloads" -> {
@@ -83,7 +83,7 @@ class ManageStorageFragment : PreferenceFragmentCompat(), Preference.OnPreferenc
                     AlertDialog.Builder(context).apply {
                         setTitle(R.string.warning)
                         setMessage(R.string.settings_clear_downloads_alert_message)
-                        setPositiveButton(android.R.string.yes) { _, _ ->
+                        setPositiveButton(android.R.string.ok) { _, _ ->
                             CoroutineScope(Dispatchers.IO).launch {
                                 job?.cancel()
                                 launch(Dispatchers.Main) {
@@ -109,18 +109,18 @@ class ManageStorageFragment : PreferenceFragmentCompat(), Preference.OnPreferenc
                                 }
                             }
                         }
-                        setNegativeButton(android.R.string.no) { _, _ -> }
+                        setNegativeButton(android.R.string.cancel) { _, _ -> }
                     }.show()
                 }
                 "clear_history" -> {
                     AlertDialog.Builder(context).apply {
                         setTitle(R.string.warning)
                         setMessage(R.string.settings_clear_history_alert_message)
-                        setPositiveButton(android.R.string.yes) { _, _ ->
+                        setPositiveButton(android.R.string.ok) { _, _ ->
                             histories.clear()
                             summary = context.getString(R.string.settings_clear_history_summary, histories.size)
                         }
-                        setNegativeButton(android.R.string.no) { _, _ -> }
+                        setNegativeButton(android.R.string.cancel) { _, _ -> }
                     }.show()
                 }
                 else -> return false

@@ -158,7 +158,7 @@ fun checkUpdate(context: Context, force: Boolean = false) {
             setTitle(R.string.update_title)
             val msg = extractReleaseNote(update, Locale.getDefault())
             setMessage(Markwon.create(context).toMarkdown(msg))
-            setPositiveButton(android.R.string.yes) { _, _ ->
+            setPositiveButton(android.R.string.ok) { _, _ ->
 
                 val downloadManager = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
 
@@ -181,7 +181,7 @@ fun checkUpdate(context: Context, force: Boolean = false) {
                     Preferences["update_download_id"] = it
                 }
             }
-            setNegativeButton(if (force) android.R.string.no else R.string.ignore_update) { _, _ ->
+            setNegativeButton(if (force) android.R.string.cancel else R.string.ignore_update) { _, _ ->
                 if (!force)
                     preferences.edit()
                         .putLong("ignore_update_until", System.currentTimeMillis() + 604800000)

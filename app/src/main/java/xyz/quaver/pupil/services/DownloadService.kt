@@ -314,6 +314,12 @@ class DownloadService : Service() {
             progress[galleryID]?.set(index, if (image != null) Float.POSITIVE_INFINITY else 0F)
         }
 
+        if (isCompleted(galleryID)) {
+            notificationManager.cancel(galleryID)
+            startId?.let { stopSelf(it) }
+            return@launch
+        }
+
         notification[galleryID]?.setContentTitle(reader.galleryInfo.title?.ellipsize(30))
         notify(galleryID)
 

@@ -41,6 +41,7 @@ import java.io.FileOutputStream
 import java.io.InputStream
 import java.net.URL
 
+@Suppress("DEPRECATION")
 @Deprecated("Use downloader.Cache instead")
 class Cache(context: Context) : ContextWrapper(context) {
 

@@ -68,8 +68,8 @@ class SettingsActivity : AppCompatActivity() {
         super.onResume()
     }
 
-    override fun onOptionsItemSelected(item: MenuItem?): Boolean {
-        when (item?.itemId) {
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        when (item.itemId) {
             android.R.id.home -> onBackPressed()
         }
 

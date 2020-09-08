@@ -27,6 +27,7 @@ import java.io.FileOutputStream
 import java.lang.reflect.Array
 import java.net.URL
 
+@Suppress("DEPRECATION")
 @Deprecated("Use downloader.Cache instead")
 fun getCachedGallery(context: Context, galleryID: Int) =
     File(getDownloadDirectory(context), galleryID.toString()).let {
@@ -36,6 +37,7 @@ fun getCachedGallery(context: Context, galleryID: Int) =
             File(context.cacheDir, "imageCache/$galleryID")
     }
 
+@Suppress("DEPRECATION")
 @Deprecated("Use downloader.Cache instead")
 fun getDownloadDirectory(context: Context) =
     Preferences.get<String>("dl_location").let {
@@ -45,6 +47,7 @@ fun getDownloadDirectory(context: Context) =
             context.getExternalFilesDir(null)!!
     }
 
+@Suppress("DEPRECATION")
 @Deprecated("Use FileX instead")
 fun File.isParentOf(another: File) =
     another.absolutePath.startsWith(this.absolutePath)
