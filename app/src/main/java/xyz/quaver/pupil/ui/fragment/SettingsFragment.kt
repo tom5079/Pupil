@@ -26,6 +26,7 @@ import androidx.preference.Preference
 import androidx.preference.PreferenceCategory
 import androidx.preference.PreferenceFragmentCompat
 import androidx.preference.SwitchPreferenceCompat
+import com.google.android.gms.oss.licenses.OssLicensesMenuActivity
 import xyz.quaver.io.FileX
 import xyz.quaver.io.util.getChild
 import xyz.quaver.pupil.R
@@ -245,6 +246,12 @@ class SettingsFragment :
                         "user_id" -> {
                             summary = Preferences.get<String>("user_id")
                             onPreferenceClickListener = this@SettingsFragment
+                        }
+                        "oss" -> {
+                            setOnPreferenceClickListener {
+                                context?.startActivity(Intent(context, OssLicensesMenuActivity::class.java))
+                                true
+                            }
                         }
                     }
 

@@ -104,6 +104,10 @@
             app:key="user_id"
             app:title="@string/settings_user_id"/>
 
+        <Preference
+            app:key="oss"
+            app:title="@string/settings_oss"/>
+
     </PreferenceCategory>
 
 </PreferenceScreen>
