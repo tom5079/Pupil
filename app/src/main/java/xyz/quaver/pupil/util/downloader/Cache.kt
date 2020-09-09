@@ -34,10 +34,7 @@ import xyz.quaver.Code
 import xyz.quaver.hitomi.GalleryBlock
 import xyz.quaver.hitomi.Reader
 import xyz.quaver.io.FileX
-import xyz.quaver.io.util.getChild
-import xyz.quaver.io.util.readBytes
-import xyz.quaver.io.util.readText
-import xyz.quaver.io.util.writeBytes
+import xyz.quaver.io.util.*
 import xyz.quaver.pupil.client
 import xyz.quaver.pupil.util.Preferences
 
