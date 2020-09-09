@@ -22,23 +22,19 @@ import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.os.Build
 import android.os.Bundle
 import android.view.MenuItem
 import android.view.WindowManager
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.snackbar.Snackbar
-import kotlinx.android.synthetic.main.settings_activity.*
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
-import net.rdrei.android.dirchooser.DirectoryChooserActivity
-import xyz.quaver.io.FileX
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.favorites
 import xyz.quaver.pupil.ui.fragment.LockSettingsFragment
 import xyz.quaver.pupil.ui.fragment.SettingsFragment
-import xyz.quaver.pupil.util.*
-import java.io.File
+import xyz.quaver.pupil.util.Preferences
+import xyz.quaver.pupil.util.normalizeID
 import java.nio.charset.Charset
 
 class SettingsActivity : AppCompatActivity() {
