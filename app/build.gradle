@@ -78,6 +78,7 @@ dependencies {
     implementation 'com.google.firebase:firebase-perf:19.0.8'
     implementation 'com.github.arimorty:floatingsearchview:2.1.1'
     implementation 'com.github.clans:fab:1.6.4'
+    //implementation 'com.quiph.ui:recyclerviewfastscroller:0.2.1'
     //noinspection GradleDependency
     implementation 'com.squareup.okhttp3:okhttp:3.12.12'
     implementation 'com.github.bumptech.glide:glide:4.11.0'
