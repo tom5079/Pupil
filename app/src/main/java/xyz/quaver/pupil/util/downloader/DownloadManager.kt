@@ -124,7 +124,7 @@ class DownloadManager private constructor(context: Context) : ContextWrapper(con
 
         downloadFolderMap[galleryID]?.let {
             kotlin.runCatching {
-                downloadFolder.getChild(it).delete()
+                downloadFolder.getChild(it).deleteRecursively()
                 downloadFolderMap.remove(galleryID)
 
                 downloadFolder.getChild(".download").let { if (!it.exists()) it.createNewFile() }
