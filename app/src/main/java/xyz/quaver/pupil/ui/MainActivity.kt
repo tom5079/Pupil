@@ -1039,7 +1039,7 @@ class MainActivity : AppCompatActivity() {
                         }
                         else -> {
                             val result = doSearch(query).sorted()
-                            downloads.filter { result.binarySearch(it) >= 0 }.also {
+                            downloads.reversed().filter { result.binarySearch(it) >= 0 }.also {
                                 totalItems = it.size
                             }
                         }
@@ -1052,7 +1052,7 @@ class MainActivity : AppCompatActivity() {
                         }
                         else -> {
                             val result = doSearch(query).sorted()
-                            favorites.filter { result.binarySearch(it) >= 0 }.also {
+                            favorites.reversed().filter { result.binarySearch(it) >= 0 }.also {
                                 totalItems = it.size
                             }
                         }
