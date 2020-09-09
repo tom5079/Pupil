@@ -389,8 +389,6 @@ class DownloadService : Service() {
             COMMAND_DELETE -> intent.getIntExtra(KEY_ID, -1).let { if (it > 0) delete(it, startId) }
         }
 
-        startForeground(R.id.downloader_notification_id, serviceNotification.build())
-
         return START_NOT_STICKY
     }
 
@@ -402,6 +400,7 @@ class DownloadService : Service() {
     override fun onBind(p0: Intent?) = binder
 
     override fun onCreate() {
+        startForeground(R.id.downloader_notification_id, serviceNotification.build())
         interceptors[Tag::class] = interceptor
     }
 
