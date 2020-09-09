@@ -172,6 +172,7 @@
     <string name="settings_import_old_galleries">Import old galleries</string>
     <string name="settings_user_id">User ID</string>
     <string name="settings_user_id_toast">User ID is copied to clipboard</string>
+    <string name="settings_oss">Open Source Notice</string>
 
     <!-- MANAGE FAVORITES -->
 
