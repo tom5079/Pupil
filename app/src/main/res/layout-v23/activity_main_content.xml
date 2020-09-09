@@ -63,18 +63,22 @@
             android:text="@string/main_no_result"
             android:visibility="invisible"/>
 
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/main_recyclerview"
+        <com.qtalk.recyclerviewfastscroller.RecyclerViewFastScroller
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:paddingTop="64dp"
-            android:clipToPadding="false"
-            app:fastScrollEnabled="true"
-            app:fastScrollHorizontalThumbDrawable="@drawable/thumb_drawable"
-            app:fastScrollVerticalThumbDrawable="@drawable/thumb_drawable"
-            app:fastScrollHorizontalTrackDrawable="@drawable/track_drawable"
-            app:fastScrollVerticalTrackDrawable="@drawable/track_drawable"
-            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"/>
+            app:handleHeight="100dp"
+            app:addLastItemPadding="true"
+            app:popupDrawable="@color/transparent">
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/main_recyclerview"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:paddingTop="64dp"
+                android:clipToPadding="false"
+                app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"/>
+
+        </com.qtalk.recyclerviewfastscroller.RecyclerViewFastScroller>
 
         <com.github.clans.fab.FloatingActionMenu
             android:id="@+id/main_fab"

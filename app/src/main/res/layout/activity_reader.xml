@@ -26,16 +26,20 @@
     android:background="@color/dark_gray"
     tools:context=".ui.ReaderActivity">
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/reader_recyclerview"
+    <com.qtalk.recyclerviewfastscroller.RecyclerViewFastScroller
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        app:fastScrollEnabled="true"
-        app:fastScrollHorizontalThumbDrawable="@drawable/thumb_drawable"
-        app:fastScrollVerticalThumbDrawable="@drawable/thumb_drawable"
-        app:fastScrollHorizontalTrackDrawable="@drawable/track_drawable"
-        app:fastScrollVerticalTrackDrawable="@drawable/track_drawable"
-        app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"/>
+        app:handleHeight="100dp"
+        app:addLastItemPadding="true"
+        app:popupDrawable="@color/transparent">
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/reader_recyclerview"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"/>
+
+    </com.qtalk.recyclerviewfastscroller.RecyclerViewFastScroller>
 
     <LinearLayout
         android:layout_width="match_parent"
