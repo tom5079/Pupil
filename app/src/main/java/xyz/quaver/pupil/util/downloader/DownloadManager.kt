@@ -75,7 +75,6 @@ class DownloadManager private constructor(context: Context) : ContextWrapper(con
 
                     data ?: {
                         file.createNewFile()
-                        file.writeText("{}")
                         mutableMapOf<Int, String>()
                     }.invoke()
                 }.invoke()
@@ -99,9 +98,6 @@ class DownloadManager private constructor(context: Context) : ContextWrapper(con
 
     @Synchronized
     fun addDownloadFolder(galleryID: Int) {
-        if (downloadFolderMap.containsKey(galleryID))
-            return
-
         val name = runBlocking {
             Cache.getInstance(this@DownloadManager, galleryID).getGalleryBlock()
         }?.formatDownloadFolder() ?: return
@@ -119,9 +115,6 @@ class DownloadManager private constructor(context: Context) : ContextWrapper(con
 
     @Synchronized
     fun deleteDownloadFolder(galleryID: Int) {
-        if (!downloadFolderMap.containsKey(galleryID))
-            return
-
         downloadFolderMap[galleryID]?.let {
             kotlin.runCatching {
                 downloadFolder.getChild(it).deleteRecursively()

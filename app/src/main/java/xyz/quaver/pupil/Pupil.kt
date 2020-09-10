@@ -108,12 +108,12 @@ class Pupil : Application() {
 
                 if (!FileX(this, it).canWrite())
                     throw Exception()
+
+                DownloadManager.getInstance(this).migrate()
             }
         } catch (e: Exception) {
             Preferences.remove("download_folder")
         }
-
-        DownloadManager.getInstance(this).migrate()
 
         histories = SavedSet(File(ContextCompat.getDataDir(this), "histories.json"), 0)
         favorites = SavedSet(File(ContextCompat.getDataDir(this), "favorites.json"), 0)
