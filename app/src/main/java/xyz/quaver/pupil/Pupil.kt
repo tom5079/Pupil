@@ -41,6 +41,7 @@ import okhttp3.Interceptor
 import okhttp3.OkHttpClient
 import okhttp3.Response
 import xyz.quaver.io.FileX
+import xyz.quaver.pupil.types.Tag
 import xyz.quaver.pupil.util.*
 import xyz.quaver.setClient
 import java.io.File
@@ -50,9 +51,13 @@ import kotlin.reflect.KClass
 
 typealias PupilInterceptor = (Interceptor.Chain) -> Response
 
-lateinit var histories: GalleryList
+lateinit var histories: SavedSet<Int>
     private set
-lateinit var favorites: GalleryList
+lateinit var favorites: SavedSet<Int>
+    private set
+lateinit var favoriteTags: SavedSet<Tag>
+    private set
+lateinit var searchHistory: SavedSet<String>
     private set
 
 val interceptors = mutableMapOf<KClass<out Any>, PupilInterceptor>()
@@ -110,8 +115,10 @@ class Pupil : Application() {
             Preferences.remove("download_folder")
         }
 
-        histories = GalleryList(File(ContextCompat.getDataDir(this), "histories.json"))
-        favorites = GalleryList(File(ContextCompat.getDataDir(this), "favorites.json"))
+        histories = SavedSet(File(ContextCompat.getDataDir(this), "histories.json"), 0)
+        favorites = SavedSet(File(ContextCompat.getDataDir(this), "favorites.json"), 0)
+        favoriteTags = SavedSet(File(ContextCompat.getDataDir(this), "favorites_tags.json"), Tag.parse(""))
+        searchHistory = SavedSet(File(ContextCompat.getDataDir(this), "search_histories.json"), "")
 
         if (Preferences["new_history"]) {
             CoroutineScope(Dispatchers.IO).launch {

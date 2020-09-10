@@ -18,6 +18,7 @@
 
 package xyz.quaver.pupil.ui.fragment
 
+import android.app.Activity
 import android.content.*
 import android.os.Bundle
 import android.widget.Toast
@@ -27,14 +28,19 @@ import androidx.preference.PreferenceCategory
 import androidx.preference.PreferenceFragmentCompat
 import androidx.preference.SwitchPreferenceCompat
 import com.google.android.gms.oss.licenses.OssLicensesMenuActivity
+import com.google.android.material.snackbar.Snackbar
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.json.Json
 import xyz.quaver.io.FileX
 import xyz.quaver.io.util.getChild
 import xyz.quaver.pupil.R
+import xyz.quaver.pupil.favorites
 import xyz.quaver.pupil.ui.LockActivity
 import xyz.quaver.pupil.ui.SettingsActivity
 import xyz.quaver.pupil.ui.dialog.*
 import xyz.quaver.pupil.util.*
 import xyz.quaver.pupil.util.downloader.DownloadManager
+import java.nio.charset.Charset
 
 class SettingsFragment :
     PreferenceFragmentCompat(),
@@ -69,7 +75,7 @@ class SettingsFragment :
                     checkUpdate(activity as SettingsActivity, true)
                 }
                 "download_folder" -> {
-                    DownloadLocationDialogFragment().show(requireActivity().supportFragmentManager, "Download Location Dialog")
+                    DownloadLocationDialogFragment().show(parentFragmentManager, "Download Location Dialog")
                 }
                 "default_query" -> {
                     DefaultQueryDialog(requireContext()).apply {
@@ -80,8 +86,10 @@ class SettingsFragment :
                     }.show()
                 }
                 "app_lock" -> {
-                    val intent = Intent(requireContext(), LockActivity::class.java)
-                    activity?.startActivityForResult(intent, R.id.request_lock.normalizeID())
+                    val intent = Intent(requireContext(), LockActivity::class.java).apply {
+                        putExtra("force", true)
+                    }
+                    startActivityForResult(intent, R.id.request_lock.normalizeID())
                 }
                 "mirrors" -> {
                     MirrorDialog(requireContext())
@@ -257,6 +265,21 @@ class SettingsFragment :
 
                 }
             }
+        }
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        when(requestCode) {
+            R.id.request_lock.normalizeID() -> {
+                if (resultCode == Activity.RESULT_OK) {
+                    parentFragmentManager
+                        .beginTransaction()
+                        .replace(R.id.settings, LockSettingsFragment())
+                        .addToBackStack("Lock")
+                        .commitAllowingStateLoss()
+                }
+            }
+            else -> super.onActivityResult(requestCode, resultCode, data)
         }
     }
 }

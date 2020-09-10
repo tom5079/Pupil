@@ -30,3 +30,24 @@ data class TagSuggestion(val s: String, val t: Int, val u: String, val n: String
         return s
     }
 }
+
+@Parcelize
+class Suggestion(val str: String) : SearchSuggestion {
+    override fun getBody() = str
+}
+
+@Parcelize
+class NoResultSuggestion(val str: String) : SearchSuggestion {
+    override fun getBody() = str
+}
+
+@Parcelize
+class LoadingSuggestion(val str: String) : SearchSuggestion {
+    override fun getBody() = str
+}
+
+@Parcelize
+@Suppress("PARCELABLE_PRIMARY_CONSTRUCTOR_IS_EMPTY")
+class FavoriteHistorySwitch(private val body: String) : SearchSuggestion {
+    override fun getBody() = body
+}

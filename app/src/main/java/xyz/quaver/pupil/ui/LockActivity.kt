@@ -42,6 +42,7 @@ import xyz.quaver.pupil.util.Preferences
 class LockActivity : AppCompatActivity() {
 
     private lateinit var lockManager: LockManager
+    private var lastUnlocked = 0L
     private var mode: String? = null
 
     private val patternLockFragment = PatternLockFragment().apply {
@@ -52,6 +53,7 @@ class LockActivity : AppCompatActivity() {
                     val result = lockManager.check(it)
 
                     if (result == true) {
+                        lastUnlocked = System.currentTimeMillis()
                         setResult(Activity.RESULT_OK)
                         finish()
                     } else
@@ -86,6 +88,7 @@ class LockActivity : AppCompatActivity() {
                     val result = lockManager.check(it)
 
                     if (result == true) {
+                        lastUnlocked = System.currentTimeMillis()
                         setResult(Activity.RESULT_OK)
                         finish()
                     } else {
@@ -157,6 +160,7 @@ class LockActivity : AppCompatActivity() {
                 override fun onAuthenticationSucceeded(
                     result: BiometricPrompt.AuthenticationResult) {
                     super.onAuthenticationSucceeded(result)
+                    lastUnlocked = System.currentTimeMillis()
                     setResult(RESULT_OK)
                     finish()
                     return
@@ -185,10 +189,18 @@ class LockActivity : AppCompatActivity() {
         }
 
         mode = intent.getStringExtra("mode")
+        val force = intent.getBooleanExtra("force", false)
 
         when(mode) {
             null -> {
                 if (lockManager.isEmpty()) {
+                    setResult(RESULT_OK)
+                    finish()
+                    return
+                }
+
+                if (System.currentTimeMillis() - lastUnlocked < 5*60*1000 && !force) {
+                    lastUnlocked = System.currentTimeMillis()
                     setResult(RESULT_OK)
                     finish()
                     return

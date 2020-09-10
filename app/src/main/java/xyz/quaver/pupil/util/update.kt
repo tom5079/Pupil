@@ -56,6 +56,7 @@ import xyz.quaver.io.util.*
 import xyz.quaver.pupil.BuildConfig
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.client
+import xyz.quaver.pupil.favorites
 import xyz.quaver.pupil.services.DownloadService
 import xyz.quaver.pupil.util.downloader.Cache
 import xyz.quaver.pupil.util.downloader.Metadata
@@ -195,7 +196,7 @@ fun checkUpdate(context: Context, force: Boolean = false) {
     }
 }
 
-fun restore(favorites: GalleryList, url: String, onFailure: ((Throwable) -> Unit)? = null, onSuccess: ((List<Int>) -> Unit)? = null) {
+fun restore(url: String, onFailure: ((Throwable) -> Unit)? = null, onSuccess: ((List<Int>) -> Unit)? = null) {
     if (!URLUtil.isValidUrl(url)) {
         onFailure?.invoke(IllegalArgumentException())
         return

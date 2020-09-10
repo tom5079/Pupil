@@ -146,4 +146,6 @@
     <string name="settings_download_folder_name_message">지원되는 변수는 %s 입니다\n\n%s</string>
     <string name="settings_manage_storage">저장소 관리</string>
     <string name="settings_oss">오픈 소스 라이선스</string>
+    <string name="search_show_histories">검색 기록 보기</string>
+    <string name="search_show_tags">즐겨찾기 태그 보기</string>
 </resources>

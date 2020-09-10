@@ -146,4 +146,6 @@
     <string name="settings_download_folder_name_message">%sに含まれている文字列を対応する変数に置換します\n\n%s</string>
     <string name="settings_manage_storage">ストレージ管理</string>
     <string name="settings_oss">オープンソースライセンス</string>
+    <string name="search_show_tags">お気に入りのタグを見る</string>
+    <string name="search_show_histories">履歴を見る</string>
 </resources>

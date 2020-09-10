@@ -24,7 +24,7 @@ import kotlinx.serialization.Serializable
 data class Tag(val area: String?, val tag: String, val isNegative: Boolean = false) {
     companion object {
         fun parse(tag: String) : Tag {
-            if (tag.first() == '-') {
+            if (tag.firstOrNull() == '-') {
                 tag.substring(1).split(Regex(":"), 2).let {
                     return when(it.size) {
                         2 -> Tag(it[0], it[1], true)
@@ -62,9 +62,7 @@ data class Tag(val area: String?, val tag: String, val isNegative: Boolean = fal
         return false
     }
 
-    override fun hashCode(): Int {
-        return super.hashCode()
-    }
+    override fun hashCode() = toString().hashCode()
 }
 
 class Tags(val tags: MutableSet<Tag> = mutableSetOf()) : MutableSet<Tag> by tags {
@@ -110,7 +108,4 @@ class Tags(val tags: MutableSet<Tag> = mutableSetOf()) : MutableSet<Tag> by tags
     override fun toString(): String {
         return tags.joinToString(" ") { it.toString() }
     }
-
-
-
 }
