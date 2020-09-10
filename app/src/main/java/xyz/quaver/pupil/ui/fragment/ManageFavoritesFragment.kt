@@ -62,6 +62,11 @@ class ManageFavoritesFragment : PreferenceFragmentCompat() {
                 }
 
                 override fun onResponse(call: Call, response: Response) {
+                    if (response.code() != 200) {
+                        response.close()
+                        return
+                    }
+
                     Intent(Intent.ACTION_SEND).apply {
                         type = "text/plain"
                         putExtra(Intent.EXTRA_TEXT, response.body()?.use { it.string() }?.replace("\n", ""))

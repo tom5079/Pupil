@@ -214,7 +214,7 @@ fun restore(url: String, onFailure: ((Throwable) -> Unit)? = null, onSuccess: ((
 
         override fun onResponse(call: Call, response: Response) {
             kotlin.runCatching {
-                Json.decodeFromString<List<Int>>(response.body().use { it?.string() } ?: "[]").let {
+                Json.decodeFromString<List<Int>>(response.also { if (it.code() != 200) throw IOException() }.body().use { it?.string() } ?: "[]").let {
                     favorites.addAll(it)
                     onSuccess?.invoke(it)
                 }

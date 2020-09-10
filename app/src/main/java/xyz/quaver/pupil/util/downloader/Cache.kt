@@ -37,6 +37,7 @@ import xyz.quaver.io.FileX
 import xyz.quaver.io.util.*
 import xyz.quaver.pupil.client
 import xyz.quaver.pupil.util.Preferences
+import java.io.IOException
 
 @Serializable
 data class Metadata(
@@ -138,7 +139,7 @@ class Cache private constructor(context: Context, val galleryID: Int) : ContextW
                         .url(it)
                         .build()
 
-                    client.newCall(request).execute().body()?.use { it.bytes() }
+                    client.newCall(request).execute().also { if (it.code() != 200) throw IOException() }.body()?.use { it.bytes() }
                 }.getOrNull()?.also { kotlin.run {
                     cacheFolder.getChild(".thumbnail").writeBytes(it)
                 } }

@@ -215,7 +215,7 @@ class DownloadService : Service() {
             val ext = call.request().url().encodedPath().split('.').last()
 
             kotlin.runCatching {
-                val image = response.body()?.use { it.bytes() } ?: throw Exception()
+                val image = response.also { if (it.code() != 200) throw IOException() }.body()?.use { it.bytes() } ?: throw Exception()
 
                 CoroutineScope(Dispatchers.IO).launch {
                     kotlin.runCatching {
