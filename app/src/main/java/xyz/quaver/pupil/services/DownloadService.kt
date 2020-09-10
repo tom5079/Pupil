@@ -27,6 +27,7 @@ import android.util.SparseArray
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.app.TaskStackBuilder
+import androidx.core.content.ContextCompat
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -46,7 +47,6 @@ import xyz.quaver.pupil.util.downloader.DownloadManager
 import xyz.quaver.pupil.util.ellipsize
 import xyz.quaver.pupil.util.normalizeID
 import xyz.quaver.pupil.util.requestBuilders
-import xyz.quaver.pupil.util.startForegroundServiceCompat
 import java.io.IOException
 
 private typealias ProgressListener = (DownloadService.Tag, Long, Long, Boolean) -> Unit
@@ -354,7 +354,7 @@ class DownloadService : Service() {
         const val COMMAND_DELETE = "DELETE"
 
         private fun command(context: Context, extras: Intent.() -> Unit) {
-            context.startForegroundServiceCompat(Intent(context, DownloadService::class.java).apply(extras))
+            ContextCompat.startForegroundService(context, Intent(context, DownloadService::class.java).apply(extras))
         }
 
         fun download(context: Context, galleryID: Int, priority: Boolean = false) {

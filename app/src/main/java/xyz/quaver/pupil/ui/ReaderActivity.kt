@@ -35,6 +35,7 @@ import androidx.recyclerview.widget.PagerSnapHelper
 import androidx.recyclerview.widget.RecyclerView
 import androidx.vectordrawable.graphics.drawable.Animatable2Compat
 import androidx.vectordrawable.graphics.drawable.AnimatedVectorDrawableCompat
+import com.bumptech.glide.Glide
 import com.google.android.material.snackbar.Snackbar
 import com.google.firebase.crashlytics.FirebaseCrashlytics
 import kotlinx.android.synthetic.main.activity_reader.*
@@ -472,5 +473,15 @@ class ReaderActivity : BaseActivity() {
                 labelText = getString(R.string.reader_fab_download)
             }
         }
+    }
+
+    override fun onLowMemory() {
+        super.onLowMemory()
+        Glide.get(this).onLowMemory()
+    }
+
+    override fun onTrimMemory(level: Int) {
+        super.onTrimMemory(level)
+        Glide.get(this).onTrimMemory(level)
     }
 }

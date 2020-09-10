@@ -968,4 +968,14 @@ class MainActivity :
             }
         }
     }
+
+    override fun onLowMemory() {
+        super.onLowMemory()
+        Glide.get(this).onLowMemory()
+    }
+
+    override fun onTrimMemory(level: Int) {
+        super.onTrimMemory(level)
+        Glide.get(this).onTrimMemory(level)
+    }
 }
