@@ -18,10 +18,7 @@
 
 package xyz.quaver.pupil
 
-import android.app.Application
-import android.app.Notification
-import android.app.NotificationChannel
-import android.app.NotificationManager
+import android.app.*
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -43,6 +40,7 @@ import okhttp3.Response
 import xyz.quaver.io.FileX
 import xyz.quaver.pupil.types.Tag
 import xyz.quaver.pupil.util.*
+import xyz.quaver.pupil.util.downloader.DownloadManager
 import xyz.quaver.setClient
 import java.io.File
 import java.util.*
@@ -114,6 +112,8 @@ class Pupil : Application() {
         } catch (e: Exception) {
             Preferences.remove("download_folder")
         }
+
+        DownloadManager.getInstance(this).migrate()
 
         histories = SavedSet(File(ContextCompat.getDataDir(this), "histories.json"), 0)
         favorites = SavedSet(File(ContextCompat.getDataDir(this), "favorites.json"), 0)
