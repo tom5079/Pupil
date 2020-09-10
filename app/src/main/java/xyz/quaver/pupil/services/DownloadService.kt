@@ -381,6 +381,8 @@ class DownloadService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        startForeground(R.id.downloader_notification_id, serviceNotification.build())
+
         when (intent?.getStringExtra(KEY_COMMAND)) {
             COMMAND_DOWNLOAD -> intent.getIntExtra(KEY_ID, -1).let { if (it > 0)
                 download(it, intent.getBooleanExtra(KEY_PRIORITY, false), startId)

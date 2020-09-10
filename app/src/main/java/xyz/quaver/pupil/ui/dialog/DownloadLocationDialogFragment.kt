@@ -123,7 +123,7 @@ class DownloadLocationDialogFragment : DialogFragment() {
             .setView(build())
             .setPositiveButton(requireContext().getText(android.R.string.ok)) { _, _ ->
                 if (Preferences["download_folder", ""].isEmpty())
-                    Preferences["download_folder"] = context?.getExternalFilesDir(null)?.canonicalPath ?: ""
+                    Preferences["download_folder"] = context?.getExternalFilesDir(null)?.toUri()?.toString() ?: ""
 
                 DownloadManager.getInstance(requireContext()).migrate()
             }
