@@ -22,6 +22,7 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.os.Build
+import androidx.core.content.ContextCompat
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import xyz.quaver.Code
@@ -100,13 +101,6 @@ fun GalleryBlock.formatDownloadFolderTest(format: String): String =
             str.replace(k, v.invoke(this), true)
         }
     }
-
-fun Context.startForegroundServiceCompat(service: Intent) {
-    if (Build.VERSION.SDK_INT >= 26)
-        startForegroundService(service)
-    else
-        startService(service)
-}
 
 val Reader.requestBuilders: List<Request.Builder>
     get() {

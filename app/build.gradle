@@ -20,8 +20,8 @@ android {
         applicationId "xyz.quaver.pupil"
         minSdkVersion 16
         targetSdkVersion 30
-        versionCode 57
-        versionName "5.0-beta8"
+        versionCode 58
+        versionName "5.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
     }
