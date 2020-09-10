@@ -258,7 +258,12 @@ fun xyz.quaver.pupil.util.downloader.DownloadManager.migrate() {
     job?.cancel()
     job = CoroutineScope(Dispatchers.IO).launch {
         val downloadFolders = downloadFolder.listFiles { folder ->
-            (folder as? FileX)?.isDirectory == true && !downloadFolderMap.values.contains(folder.name)
+            folder.isDirectory && !downloadFolderMap.values.contains(folder.name)
+        }?.map {
+            if (it !is FileX)
+                FileX(this@migrate, it)
+            else
+                it
         }
 
         if (downloadFolders.isNullOrEmpty()) return@launch
@@ -270,8 +275,6 @@ fun xyz.quaver.pupil.util.downloader.DownloadManager.migrate() {
             notificationManager.notify(R.id.notification_id_import, notification.build())
 
             kotlin.runCatching {
-                if (folder !is FileX) return@runCatching
-
                 val metadata = kotlin.runCatching {
                     folder.getChild(".metadata").readText()?.let { Json.parseToJsonElement(it).jsonObject }
                 }.getOrNull()

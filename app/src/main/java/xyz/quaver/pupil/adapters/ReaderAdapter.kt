@@ -42,6 +42,7 @@ import xyz.quaver.hitomi.getReferer
 import xyz.quaver.hitomi.imageUrlFromImage
 import xyz.quaver.hiyobi.createImgList
 import xyz.quaver.io.util.readBytes
+import xyz.quaver.pupil.BuildConfig
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.services.DownloadService
 import xyz.quaver.pupil.ui.ReaderActivity
@@ -123,6 +124,10 @@ class ReaderAdapter(private val activity: ReaderActivity,
                     .diskCacheStrategy(DiskCacheStrategy.NONE)
                     .skipMemoryCache(false)
                     .fitCenter()
+                    .apply {
+                        if (BuildConfig.CENSOR)
+                            override(5, 8)
+                    }
                     .error(R.drawable.image_broken_variant)
                     .into(holder.view.image)
             }
@@ -139,6 +144,10 @@ class ReaderAdapter(private val activity: ReaderActivity,
                         .diskCacheStrategy(DiskCacheStrategy.NONE)
                         .skipMemoryCache(true)
                         .fitCenter()
+                        .apply {
+                            if (BuildConfig.CENSOR)
+                                override(5, 8)
+                        }
                         .error(R.drawable.image_broken_variant)
                         .listener(object: RequestListener<Drawable> {
                             override fun onLoadFailed(
