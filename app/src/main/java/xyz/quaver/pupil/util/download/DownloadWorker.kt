@@ -277,6 +277,12 @@ class DownloadWorker private constructor(context: Context) : ContextWrapper(cont
                 }
 
                 override fun onResponse(call: Call, response: Response) {
+                    if (response.code() != 200) {
+                        response.close()
+                        onFailure(call, IOException())
+                        return
+                    }
+
                     val ext = call.request().url().encodedPath().split('.').last()
 
                     try {

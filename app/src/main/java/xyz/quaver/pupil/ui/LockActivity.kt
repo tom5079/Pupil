@@ -39,10 +39,10 @@ import xyz.quaver.pupil.util.Lock
 import xyz.quaver.pupil.util.LockManager
 import xyz.quaver.pupil.util.Preferences
 
+private var lastUnlocked = 0L
 class LockActivity : AppCompatActivity() {
 
     private lateinit var lockManager: LockManager
-    private var lastUnlocked = 0L
     private var mode: String? = null
 
     private val patternLockFragment = PatternLockFragment().apply {

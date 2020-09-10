@@ -21,7 +21,7 @@ android {
         minSdkVersion 16
         targetSdkVersion 30
         versionCode 58
-        versionName "5.0-hotfix2"
+        versionName "5.0-hotfix3"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
     }
@@ -99,7 +99,7 @@ dependencies {
     implementation 'com.andrognito.patternlockview:patternlockview:1.0.0'
     //implementation 'com.andrognito.pinlockview:pinlockview:2.1.0'
     implementation "ru.noties.markwon:core:3.1.0"
-    implementation ("xyz.quaver:libpupil:1.5") {
+    implementation ("xyz.quaver:libpupil:1.6") {
         exclude group: 'org.jetbrains.kotlinx', module: 'kotlinx-serialization-core-jvm'
     }
     implementation "xyz.quaver:documentfilex:0.2.15"
