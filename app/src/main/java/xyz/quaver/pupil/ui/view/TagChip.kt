@@ -18,6 +18,7 @@
 
 package xyz.quaver.pupil.ui.view
 
+import android.annotation.SuppressLint
 import android.content.Context
 import androidx.core.content.ContextCompat
 import com.google.android.material.chip.Chip
@@ -25,7 +26,16 @@ import xyz.quaver.pupil.R
 import xyz.quaver.pupil.types.Tag
 import xyz.quaver.pupil.util.wordCapitalize
 
-class TagChip(context: Context, val tag: Tag) : Chip(context) {
+@SuppressLint("ViewConstructor")
+class TagChip(context: Context, tag: Tag) : Chip(context) {
+
+    val tag: Tag =
+        tag.let {
+            when {
+                it.area != null -> it
+                else -> Tag("tag", tag.tag)
+            }
+        }
 
     private val languages = context.resources.getStringArray(R.array.languages).map {
         it.split("|").let { split ->
@@ -34,13 +44,6 @@ class TagChip(context: Context, val tag: Tag) : Chip(context) {
     }.toMap()
 
     init {
-        val tag = tag.let {
-            when {
-                it.area != null -> it
-                else -> Tag("tag", tag.tag)
-            }
-        }
-
         chipIcon = when(tag.area) {
             "male" -> {
                 setChipBackgroundColorResource(R.color.material_blue_700)
