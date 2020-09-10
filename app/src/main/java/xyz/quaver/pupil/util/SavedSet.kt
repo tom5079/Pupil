@@ -1,6 +1,6 @@
 /*
  *     Pupil, Hitomi.la viewer for Android
- *     Copyright (C) 2019  tom5079
+ *     Copyright (C) 2020  tom5079
  *
  *     This program is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
@@ -18,12 +18,17 @@
 
 package xyz.quaver.pupil.util
 
-import kotlinx.serialization.decodeFromString
-import kotlinx.serialization.encodeToString
+import kotlinx.serialization.*
+import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
 import java.io.File
 
-class GalleryList(private val file: File, private val list: MutableSet<Int> = mutableSetOf()) : MutableSet<Int> by list {
+class SavedSet <T: Any> (private val file: File, private val any: T, private val set: MutableSet<T> = mutableSetOf()) : MutableSet<T> by set {
+
+    @Suppress("UNCHECKED_CAST")
+    @OptIn(ExperimentalSerializationApi::class)
+    val serializer: KSerializer<List<T>>
+        get() = ListSerializer(serializer(any::class.java) as KSerializer<T>)
 
     init {
         if (!file.exists()) {
@@ -35,47 +40,48 @@ class GalleryList(private val file: File, private val list: MutableSet<Int> = mu
 
     fun load() {
         synchronized(this) {
-            list.clear()
+            set.clear()
             kotlin.runCatching {
-                Json.decodeFromString<List<Int>>(file.bufferedReader().use { it.readText() })
+                Json.decodeFromString(serializer, file.readText())
             }.onSuccess {
-                list.addAll(it)
+                set.addAll(it)
             }
         }
     }
 
+    @OptIn(ExperimentalSerializationApi::class)
     fun save() {
         synchronized(this) {
-            file.writeText(Json.encodeToString(list.toList()))
+            file.writeText(Json.encodeToString(serializer, set.toList()))
         }
     }
 
-    override fun add(element: Int): Boolean {
+    override fun add(element: T): Boolean {
         load()
 
-        return list.add(element).also {
+        return set.add(element).also {
             save()
         }
     }
 
-    override fun addAll(elements: Collection<Int>): Boolean {
+    override fun addAll(elements: Collection<T>): Boolean {
         load()
 
-        return list.addAll(elements).also {
+        return set.addAll(elements).also {
             save()
         }
     }
 
-    override fun remove(element: Int): Boolean {
+    override fun remove(element: T): Boolean {
         load()
 
-        return list.remove(element).also {
+        return set.remove(element).also {
             save()
         }
     }
 
     override fun clear() {
-        list.clear()
+        set.clear()
         save()
     }
 

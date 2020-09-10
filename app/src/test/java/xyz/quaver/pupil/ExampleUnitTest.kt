@@ -26,14 +26,21 @@ package xyz.quaver.pupil
  * See [testing documentation](http://d.android.com/tools/testing).
  */
 
+import kotlinx.serialization.*
 import kotlinx.serialization.json.Json
 import org.junit.Test
+import java.lang.reflect.ParameterizedType
+import kotlin.reflect.KClass
+import kotlin.reflect.KType
+import kotlin.reflect.typeOf
 
 class ExampleUnitTest {
 
     @Test
     fun test() {
-        
+        val a = mutableSetOf<Int>()
+
+        print(a::class.java.methods.firstOrNull { it.name == "add" }?.genericParameterTypes?.firstOrNull() as? ParameterizedType)
     }
 
 }

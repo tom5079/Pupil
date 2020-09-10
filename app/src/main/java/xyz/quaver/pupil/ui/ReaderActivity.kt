@@ -28,7 +28,6 @@ import android.os.IBinder
 import android.view.*
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
-import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -57,7 +56,7 @@ import java.util.*
 import kotlin.concurrent.schedule
 import kotlin.concurrent.timer
 
-class ReaderActivity : AppCompatActivity() {
+class ReaderActivity : BaseActivity() {
 
     private var galleryID = 0
     private var currentPage = 0
@@ -101,10 +100,6 @@ class ReaderActivity : AppCompatActivity() {
         title = getString(R.string.reader_loading)
         supportActionBar?.setDisplayHomeAsUpEnabled(false)
 
-        window.setFlags(
-            WindowManager.LayoutParams.FLAG_SECURE,
-            WindowManager.LayoutParams.FLAG_SECURE)
-
         handleIntent(intent)
         cache = Cache.getInstance(this, galleryID)
         FirebaseCrashlytics.getInstance().setCustomKey("GalleryID", galleryID)
@@ -113,6 +108,7 @@ class ReaderActivity : AppCompatActivity() {
             onBackPressed()
             return
         }
+
         if (Preferences["cache_disable"]) {
             reader_download_progressbar.visibility = View.GONE
             CoroutineScope(Dispatchers.IO).launch {
@@ -169,17 +165,6 @@ class ReaderActivity : AppCompatActivity() {
         } else {
             galleryID = intent.getIntExtra("galleryID", 0)
         }
-    }
-
-    override fun onResume() {
-        if (Preferences["security_mode"])
-            window.setFlags(
-                WindowManager.LayoutParams.FLAG_SECURE,
-                WindowManager.LayoutParams.FLAG_SECURE)
-        else
-            window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
-
-        super.onResume()
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {

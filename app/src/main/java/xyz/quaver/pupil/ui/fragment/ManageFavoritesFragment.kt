@@ -82,7 +82,7 @@ class ManageFavoritesFragment : PreferenceFragmentCompat() {
                 .setTitle(R.string.settings_restore_title)
                 .setView(editText)
                 .setPositiveButton(android.R.string.ok) { _, _ ->
-                    restore(favorites, editText.text.toString(),
+                    restore(editText.text.toString(),
                         onFailure = onFailure@{
                             val view = view ?: return@onFailure
                             Snackbar.make(view, R.string.settings_restore_failed, Snackbar.LENGTH_LONG).show()

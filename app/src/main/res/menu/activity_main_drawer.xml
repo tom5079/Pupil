@@ -27,7 +27,7 @@
 
         <item android:id="@+id/main_drawer_history"
             android:title="@string/main_drawer_history"
-            android:icon="@drawable/ic_history"/>
+            android:icon="@drawable/history"/>
 
         <item android:id="@+id/main_drawer_downloads"
             android:title="@string/main_drawer_downloads"

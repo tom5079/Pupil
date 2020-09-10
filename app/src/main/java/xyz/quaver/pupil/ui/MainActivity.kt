@@ -19,65 +19,49 @@
 package xyz.quaver.pupil.ui
 
 import android.annotation.SuppressLint
-import android.app.Activity
 import android.content.Intent
-import android.graphics.drawable.Animatable
 import android.net.Uri
 import android.os.Bundle
-import android.text.*
-import android.text.style.AlignmentSpan
-import android.util.TypedValue
-import android.view.KeyEvent
-import android.view.MotionEvent
-import android.view.View
-import android.view.WindowManager
-import android.view.inputmethod.EditorInfo
+import android.text.InputType
+import android.view.*
 import android.widget.*
 import androidx.appcompat.app.AlertDialog
-import androidx.appcompat.app.AppCompatActivity
 import androidx.cardview.widget.CardView
-import androidx.core.content.ContextCompat
-import androidx.core.content.res.ResourcesCompat
 import androidx.core.view.GravityCompat
-import androidx.vectordrawable.graphics.drawable.AnimatedVectorDrawableCompat
 import com.arlib.floatingsearchview.FloatingSearchView
 import com.arlib.floatingsearchview.FloatingSearchViewDayNight
 import com.arlib.floatingsearchview.suggestions.model.SearchSuggestion
 import com.arlib.floatingsearchview.util.view.SearchInputView
 import com.bumptech.glide.Glide
 import com.google.android.material.appbar.AppBarLayout
+import com.google.android.material.navigation.NavigationView
 import com.google.android.material.snackbar.Snackbar
 import com.google.firebase.crashlytics.FirebaseCrashlytics
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.activity_main_content.*
 import kotlinx.coroutines.*
-import kotlinx.serialization.decodeFromString
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
 import xyz.quaver.hitomi.doSearch
 import xyz.quaver.hitomi.getGalleryIDsFromNozomi
 import xyz.quaver.hitomi.getSuggestionsForQuery
-import xyz.quaver.pupil.R
+import xyz.quaver.pupil.*
 import xyz.quaver.pupil.adapters.GalleryBlockAdapter
-import xyz.quaver.pupil.favorites
-import xyz.quaver.pupil.histories
 import xyz.quaver.pupil.services.DownloadService
-import xyz.quaver.pupil.types.TagSuggestion
-import xyz.quaver.pupil.types.Tags
+import xyz.quaver.pupil.types.*
 import xyz.quaver.pupil.ui.dialog.DownloadLocationDialogFragment
 import xyz.quaver.pupil.ui.dialog.GalleryDialog
 import xyz.quaver.pupil.util.*
 import xyz.quaver.pupil.util.downloader.Cache
 import xyz.quaver.pupil.util.downloader.DownloadManager
-import java.io.File
-import java.util.*
-import kotlin.collections.ArrayList
 import kotlin.math.abs
 import kotlin.math.ceil
 import kotlin.math.min
 import kotlin.math.roundToInt
 
-class MainActivity : AppCompatActivity() {
+class MainActivity :
+    BaseActivity(),
+    FloatingSearchView.OnMenuItemClickListener,
+    NavigationView.OnNavigationItemSelectedListener
+{
 
     enum class Mode {
         SEARCH,
@@ -115,26 +99,9 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val lockManager = try {
-            LockManager(this)
-        } catch (e: Exception) {
-            android.app.AlertDialog.Builder(this).apply {
-                setTitle(R.string.warning)
-                setMessage(R.string.lock_corrupted)
-                setPositiveButton(android.R.string.ok) { _, _ ->
-                    finish()
-                }
-            }.show()
-
-            return
-        }
-
-        if (lockManager.isNotEmpty())
-            startActivityForResult(Intent(this, LockActivity::class.java), R.id.request_lock.normalizeID())
-
         if (intent.action == Intent.ACTION_VIEW) {
             intent.dataString?.let { url ->
-                restore(favorites, url,
+                restore(url,
                     onFailure = {
                         Snackbar.make(this.main_recyclerview, R.string.settings_backup_failed, Snackbar.LENGTH_LONG).show()
                     }, onSuccess = {
@@ -174,17 +141,6 @@ class MainActivity : AppCompatActivity() {
         super.onDestroy()
 
         (main_recyclerview?.adapter as? GalleryBlockAdapter)?.timer?.cancel()
-    }
-
-    override fun onResume() {
-        if (Preferences["security_mode"])
-            window.setFlags(
-                WindowManager.LayoutParams.FLAG_SECURE,
-                WindowManager.LayoutParams.FLAG_SECURE)
-        else
-            window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
-
-        super.onResume()
     }
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
@@ -234,10 +190,6 @@ class MainActivity : AppCompatActivity() {
                     loadBlocks()
                 }
             }
-            R.id.request_lock.normalizeID() -> {
-                if (resultCode != Activity.RESULT_OK)
-                    finish()
-            }
             else -> super.onActivityResult(requestCode, resultCode, data)
         }
     }
@@ -261,71 +213,7 @@ class MainActivity : AppCompatActivity() {
         )
 
         //NavigationView
-        main_nav_view.setNavigationItemSelectedListener {
-            runOnUiThread {
-                main_drawer_layout.closeDrawers()
-
-                when(it.itemId) {
-                    R.id.main_drawer_home -> {
-                        cancelFetch()
-                        clearGalleries()
-                        currentPage = 0
-                        query = ""
-                        queryStack.clear()
-                        mode = Mode.SEARCH
-                        fetchGalleries(query, sortMode)
-                        loadBlocks()
-                    }
-                    R.id.main_drawer_history -> {
-                        cancelFetch()
-                        clearGalleries()
-                        currentPage = 0
-                        query = ""
-                        queryStack.clear()
-                        mode = Mode.HISTORY
-                        fetchGalleries(query, sortMode)
-                        loadBlocks()
-                    }
-                    R.id.main_drawer_downloads -> {
-                        cancelFetch()
-                        clearGalleries()
-                        currentPage = 0
-                        query = ""
-                        queryStack.clear()
-                        mode = Mode.DOWNLOAD
-                        fetchGalleries(query, sortMode)
-                        loadBlocks()
-                    }
-                    R.id.main_drawer_favorite -> {
-                        cancelFetch()
-                        clearGalleries()
-                        currentPage = 0
-                        query = ""
-                        queryStack.clear()
-                        mode = Mode.FAVORITE
-                        fetchGalleries(query, sortMode)
-                        loadBlocks()
-                    }
-                    R.id.main_drawer_help -> {
-                        startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(getString(R.string.help))))
-                    }
-                    R.id.main_drawer_github -> {
-                        startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(getString(R.string.github))))
-                    }
-                    R.id.main_drawer_homepage -> {
-                        startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(getString(R.string.home_page))))
-                    }
-                    R.id.main_drawer_email -> {
-                        startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(getString(R.string.email))))
-                    }
-                    R.id.main_drawer_kakaotalk -> {
-                        startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(getString(R.string.discord))))
-                    }
-                }
-            }
-
-            true
-        }
+        main_nav_view.setNavigationItemSelectedListener(this)
 
         with(main_fab_cancel) {
             setImageResource(R.drawable.cancel)
@@ -720,36 +608,24 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private var isFavorite = false
+    private val defaultSuggestions: List<SearchSuggestion>
+        get() = when {
+            isFavorite -> {
+                favoriteTags.map {
+                    TagSuggestion(it.tag, -1, "", it.area ?: "tag")
+                } + FavoriteHistorySwitch(getString(R.string.search_show_histories))
+            }
+            else -> {
+                searchHistory.map {
+                    Suggestion(it)
+                }.takeLast(20) + FavoriteHistorySwitch(getString(R.string.search_show_tags))
+            }
+        }.reversed()
+
     private var suggestionJob : Job? = null
     private fun setupSearchBar() {
-        val searchInputView = findViewById<SearchInputView>(R.id.search_bar_text)
-        //Change upper case letters to lower case
-        searchInputView.addTextChangedListener(object: TextWatcher {
-            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
-
-            }
-
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-
-            }
-
-            override fun afterTextChanged(s: Editable?) {
-                s ?: return
-
-                if (s.any { it.isUpperCase() })
-                    s.replace(0, s.length, s.toString().toLowerCase(Locale.getDefault()))
-            }
-        })
-        searchInputView.imeOptions = EditorInfo.IME_FLAG_NO_EXTRACT_UI
-
         with(main_searchview as FloatingSearchViewDayNight) {
-            val favoritesFile = File(ContextCompat.getDataDir(context), "favorites_tags.json")
-
-            if (!favoritesFile.exists()) {
-                favoritesFile.createNewFile()
-                favoritesFile.writeText("[]")
-            }
-
             setOnLeftMenuClickListener(object: FloatingSearchView.OnLeftMenuClickListener {
                 override fun onMenuOpened() {
                     (this@MainActivity.main_recyclerview.adapter as GalleryBlockAdapter).closeAllItems()
@@ -760,61 +636,29 @@ class MainActivity : AppCompatActivity() {
                 }
             })
 
-            setOnMenuItemClickListener {
-                when(it.itemId) {
-                    R.id.main_menu_settings -> startActivityForResult(Intent(this@MainActivity, SettingsActivity::class.java), R.id.request_settings.normalizeID())
-                    R.id.main_menu_thin -> {
-                        main_recyclerview.apply {
-                            (adapter as GalleryBlockAdapter).apply {
-                                isThin = !isThin
-                            }
-
-                            adapter = adapter       // Force to redraw
-                        }
-                    }
-                    R.id.main_menu_sort_newest -> {
-                        sortMode = SortMode.NEWEST
-                        it.isChecked = true
-
-                        runOnUiThread {
-                            currentPage = 0
-
-                            cancelFetch()
-                            clearGalleries()
-                            fetchGalleries(query, sortMode)
-                            loadBlocks()
-                        }
-                    }
-                    R.id.main_menu_sort_popular -> {
-                        sortMode = SortMode.POPULAR
-                        it.isChecked = true
-
-                        runOnUiThread {
-                            currentPage = 0
-
-                            cancelFetch()
-                            clearGalleries()
-                            fetchGalleries(query, sortMode)
-                            loadBlocks()
-                        }
-                    }
-                }
+            onHistoryDeleteClickedListener = {
+                searchHistory.remove(it)
+                swapSuggestions(defaultSuggestions)
             }
+            onFavoriteHistorySwitchClickListener = {
+                isFavorite = !isFavorite
+                swapSuggestions(defaultSuggestions)
+            }
+
+            setOnMenuItemClickListener(this@MainActivity)
 
             setOnQueryChangeListener { _, query ->
                 this@MainActivity.query = query
 
                 suggestionJob?.cancel()
 
-                clearSuggestions()
-
                 if (query.isEmpty() or query.endsWith(' ')) {
-                    swapSuggestions(Tags(Json.decodeFromString(favoritesFile.readText())).map {
-                        TagSuggestion(it.tag, -1, "", it.area ?: "tag")
-                    })
+                    swapSuggestions(defaultSuggestions)
 
                     return@setOnQueryChangeListener
                 }
+
+                swapSuggestions(listOf(LoadingSuggestion(getText(R.string.reader_loading).toString())))
 
                 val currentQuery = query.split(" ").last().replace('_', ' ')
 
@@ -825,113 +669,22 @@ class MainActivity : AppCompatActivity() {
 
                     suggestions.filter {
                         val tag = "${it.n}:${it.s.replace(Regex("\\s"), "_")}"
-                        Tags(Json.decodeFromString(favoritesFile.readText())).contains(tag)
+                        favoriteTags.contains(Tag.parse(tag))
                     }.reversed().forEach {
                         suggestions.remove(it)
                         suggestions.add(0, it)
                     }
 
                     withContext(Dispatchers.Main) {
-                        swapSuggestions(suggestions)
+                        swapSuggestions(if (suggestions.isNotEmpty()) suggestions else listOf(NoResultSuggestion(getText(R.string.main_no_result).toString())))
                     }
                 }
             }
-
-            setOnBindSuggestionCallback { suggestionView, leftIcon, textView, item, _ ->
-                item as TagSuggestion
-
-                val tag = "${item.n}:${item.s.replace(Regex("\\s"), "_")}"
-
-                val color = TypedValue()
-                theme.resolveAttribute(R.attr.colorControlNormal, color, true)
-
-                leftIcon.setImageDrawable(
-                    ResourcesCompat.getDrawable(
-                        resources,
-                        when(item.n) {
-                            "female" -> R.drawable.gender_female
-                            "male" -> R.drawable.gender_male
-                            "language" -> R.drawable.translate
-                            "group" -> R.drawable.account_group
-                            "character" -> R.drawable.account_star
-                            "series" -> R.drawable.book_open
-                            "artist" -> R.drawable.brush
-                            else -> R.drawable.tag
-                        },
-                        context.theme)
-                )
-
-                with(suggestionView.findViewById<ImageView>(R.id.right_icon)) {
-
-                    if (Tags(Json.decodeFromString(favoritesFile.readText())).contains(tag))
-                        setImageResource(R.drawable.ic_star_filled)
-                    else
-                        setImageResource(R.drawable.ic_star_empty)
-
-                    visibility = View.VISIBLE
-                    rotation = 0f
-                    isEnabled = true
-
-                    isClickable = true
-                    setOnClickListener {
-                        val favorites = Tags(Json.decodeFromString(favoritesFile.readText()))
-
-                        if (favorites.contains(tag)) {
-                            setImageResource(R.drawable.ic_star_empty)
-                            favorites.remove(tag)
-                        }
-                        else {
-                            setImageDrawable(AnimatedVectorDrawableCompat.create(context,
-                                R.drawable.avd_star
-                            ))
-                            (drawable as Animatable).start()
-
-                            favorites.add(tag)
-                        }
-
-                        favoritesFile.writeText(Json.encodeToString(favorites.tags))
-                    }
-                }
-
-                if (item.t == -1) {
-                    textView.text = item.s
-                } else {
-                    val text = "${item.s}\n ${item.t}"
-
-                    val len = text.length
-                    val left = item.s.length
-
-                    textView.text = SpannableString(text).apply {
-                        val s = AlignmentSpan.Standard(Layout.Alignment.ALIGN_OPPOSITE)
-                        setSpan(s, left, len, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
-                        setSpan(SetLineOverlap(true), 1, len-2, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
-                        setSpan(SetLineOverlap(false), len-1, len, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
-                    }
-                }
-            }
-
-            setOnSearchListener(object : FloatingSearchView.OnSearchListener {
-                override fun onSuggestionClicked(searchSuggestion: SearchSuggestion?) {
-                    if (searchSuggestion !is TagSuggestion)
-                        return
-
-                    with(searchInputView.text) {
-                        delete(if (lastIndexOf(' ') == -1) 0 else lastIndexOf(' ')+1, length)
-                        append("${searchSuggestion.n}:${searchSuggestion.s.replace(Regex("\\s"), "_")} ")
-                    }
-                }
-
-                override fun onSearchAction(currentQuery: String?) {
-                    //Do search on onFocusCleared()
-                }
-            })
 
             setOnFocusChangeListener(object: FloatingSearchView.OnFocusChangeListener {
                 override fun onFocus() {
                     if (query.isEmpty() or query.endsWith(' '))
-                        swapSuggestions(Tags(Json.decodeFromString(favoritesFile.readText())).map {
-                            TagSuggestion(it.tag, -1, "", it.area ?: "tag")
-                        })
+                        swapSuggestions(defaultSuggestions)
                 }
 
                 override fun onFocusCleared() {
@@ -949,6 +702,113 @@ class MainActivity : AppCompatActivity() {
 
             attachNavigationDrawerToMenuButton(main_drawer_layout)
         }
+    }
+
+    override fun onActionMenuItemSelected(item: MenuItem?) {
+        when(item?.itemId) {
+            R.id.main_menu_settings -> startActivityForResult(Intent(this@MainActivity, SettingsActivity::class.java), R.id.request_settings.normalizeID())
+            R.id.main_menu_thin -> {
+                main_recyclerview.apply {
+                    (adapter as GalleryBlockAdapter).apply {
+                        isThin = !isThin
+                    }
+
+                    adapter = adapter       // Force to redraw
+                }
+            }
+            R.id.main_menu_sort_newest -> {
+                sortMode = SortMode.NEWEST
+                item.isChecked = true
+
+                runOnUiThread {
+                    currentPage = 0
+
+                    cancelFetch()
+                    clearGalleries()
+                    fetchGalleries(query, sortMode)
+                    loadBlocks()
+                }
+            }
+            R.id.main_menu_sort_popular -> {
+                sortMode = SortMode.POPULAR
+                item.isChecked = true
+
+                runOnUiThread {
+                    currentPage = 0
+
+                    cancelFetch()
+                    clearGalleries()
+                    fetchGalleries(query, sortMode)
+                    loadBlocks()
+                }
+            }
+        }
+    }
+
+    override fun onNavigationItemSelected(item: MenuItem): Boolean {
+        runOnUiThread {
+            main_drawer_layout.closeDrawers()
+
+            when(item.itemId) {
+                R.id.main_drawer_home -> {
+                    cancelFetch()
+                    clearGalleries()
+                    currentPage = 0
+                    query = ""
+                    queryStack.clear()
+                    mode = Mode.SEARCH
+                    fetchGalleries(query, sortMode)
+                    loadBlocks()
+                }
+                R.id.main_drawer_history -> {
+                    cancelFetch()
+                    clearGalleries()
+                    currentPage = 0
+                    query = ""
+                    queryStack.clear()
+                    mode = Mode.HISTORY
+                    fetchGalleries(query, sortMode)
+                    loadBlocks()
+                }
+                R.id.main_drawer_downloads -> {
+                    cancelFetch()
+                    clearGalleries()
+                    currentPage = 0
+                    query = ""
+                    queryStack.clear()
+                    mode = Mode.DOWNLOAD
+                    fetchGalleries(query, sortMode)
+                    loadBlocks()
+                }
+                R.id.main_drawer_favorite -> {
+                    cancelFetch()
+                    clearGalleries()
+                    currentPage = 0
+                    query = ""
+                    queryStack.clear()
+                    mode = Mode.FAVORITE
+                    fetchGalleries(query, sortMode)
+                    loadBlocks()
+                }
+                R.id.main_drawer_help -> {
+                    startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(getString(R.string.help))))
+                }
+                R.id.main_drawer_github -> {
+                    startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(getString(R.string.github))))
+                }
+                R.id.main_drawer_homepage -> {
+                    startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(getString(R.string.home_page))))
+                }
+                R.id.main_drawer_email -> {
+                    startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(getString(R.string.email))))
+                }
+                R.id.main_drawer_kakaotalk -> {
+                    startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(getString(R.string.discord))))
+                }
+            }
+        }
+
+        return true
     }
 
     private fun cancelFetch() {
@@ -973,6 +833,9 @@ class MainActivity : AppCompatActivity() {
 
     private fun fetchGalleries(query: String, sortMode: SortMode) {
         val defaultQuery: String = Preferences["default_query"]
+
+        if (query.isNotBlank())
+            searchHistory.add(query)
 
         if (query != queryStack.lastOrNull()) {
             queryStack.remove(query)

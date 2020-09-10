@@ -37,15 +37,10 @@ import xyz.quaver.pupil.util.Preferences
 import xyz.quaver.pupil.util.normalizeID
 import java.nio.charset.Charset
 
-class SettingsActivity : AppCompatActivity() {
+class SettingsActivity : BaseActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        window.setFlags(
-            WindowManager.LayoutParams.FLAG_SECURE,
-            WindowManager.LayoutParams.FLAG_SECURE)
-
         setContentView(R.layout.settings_activity)
         supportFragmentManager
             .beginTransaction()
@@ -54,64 +49,12 @@ class SettingsActivity : AppCompatActivity() {
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
     }
 
-    override fun onResume() {
-        if (Preferences["security_mode"])
-            window.setFlags(
-                WindowManager.LayoutParams.FLAG_SECURE,
-                WindowManager.LayoutParams.FLAG_SECURE)
-        else
-            window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
-        super.onResume()
-    }
-
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
             android.R.id.home -> onBackPressed()
         }
 
         return true
-    }
-
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        when(requestCode) {
-            R.id.request_lock.normalizeID() -> {
-                if (resultCode == Activity.RESULT_OK) {
-                    supportFragmentManager
-                        .beginTransaction()
-                        .replace(R.id.settings, LockSettingsFragment())
-                        .addToBackStack("Lock")
-                        .commitAllowingStateLoss()
-                }
-            }
-            R.id.request_restore.normalizeID() -> {
-                if (resultCode == Activity.RESULT_OK) {
-                    val uri = data?.data ?: return
-
-                    try {
-                        val str = contentResolver.openInputStream(uri).use { inputStream ->
-                            inputStream!!
-
-                            inputStream.readBytes().toString(Charset.defaultCharset())
-                        }
-
-                        favorites.addAll(Json.decodeFromString<List<Int>>(str).also {
-                            Snackbar.make(
-                                window.decorView,
-                                getString(R.string.settings_restore_success, it.size),
-                                Snackbar.LENGTH_LONG
-                            ).show()
-                        })
-                    } catch (e: Exception) {
-                        Snackbar.make(
-                            window.decorView,
-                            R.string.settings_restore_failed,
-                            Snackbar.LENGTH_LONG
-                        ).show()
-                    }
-                }
-            }
-            else -> super.onActivityResult(requestCode, resultCode, data)
-        }
     }
 
     @SuppressLint("InlinedApi")
