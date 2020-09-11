@@ -5,4 +5,6 @@
 	<dimen name="activity_vertical_margin">16dp</dimen>
 
 	<dimen name="galleryblock_thumbnail_thin">100dp</dimen>
+
+	<dimen name="reader_max_height">2000dp</dimen>
 </resources>
