@@ -82,14 +82,9 @@ class ReaderAdapter(private val activity: ReaderActivity,
             cache = Cache.getInstance(holder.view.context, galleryID)
 
         if (isFullScreen) {
-            holder.view.layoutParams.height = RecyclerView.LayoutParams.MATCH_PARENT
             holder.view.container.layoutParams.height = ConstraintLayout.LayoutParams.MATCH_PARENT
         } else {
-            holder.view.layoutParams.height = RecyclerView.LayoutParams.WRAP_CONTENT
-            holder.view.container.layoutParams.height = 0
-
-            (holder.view.container.layoutParams as ConstraintLayout.LayoutParams)
-                .dimensionRatio = "W,${reader!!.galleryInfo.files[position].width}:${reader!!.galleryInfo.files[position].height}"
+            holder.view.container.layoutParams.height = ConstraintLayout.LayoutParams.WRAP_CONTENT
         }
 
         holder.view.image.setOnPhotoTapListener { _, _, _ ->
@@ -123,10 +118,15 @@ class ReaderAdapter(private val activity: ReaderActivity,
                     .load(url!!)
                     .diskCacheStrategy(DiskCacheStrategy.NONE)
                     .skipMemoryCache(false)
-                    .fitCenter()
+                    .error(R.drawable.image_broken_variant)
                     .apply {
                         if (BuildConfig.CENSOR)
                             override(5, 8)
+                        else
+                            override(
+                                holder.view.context.resources.displayMetrics.widthPixels,
+                                holder.view.context.resources.getDimensionPixelSize(R.dimen.reader_max_height)
+                            )
                     }
                     .error(R.drawable.image_broken_variant)
                     .into(holder.view.image)
@@ -143,10 +143,14 @@ class ReaderAdapter(private val activity: ReaderActivity,
                         .load(image.readBytes())
                         .diskCacheStrategy(DiskCacheStrategy.NONE)
                         .skipMemoryCache(true)
-                        .fitCenter()
                         .apply {
                             if (BuildConfig.CENSOR)
                                 override(5, 8)
+                            else
+                                override(
+                                    holder.view.context.resources.displayMetrics.widthPixels,
+                                    holder.view.context.resources.getDimensionPixelSize(R.dimen.reader_max_height)
+                                )
                         }
                         .error(R.drawable.image_broken_variant)
                         .listener(object: RequestListener<Drawable> {
@@ -163,8 +167,13 @@ class ReaderAdapter(private val activity: ReaderActivity,
                                 return true
                             }
 
-                            override fun onResourceReady(resource: Drawable?, model: Any?, target: Target<Drawable>?, dataSource: DataSource?, isFirstResource: Boolean) =
-                                false
+                            override fun onResourceReady(
+                                resource: Drawable?,
+                                model: Any?,
+                                target: Target<Drawable>?,
+                                dataSource: DataSource?,
+                                isFirstResource: Boolean
+                            ) = false
                         }).let { launch(Dispatchers.Main) { it.into(holder.view.image) } }
                 }
             } else {
