@@ -82,16 +82,16 @@ class ReaderAdapter(private val activity: ReaderActivity,
             cache = Cache.getInstance(holder.view.context, galleryID)
 
         if (isFullScreen) {
-            holder.view.container.layoutParams.height = ConstraintLayout.LayoutParams.MATCH_PARENT
+            holder.view.layoutParams.height = ConstraintLayout.LayoutParams.MATCH_PARENT
         } else {
-            holder.view.container.layoutParams.height = ConstraintLayout.LayoutParams.WRAP_CONTENT
+            holder.view.layoutParams.height = ConstraintLayout.LayoutParams.WRAP_CONTENT
         }
 
         holder.view.image.setOnPhotoTapListener { _, _, _ ->
             onItemClickListener?.invoke(position)
         }
 
-        holder.view.container.setOnClickListener {
+        holder.view.setOnClickListener {
             onItemClickListener?.invoke(position)
         }
 
