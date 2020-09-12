@@ -70,6 +70,7 @@
             app:handleHasFixedSize="true"
             app:handleHeight="72dp"
             app:handleWidth="24dp"
+            app:trackMarginStart="64dp"
             app:addLastItemPadding="true"
             app:popupDrawable="@color/transparent">
 
