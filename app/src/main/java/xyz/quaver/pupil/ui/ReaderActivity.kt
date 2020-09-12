@@ -26,9 +26,14 @@ import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.os.IBinder
 import android.view.*
+import android.view.animation.Animation
+import android.view.animation.AnticipateInterpolator
+import android.view.animation.OvershootInterpolator
+import android.view.animation.TranslateAnimation
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
+import androidx.core.content.res.ResourcesCompat
 import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.PagerSnapHelper
@@ -42,6 +47,7 @@ import com.qtalk.recyclerviewfastscroller.RecyclerViewFastScroller
 import kotlinx.android.synthetic.main.activity_reader.*
 import kotlinx.android.synthetic.main.activity_reader.view.*
 import kotlinx.android.synthetic.main.dialog_numberpicker.view.*
+import kotlinx.android.synthetic.main.reader_eye_card.view.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -52,11 +58,13 @@ import xyz.quaver.pupil.favorites
 import xyz.quaver.pupil.histories
 import xyz.quaver.pupil.services.DownloadService
 import xyz.quaver.pupil.util.Preferences
+import xyz.quaver.pupil.util.camera
+import xyz.quaver.pupil.util.closeCamera
 import xyz.quaver.pupil.util.downloader.Cache
 import xyz.quaver.pupil.util.downloader.DownloadManager
+import xyz.quaver.pupil.util.testCamera
 import java.util.*
 import kotlin.concurrent.schedule
-import kotlin.concurrent.timer
 
 class ReaderActivity : BaseActivity() {
 
@@ -89,7 +97,6 @@ class ReaderActivity : BaseActivity() {
     }
 
     private val timer = Timer()
-    private var autoTimer: Timer? = null
 
     private val snapHelper = PagerSnapHelper()
 
@@ -385,23 +392,64 @@ class ReaderActivity : BaseActivity() {
         with(reader_fab_auto) {
             setImageResource(R.drawable.clock_start)
             setOnClickListener {
-                if (autoTimer == null) {
-                    autoTimer = timer(initialDelay = 10000L, period = 10000L) {
-                        CoroutineScope(Dispatchers.Main).launch {
-                            with(this@ReaderActivity.reader_recyclerview) {
-                                val lastItem =
-                                    (layoutManager as LinearLayoutManager).findLastCompletelyVisibleItemPosition()
-
-                                if (lastItem < adapter!!.itemCount - 1)
-                                    (layoutManager as LinearLayoutManager).scrollToPosition(lastItem + 1)
+                val eyes = this@ReaderActivity.eye_card
+                when (camera) {
+                    null -> {
+                        eyes.apply {
+                            visibility = View.VISIBLE
+                            TranslateAnimation(0F, 0F, -100F, 0F).apply {
+                                duration = 500
+                                fillAfter = false
+                                interpolator = OvershootInterpolator()
+                            }.let { startAnimation(it) }
+                        }
+                        testCamera(context) { faces ->
+                            eyes.dot.let {
+                                it.visibility = View.VISIBLE
+                                Timer().schedule(50) {
+                                    runOnUiThread {
+                                        it.visibility = View.GONE
+                                    }
+                                }
                             }
+
+                            if (faces.size != 1)
+                                ResourcesCompat.getDrawable(resources, R.drawable.eye_off, context.theme).let {
+                                    eyes.left_eye.setImageDrawable(it)
+                                    eyes.right_eye.setImageDrawable(it)
+
+                                    return@testCamera
+                                }
+
+                            val left = ResourcesCompat.getDrawable(resources,
+                                if (faces[0].rightEyeOpenProbability?.let { it > 0.4 } == true) R.drawable.eye else R.drawable.eye_closed,
+                            context.theme)
+                            val right = ResourcesCompat.getDrawable(resources,
+                                if (faces[0].leftEyeOpenProbability?.let { it > 0.4 } == true) R.drawable.eye else R.drawable.eye_closed,
+                            context.theme)
+
+                            eyes.left_eye.setImageDrawable(left)
+                            eyes.right_eye.setImageDrawable(right)
                         }
                     }
-                    setImageResource(R.drawable.clock_end)
-                } else {
-                    autoTimer?.cancel()
-                    autoTimer = null
-                    setImageResource(R.drawable.clock_start)
+                    else -> {
+                        eyes.apply {
+                            TranslateAnimation(0F, 0F, 0F, -100F).apply {
+                                duration = 500
+                                fillAfter = false
+                                interpolator = AnticipateInterpolator()
+                                setAnimationListener(object: Animation.AnimationListener {
+                                    override fun onAnimationStart(p0: Animation?) {}
+                                    override fun onAnimationRepeat(p0: Animation?) {}
+
+                                    override fun onAnimationEnd(p0: Animation?) {
+                                        eyes.visibility = View.GONE
+                                    }
+                                })
+                            }.let { startAnimation(it) }
+                        }
+                        closeCamera()
+                    }
                 }
             }
         }

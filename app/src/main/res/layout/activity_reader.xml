@@ -45,6 +45,14 @@
 
     </com.qtalk.recyclerviewfastscroller.RecyclerViewFastScroller>
 
+    <include layout="@layout/reader_eye_card"
+        android:id="@+id/eye_card"
+        android:visibility="gone"
+        android:layout_height="wrap_content"
+        android:layout_width="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:layout_margin="8dp"/>
+
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -80,6 +88,7 @@
             android:id="@+id/reader_fab_download"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            app:srcCompat="@drawable/ic_download"
             app:fab_label="@string/reader_fab_download"
             app:fab_size="mini"/>
 
@@ -87,6 +96,7 @@
             android:id="@+id/reader_fab_retry"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            app:srcCompat="@drawable/refresh"
             app:fab_label="@string/reader_fab_retry"
             app:fab_size="mini"/>
 
@@ -94,6 +104,7 @@
             android:id="@+id/reader_fab_auto"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            app:srcCompat="@drawable/clock_start"
             app:fab_label="@string/reader_fab_auto"
             app:fab_size="mini"/>
 
@@ -101,6 +112,7 @@
             android:id="@+id/reader_fab_fullscreen"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            app:srcCompat="@drawable/ic_fullscreen"
             app:fab_label="@string/reader_fab_fullscreen"
             app:fab_size="mini"/>
 

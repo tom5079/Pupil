@@ -78,6 +78,7 @@ dependencies {
     implementation 'com.google.firebase:firebase-crashlytics:17.2.1'
     implementation 'com.google.firebase:firebase-perf:19.0.8'
     implementation 'com.google.android.gms:play-services-oss-licenses:17.0.0'
+    implementation 'com.google.android.gms:play-services-mlkit-face-detection:16.1.1'
     implementation 'com.github.arimorty:floatingsearchview:2.1.1'
     implementation 'com.github.clans:fab:1.6.4'
     //implementation 'com.quiph.ui:recyclerviewfastscroller:0.2.1'
