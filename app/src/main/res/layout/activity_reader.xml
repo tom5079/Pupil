@@ -32,8 +32,8 @@
         app:fastScrollDirection="horizontal"
         app:handleDrawable="@drawable/thumb_horizontal"
         app:handleHasFixedSize="true"
-        app:handleHeight="72dp"
-        app:handleWidth="24dp"
+        app:handleHeight="24dp"
+        app:handleWidth="72dp"
         app:addLastItemPadding="true"
         app:popupDrawable="@color/transparent">
 
