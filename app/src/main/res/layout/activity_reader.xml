@@ -29,7 +29,10 @@
     <com.qtalk.recyclerviewfastscroller.RecyclerViewFastScroller
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        app:handleHeight="50dp"
+        app:handleDrawable="@drawable/thumb"
+        app:handleHasFixedSize="true"
+        app:handleHeight="72dp"
+        app:handleWidth="24dp"
         app:addLastItemPadding="true"
         app:popupDrawable="@color/transparent">
 
