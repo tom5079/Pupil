@@ -85,6 +85,9 @@ class ReaderAdapter(private val activity: ReaderActivity,
             holder.view.layoutParams.height = ConstraintLayout.LayoutParams.MATCH_PARENT
         } else {
             holder.view.layoutParams.height = ConstraintLayout.LayoutParams.WRAP_CONTENT
+
+            (holder.view.progress_layout.layoutParams as ConstraintLayout.LayoutParams)
+                .dimensionRatio = "${reader!!.galleryInfo.files[position].width}:${reader!!.galleryInfo.files[position].height}"
         }
 
         holder.view.image.setOnPhotoTapListener { _, _, _ ->
