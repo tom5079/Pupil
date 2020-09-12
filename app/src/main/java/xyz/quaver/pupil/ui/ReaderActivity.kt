@@ -38,6 +38,7 @@ import androidx.vectordrawable.graphics.drawable.AnimatedVectorDrawableCompat
 import com.bumptech.glide.Glide
 import com.google.android.material.snackbar.Snackbar
 import com.google.firebase.crashlytics.FirebaseCrashlytics
+import com.qtalk.recyclerviewfastscroller.RecyclerViewFastScroller
 import kotlinx.android.synthetic.main.activity_reader.*
 import kotlinx.android.synthetic.main.activity_reader.view.*
 import kotlinx.android.synthetic.main.dialog_numberpicker.view.*
@@ -422,10 +423,22 @@ class ReaderActivity : BaseActivity() {
                 flags = flags or WindowManager.LayoutParams.FLAG_FULLSCREEN
                 supportActionBar?.hide()
                 this@ReaderActivity.reader_fab.visibility = View.INVISIBLE
+                this@ReaderActivity.scroller.let {
+                    it.handleWidth = resources.getDimensionPixelSize(R.dimen.thumb_height)
+                    it.handleHeight = resources.getDimensionPixelSize(R.dimen.thumb_width)
+                    it.handleDrawable = ContextCompat.getDrawable(this@ReaderActivity, R.drawable.thumb_horizontal)
+                    it.fastScrollDirection = RecyclerViewFastScroller.FastScrollDirection.HORIZONTAL
+                }
             } else {
                 flags = flags and WindowManager.LayoutParams.FLAG_FULLSCREEN.inv()
                 supportActionBar?.show()
                 this@ReaderActivity.reader_fab.visibility = View.VISIBLE
+                this@ReaderActivity.scroller.let {
+                    it.handleWidth = resources.getDimensionPixelSize(R.dimen.thumb_width)
+                    it.handleHeight = resources.getDimensionPixelSize(R.dimen.thumb_height)
+                    it.handleDrawable = ContextCompat.getDrawable(this@ReaderActivity, R.drawable.thumb)
+                    it.fastScrollDirection = RecyclerViewFastScroller.FastScrollDirection.VERTICAL
+                }
             }
 
             window.attributes = this

@@ -27,13 +27,13 @@
     tools:context=".ui.ReaderActivity">
 
     <com.qtalk.recyclerviewfastscroller.RecyclerViewFastScroller
+        android:id="@+id/scroller"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        app:fastScrollDirection="horizontal"
-        app:handleDrawable="@drawable/thumb_horizontal"
+        app:handleDrawable="@drawable/thumb"
+        app:handleHeight="72dp"
+        app:handleWidth="24dp"
         app:handleHasFixedSize="true"
-        app:handleHeight="24dp"
-        app:handleWidth="72dp"
         app:addLastItemPadding="true"
         app:popupDrawable="@color/transparent">
 

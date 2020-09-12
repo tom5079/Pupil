@@ -7,4 +7,7 @@
 	<dimen name="galleryblock_thumbnail_thin">100dp</dimen>
 
 	<dimen name="reader_max_height">2000dp</dimen>
+
+	<dimen name="thumb_width">24dp</dimen>
+	<dimen name="thumb_height">72dp</dimen>
 </resources>
