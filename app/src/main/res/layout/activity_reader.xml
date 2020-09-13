@@ -33,6 +33,8 @@
         app:handleDrawable="@drawable/thumb"
         app:handleHeight="72dp"
         app:handleWidth="24dp"
+        app:disableTrack="true"
+        app:hideHandleAfter="1000"
         app:handleHasFixedSize="true"
         app:addLastItemPadding="true"
         app:popupDrawable="@color/transparent">

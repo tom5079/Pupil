@@ -41,7 +41,6 @@ import xyz.quaver.hitomi.Reader
 import xyz.quaver.hitomi.getReferer
 import xyz.quaver.hitomi.imageUrlFromImage
 import xyz.quaver.hiyobi.createImgList
-import xyz.quaver.io.util.readBytes
 import xyz.quaver.pupil.BuildConfig
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.services.DownloadService
@@ -143,7 +142,7 @@ class ReaderAdapter(private val activity: ReaderActivity,
 
                 CoroutineScope(Dispatchers.IO).launch {
                     glide
-                        .load(image.readBytes())
+                        .load(image.uri)
                         .diskCacheStrategy(DiskCacheStrategy.NONE)
                         .skipMemoryCache(true)
                         .apply {

@@ -71,11 +71,9 @@ val client: OkHttpClient
 
 class Pupil : Application() {
 
-    init {
-        AppCompatDelegate.setCompatVectorFromResourcesEnabled(true)
-    }
-
     override fun onCreate() {
+        AppCompatDelegate.setCompatVectorFromResourcesEnabled(true)
+
         preferences = PreferenceManager.getDefaultSharedPreferences(this)
 
         val userID = Preferences["user_id", ""].let {  userID ->
