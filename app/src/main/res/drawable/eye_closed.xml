@@ -1,0 +1,44 @@
+<!--
+  ~     Pupil, Hitomi.la viewer for Android
+  ~     Copyright (C) 2020  tom5079
+  ~
+  ~     This program is free software: you can redistribute it and/or modify
+  ~     it under the terms of the GNU General Public License as published by
+  ~     the Free Software Foundation, either version 3 of the License, or
+  ~     (at your option) any later version.
+  ~
+  ~     This program is distributed in the hope that it will be useful,
+  ~     but WITHOUT ANY WARRANTY; without even the implied warranty of
+  ~     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  ~     GNU General Public License for more details.
+  ~
+  ~     You should have received a copy of the GNU General Public License
+  ~     along with this program.  If not, see <http://www.gnu.org/licenses/>.
+  -->
+
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="22dp"
+    android:height="15dp"
+    android:viewportWidth="22"
+    android:viewportHeight="15">
+  <path
+      android:pathData="M21.61,5.4C14.21,13.39 7.16,13.37 0.43,5.32"
+      android:strokeWidth="1"
+      android:strokeColor="?attr/colorControlNormal"/>
+  <path
+      android:pathData="M1.32,9.8L3.03,7.8"
+      android:strokeWidth="1"
+      android:strokeColor="?attr/colorControlNormal"/>
+  <path
+      android:pathData="M5.14,12.37L6.16,10.37"
+      android:strokeWidth="1"
+      android:strokeColor="?attr/colorControlNormal"/>
+  <path
+      android:pathData="M16.27,12.37L15.25,10.37"
+      android:strokeWidth="1"
+      android:strokeColor="?attr/colorControlNormal"/>
+  <path
+      android:pathData="M18.78,7.8L20.49,9.8"
+      android:strokeWidth="1"
+      android:strokeColor="?attr/colorControlNormal"/>
+</vector>
