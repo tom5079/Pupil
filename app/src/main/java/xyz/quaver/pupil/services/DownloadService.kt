@@ -309,11 +309,25 @@ class DownloadService : Service() {
 
         progress.put(galleryID, MutableList(reader.galleryInfo.files.size) { 0F })
 
-        cache.metadata.imageList?.forEachIndexed { index, image ->
-            progress[galleryID]?.set(index, if (image != null) Float.POSITIVE_INFINITY else 0F)
+        cache.metadata.imageList?.let {
+            if (progress[galleryID]?.size != it.size) {
+                cache.metadata.imageList?.filterNotNull()?.forEach { file ->
+                    cache.findFile(file)?.delete()
+                }
+                cache.metadata.imageList = MutableList(reader.galleryInfo.files.size) { null }
+                return@let
+            }
+
+            it.forEachIndexed { index, image ->
+                progress[galleryID]?.set(index, if (image != null) Float.POSITIVE_INFINITY else 0F)
+            }
         }
 
         if (isCompleted(galleryID)) {
+            if (DownloadManager.getInstance(this@DownloadService)
+                    .getDownloadFolder(galleryID) != null)
+                Cache.getInstance(this@DownloadService, galleryID).moveToDownload()
+
             notificationManager.cancel(galleryID)
             startId?.let { stopSelf(it) }
             return@launch

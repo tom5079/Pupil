@@ -200,24 +200,42 @@ class Cache private constructor(context: Context, val galleryID: Int) : ContextW
     fun moveToDownload() = CoroutineScope(Dispatchers.IO).launch {
         val downloadFolder = downloadFolder ?: return@launch
 
+        if (downloadFolder.getChild(".metadata").exists())
+            return@launch
+
         metadata.imageList?.forEach { imageName ->
             imageName ?: return@forEach
             val target = downloadFolder.getChild(imageName)
             val source = cacheFolder.getChild(imageName)
 
-            if (!source.exists())
+            if (!source.exists() || target.exists())
                 return@forEach
 
             kotlin.runCatching {
                 target.createNewFile()
-                source.readBytes()?.let { target.writeBytes(it) }
+                target.outputStream()?.use { target -> source.inputStream()?.use { source ->
+                    source.copyTo(target)
+                } }
+            }
+        }
+
+        val cacheThumbnail = cacheFolder.getChild(".thumbnail")
+        val downloadThumbnail = downloadFolder.getChild(".thumbnail")
+
+        if (cacheThumbnail.exists() && !downloadThumbnail.exists()) {
+            kotlin.runCatching {
+                downloadThumbnail.createNewFile()
+                downloadThumbnail.outputStream()?.use { target -> cacheThumbnail.inputStream()?.use { source ->
+                    source.copyTo(target)
+                } }
+                cacheThumbnail.delete()
             }
         }
 
         val cacheMetadata = cacheFolder.getChild(".metadata")
         val downloadMetadata = downloadFolder.getChild(".metadata")
 
-        if (cacheMetadata.exists()) {
+        if (cacheMetadata.exists() && !downloadMetadata.exists()) {
             kotlin.runCatching {
                 downloadMetadata.createNewFile()
                 downloadMetadata.writeText(Json.encodeToString(metadata))

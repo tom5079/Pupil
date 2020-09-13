@@ -26,6 +26,7 @@ import android.text.InputType
 import android.view.*
 import android.widget.*
 import androidx.appcompat.app.AlertDialog
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.cardview.widget.CardView
 import androidx.core.view.GravityCompat
 import com.arlib.floatingsearchview.FloatingSearchView
@@ -97,7 +98,9 @@ class MainActivity :
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        AppCompatDelegate.setCompatVectorFromResourcesEnabled(true)
         super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_main)
 
         if (intent.action == Intent.ACTION_VIEW) {
             intent.dataString?.let { url ->
@@ -110,8 +113,6 @@ class MainActivity :
                 )
             }
         }
-
-        setContentView(R.layout.activity_main)
 
         if (Preferences["download_folder", ""].isEmpty())
             DownloadLocationDialogFragment().show(supportFragmentManager, "Download Location Dialog")

@@ -20,6 +20,7 @@ package xyz.quaver.pupil.adapters
 
 import android.content.Context
 import android.graphics.drawable.Drawable
+import android.util.Log
 import android.util.SparseBooleanArray
 import android.view.LayoutInflater
 import android.view.View
@@ -125,6 +126,8 @@ class GalleryBlockAdapter(private val glide: RequestManager, private val galleri
         }
 
         fun bind(galleryID: Int) {
+            val time = System.currentTimeMillis()
+
             val cache = Cache.getInstance(view.context, galleryID)
 
             val galleryBlock = cache.metadata.galleryBlock ?: return
@@ -219,13 +222,15 @@ class GalleryBlockAdapter(private val glide: RequestManager, private val galleri
                 }
 
                 galleryblock_tag_group.removeAllViews()
-                galleryBlock.relatedTags.forEach {
-                    galleryblock_tag_group.addView(TagChip(context, Tag.parse(it)).apply {
-                        setOnClickListener { view ->
-                            for (callback in onChipClickedHandler)
-                                callback.invoke((view as TagChip).tag)
-                        }
-                    })
+                CoroutineScope(Dispatchers.Default).launch {
+                    galleryBlock.relatedTags.forEach {
+                        TagChip(context, Tag.parse(it)).apply {
+                            setOnClickListener { view ->
+                                for (callback in onChipClickedHandler)
+                                    callback.invoke((view as TagChip).tag)
+                            }
+                        }.let { launch(Dispatchers.Main) { galleryblock_tag_group.addView(it) } }
+                    }
                 }
 
                 galleryblock_id.text = galleryBlock.id.toString()
@@ -274,6 +279,7 @@ class GalleryBlockAdapter(private val glide: RequestManager, private val galleri
                     galleryblock_tag_group.visibility = View.GONE
                 }
             }
+            Log.i("PUPILD", "${System.currentTimeMillis() - time}")
         }
     }
     class NextViewHolder(view: LinearLayout) : RecyclerView.ViewHolder(view)
