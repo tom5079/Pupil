@@ -18,15 +18,23 @@
 
 package xyz.quaver.pupil.ui
 
+import android.Manifest
 import android.content.ComponentName
 import android.content.Intent
 import android.content.ServiceConnection
+import android.content.pm.PackageManager
 import android.graphics.drawable.Animatable
 import android.graphics.drawable.Drawable
+import android.os.Build
 import android.os.Bundle
 import android.os.IBinder
 import android.view.*
+import android.view.animation.Animation
+import android.view.animation.AnticipateInterpolator
+import android.view.animation.OvershootInterpolator
+import android.view.animation.TranslateAnimation
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
 import androidx.preference.PreferenceManager
@@ -38,12 +46,15 @@ import androidx.vectordrawable.graphics.drawable.AnimatedVectorDrawableCompat
 import com.bumptech.glide.Glide
 import com.google.android.material.snackbar.Snackbar
 import com.google.firebase.crashlytics.FirebaseCrashlytics
+import com.google.mlkit.vision.face.Face
 import com.qtalk.recyclerviewfastscroller.RecyclerViewFastScroller
 import kotlinx.android.synthetic.main.activity_reader.*
 import kotlinx.android.synthetic.main.activity_reader.view.*
 import kotlinx.android.synthetic.main.dialog_numberpicker.view.*
+import kotlinx.android.synthetic.main.reader_eye_card.view.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import xyz.quaver.Code
 import xyz.quaver.pupil.R
@@ -52,11 +63,13 @@ import xyz.quaver.pupil.favorites
 import xyz.quaver.pupil.histories
 import xyz.quaver.pupil.services.DownloadService
 import xyz.quaver.pupil.util.Preferences
+import xyz.quaver.pupil.util.camera
+import xyz.quaver.pupil.util.closeCamera
 import xyz.quaver.pupil.util.downloader.Cache
 import xyz.quaver.pupil.util.downloader.DownloadManager
+import xyz.quaver.pupil.util.startCamera
 import java.util.*
 import kotlin.concurrent.schedule
-import kotlin.concurrent.timer
 
 class ReaderActivity : BaseActivity() {
 
@@ -89,11 +102,28 @@ class ReaderActivity : BaseActivity() {
     }
 
     private val timer = Timer()
-    private var autoTimer: Timer? = null
-
     private val snapHelper = PagerSnapHelper()
-
     private var menu: Menu? = null
+
+    private val requestPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
+        if (isGranted)
+            toggleCamera()
+        else
+            AlertDialog.Builder(this)
+                .setTitle(R.string.error)
+                .setMessage(R.string.camera_denied)
+                .setPositiveButton(android.R.string.ok) { _, _ ->}
+                .show()
+    }
+
+    enum class Eye {
+        LEFT,
+        RIGHT
+    }
+
+    private var cameraEnabled = false
+    private var eyeType: Eye? = null
+    private var eyeCount: Int = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -217,6 +247,18 @@ class ReaderActivity : BaseActivity() {
         }
 
         return true
+    }
+
+    override fun onResume() {
+        super.onResume()
+
+        if (cameraEnabled)
+            startCamera(this, cameraCallback)
+    }
+
+    override fun onPause() {
+        super.onPause()
+        closeCamera()
     }
 
     override fun onDestroy() {
@@ -368,6 +410,7 @@ class ReaderActivity : BaseActivity() {
                         animateDownloadFAB(false)
                     } else {
                         downloadManager.addDownloadFolder(galleryID)
+                        DownloadService.download(context, galleryID, true)
                         animateDownloadFAB(true)
                     }
                 }
@@ -377,31 +420,26 @@ class ReaderActivity : BaseActivity() {
         with(reader_fab_retry) {
             setImageResource(R.drawable.refresh)
             setOnClickListener {
-                downloader?.cancel(galleryID)
-                downloader?.download(galleryID)
+                DownloadService.download(context, galleryID)
             }
         }
 
         with(reader_fab_auto) {
-            setImageResource(R.drawable.clock_start)
+            setImageResource(R.drawable.eye_white)
             setOnClickListener {
-                if (autoTimer == null) {
-                    autoTimer = timer(initialDelay = 10000L, period = 10000L) {
-                        CoroutineScope(Dispatchers.Main).launch {
-                            with(this@ReaderActivity.reader_recyclerview) {
-                                val lastItem =
-                                    (layoutManager as LinearLayoutManager).findLastCompletelyVisibleItemPosition()
-
-                                if (lastItem < adapter!!.itemCount - 1)
-                                    (layoutManager as LinearLayoutManager).scrollToPosition(lastItem + 1)
-                            }
-                        }
+                when {
+                    ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED -> {
+                        toggleCamera()
                     }
-                    setImageResource(R.drawable.clock_end)
-                } else {
-                    autoTimer?.cancel()
-                    autoTimer = null
-                    setImageResource(R.drawable.clock_start)
+                    Build.VERSION.SDK_INT >= 23 && shouldShowRequestPermissionRationale(Manifest.permission.CAMERA) -> {
+                        AlertDialog.Builder(this@ReaderActivity)
+                            .setTitle(R.string.warning)
+                            .setMessage(R.string.camera_denied)
+                            .setPositiveButton(android.R.string.ok) { _, _ ->}
+                            .show()
+                    }
+                    else ->
+                        requestPermissionLauncher.launch(Manifest.permission.CAMERA)
                 }
             }
         }
@@ -454,6 +492,17 @@ class ReaderActivity : BaseActivity() {
         } else {
             snapHelper.attachToRecyclerView(reader_recyclerview)
             reader_recyclerview.layoutManager = LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, Preferences["rtl", false])
+
+            if (Preferences["rtl", false])
+                with(reader_progressbar) {
+                    scaleX = -1F
+                    translationX = 1F
+                }
+            else
+                with(reader_progressbar) {
+                    scaleX = 0F
+                    translationX = 0F
+                }
         }
 
         (reader_recyclerview.layoutManager as LinearLayoutManager).scrollToPositionWithOffset(currentPage-1, 0)
@@ -484,6 +533,125 @@ class ReaderActivity : BaseActivity() {
             } else {
                 setImageResource(R.drawable.ic_download)
                 labelText = getString(R.string.reader_fab_download)
+            }
+        }
+    }
+
+    val cameraCallback: (List<Face>) -> Unit = callback@{ faces ->
+        eye_card.dot.let {
+            it.visibility = View.VISIBLE
+            CoroutineScope(Dispatchers.Main).launch {
+                delay(50)
+                it.visibility = View.INVISIBLE
+            }
+        }
+
+        if (faces.size != 1)
+            ContextCompat.getDrawable(this, R.drawable.eye_off).let {
+                with(eye_card) {
+                    left_eye.setImageDrawable(it)
+                    right_eye.setImageDrawable(it)
+                }
+
+                return@callback
+            }
+
+        val (left, right) = Pair(
+            faces[0].rightEyeOpenProbability?.let { it > 0.4 } == true,
+            faces[0].leftEyeOpenProbability?.let { it > 0.4 } == true
+        )
+
+        with(eye_card) {
+            left_eye.setImageDrawable(
+                ContextCompat.getDrawable(
+                    context,
+                    if (left) R.drawable.eye else R.drawable.eye_closed
+                )
+            )
+            right_eye.setImageDrawable(
+                ContextCompat.getDrawable(
+                    context,
+                    if (right) R.drawable.eye else R.drawable.eye_closed
+                )
+            )
+        }
+
+        when {
+            // Both closed / opened
+            !left.xor(right) -> {
+                eyeType = null
+                eyeCount = 0
+            }
+            !left -> {
+                if (eyeType != Eye.LEFT) {
+                    eyeType = Eye.LEFT
+                    eyeCount = 0
+                }
+                eyeCount++
+            }
+            !right -> {
+                if (eyeType != Eye.RIGHT) {
+                    eyeType = Eye.RIGHT
+                    eyeCount = 0
+                }
+                eyeCount++
+            }
+        }
+
+        if (eyeCount > 3) {
+            (this@ReaderActivity.reader_recyclerview.layoutManager as LinearLayoutManager).let {
+                it.scrollToPositionWithOffset(when(eyeType!!) {
+                    Eye.RIGHT -> {
+                        if (it.reverseLayout) currentPage - 2 else currentPage
+                    }
+                    Eye.LEFT -> {
+                        if (it.reverseLayout) currentPage else currentPage - 2
+                    }
+                }, 0)
+            }
+
+            eyeType = null
+            eyeCount = 0
+        }
+    }
+
+    private fun toggleCamera() {
+        val eyes = this@ReaderActivity.eye_card
+        when (camera) {
+            null -> {
+                reader_fab_auto.labelText = getString(R.string.reader_fab_auto_cancel)
+                reader_fab_auto.setImageResource(R.drawable.eye_off_white)
+                eyes.apply {
+                    visibility = View.VISIBLE
+                    TranslateAnimation(0F, 0F, -100F, 0F).apply {
+                        duration = 500
+                        fillAfter = false
+                        interpolator = OvershootInterpolator()
+                    }.let { startAnimation(it) }
+                }
+                startCamera(this, cameraCallback)
+                cameraEnabled = true
+            }
+            else -> {
+                reader_fab_auto.labelText = getString(R.string.reader_fab_auto)
+                reader_fab_auto.setImageResource(R.drawable.eye_white)
+                eyes.apply {
+                    TranslateAnimation(0F, 0F, 0F, -100F).apply {
+                        duration = 500
+                        fillAfter = false
+                        interpolator = AnticipateInterpolator()
+                        setAnimationListener(object: Animation.AnimationListener {
+                            override fun onAnimationStart(p0: Animation?) {}
+                            override fun onAnimationRepeat(p0: Animation?) {}
+
+                            override fun onAnimationEnd(p0: Animation?) {
+                                eyes.visibility = View.GONE
+                            }
+                        })
+                    }.let { startAnimation(it) }
+                }
+                closeCamera()
+                cameraEnabled = false
             }
         }
     }

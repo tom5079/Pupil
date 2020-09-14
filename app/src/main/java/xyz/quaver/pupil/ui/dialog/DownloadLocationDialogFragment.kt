@@ -186,7 +186,7 @@ class DownloadLocationDialogFragment : DialogFragment() {
                         if (key == null) entries[key]!!.location_available.text = downloadFolder
                     }
                     else
-                        Preferences["download_folder"] = File(directory).canonicalPath
+                        Preferences["download_folder"] = File(directory).toURI().toString()
                 }
             }
             else -> super.onActivityResult(requestCode, resultCode, data)

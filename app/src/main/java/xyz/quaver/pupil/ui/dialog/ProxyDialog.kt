@@ -27,6 +27,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
+import androidx.appcompat.app.AlertDialog
 import kotlinx.android.synthetic.main.dialog_proxy.view.*
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -40,7 +41,7 @@ import xyz.quaver.pupil.util.getProxyInfo
 import xyz.quaver.pupil.util.proxyInfo
 import java.net.Proxy
 
-class ProxyDialog(context: Context) : Dialog(context) {
+class ProxyDialog(context: Context) : AlertDialog(context) {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         setContentView(build())

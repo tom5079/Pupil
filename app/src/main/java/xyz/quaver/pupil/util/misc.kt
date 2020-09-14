@@ -93,14 +93,14 @@ fun GalleryBlock.formatDownloadFolder(): String =
         formatMap.entries.fold(it) { str, (k, v) ->
             str.replace(k, v.invoke(this), true)
         }
-    }.replace("/", "")
+    }.replace(Regex("""[*\\|"?><:/]"""), "")
 
 fun GalleryBlock.formatDownloadFolderTest(format: String): String =
     format.let {
         formatMap.entries.fold(it) { str, (k, v) ->
             str.replace(k, v.invoke(this), true)
         }
-    }.replace("/", "")
+    }.replace(Regex("""[*\\|"?><:/]"""), "")
 
 val Reader.requestBuilders: List<Request.Builder>
     get() {
