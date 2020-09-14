@@ -80,8 +80,8 @@ class GalleryBlockAdapter(private val glide: RequestManager, private val galleri
 
             CoroutineScope(Dispatchers.Main).launch {
                 if (cache.metadata.reader == null || Preferences["cache_disable"]) {
-                    view.galleryblock_progressbar.visibility = View.GONE
-                    view.galleryblock_progress_complete.visibility = View.GONE
+                    view.galleryblock_progressbar_layout.visibility = View.GONE
+                    view.galleryblock_progress_complete.visibility = View.INVISIBLE
                     return@launch
                 }
 
@@ -91,8 +91,10 @@ class GalleryBlockAdapter(private val glide: RequestManager, private val galleri
                     progress = imageList.filterNotNull().size
                     max = imageList.size
 
-                    if (visibility == View.GONE)
-                        visibility = View.VISIBLE
+                    with(view.galleryblock_progressbar_layout) {
+                        if (visibility == View.GONE)
+                            visibility = View.VISIBLE
+                    }
 
                     if (progress == max) {
                         val downloadManager = DownloadManager.getInstance(context)
@@ -126,8 +128,6 @@ class GalleryBlockAdapter(private val glide: RequestManager, private val galleri
         }
 
         fun bind(galleryID: Int) {
-            val time = System.currentTimeMillis()
-
             val cache = Cache.getInstance(view.context, galleryID)
 
             val galleryBlock = cache.metadata.galleryBlock ?: return
@@ -223,14 +223,14 @@ class GalleryBlockAdapter(private val glide: RequestManager, private val galleri
 
                 galleryblock_tag_group.removeAllViews()
                 CoroutineScope(Dispatchers.Default).launch {
-                    galleryBlock.relatedTags.forEach {
+                    galleryBlock.relatedTags.map {
                         TagChip(context, Tag.parse(it)).apply {
                             setOnClickListener { view ->
                                 for (callback in onChipClickedHandler)
                                     callback.invoke((view as TagChip).tag)
                             }
-                        }.let { launch(Dispatchers.Main) { galleryblock_tag_group.addView(it) } }
-                    }
+                        }
+                    }.let { launch(Dispatchers.Main) { it.forEach { galleryblock_tag_group.addView(it) } } }
                 }
 
                 galleryblock_id.text = galleryBlock.id.toString()
@@ -279,7 +279,6 @@ class GalleryBlockAdapter(private val glide: RequestManager, private val galleri
                     galleryblock_tag_group.visibility = View.GONE
                 }
             }
-            Log.i("PUPILD", "${System.currentTimeMillis() - time}")
         }
     }
     class NextViewHolder(view: LinearLayout) : RecyclerView.ViewHolder(view)

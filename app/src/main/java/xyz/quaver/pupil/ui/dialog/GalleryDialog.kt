@@ -18,13 +18,13 @@
 
 package xyz.quaver.pupil.ui.dialog
 
-import android.app.Dialog
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.widget.LinearLayout.LayoutParams
+import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -53,7 +53,7 @@ import xyz.quaver.pupil.util.ItemClickSupport
 import xyz.quaver.pupil.util.downloader.Cache
 import xyz.quaver.pupil.util.wordCapitalize
 
-class GalleryDialog(context: Context, private val glide: RequestManager, private val galleryID: Int) : Dialog(context) {
+class GalleryDialog(context: Context, private val glide: RequestManager, private val galleryID: Int) : AlertDialog(context) {
 
     val onChipClickedHandler = ArrayList<((Tag) -> (Unit))>()
 

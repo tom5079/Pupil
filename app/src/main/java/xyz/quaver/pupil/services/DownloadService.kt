@@ -28,6 +28,7 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.app.TaskStackBuilder
 import androidx.core.content.ContextCompat
+import com.google.firebase.crashlytics.FirebaseCrashlytics
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -42,6 +43,7 @@ import xyz.quaver.pupil.R
 import xyz.quaver.pupil.client
 import xyz.quaver.pupil.interceptors
 import xyz.quaver.pupil.ui.ReaderActivity
+import xyz.quaver.pupil.util.Preferences
 import xyz.quaver.pupil.util.downloader.Cache
 import xyz.quaver.pupil.util.downloader.DownloadManager
 import xyz.quaver.pupil.util.ellipsize
@@ -308,6 +310,18 @@ class DownloadService : Service() {
         }
 
         progress.put(galleryID, MutableList(reader.galleryInfo.files.size) { 0F })
+
+        FirebaseCrashlytics.getInstance().log(
+            """
+                GALLERYID: $galleryID
+                CACHE: ${cache.findFile(".metadata")}
+                PATTERN: ${Preferences["download_folder_name", ""]}
+                READER ID: ${reader.galleryInfo.id}
+                READER SIZE: ${reader.galleryInfo.files.size}
+                CACHE READER ID: ${cache.metadata.reader?.galleryInfo?.id}}
+                CACHE READER SIZE: ${cache.metadata.reader?.galleryInfo?.files?.size}
+            """.trimIndent()
+        )
 
         cache.metadata.imageList?.let {
             if (progress[galleryID]?.size != it.size) {
