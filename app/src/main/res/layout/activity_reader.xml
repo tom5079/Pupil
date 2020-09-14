@@ -55,28 +55,11 @@
         android:layout_gravity="center_horizontal"
         android:layout_margin="8dp"/>
 
-    <LinearLayout
+    <ProgressBar
+        android:id="@+id/reader_download_progressbar"
+        style="@style/Widget.AppCompat.ProgressBar.Horizontal"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical">
-
-        <ProgressBar
-            android:id="@+id/reader_download_progressbar"
-            style="@style/Widget.AppCompat.ProgressBar.Horizontal"
-            android:layout_width="match_parent"
-            android:layout_height="4dp"
-            android:layout_gravity="center"/>
-
-        <ProgressBar
-            android:id="@+id/reader_progressbar"
-            style="@style/Widget.AppCompat.ProgressBar.Horizontal"
-            android:layout_width="match_parent"
-            android:layout_height="4dp"
-            android:progressTint="@color/material_green_a700"
-            tools:ignore="UnusedAttribute"
-            android:visibility="gone"/>
-
-    </LinearLayout>
+        android:layout_height="4dp"/>
     
     <com.github.clans.fab.FloatingActionMenu
         android:id="@+id/reader_fab"

@@ -82,11 +82,6 @@ class ReaderActivity : BaseActivity() {
         field = value
 
         (reader_recyclerview.adapter as ReaderAdapter).isFullScreen = value
-
-        reader_progressbar.visibility = when {
-            value -> View.VISIBLE
-            else -> View.GONE
-        }
     }
 
     private lateinit var cache: Cache
@@ -124,6 +119,7 @@ class ReaderActivity : BaseActivity() {
     private var cameraEnabled = false
     private var eyeType: Eye? = null
     private var eyeCount: Int = 0
+    private var eyeTime: Long = 0L
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -328,7 +324,6 @@ class ReaderActivity : BaseActivity() {
             runOnUiThread {
                 reader_download_progressbar.max = reader_recyclerview.adapter?.itemCount ?: 0
                 reader_download_progressbar.progress = downloader.progress[galleryID]?.count { it.isInfinite() } ?: 0
-                reader_progressbar.max = reader_recyclerview.adapter?.itemCount ?: 0
 
                 if (title == getString(R.string.reader_loading)) {
                     val reader = cache.metadata.reader
@@ -391,7 +386,7 @@ class ReaderActivity : BaseActivity() {
                         return
                     currentPage = layoutManager.findFirstVisibleItemPosition()+1
                     menu?.findItem(R.id.reader_menu_page_indicator)?.title = "$currentPage/${recyclerView.adapter!!.itemCount}"
-                    this@ReaderActivity.reader_progressbar.progress = currentPage
+
                 }
             })
         }
@@ -492,17 +487,6 @@ class ReaderActivity : BaseActivity() {
         } else {
             snapHelper.attachToRecyclerView(reader_recyclerview)
             reader_recyclerview.layoutManager = LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, Preferences["rtl", false])
-
-            if (Preferences["rtl", false])
-                with(reader_progressbar) {
-                    scaleX = -1F
-                    translationX = 1F
-                }
-            else
-                with(reader_progressbar) {
-                    scaleX = 0F
-                    translationX = 0F
-                }
         }
 
         (reader_recyclerview.layoutManager as LinearLayoutManager).scrollToPositionWithOffset(currentPage-1, 0)
@@ -581,11 +565,13 @@ class ReaderActivity : BaseActivity() {
             !left.xor(right) -> {
                 eyeType = null
                 eyeCount = 0
+                eyeTime = 0L
             }
             !left -> {
                 if (eyeType != Eye.LEFT) {
                     eyeType = Eye.LEFT
                     eyeCount = 0
+                    eyeTime = System.currentTimeMillis()
                 }
                 eyeCount++
             }
@@ -593,12 +579,13 @@ class ReaderActivity : BaseActivity() {
                 if (eyeType != Eye.RIGHT) {
                     eyeType = Eye.RIGHT
                     eyeCount = 0
+                    eyeTime = System.currentTimeMillis()
                 }
                 eyeCount++
             }
         }
 
-        if (eyeCount > 3) {
+        if (eyeCount > 3 && System.currentTimeMillis() - eyeTime > 500) {
             (this@ReaderActivity.reader_recyclerview.layoutManager as LinearLayoutManager).let {
                 it.scrollToPositionWithOffset(when(eyeType!!) {
                     Eye.RIGHT -> {
@@ -612,6 +599,7 @@ class ReaderActivity : BaseActivity() {
 
             eyeType = null
             eyeCount = 0
+            eyeTime = 0L
         }
     }
 
