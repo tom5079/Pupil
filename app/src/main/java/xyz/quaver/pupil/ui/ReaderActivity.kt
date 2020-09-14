@@ -410,6 +410,7 @@ class ReaderActivity : BaseActivity() {
                         animateDownloadFAB(false)
                     } else {
                         downloadManager.addDownloadFolder(galleryID)
+                        DownloadService.download(context, galleryID, true)
                         animateDownloadFAB(true)
                     }
                 }
@@ -419,8 +420,7 @@ class ReaderActivity : BaseActivity() {
         with(reader_fab_retry) {
             setImageResource(R.drawable.refresh)
             setOnClickListener {
-                downloader?.cancel(galleryID)
-                downloader?.download(galleryID)
+                DownloadService.download(context, galleryID)
             }
         }
 

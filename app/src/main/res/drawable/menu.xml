@@ -1,4 +1,4 @@
 <!--drawable/menu.xml-->
 <vector xmlns:android="http://schemas.android.com/apk/res/android" android:height="24dp" android:width="24dp" android:viewportWidth="24" android:viewportHeight="24">
-    <path android:fillColor="#fff" android:pathData="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2z"/>
+    <path android:fillColor="?attr/colorControlNormal" android:pathData="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2z"/>
 </vector>

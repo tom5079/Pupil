@@ -339,7 +339,7 @@ class DownloadService : Service() {
 
         if (isCompleted(galleryID)) {
             if (DownloadManager.getInstance(this@DownloadService)
-                    .getDownloadFolder(galleryID) != null)
+                    .getDownloadFolder(galleryID) != null )
                 Cache.getInstance(this@DownloadService, galleryID).moveToDownload()
 
             notificationManager.cancel(galleryID)
