@@ -132,7 +132,7 @@
     <string name="settings_user_id">유저 ID</string>
     <string name="settings_user_id_toast">유저 ID를 클립보드에 복사했습니다</string>
     <string name="reader_fab_retry">재시도</string>
-    <string name="reader_fab_auto">자동 스크롤</string>
+    <string name="reader_fab_auto">눈 깜빡임 감지 스크롤</string>
     <string name="search_all">모든 갤러리 검색</string>
     <string name="settings_rtl">좌측으로 페이지 넘기기</string>
     <string name="settings_manage_favorites">즐겨찾기 관리</string>
@@ -148,4 +148,8 @@
     <string name="settings_oss">오픈 소스 라이선스</string>
     <string name="search_show_histories">검색 기록 보기</string>
     <string name="search_show_tags">즐겨찾기 태그 보기</string>
+    <string name="reader_fab_auto_cancel">눈 깜빡임 감지 중지</string>
+    <string name="camera_denied">카메라 권한이 거부되었기 때문에 눈 깜빡임 감지가 불가능합니다</string>
+    <string name="no_camera">이 장치에는 전면 카메라가 없습니다</string>
+    <string name="error">오류</string>
 </resources>

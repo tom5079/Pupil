@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~     Pupil, Hitomi.la viewer for Android
+  ~     Copyright (C) 2020  tom5079
+  ~
+  ~     This program is free software: you can redistribute it and/or modify
+  ~     it under the terms of the GNU General Public License as published by
+  ~     the Free Software Foundation, either version 3 of the License, or
+  ~     (at your option) any later version.
+  ~
+  ~     This program is distributed in the hope that it will be useful,
+  ~     but WITHOUT ANY WARRANTY; without even the implied warranty of
+  ~     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  ~     GNU General Public License for more details.
+  ~
+  ~     You should have received a copy of the GNU General Public License
+  ~     along with this program.  If not, see <http://www.gnu.org/licenses/>.
+  -->
+
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    app:cardCornerRadius="16dp">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content">
+
+        <ImageView
+            android:id="@+id/left_eye"
+            android:layout_width="8dp"
+            android:layout_height="8dp"
+            app:srcCompat="@drawable/eye_off"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintLeft_toLeftOf="parent"
+            android:layout_margin="4dp"
+            tools:ignore="ContentDescription" />
+
+        <ImageView
+            android:id="@+id/right_eye"
+            android:layout_width="8dp"
+            android:layout_height="8dp"
+            app:srcCompat="@drawable/eye_off"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintLeft_toRightOf="@id/left_eye"
+            app:layout_constraintRight_toRightOf="parent"
+            android:layout_margin="4dp"
+            tools:ignore="ContentDescription" />
+
+        <ImageView
+            android:id="@+id/dot"
+            android:layout_width="4dp"
+            android:layout_height="4dp"
+            android:visibility="invisible"
+            app:srcCompat="@drawable/dot"
+            app:layout_constraintLeft_toLeftOf="@id/left_eye"
+            app:layout_constraintRight_toRightOf="@id/right_eye"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:ignore="ContentDescription" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</androidx.cardview.widget.CardView>

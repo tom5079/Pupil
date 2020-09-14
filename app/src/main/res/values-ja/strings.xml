@@ -132,7 +132,7 @@
     <string name="settings_user_id">ユーザーID</string>
     <string name="settings_user_id_toast">ユーザーIDをクリップボードにコピーしました</string>
     <string name="reader_fab_retry">リトライ</string>
-    <string name="reader_fab_auto">自動スクロール</string>
+    <string name="reader_fab_auto">まばたき検知スクロール</string>
     <string name="search_all">全てのギャラリーを対象に検索</string>
     <string name="settings_rtl">綴じ方向を左にする</string>
     <string name="settings_manage_favorites">ブックマーク管理</string>
@@ -148,4 +148,8 @@
     <string name="settings_oss">オープンソースライセンス</string>
     <string name="search_show_tags">お気に入りのタグを見る</string>
     <string name="search_show_histories">履歴を見る</string>
+    <string name="reader_fab_auto_cancel">まばたき検知を中止</string>
+    <string name="camera_denied">カメラ権限が拒否されているため、まばたき検知使用できません</string>
+    <string name="no_camera">この機器には前面カメラが装着されていません</string>
+    <string name="error">エラー</string>
 </resources>
