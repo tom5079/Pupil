@@ -16,13 +16,14 @@
  *     along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-@file:Suppress("DEPRECATION")
+@file:Suppress("DEPRECATION", "Recycle")
 
 package xyz.quaver.pupil.util
 
 import android.content.Context
 import android.content.pm.PackageManager
 import android.graphics.ImageFormat
+import android.graphics.SurfaceTexture
 import android.hardware.Camera
 import android.view.Surface
 import android.view.WindowManager
@@ -68,6 +69,7 @@ private fun getRotation(context: Context, cameraID: Int): Int {
 }
 
 var camera: Camera? = null
+var surfaceTexture: SurfaceTexture? = null
 private val detector = FaceDetection.getClient(
     FaceDetectorOptions.Builder()
         .setClassificationMode(FaceDetectorOptions.CLASSIFICATION_MODE_ALL)
@@ -75,7 +77,7 @@ private val detector = FaceDetection.getClient(
 )
 private var process: Task<List<Face>>? = null
 
-fun testCamera(context: Context, callback: (List<Face>) -> Unit) {
+fun startCamera(context: Context, callback: (List<Face>) -> Unit) {
     if (camera != null) closeCamera()
 
     val cameraID = openFrontCamera().let { (cam, cameraID) ->
@@ -88,9 +90,13 @@ fun testCamera(context: Context, callback: (List<Face>) -> Unit) {
         parameters = parameters.apply {
             setPreviewSize(640, 480)
             previewFormat = ImageFormat.NV21
-            flashMode = Camera.Parameters.FLASH_MODE_OFF
         }
-        setPreviewCallback { bytes, camera ->
+
+        setPreviewTexture(surfaceTexture ?: SurfaceTexture(0).also {
+            surfaceTexture = it
+        })
+        startPreview()
+        setPreviewCallback { bytes, _ ->
             if (process?.isComplete == false)
                 return@setPreviewCallback
 
@@ -100,14 +106,14 @@ fun testCamera(context: Context, callback: (List<Face>) -> Unit) {
             process = detector.process(image)
                 .addOnSuccessListener(callback)
         }
-
-        startPreview()
     }
 }
 
 fun closeCamera() {
     camera?.setPreviewCallback(null)
     camera?.stopPreview()
+    surfaceTexture?.release()
+    surfaceTexture = null
     camera?.release()
     camera = null
 }

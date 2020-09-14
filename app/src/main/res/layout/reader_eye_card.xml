@@ -55,7 +55,7 @@
             android:id="@+id/dot"
             android:layout_width="4dp"
             android:layout_height="4dp"
-            android:visibility="gone"
+            android:visibility="invisible"
             app:srcCompat="@drawable/dot"
             app:layout_constraintLeft_toLeftOf="@id/left_eye"
             app:layout_constraintRight_toRightOf="@id/right_eye"

@@ -106,7 +106,7 @@
             android:id="@+id/reader_fab_auto"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            app:srcCompat="@drawable/clock_start"
+            app:srcCompat="@drawable/eye_white"
             app:fab_label="@string/reader_fab_auto"
             app:fab_size="mini"/>
 
