@@ -162,16 +162,14 @@
 				android:layout_marginLeft="8dp"
 				android:layout_marginBottom="8dp"
 				app:layout_constraintTop_toBottomOf="@id/galleryblock_type"
-				app:layout_constraintBottom_toTopOf="@id/galleryblock_padding"
 				app:layout_constraintLeft_toRightOf="@id/galleryblock_thumbnail" />
 
-			<View
-				android:id="@+id/galleryblock_padding"
-				android:layout_width="0dp"
-				android:layout_height="0dp"
-				app:layout_constraintRight_toRightOf="parent"
-				app:layout_constraintTop_toBottomOf="@id/galleryblock_language"
-				app:layout_constraintBottom_toTopOf="@id/galleryblock_tag_group"/>
+			<androidx.constraintlayout.widget.Barrier
+				android:id="@+id/padding"
+				android:layout_width="wrap_content"
+				android:layout_height="wrap_content"
+				app:barrierDirection="bottom"
+				app:constraint_referenced_ids="galleryblock_language"/>
 
 			<com.google.android.material.chip.ChipGroup
 				android:id="@+id/galleryblock_tag_group"
@@ -181,7 +179,7 @@
 				android:layout_marginTop="16dp"
 				android:layout_marginBottom="16dp"
 				app:chipSpacing="4dp"
-				app:layout_constraintTop_toBottomOf="@id/galleryblock_padding"
+				app:layout_constraintTop_toBottomOf="@id/padding"
 				app:layout_constraintLeft_toRightOf="@id/galleryblock_thumbnail"
 				app:layout_constraintRight_toRightOf="parent"/>
 

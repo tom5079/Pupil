@@ -59,6 +59,8 @@ class SavedSet <T: Any> (private val file: File, private val any: T, private val
     override fun add(element: T): Boolean {
         load()
 
+        set.remove(element)
+
         return set.add(element).also {
             save()
         }
@@ -66,6 +68,8 @@ class SavedSet <T: Any> (private val file: File, private val any: T, private val
 
     override fun addAll(elements: Collection<T>): Boolean {
         load()
+
+        set.removeAll(elements)
 
         return set.addAll(elements).also {
             save()
