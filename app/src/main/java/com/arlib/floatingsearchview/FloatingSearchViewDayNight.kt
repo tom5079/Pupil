@@ -82,9 +82,12 @@ class FloatingSearchViewDayNight @JvmOverloads constructor(context: Context, att
     override fun onSuggestionClicked(searchSuggestion: SearchSuggestion?) {
         when (searchSuggestion) {
             is TagSuggestion -> {
+                val tag = "${searchSuggestion.n}:${searchSuggestion.s.replace(Regex("\\s"), "_")}"
                 with(searchInputView.text) {
-                    delete(if (lastIndexOf(' ') == -1) 0 else lastIndexOf(' ')+1, length)
-                    append("${searchSuggestion.n}:${searchSuggestion.s.replace(Regex("\\s"), "_")} ")
+                    delete(if (lastIndexOf(' ') == -1) 0 else lastIndexOf(' ') + 1, length)
+
+                    if (!this.contains(tag))
+                        append("$tag ")
                 }
             }
             is Suggestion -> {
