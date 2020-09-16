@@ -29,10 +29,6 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.cardview.widget.CardView
 import androidx.core.view.GravityCompat
-import com.arlib.floatingsearchview.FloatingSearchView
-import com.arlib.floatingsearchview.FloatingSearchViewDayNight
-import com.arlib.floatingsearchview.suggestions.model.SearchSuggestion
-import com.arlib.floatingsearchview.util.view.SearchInputView
 import com.bumptech.glide.Glide
 import com.google.android.material.appbar.AppBarLayout
 import com.google.android.material.navigation.NavigationView
@@ -41,6 +37,9 @@ import com.google.firebase.crashlytics.FirebaseCrashlytics
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.activity_main_content.*
 import kotlinx.coroutines.*
+import xyz.quaver.floatingsearchview.FloatingSearchView
+import xyz.quaver.floatingsearchview.suggestions.model.SearchSuggestion
+import xyz.quaver.floatingsearchview.util.view.SearchInputView
 import xyz.quaver.hitomi.doSearch
 import xyz.quaver.hitomi.getGalleryIDsFromNozomi
 import xyz.quaver.hitomi.getSuggestionsForQuery
@@ -60,7 +59,6 @@ import kotlin.math.roundToInt
 
 class MainActivity :
     BaseActivity(),
-    FloatingSearchView.OnMenuItemClickListener,
     NavigationView.OnNavigationItemSelectedListener
 {
 
@@ -626,8 +624,8 @@ class MainActivity :
 
     private var suggestionJob : Job? = null
     private fun setupSearchBar() {
-        with(main_searchview as FloatingSearchViewDayNight) {
-            setOnLeftMenuClickListener(object: FloatingSearchView.OnLeftMenuClickListener {
+        with(main_searchview as xyz.quaver.pupil.ui.view.FloatingSearchView) {
+            onMenuStatusChangeListener = object: FloatingSearchView.OnMenuStatusChangeListener {
                 override fun onMenuOpened() {
                     (this@MainActivity.main_recyclerview.adapter as GalleryBlockAdapter).closeAllItems()
                 }
@@ -635,7 +633,7 @@ class MainActivity :
                 override fun onMenuClosed() {
                     //Do Nothing
                 }
-            })
+            }
 
             onHistoryDeleteClickedListener = {
                 searchHistory.remove(it)
@@ -646,9 +644,11 @@ class MainActivity :
                 swapSuggestions(defaultSuggestions)
             }
 
-            setOnMenuItemClickListener(this@MainActivity)
+            onMenuItemClickListener = {
+                onActionMenuItemSelected(it)
+            }
 
-            setOnQueryChangeListener { _, query ->
+            onQueryChangeListener = lambda@{ _, query ->
                 this@MainActivity.query = query
 
                 suggestionJob?.cancel()
@@ -656,7 +656,7 @@ class MainActivity :
                 if (query.isEmpty() or query.endsWith(' ')) {
                     swapSuggestions(defaultSuggestions)
 
-                    return@setOnQueryChangeListener
+                    return@lambda
                 }
 
                 swapSuggestions(listOf(LoadingSuggestion(getText(R.string.reader_loading).toString())))
@@ -682,7 +682,7 @@ class MainActivity :
                 }
             }
 
-            setOnFocusChangeListener(object: FloatingSearchView.OnFocusChangeListener {
+            onFocusChangeListener = object: FloatingSearchView.OnFocusChangeListener {
                 override fun onFocus() {
                     if (query.isEmpty() or query.endsWith(' '))
                         swapSuggestions(defaultSuggestions)
@@ -699,13 +699,13 @@ class MainActivity :
                         loadBlocks()
                     }
                 }
-            })
+            }
 
             attachNavigationDrawerToMenuButton(main_drawer_layout)
         }
     }
 
-    override fun onActionMenuItemSelected(item: MenuItem?) {
+    fun onActionMenuItemSelected(item: MenuItem?) {
         when(item?.itemId) {
             R.id.main_menu_settings -> startActivityForResult(Intent(this@MainActivity, SettingsActivity::class.java), R.id.request_settings.normalizeID())
             R.id.main_menu_thin -> {
