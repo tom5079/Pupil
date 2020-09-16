@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
   ~     Pupil, Hitomi.la viewer for Android
-  ~     Copyright (C) 2019  tom5079
+  ~     Copyright (C) 2020  tom5079
   ~
   ~     This program is free software: you can redistribute it and/or modify
   ~     it under the terms of the GNU General Public License as published by
@@ -32,7 +32,7 @@
             android:id="@+id/main_appbar_layout"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="@color/transparent"
+            android:background="@android:color/transparent"
             android:visibility="invisible"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintLeft_toLeftOf="parent">
@@ -41,7 +41,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="64dp"
                 android:visibility="invisible"
-                android:background="@color/transparent"
+                android:background="@android:color/transparent"
                 app:layout_scrollFlags="scroll|enterAlways"
                 app:layout_behavior="@string/appbar_scrolling_view_behavior"/>
 
@@ -74,7 +74,7 @@
             app:hideHandleAfter="1000"
             app:trackMarginStart="64dp"
             app:addLastItemPadding="true"
-            app:popupDrawable="@color/transparent">
+            app:popupDrawable="@android:color/transparent">
 
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/main_recyclerview"
@@ -126,21 +126,20 @@
 
     </androidx.coordinatorlayout.widget.CoordinatorLayout>
 
-    <com.arlib.floatingsearchview.FloatingSearchViewDayNight
+    <xyz.quaver.pupil.ui.view.FloatingSearchView
         android:id="@+id/main_searchview"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        app:floatingSearch_suggestionRightIconColor="@color/material_orange_500"
-        app:floatingSearch_searchBarMarginLeft="8dp"
-        app:floatingSearch_searchBarMarginRight="8dp"
-        app:floatingSearch_searchBarMarginTop="8dp"
-        app:floatingSearch_searchHint="@string/search_hint"
-        app:floatingSearch_suggestionsListAnimDuration="250"
-        app:floatingSearch_showSearchKey="true"
-        app:floatingSearch_leftActionMode="showHamburger"
-        app:floatingSearch_menu="@menu/main"
-        app:floatingSearch_dismissOnOutsideTouch="true"
-        app:floatingSearch_close_search_on_keyboard_dismiss="true"
+        app:searchBarMarginLeft="6dp"
+        app:searchBarMarginRight="6dp"
+        app:searchBarMarginTop="6dp"
+        app:searchHint="@string/search_hint"
+        app:suggestionAnimDuration="250"
+        app:showSearchKey="true"
+        app:leftActionMode="showHamburger"
+        app:menu="@menu/main"
+        app:dismissOnOutsideTouch="true"
+        app:close_search_on_keyboard_dismiss="true"
         tools:ignore="NewApi" />
 
 </RelativeLayout>

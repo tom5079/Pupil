@@ -23,7 +23,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/dark_gray"
+    android:background="@android:color/darker_gray"
     tools:context=".ui.ReaderActivity">
 
     <com.qtalk.recyclerviewfastscroller.RecyclerViewFastScroller
@@ -37,7 +37,7 @@
         app:hideHandleAfter="1000"
         app:handleHasFixedSize="true"
         app:addLastItemPadding="true"
-        app:popupDrawable="@color/transparent">
+        app:popupDrawable="@android:color/transparent">
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/reader_recyclerview"
