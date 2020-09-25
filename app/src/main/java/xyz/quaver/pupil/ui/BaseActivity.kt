@@ -23,6 +23,7 @@ import android.content.Intent
 import android.os.Bundle
 import android.os.PersistableBundle
 import android.view.WindowManager
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.CallSuper
 import androidx.appcompat.app.AppCompatActivity
 import xyz.quaver.pupil.R
@@ -33,6 +34,13 @@ import xyz.quaver.pupil.util.normalizeID
 open class BaseActivity : AppCompatActivity() {
 
     private var locked: Boolean = true
+
+    private val lockLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+        if (it.resultCode == Activity.RESULT_OK)
+            locked = false
+        else
+            finish()
+    }
 
     @CallSuper
     override fun onCreate(savedInstanceState: Bundle?, persistentState: PersistableBundle?) {
@@ -53,20 +61,7 @@ open class BaseActivity : AppCompatActivity() {
             window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
 
         if (locked)
-            startActivityForResult(Intent(this, LockActivity::class.java), R.id.request_lock.normalizeID())
-    }
-
-    @CallSuper
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        when(requestCode) {
-            R.id.request_lock.normalizeID() -> {
-                if (resultCode == Activity.RESULT_OK)
-                    locked = false
-                else
-                    finish()
-            }
-            else -> super.onActivityResult(requestCode, resultCode, data)
-        }
+            lockLauncher.launch(Intent(this, LockActivity::class.java))
     }
 
 }

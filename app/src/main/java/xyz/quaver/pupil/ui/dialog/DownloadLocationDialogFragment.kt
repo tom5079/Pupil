@@ -26,11 +26,13 @@ import android.os.Build
 import android.os.Bundle
 import android.view.View
 import android.widget.LinearLayout
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
 import androidx.fragment.app.DialogFragment
 import com.google.android.material.snackbar.Snackbar
+import kotlinx.android.synthetic.main.dialog_download_folder_name.view.*
 import kotlinx.android.synthetic.main.item_download_folder.view.*
 import net.rdrei.android.dirchooser.DirectoryChooserActivity
 import net.rdrei.android.dirchooser.DirectoryChooserConfig
@@ -40,11 +42,69 @@ import xyz.quaver.pupil.util.Preferences
 import xyz.quaver.pupil.util.byteToString
 import xyz.quaver.pupil.util.downloader.DownloadManager
 import xyz.quaver.pupil.util.migrate
-import xyz.quaver.pupil.util.normalizeID
 import java.io.File
 
 class DownloadLocationDialogFragment : DialogFragment() {
     private val entries = mutableMapOf<File?, View>()
+
+    private val requestDownloadFolderLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+        if (it.resultCode == Activity.RESULT_OK) {
+            val activity = activity ?: return@registerForActivityResult
+            val context = context ?: return@registerForActivityResult
+            val dialog = dialog ?: return@registerForActivityResult
+
+            it.data?.data?.also { uri ->
+                val takeFlags: Int =
+                    activity.intent.flags and
+                            (Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT)
+                    context.contentResolver.takePersistableUriPermission(uri, takeFlags)
+
+                if (kotlin.runCatching { FileX(context, uri).canWrite() }.getOrDefault(false)) {
+                    entries[null]?.message?.text = uri.toString()
+                    Preferences["download_folder"] = uri.toString()
+                } else {
+                    Snackbar.make(
+                        dialog.window!!.decorView.rootView,
+                        R.string.settings_download_folder_not_writable,
+                        Snackbar.LENGTH_LONG
+                    ).show()
+
+                    val downloadFolder = DownloadManager.getInstance(context).downloadFolder.canonicalPath
+                    val key = entries.keys.firstOrNull { it?.canonicalPath == downloadFolder }
+                    entries[key]!!.button.isChecked = true
+                    if (key == null) entries[key]!!.location_available.text = downloadFolder
+                }
+            }
+        }
+    }
+
+    private val requestDownloadFolderOldLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+        val context = context ?: return@registerForActivityResult
+        val dialog = dialog ?: return@registerForActivityResult
+
+        if (it.resultCode == DirectoryChooserActivity.RESULT_CODE_DIR_SELECTED) {
+            val directory = it.data?.getStringExtra(DirectoryChooserActivity.RESULT_SELECTED_DIR)!!
+
+            if (!File(directory).canWrite()) {
+                Snackbar.make(
+                    dialog.window!!.decorView.rootView,
+                    R.string.settings_download_folder_not_writable,
+                    Snackbar.LENGTH_LONG
+                ).show()
+
+                val downloadFolder = DownloadManager.getInstance(context).downloadFolder.canonicalPath
+                val key = entries.keys.firstOrNull { it?.canonicalPath == downloadFolder }
+                entries[key]!!.button.isChecked = true
+                if (key == null) entries[key]!!.location_available.text = downloadFolder
+            }
+            else {
+                entries[null]?.location_available?.text = directory
+                Preferences["download_folder"] = File(directory).toURI().toString()
+            }
+        }
+    }
 
     @SuppressLint("InflateParams")
     private fun build() : View? {
@@ -90,7 +150,7 @@ class DownloadLocationDialogFragment : DialogFragment() {
                         putExtra("android.content.extra.SHOW_ADVANCED", true)
                     }
 
-                    startActivityForResult(intent, R.id.request_download_folder.normalizeID())
+                    requestDownloadFolderLauncher.launch(intent)
                 } else {    // Can't use SAF on old Androids!
                     val config = DirectoryChooserConfig.builder()
                         .newDirectoryName("Pupil")
@@ -101,7 +161,7 @@ class DownloadLocationDialogFragment : DialogFragment() {
                         putExtra(DirectoryChooserActivity.EXTRA_CONFIG, config)
                     }
 
-                    startActivityForResult(intent, R.id.request_download_folder_old.normalizeID())
+                    requestDownloadFolderOldLauncher.launch(intent)
                 }
             }
             entries[null] = this
@@ -132,65 +192,4 @@ class DownloadLocationDialogFragment : DialogFragment() {
 
         return builder.create()
     }
-
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        when (requestCode) {
-            R.id.request_download_folder.normalizeID() -> {
-                if (resultCode == Activity.RESULT_OK) {
-                    val activity = activity ?: return
-                    val context = context ?: return
-                    val dialog = dialog ?: return
-
-                    data?.data?.also { uri ->
-                        val takeFlags: Int =
-                            activity.intent.flags and
-                                    (Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
-
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT)
-                            context.contentResolver.takePersistableUriPermission(uri, takeFlags)
-
-                        if (kotlin.runCatching { FileX(context, uri).canWrite() }.getOrDefault(false))
-                            Preferences["download_folder"] = uri.toString()
-                        else {
-                            Snackbar.make(
-                                dialog.window!!.decorView.rootView,
-                                R.string.settings_download_folder_not_writable,
-                                Snackbar.LENGTH_LONG
-                            ).show()
-
-                            val downloadFolder = DownloadManager.getInstance(context).downloadFolder.canonicalPath
-                            val key = entries.keys.firstOrNull { it?.canonicalPath == downloadFolder }
-                            entries[key]!!.button.isChecked = true
-                            if (key == null) entries[key]!!.location_available.text = downloadFolder
-                        }
-                    }
-                }
-            }
-            R.id.request_download_folder_old.normalizeID() -> {
-                val context = context ?: return
-                val dialog = dialog ?: return
-
-                if (resultCode == DirectoryChooserActivity.RESULT_CODE_DIR_SELECTED) {
-                    val directory = data?.getStringExtra(DirectoryChooserActivity.RESULT_SELECTED_DIR)!!
-
-                    if (!File(directory).canWrite()) {
-                        Snackbar.make(
-                            dialog.window!!.decorView.rootView,
-                            R.string.settings_download_folder_not_writable,
-                            Snackbar.LENGTH_LONG
-                        ).show()
-
-                        val downloadFolder = DownloadManager.getInstance(context).downloadFolder.canonicalPath
-                        val key = entries.keys.firstOrNull { it?.canonicalPath == downloadFolder }
-                        entries[key]!!.button.isChecked = true
-                        if (key == null) entries[key]!!.location_available.text = downloadFolder
-                    }
-                    else
-                        Preferences["download_folder"] = File(directory).toURI().toString()
-                }
-            }
-            else -> super.onActivityResult(requestCode, resultCode, data)
-        }
-    }
-
 }

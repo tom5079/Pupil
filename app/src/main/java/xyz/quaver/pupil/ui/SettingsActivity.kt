@@ -18,24 +18,10 @@
 
 package xyz.quaver.pupil.ui
 
-import android.annotation.SuppressLint
-import android.app.Activity
-import android.content.Intent
-import android.content.pm.PackageManager
 import android.os.Bundle
 import android.view.MenuItem
-import android.view.WindowManager
-import androidx.appcompat.app.AppCompatActivity
-import com.google.android.material.snackbar.Snackbar
-import kotlinx.serialization.decodeFromString
-import kotlinx.serialization.json.Json
 import xyz.quaver.pupil.R
-import xyz.quaver.pupil.favorites
-import xyz.quaver.pupil.ui.fragment.LockSettingsFragment
 import xyz.quaver.pupil.ui.fragment.SettingsFragment
-import xyz.quaver.pupil.util.Preferences
-import xyz.quaver.pupil.util.normalizeID
-import java.nio.charset.Charset
 
 class SettingsActivity : BaseActivity() {
 
@@ -55,20 +41,5 @@ class SettingsActivity : BaseActivity() {
         }
 
         return true
-    }
-
-    @SuppressLint("InlinedApi")
-    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
-        when (requestCode) {
-            R.id.request_write_permission_and_saf.normalizeID() -> {
-                if (grantResults.firstOrNull() == PackageManager.PERMISSION_GRANTED) {
-                    val intent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).apply {
-                        putExtra("android.content.extra.SHOW_ADVANCED", true)
-                    }
-
-                    startActivityForResult(intent, R.id.request_download_folder.normalizeID())
-                }
-            }
-        }
     }
 }
