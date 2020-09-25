@@ -39,6 +39,7 @@ import kotlinx.android.synthetic.main.activity_main_content.*
 import kotlinx.coroutines.*
 import xyz.quaver.floatingsearchview.FloatingSearchView
 import xyz.quaver.floatingsearchview.suggestions.model.SearchSuggestion
+import xyz.quaver.floatingsearchview.util.view.MenuView
 import xyz.quaver.floatingsearchview.util.view.SearchInputView
 import xyz.quaver.hitomi.doSearch
 import xyz.quaver.hitomi.getGalleryIDsFromNozomi
@@ -635,6 +636,14 @@ class MainActivity :
                 }
             }
 
+            post {
+                findViewById<MenuView>(R.id.menu_view).menuItems.firstOrNull {
+                    (it as MenuItem).itemId == R.id.main_menu_thin
+                }?.let {
+                    (it as MenuItem).isChecked = Preferences["thin"]
+                }
+            }
+
             onHistoryDeleteClickedListener = {
                 searchHistory.remove(it)
                 swapSuggestions(defaultSuggestions)
@@ -709,9 +718,14 @@ class MainActivity :
         when(item?.itemId) {
             R.id.main_menu_settings -> startActivityForResult(Intent(this@MainActivity, SettingsActivity::class.java), R.id.request_settings.normalizeID())
             R.id.main_menu_thin -> {
+                val thin = !item.isChecked
+
+                item.isChecked = thin
                 main_recyclerview.apply {
                     (adapter as GalleryBlockAdapter).apply {
-                        isThin = !isThin
+                        this.thin = thin
+
+                        Preferences["thin"] = thin
                     }
 
                     adapter = adapter       // Force to redraw

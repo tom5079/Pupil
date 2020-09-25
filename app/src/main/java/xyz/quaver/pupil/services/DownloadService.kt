@@ -311,25 +311,15 @@ class DownloadService : Service() {
 
         progress.put(galleryID, MutableList(reader.galleryInfo.files.size) { 0F })
 
-        FirebaseCrashlytics.getInstance().log(
-            """
-                GALLERYID: $galleryID
-                CACHE: ${cache.findFile(".metadata")}
-                PATTERN: ${Preferences["download_folder_name", ""]}
-                READER ID: ${reader.galleryInfo.id}
-                READER SIZE: ${reader.galleryInfo.files.size}
-                CACHE READER ID: ${cache.metadata.reader?.galleryInfo?.id}}
-                CACHE READER SIZE: ${cache.metadata.reader?.galleryInfo?.files?.size}
-            """.trimIndent()
-        )
-
         cache.metadata.imageList?.let {
             if (progress[galleryID]?.size != it.size) {
-                cache.metadata.imageList?.filterNotNull()?.forEach { file ->
-                    cache.findFile(file)?.delete()
-                }
-                cache.metadata.imageList = MutableList(reader.galleryInfo.files.size) { null }
-                return@let
+                FirebaseCrashlytics.getInstance().log(
+                    """
+                        GALLERYID: $galleryID
+                        ${it.size} - ${progress[galleryID]?.size}
+                    """.trimIndent()
+                )
+                error("ImageList Size does not match")
             }
 
             it.forEachIndexed { index, image ->
@@ -361,7 +351,17 @@ class DownloadService : Service() {
             }
         }
 
-        reader.requestBuilders.forEachIndexed { index, it ->
+        reader.requestBuilders.also {
+            if (it.size != progress[galleryID]?.size) {
+                FirebaseCrashlytics.getInstance().log(
+                    """
+                        GALLERYID: $galleryID
+                        ${it.size} - ${progress[galleryID]?.size}
+                    """.trimIndent()
+                )
+                error("Requests Size does not match")
+            }
+        }.forEachIndexed { index, it ->
             if (progress[galleryID]?.get(index)?.isInfinite() != true) {
                 val request = it.tag(Tag(galleryID, index, startId)).build()
                 client.newCall(request).enqueue(callback)

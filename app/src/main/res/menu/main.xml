@@ -20,10 +20,10 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
 	xmlns:app="http://schemas.android.com/apk/res-auto">
 
-	<item android:id="@+id/main_menu_thin"
-		android:title="@string/main_menu_thin"/>
-
-	<item android:title="@string/main_menu_sort">
+	<item android:id="@+id/sort"
+		android:title="@string/main_menu_sort"
+		android:icon="@drawable/sort_variant"
+		app:showAsAction="ifRoom">
 		<menu>
 			<group android:checkableBehavior="single">
 				<item android:id="@+id/main_menu_sort_newest"
@@ -40,5 +40,10 @@
 		android:icon="@drawable/ic_settings"
 		android:title="@string/main_settings"
 		app:showAsAction="always"/>
+
+	<item android:id="@+id/main_menu_thin"
+		android:title="@string/main_menu_thin"
+		app:showAsAction="never"
+		android:checkable="true"/>
 
 </menu>

@@ -50,7 +50,7 @@
     <string name="main_drawer_group_contact_email">Email me!</string>
     <string name="main_drawer_grouop_contact_discord">Discord</string>
 
-    <string name="main_menu_thin">Toggle Thin Mode</string>
+    <string name="main_menu_thin">Thin Mode</string>
 
     <string name="main_menu_sort">Sort</string>
     <string name="main_menu_sort_newest">Newest</string>

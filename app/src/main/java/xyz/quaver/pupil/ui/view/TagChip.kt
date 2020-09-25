@@ -23,6 +23,7 @@ import android.content.Context
 import androidx.core.content.ContextCompat
 import com.google.android.material.chip.Chip
 import xyz.quaver.pupil.R
+import xyz.quaver.pupil.favoriteTags
 import xyz.quaver.pupil.types.Tag
 import xyz.quaver.pupil.util.wordCapitalize
 
@@ -56,6 +57,34 @@ class TagChip(context: Context, tag: Tag) : Chip(context) {
                 ContextCompat.getDrawable(context, R.drawable.gender_female_white)
             }
             else -> null
+        }.also {
+            if (favoriteTags.contains(tag))
+                setChipBackgroundColorResource(R.color.material_orange_500)
+        }
+
+        isCloseIconVisible = true
+        closeIcon = ContextCompat.getDrawable(context,
+            if (favoriteTags.contains(tag))
+                R.drawable.ic_star_filled
+            else
+                R.drawable.ic_star_empty
+        )
+
+        setOnCloseIconClickListener {
+            if (favoriteTags.contains(tag)) {
+                favoriteTags.remove(tag)
+                closeIcon = ContextCompat.getDrawable(context, R.drawable.ic_star_empty)
+
+                when(tag.area) {
+                    "male" -> setChipBackgroundColorResource(R.color.material_blue_700)
+                    "female" -> setChipBackgroundColorResource(R.color.material_pink_600)
+                    else -> chipBackgroundColor = null
+                }
+            } else {
+                favoriteTags.add(tag)
+                closeIcon = ContextCompat.getDrawable(context, R.drawable.ic_star_filled)
+                setChipBackgroundColorResource(R.color.material_orange_500)
+            }
         }
 
         text = when (tag.area) {
