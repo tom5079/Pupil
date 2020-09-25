@@ -20,7 +20,6 @@ package xyz.quaver.pupil.adapters
 
 import android.content.Context
 import android.graphics.drawable.Drawable
-import android.util.Log
 import android.util.SparseBooleanArray
 import android.view.LayoutInflater
 import android.view.View
@@ -70,7 +69,7 @@ class GalleryBlockAdapter(private val glide: RequestManager, private val galleri
 
     val timer = Timer()
 
-    var isThin = false
+    var thin: Boolean = Preferences["thin"]
 
     inner class GalleryViewHolder(val view: View) : RecyclerView.ViewHolder(view) {
         var timerTask: TimerTask? = null
@@ -88,7 +87,7 @@ class GalleryBlockAdapter(private val glide: RequestManager, private val galleri
                 with(view.galleryblock_progressbar) {
                     val imageList = cache.metadata.imageList!!
 
-                    progress = imageList.filterNotNull().size
+                    progress = imageList.count { it != null }
                     max = imageList.size
 
                     with(view.galleryblock_progressbar_layout) {
@@ -96,7 +95,7 @@ class GalleryBlockAdapter(private val glide: RequestManager, private val galleri
                             visibility = View.VISIBLE
                     }
 
-                    if (progress == max) {
+                    if (!imageList.contains(null)) {
                         val downloadManager = DownloadManager.getInstance(context)
 
                         if (completeFlag.get(galleryID, false)) {
@@ -143,7 +142,7 @@ class GalleryBlockAdapter(private val glide: RequestManager, private val galleri
                 val artists = galleryBlock.artists
                 val series = galleryBlock.series
 
-                if (isThin)
+                if (thin)
                     galleryblock_thumbnail.layoutParams.width = context.resources.getDimensionPixelSize(
                         R.dimen.galleryblock_thumbnail_thin
                     )
@@ -273,7 +272,7 @@ class GalleryBlockAdapter(private val glide: RequestManager, private val galleri
 
 
                 // Make some views invisible to make it thinner
-                if (isThin) {
+                if (thin) {
                     galleryblock_language.visibility = View.GONE
                     galleryblock_type.visibility = View.GONE
                     galleryblock_tag_group.visibility = View.GONE

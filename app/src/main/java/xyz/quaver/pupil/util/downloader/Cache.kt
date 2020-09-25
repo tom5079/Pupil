@@ -212,7 +212,9 @@ class Cache private constructor(context: Context, val galleryID: Int) : ContextW
                 return@forEach
 
             kotlin.runCatching {
-                target.createNewFile()
+                if (!target.exists())
+                    target.createNewFile()
+
                 target.outputStream()?.use { target -> source.inputStream()?.use { source ->
                     source.copyTo(target)
                 } }
@@ -224,7 +226,9 @@ class Cache private constructor(context: Context, val galleryID: Int) : ContextW
 
         if (cacheThumbnail.exists() && !downloadThumbnail.exists()) {
             kotlin.runCatching {
-                downloadThumbnail.createNewFile()
+                if (!downloadThumbnail.exists())
+                    downloadThumbnail.createNewFile()
+
                 downloadThumbnail.outputStream()?.use { target -> cacheThumbnail.inputStream()?.use { source ->
                     source.copyTo(target)
                 } }
@@ -237,7 +241,9 @@ class Cache private constructor(context: Context, val galleryID: Int) : ContextW
 
         if (cacheMetadata.exists() && !downloadMetadata.exists()) {
             kotlin.runCatching {
-                downloadMetadata.createNewFile()
+                if (!downloadMetadata.exists())
+                    downloadMetadata.createNewFile()
+
                 downloadMetadata.writeText(Json.encodeToString(metadata))
                 cacheMetadata.delete()
             }
