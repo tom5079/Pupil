@@ -23,7 +23,10 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.text.InputType
-import android.view.*
+import android.view.KeyEvent
+import android.view.MenuItem
+import android.view.MotionEvent
+import android.view.View
 import android.widget.*
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatDelegate
@@ -50,9 +53,12 @@ import xyz.quaver.pupil.services.DownloadService
 import xyz.quaver.pupil.types.*
 import xyz.quaver.pupil.ui.dialog.DownloadLocationDialogFragment
 import xyz.quaver.pupil.ui.dialog.GalleryDialog
-import xyz.quaver.pupil.util.*
+import xyz.quaver.pupil.util.ItemClickSupport
+import xyz.quaver.pupil.util.Preferences
+import xyz.quaver.pupil.util.checkUpdate
 import xyz.quaver.pupil.util.downloader.Cache
 import xyz.quaver.pupil.util.downloader.DownloadManager
+import xyz.quaver.pupil.util.restore
 import kotlin.math.abs
 import kotlin.math.ceil
 import kotlin.math.min
@@ -95,7 +101,6 @@ class MainActivity :
     private var loadingJob: Job? = null
     private var currentPage = 0
 
-
     override fun onCreate(savedInstanceState: Bundle?) {
         AppCompatDelegate.setCompatVectorFromResourcesEnabled(true)
         super.onCreate(savedInstanceState)
@@ -134,6 +139,17 @@ class MainActivity :
                 loadBlocks()
             }
             else -> super.onBackPressed()
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+
+        runOnUiThread {
+            cancelFetch()
+            clearGalleries()
+            fetchGalleries(query, sortMode)
+            loadBlocks()
         }
     }
 
@@ -177,20 +193,6 @@ class MainActivity :
                 true
             }
             else -> super.onKeyDown(keyCode, event)
-        }
-    }
-
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        when(requestCode) {
-            R.id.request_settings.normalizeID() -> {
-                runOnUiThread {
-                    cancelFetch()
-                    clearGalleries()
-                    fetchGalleries(query, sortMode)
-                    loadBlocks()
-                }
-            }
-            else -> super.onActivityResult(requestCode, resultCode, data)
         }
     }
 
@@ -716,7 +718,7 @@ class MainActivity :
 
     fun onActionMenuItemSelected(item: MenuItem?) {
         when(item?.itemId) {
-            R.id.main_menu_settings -> startActivityForResult(Intent(this@MainActivity, SettingsActivity::class.java), R.id.request_settings.normalizeID())
+            R.id.main_menu_settings -> startActivity(Intent(this@MainActivity, SettingsActivity::class.java))
             R.id.main_menu_thin -> {
                 val thin = !item.isChecked
 
