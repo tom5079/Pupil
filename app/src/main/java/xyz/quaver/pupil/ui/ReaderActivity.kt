@@ -118,7 +118,6 @@ class ReaderActivity : BaseActivity() {
 
     private var cameraEnabled = false
     private var eyeType: Eye? = null
-    private var eyeCount: Int = 0
     private var eyeTime: Long = 0L
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -248,6 +247,8 @@ class ReaderActivity : BaseActivity() {
     override fun onResume() {
         super.onResume()
 
+        bindService(Intent(this, DownloadService::class.java), conn, BIND_AUTO_CREATE)
+
         if (cameraEnabled)
             startCamera(this, cameraCallback)
     }
@@ -255,6 +256,9 @@ class ReaderActivity : BaseActivity() {
     override fun onPause() {
         super.onPause()
         closeCamera()
+
+        if (downloader != null)
+            unbindService(conn)
     }
 
     override fun onDestroy() {
@@ -265,9 +269,6 @@ class ReaderActivity : BaseActivity() {
 
         if (!DownloadManager.getInstance(this).isDownloading(galleryID))
             DownloadService.cancel(this, galleryID)
-
-        if (downloader != null)
-            unbindService(conn)
     }
 
     override fun onBackPressed() {
@@ -304,7 +305,6 @@ class ReaderActivity : BaseActivity() {
 
     private fun initDownloader() {
         DownloadService.download(this, galleryID, true)
-        bindService(Intent(this, DownloadService::class.java), conn, BIND_AUTO_CREATE)
 
         timer.schedule(1000, 1000) {
             val downloader = downloader ?: return@schedule
@@ -564,28 +564,23 @@ class ReaderActivity : BaseActivity() {
             // Both closed / opened
             !left.xor(right) -> {
                 eyeType = null
-                eyeCount = 0
                 eyeTime = 0L
             }
             !left -> {
                 if (eyeType != Eye.LEFT) {
                     eyeType = Eye.LEFT
-                    eyeCount = 0
                     eyeTime = System.currentTimeMillis()
                 }
-                eyeCount++
             }
             !right -> {
                 if (eyeType != Eye.RIGHT) {
                     eyeType = Eye.RIGHT
-                    eyeCount = 0
                     eyeTime = System.currentTimeMillis()
                 }
-                eyeCount++
             }
         }
 
-        if (eyeCount > 3 && System.currentTimeMillis() - eyeTime > 500) {
+        if (eyeType != null && System.currentTimeMillis() - eyeTime > 100) {
             (this@ReaderActivity.reader_recyclerview.layoutManager as LinearLayoutManager).let {
                 it.scrollToPositionWithOffset(when(eyeType!!) {
                     Eye.RIGHT -> {
@@ -597,9 +592,7 @@ class ReaderActivity : BaseActivity() {
                 }, 0)
             }
 
-            eyeType = null
-            eyeCount = 0
-            eyeTime = 0L
+            eyeTime = System.currentTimeMillis() + 500
         }
     }
 

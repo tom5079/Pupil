@@ -45,6 +45,7 @@ import xyz.quaver.pupil.BuildConfig
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.adapters.GalleryBlockAdapter
 import xyz.quaver.pupil.adapters.ThumbnailPageAdapter
+import xyz.quaver.pupil.favoriteTags
 import xyz.quaver.pupil.histories
 import xyz.quaver.pupil.types.Tag
 import xyz.quaver.pupil.ui.ReaderActivity
@@ -141,7 +142,18 @@ class GalleryDialog(context: Context, private val glide: RequestManager, private
                     listOf(gallery.language).map { Tag("language", it) },
                     gallery.series.map { Tag("series", it) },
                     gallery.characters.map { Tag("character", it) },
-                    gallery.tags.map {
+                    gallery.tags.sortedBy {
+                        val tag = Tag.parse(it)
+
+                        if (favoriteTags.contains(tag))
+                            -1
+                        else
+                            when(Tag.parse(it).area) {
+                                "female" -> 0
+                                "male" -> 1
+                                else -> 2
+                            }
+                    }.map {
                         Tag.parse(it).let { tag ->
                             when {
                                 tag.area != null -> tag
