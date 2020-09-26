@@ -20,7 +20,6 @@ package xyz.quaver.pupil.util.downloader
 
 import android.content.Context
 import android.content.ContextWrapper
-import android.util.SparseArray
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -38,6 +37,7 @@ import xyz.quaver.io.util.*
 import xyz.quaver.pupil.client
 import xyz.quaver.pupil.util.Preferences
 import java.io.IOException
+import java.util.concurrent.ConcurrentHashMap
 
 @Serializable
 data class Metadata(
@@ -51,7 +51,7 @@ data class Metadata(
 class Cache private constructor(context: Context, val galleryID: Int) : ContextWrapper(context) {
 
     companion object {
-        val instances = SparseArray<Cache>()
+        val instances = ConcurrentHashMap<Int, Cache>()
 
         fun getInstance(context: Context, galleryID: Int) =
             instances[galleryID] ?: synchronized(this) {
@@ -61,7 +61,7 @@ class Cache private constructor(context: Context, val galleryID: Int) : ContextW
         @Synchronized
         fun delete(galleryID: Int) {
             instances[galleryID]?.cacheFolder?.deleteRecursively()
-            instances.delete(galleryID)
+            instances.remove(galleryID)
         }
     }
 

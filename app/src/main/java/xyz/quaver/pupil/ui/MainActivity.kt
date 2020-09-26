@@ -621,7 +621,7 @@ class MainActivity :
             else -> {
                 searchHistory.map {
                     Suggestion(it)
-                }.takeLast(20) + FavoriteHistorySwitch(getString(R.string.search_show_tags))
+                }.takeLast(10) + FavoriteHistorySwitch(getString(R.string.search_show_tags))
             }
         }.reversed()
 

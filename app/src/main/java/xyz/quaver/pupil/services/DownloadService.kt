@@ -23,7 +23,6 @@ import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
 import android.content.Intent
-import android.util.SparseArray
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.app.TaskStackBuilder
@@ -49,10 +48,9 @@ import xyz.quaver.pupil.util.ellipsize
 import xyz.quaver.pupil.util.normalizeID
 import xyz.quaver.pupil.util.requestBuilders
 import java.io.IOException
+import java.util.concurrent.ConcurrentHashMap
 import kotlin.math.ceil
-import kotlin.math.floor
 import kotlin.math.log10
-import kotlin.math.roundToInt
 
 private typealias ProgressListener = (DownloadService.Tag, Long, Long, Boolean) -> Unit
 class DownloadService : Service() {
@@ -71,7 +69,7 @@ class DownloadService : Service() {
             .setOngoing(true)
     }
 
-    private val notification = SparseArray<NotificationCompat.Builder?>()
+    private val notification = ConcurrentHashMap<Int, NotificationCompat.Builder?>()
 
     private fun initNotification(galleryID: Int) {
         val intent = Intent(this, ReaderActivity::class.java)
@@ -199,7 +197,7 @@ class DownloadService : Service() {
     *  0 <= value < 100 -> Download in progress
     *  Float.POSITIVE_INFINITY -> Download completed
     */
-    val progress = SparseArray<MutableList<Float>?>()
+    val progress = ConcurrentHashMap<Int, MutableList<Float>>()
 
     fun isCompleted(galleryID: Int) = progress[galleryID]?.toList()?.all { it == Float.POSITIVE_INFINITY } == true
 
@@ -297,7 +295,7 @@ class DownloadService : Service() {
     }
 
     fun download(galleryID: Int, priority: Boolean = false, startId: Int? = null): Job = CoroutineScope(Dispatchers.IO).launch {
-        if (progress.indexOfKey(galleryID) >= 0)
+        if (progress.containsKey(galleryID))
             cancel(galleryID)
 
         val cache = Cache.getInstance(this@DownloadService, galleryID)
@@ -309,29 +307,17 @@ class DownloadService : Service() {
         // Gallery doesn't exist
         if (reader == null) {
             delete(galleryID)
-            progress.put(galleryID, null)
+            progress[galleryID] = mutableListOf()
             return@launch
         }
 
-        val list = MutableList(reader.galleryInfo.files.size) { 0F }
+        progress[galleryID] = MutableList(reader.galleryInfo.files.size) { 0F }
 
         cache.metadata.imageList?.let {
-            if (list.size != it.size) {
-                FirebaseCrashlytics.getInstance().log(
-                    """
-                        GALLERYID: $galleryID
-                        ${it.size} - ${list.size}
-                    """.trimIndent()
-                )
-                error("ImageList Size does not match")
-            }
-
             it.forEachIndexed { index, image ->
-                list[index] = if (image != null) Float.POSITIVE_INFINITY else 0F
+                progress[galleryID]?.set(index, if (image != null) Float.POSITIVE_INFINITY else 0F)
             }
         }
-
-        progress.put(galleryID, list)
 
         if (isCompleted(galleryID)) {
             if (DownloadManager.getInstance(this@DownloadService)
@@ -357,18 +343,8 @@ class DownloadService : Service() {
             }
         }
 
-        reader.requestBuilders.also {
-            if (it.size != list.size) {
-                FirebaseCrashlytics.getInstance().log(
-                    """
-                        GALLERYID: $galleryID
-                        ${it.size} - ${list.size}
-                    """.trimIndent()
-                )
-                error("Requests Size does not match")
-            }
-        }.forEachIndexed { index, it ->
-            if (!list[index].isInfinite()) {
+        reader.requestBuilders.forEachIndexed { index, it ->
+            if (progress[galleryID]?.get(index)?.isInfinite() == false) {
                 val request = it.tag(Tag(galleryID, index, startId)).build()
                 client.newCall(request).enqueue(callback)
             }

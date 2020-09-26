@@ -45,22 +45,23 @@ class TagChip(context: Context, _tag: Tag) : Chip(context) {
     }.toMap()
 
     init {
-        chipIcon = when(tag.area) {
+        when(tag.area) {
             "male" -> {
                 setChipBackgroundColorResource(R.color.material_blue_700)
                 setTextColor(ContextCompat.getColor(context, android.R.color.white))
-                ContextCompat.getDrawable(context, R.drawable.gender_male_white)
+                setCloseIconTintResource(android.R.color.white)
+                chipIcon = ContextCompat.getDrawable(context, R.drawable.gender_male_white)
             }
             "female" -> {
                 setChipBackgroundColorResource(R.color.material_pink_600)
                 setTextColor(ContextCompat.getColor(context, android.R.color.white))
-                ContextCompat.getDrawable(context, R.drawable.gender_female_white)
+                setCloseIconTintResource(android.R.color.white)
+                chipIcon = ContextCompat.getDrawable(context, R.drawable.gender_female_white)
             }
-            else -> null
-        }.also {
-            if (favoriteTags.contains(tag))
-                setChipBackgroundColorResource(R.color.material_orange_500)
         }
+
+        if (favoriteTags.contains(tag))
+            setChipBackgroundColorResource(R.color.material_orange_500)
 
         isCloseIconVisible = true
         closeIcon = ContextCompat.getDrawable(context,
