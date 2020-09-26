@@ -88,7 +88,10 @@ class ReaderActivity : BaseActivity() {
     var downloader: DownloadService? = null
     private val conn = object: ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
-            downloader = (service as DownloadService.Binder).service
+            downloader = (service as DownloadService.Binder).service.also {
+                if (!it.progress.containsKey(galleryID))
+                    DownloadService.download(this@ReaderActivity, galleryID, true)
+            }
         }
 
         override fun onServiceDisconnected(name: ComponentName?) {
@@ -166,7 +169,7 @@ class ReaderActivity : BaseActivity() {
                 }
             }
         } else
-            initDownloader()
+            initDownloadListener()
 
         initView()
     }
@@ -259,6 +262,9 @@ class ReaderActivity : BaseActivity() {
 
         if (downloader != null)
             unbindService(conn)
+
+        if (!DownloadManager.getInstance(this).isDownloading(galleryID))
+            DownloadService.cancel(this, galleryID)
     }
 
     override fun onDestroy() {
@@ -266,9 +272,6 @@ class ReaderActivity : BaseActivity() {
 
         timer.cancel()
         (reader_recyclerview?.adapter as? ReaderAdapter)?.timer?.cancel()
-
-        if (!DownloadManager.getInstance(this).isDownloading(galleryID))
-            DownloadService.cancel(this, galleryID)
     }
 
     override fun onBackPressed() {
@@ -303,16 +306,14 @@ class ReaderActivity : BaseActivity() {
         }
     }
 
-    private fun initDownloader() {
-        DownloadService.download(this, galleryID, true)
-
+    private fun initDownloadListener() {
         timer.schedule(1000, 1000) {
             val downloader = downloader ?: return@schedule
 
-            if (downloader.progress.indexOfKey(galleryID) < 0)  //loading
+            if (!downloader.progress.containsKey(galleryID))  //loading
                 return@schedule
 
-            if (downloader.progress[galleryID] == null) {      //Gallery not found
+            if (downloader.progress[galleryID]?.isEmpty() == true) {      //Gallery not found
                 timer.cancel()
                 Snackbar
                     .make(reader_layout, R.string.reader_failed_to_find_gallery, Snackbar.LENGTH_INDEFINITE)
