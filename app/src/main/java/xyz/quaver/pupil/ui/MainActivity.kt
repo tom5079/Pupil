@@ -672,7 +672,9 @@ class MainActivity :
 
                 swapSuggestions(listOf(LoadingSuggestion(getText(R.string.reader_loading).toString())))
 
-                val currentQuery = query.split(" ").last().replace('_', ' ')
+                val currentQuery = query.split(" ").last()
+                    .replace(Regex("^-"), "")
+                    .replace('_', ' ')
 
                 suggestionJob = CoroutineScope(Dispatchers.IO).launch {
                     val suggestions = kotlin.runCatching {

@@ -28,13 +28,13 @@ import xyz.quaver.pupil.types.Tag
 import xyz.quaver.pupil.util.wordCapitalize
 
 @SuppressLint("ViewConstructor")
-class TagChip(context: Context, tag: Tag) : Chip(context) {
+class TagChip(context: Context, _tag: Tag) : Chip(context) {
 
     val tag: Tag =
-        tag.let {
+        _tag.let {
             when {
                 it.area != null -> it
-                else -> Tag("tag", tag.tag)
+                else -> Tag("tag", _tag.tag)
             }
         }
 
