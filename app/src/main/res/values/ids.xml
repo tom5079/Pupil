@@ -1,13 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <item name="item_click_support" type="id" />
-    <item name="request_settings" type="id" />
-    <item name="request_lock" type="id" />
-    <item name="request_restore" type="id" />
-
-    <item name="request_download_folder" type="id" />
-    <item name="request_download_folder_old" type="id" />
-    <item name="request_write_permission_and_saf" type="id" />
 
     <item name="notification_id_update" type="id" />
     <item name="notification_id_import" type="id" />

@@ -43,13 +43,16 @@ import xyz.quaver.pupil.R
 import xyz.quaver.pupil.client
 import xyz.quaver.pupil.interceptors
 import xyz.quaver.pupil.ui.ReaderActivity
-import xyz.quaver.pupil.util.Preferences
 import xyz.quaver.pupil.util.downloader.Cache
 import xyz.quaver.pupil.util.downloader.DownloadManager
 import xyz.quaver.pupil.util.ellipsize
 import xyz.quaver.pupil.util.normalizeID
 import xyz.quaver.pupil.util.requestBuilders
 import java.io.IOException
+import kotlin.math.ceil
+import kotlin.math.floor
+import kotlin.math.log10
+import kotlin.math.roundToInt
 
 private typealias ProgressListener = (DownloadService.Tag, Long, Long, Boolean) -> Unit
 class DownloadService : Service() {
@@ -218,10 +221,11 @@ class DownloadService : Service() {
 
             kotlin.runCatching {
                 val image = response.also { if (it.code() != 200) throw IOException() }.body()?.use { it.bytes() } ?: throw Exception()
+                val padding = ceil(progress[galleryID]?.size?.let { log10(it.toFloat()) } ?: 0F).toInt()
 
                 CoroutineScope(Dispatchers.IO).launch {
                     kotlin.runCatching {
-                        Cache.getInstance(this@DownloadService, galleryID).putImage(index, "$index.$ext", image)
+                        Cache.getInstance(this@DownloadService, galleryID).putImage(index, "${index.toString().padStart(padding, '0')}.$ext", image)
                     }.onSuccess {
                         progress[galleryID]?.set(index, Float.POSITIVE_INFINITY)
                         notify(galleryID)
@@ -309,33 +313,25 @@ class DownloadService : Service() {
             return@launch
         }
 
-        progress.put(galleryID, MutableList(reader.galleryInfo.files.size) { 0F })
-
-        FirebaseCrashlytics.getInstance().log(
-            """
-                GALLERYID: $galleryID
-                CACHE: ${cache.findFile(".metadata")}
-                PATTERN: ${Preferences["download_folder_name", ""]}
-                READER ID: ${reader.galleryInfo.id}
-                READER SIZE: ${reader.galleryInfo.files.size}
-                CACHE READER ID: ${cache.metadata.reader?.galleryInfo?.id}}
-                CACHE READER SIZE: ${cache.metadata.reader?.galleryInfo?.files?.size}
-            """.trimIndent()
-        )
+        val list = MutableList(reader.galleryInfo.files.size) { 0F }
 
         cache.metadata.imageList?.let {
-            if (progress[galleryID]?.size != it.size) {
-                cache.metadata.imageList?.filterNotNull()?.forEach { file ->
-                    cache.findFile(file)?.delete()
-                }
-                cache.metadata.imageList = MutableList(reader.galleryInfo.files.size) { null }
-                return@let
+            if (list.size != it.size) {
+                FirebaseCrashlytics.getInstance().log(
+                    """
+                        GALLERYID: $galleryID
+                        ${it.size} - ${list.size}
+                    """.trimIndent()
+                )
+                error("ImageList Size does not match")
             }
 
             it.forEachIndexed { index, image ->
-                progress[galleryID]?.set(index, if (image != null) Float.POSITIVE_INFINITY else 0F)
+                list[index] = if (image != null) Float.POSITIVE_INFINITY else 0F
             }
         }
+
+        progress.put(galleryID, list)
 
         if (isCompleted(galleryID)) {
             if (DownloadManager.getInstance(this@DownloadService)
@@ -361,8 +357,18 @@ class DownloadService : Service() {
             }
         }
 
-        reader.requestBuilders.forEachIndexed { index, it ->
-            if (progress[galleryID]?.get(index)?.isInfinite() != true) {
+        reader.requestBuilders.also {
+            if (it.size != list.size) {
+                FirebaseCrashlytics.getInstance().log(
+                    """
+                        GALLERYID: $galleryID
+                        ${it.size} - ${list.size}
+                    """.trimIndent()
+                )
+                error("Requests Size does not match")
+            }
+        }.forEachIndexed { index, it ->
+            if (!list[index].isInfinite()) {
                 val request = it.tag(Tag(galleryID, index, startId)).build()
                 client.newCall(request).enqueue(callback)
             }

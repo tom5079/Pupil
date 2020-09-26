@@ -11,8 +11,8 @@
       "type": "SINGLE",
       "filters": [],
       "properties": [],
-      "versionCode": 59,
-      "versionName": "5.0.3-hotfix2",
+      "versionCode": 60,
+      "versionName": "5.1",
       "enabled": true,
       "outputFile": "app-release.apk"
     }
