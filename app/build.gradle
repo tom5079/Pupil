@@ -1,15 +1,15 @@
-apply plugin: 'com.android.application'
-apply plugin: 'kotlin-android'
-apply plugin: 'kotlin-kapt'
-apply plugin: 'kotlin-android-extensions'
-apply plugin: 'kotlinx-serialization'
-apply plugin: 'com.google.android.gms.oss-licenses-plugin'
+apply plugin: "com.android.application"
+apply plugin: "kotlin-android"
+apply plugin: "kotlin-kapt"
+apply plugin: "kotlin-android-extensions"
+apply plugin: "kotlinx-serialization"
+apply plugin: "com.google.android.gms.oss-licenses-plugin"
 
 if (file("google-services.json").exists() && file("src/debug/google-services.json").exists()) {
     logger.lifecycle("Firebase Enabled")
-    apply plugin: 'com.google.gms.google-services'
-    apply plugin: 'com.google.firebase.crashlytics'
-    apply plugin: 'com.google.firebase.firebase-perf'
+    apply plugin: "com.google.gms.google-services"
+    apply plugin: "com.google.firebase.crashlytics"
+    apply plugin: "com.google.firebase.firebase-perf"
 } else {
     logger.lifecycle("Firebase Disabled")
 }
@@ -34,8 +34,8 @@ android {
             applicationIdSuffix ".debug"
             versionNameSuffix "-DEBUG"
 
-            buildConfigField('Boolean', 'CENSOR', 'false')
-            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            buildConfigField("Boolean", "CENSOR", "false")
+            proguardFiles getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
 
             ext.enableCrashlytics = false
             ext.alwaysUpdateBuildId = false
@@ -44,19 +44,19 @@ android {
             minifyEnabled true
             shrinkResources true
 
-            buildConfigField('Boolean', 'CENSOR', 'false')
-            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            buildConfigField("Boolean", "CENSOR", "false")
+            proguardFiles getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
         }
     }
     kotlinOptions {
         jvmTarget = JavaVersion.VERSION_1_8.toString()
-        freeCompilerArgs += '-Xuse-experimental=kotlin.Experimental'
+        freeCompilerArgs += "-Xuse-experimental=kotlin.Experimental"
     }
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
-    buildToolsVersion = '29.0.3'
+    buildToolsVersion = "29.0.3"
 }
 
 dependencies {
