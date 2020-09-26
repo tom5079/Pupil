@@ -27,13 +27,11 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.net.Uri
 import android.util.Base64
-import android.util.Log
 import android.webkit.URLUtil
 import androidx.appcompat.app.AlertDialog
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.preference.PreferenceManager
-import com.google.firebase.crashlytics.FirebaseCrashlytics
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -52,7 +50,9 @@ import xyz.quaver.hitomi.getGalleryBlock
 import xyz.quaver.hitomi.getReader
 import xyz.quaver.io.FileX
 import xyz.quaver.io.util.getChild
-import xyz.quaver.io.util.*
+import xyz.quaver.io.util.readText
+import xyz.quaver.io.util.writeBytes
+import xyz.quaver.io.util.writeText
 import xyz.quaver.pupil.BuildConfig
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.client
