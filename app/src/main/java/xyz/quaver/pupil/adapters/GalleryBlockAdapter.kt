@@ -26,6 +26,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.LinearLayout
 import androidx.cardview.widget.CardView
+import androidx.core.view.children
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.CircularProgressDrawable
 import androidx.vectordrawable.graphics.drawable.Animatable2Compat
@@ -48,6 +49,7 @@ import xyz.quaver.hitomi.getReader
 import xyz.quaver.io.util.getChild
 import xyz.quaver.pupil.BuildConfig
 import xyz.quaver.pupil.R
+import xyz.quaver.pupil.favoriteTags
 import xyz.quaver.pupil.favorites
 import xyz.quaver.pupil.types.Tag
 import xyz.quaver.pupil.ui.view.TagChip
@@ -222,7 +224,18 @@ class GalleryBlockAdapter(private val glide: RequestManager, private val galleri
 
                 galleryblock_tag_group.removeAllViews()
                 CoroutineScope(Dispatchers.Default).launch {
-                    galleryBlock.relatedTags.map {
+                    galleryBlock.relatedTags.sortedBy {
+                        val tag = Tag.parse(it)
+
+                        if (favoriteTags.contains(tag))
+                            -1
+                        else
+                            when(Tag.parse(it).area) {
+                                "female" -> 0
+                                "male" -> 1
+                                else -> 2
+                            }
+                    }.map {
                         TagChip(context, Tag.parse(it)).apply {
                             setOnClickListener { view ->
                                 for (callback in onChipClickedHandler)

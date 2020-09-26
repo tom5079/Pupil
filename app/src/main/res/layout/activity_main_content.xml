@@ -139,7 +139,7 @@
         app:leftActionMode="showHamburger"
         app:menu="@menu/main"
         app:dismissOnOutsideTouch="true"
-        app:close_search_on_keyboard_dismiss="true"
+        app:close_search_on_keyboard_dismiss="false"
         tools:ignore="NewApi" />
 
 </RelativeLayout>

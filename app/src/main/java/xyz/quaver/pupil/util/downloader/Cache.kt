@@ -200,24 +200,18 @@ class Cache private constructor(context: Context, val galleryID: Int) : ContextW
     fun moveToDownload() = CoroutineScope(Dispatchers.IO).launch {
         val downloadFolder = downloadFolder ?: return@launch
 
-        if (downloadFolder.getChild(".metadata").exists())
+        val cacheMetadata = cacheFolder.getChild(".metadata")
+        val downloadMetadata = downloadFolder.getChild(".metadata")
+
+        if (downloadMetadata.exists() || !cacheMetadata.exists())
             return@launch
 
-        metadata.imageList?.forEach { imageName ->
-            imageName ?: return@forEach
-            val target = downloadFolder.getChild(imageName)
-            val source = cacheFolder.getChild(imageName)
-
-            if (!source.exists() || target.exists())
-                return@forEach
-
+        if (cacheMetadata.exists()) {
             kotlin.runCatching {
-                if (!target.exists())
-                    target.createNewFile()
+                downloadMetadata.createNewFile()
+                downloadMetadata.writeText(Json.encodeToString(metadata))
 
-                target.outputStream()?.use { target -> source.inputStream()?.use { source ->
-                    source.copyTo(target)
-                } }
+                cacheMetadata.delete()
             }
         }
 
@@ -236,19 +230,22 @@ class Cache private constructor(context: Context, val galleryID: Int) : ContextW
             }
         }
 
-        val cacheMetadata = cacheFolder.getChild(".metadata")
-        val downloadMetadata = downloadFolder.getChild(".metadata")
+        metadata.imageList?.forEach { imageName ->
+            imageName ?: return@forEach
+            val target = downloadFolder.getChild(imageName)
+            val source = cacheFolder.getChild(imageName)
 
-        if (cacheMetadata.exists() && !downloadMetadata.exists()) {
+            if (!source.exists() || target.exists())
+                return@forEach
+
             kotlin.runCatching {
-                if (!downloadMetadata.exists())
-                    downloadMetadata.createNewFile()
+                if (!target.exists())
+                    target.createNewFile()
 
-                downloadMetadata.writeText(Json.encodeToString(metadata))
-                cacheMetadata.delete()
+                target.outputStream()?.use { target -> source.inputStream()?.use { source ->
+                    source.copyTo(target)
+                } }
             }
         }
-
-        cacheFolder.delete()
     }
 }

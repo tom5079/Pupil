@@ -37,6 +37,7 @@ import kotlinx.android.synthetic.main.item_download_folder.view.*
 import net.rdrei.android.dirchooser.DirectoryChooserActivity
 import net.rdrei.android.dirchooser.DirectoryChooserConfig
 import xyz.quaver.io.FileX
+import xyz.quaver.io.util.toFile
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.util.Preferences
 import xyz.quaver.pupil.util.byteToString
@@ -62,7 +63,7 @@ class DownloadLocationDialogFragment : DialogFragment() {
                     context.contentResolver.takePersistableUriPermission(uri, takeFlags)
 
                 if (kotlin.runCatching { FileX(context, uri).canWrite() }.getOrDefault(false)) {
-                    entries[null]?.message?.text = uri.toString()
+                    entries[null]?.location_available?.text = uri.toFile(context)?.canonicalPath
                     Preferences["download_folder"] = uri.toString()
                 } else {
                     Snackbar.make(
