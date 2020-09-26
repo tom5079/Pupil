@@ -18,36 +18,28 @@
 
 package xyz.quaver.pupil.types
 
-import com.arlib.floatingsearchview.suggestions.model.SearchSuggestion
+import kotlinx.android.parcel.IgnoredOnParcel
 import kotlinx.android.parcel.Parcelize
+import xyz.quaver.floatingsearchview.suggestions.model.SearchSuggestion
 import xyz.quaver.hitomi.Suggestion
 
 @Parcelize
 data class TagSuggestion(val s: String, val t: Int, val u: String, val n: String) : SearchSuggestion {
     constructor(s: Suggestion) : this(s.s, s.t, s.u, s.n)
 
-    override fun getBody(): String {
-        return s
-    }
+    @IgnoredOnParcel
+    override val body = s
 }
 
 @Parcelize
-class Suggestion(val str: String) : SearchSuggestion {
-    override fun getBody() = str
-}
+class Suggestion(override val body: String) : SearchSuggestion
 
 @Parcelize
-class NoResultSuggestion(val str: String) : SearchSuggestion {
-    override fun getBody() = str
-}
+class NoResultSuggestion(override val body: String) : SearchSuggestion
 
 @Parcelize
-class LoadingSuggestion(val str: String) : SearchSuggestion {
-    override fun getBody() = str
-}
+class LoadingSuggestion(override val body: String) : SearchSuggestion
 
 @Parcelize
 @Suppress("PARCELABLE_PRIMARY_CONSTRUCTOR_IS_EMPTY")
-class FavoriteHistorySwitch(private val body: String) : SearchSuggestion {
-    override fun getBody() = body
-}
+class FavoriteHistorySwitch(override val body: String) : SearchSuggestion

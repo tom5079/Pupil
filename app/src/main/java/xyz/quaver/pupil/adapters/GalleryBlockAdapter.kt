@@ -20,13 +20,13 @@ package xyz.quaver.pupil.adapters
 
 import android.content.Context
 import android.graphics.drawable.Drawable
-import android.util.Log
 import android.util.SparseBooleanArray
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.LinearLayout
 import androidx.cardview.widget.CardView
+import androidx.core.view.children
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.CircularProgressDrawable
 import androidx.vectordrawable.graphics.drawable.Animatable2Compat
@@ -49,6 +49,7 @@ import xyz.quaver.hitomi.getReader
 import xyz.quaver.io.util.getChild
 import xyz.quaver.pupil.BuildConfig
 import xyz.quaver.pupil.R
+import xyz.quaver.pupil.favoriteTags
 import xyz.quaver.pupil.favorites
 import xyz.quaver.pupil.types.Tag
 import xyz.quaver.pupil.ui.view.TagChip
@@ -70,7 +71,7 @@ class GalleryBlockAdapter(private val glide: RequestManager, private val galleri
 
     val timer = Timer()
 
-    var isThin = false
+    var thin: Boolean = Preferences["thin"]
 
     inner class GalleryViewHolder(val view: View) : RecyclerView.ViewHolder(view) {
         var timerTask: TimerTask? = null
@@ -88,7 +89,7 @@ class GalleryBlockAdapter(private val glide: RequestManager, private val galleri
                 with(view.galleryblock_progressbar) {
                     val imageList = cache.metadata.imageList!!
 
-                    progress = imageList.filterNotNull().size
+                    progress = imageList.count { it != null }
                     max = imageList.size
 
                     with(view.galleryblock_progressbar_layout) {
@@ -96,7 +97,7 @@ class GalleryBlockAdapter(private val glide: RequestManager, private val galleri
                             visibility = View.VISIBLE
                     }
 
-                    if (progress == max) {
+                    if (!imageList.contains(null)) {
                         val downloadManager = DownloadManager.getInstance(context)
 
                         if (completeFlag.get(galleryID, false)) {
@@ -143,7 +144,7 @@ class GalleryBlockAdapter(private val glide: RequestManager, private val galleri
                 val artists = galleryBlock.artists
                 val series = galleryBlock.series
 
-                if (isThin)
+                if (thin)
                     galleryblock_thumbnail.layoutParams.width = context.resources.getDimensionPixelSize(
                         R.dimen.galleryblock_thumbnail_thin
                     )
@@ -223,7 +224,18 @@ class GalleryBlockAdapter(private val glide: RequestManager, private val galleri
 
                 galleryblock_tag_group.removeAllViews()
                 CoroutineScope(Dispatchers.Default).launch {
-                    galleryBlock.relatedTags.map {
+                    galleryBlock.relatedTags.sortedBy {
+                        val tag = Tag.parse(it)
+
+                        if (favoriteTags.contains(tag))
+                            -1
+                        else
+                            when(Tag.parse(it).area) {
+                                "female" -> 0
+                                "male" -> 1
+                                else -> 2
+                            }
+                    }.map {
                         TagChip(context, Tag.parse(it)).apply {
                             setOnClickListener { view ->
                                 for (callback in onChipClickedHandler)
@@ -273,7 +285,7 @@ class GalleryBlockAdapter(private val glide: RequestManager, private val galleri
 
 
                 // Make some views invisible to make it thinner
-                if (isThin) {
+                if (thin) {
                     galleryblock_language.visibility = View.GONE
                     galleryblock_type.visibility = View.GONE
                     galleryblock_tag_group.visibility = View.GONE

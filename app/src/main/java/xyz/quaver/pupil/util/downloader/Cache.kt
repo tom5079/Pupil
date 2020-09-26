@@ -200,8 +200,35 @@ class Cache private constructor(context: Context, val galleryID: Int) : ContextW
     fun moveToDownload() = CoroutineScope(Dispatchers.IO).launch {
         val downloadFolder = downloadFolder ?: return@launch
 
-        if (downloadFolder.getChild(".metadata").exists())
+        val cacheMetadata = cacheFolder.getChild(".metadata")
+        val downloadMetadata = downloadFolder.getChild(".metadata")
+
+        if (downloadMetadata.exists() || !cacheMetadata.exists())
             return@launch
+
+        if (cacheMetadata.exists()) {
+            kotlin.runCatching {
+                downloadMetadata.createNewFile()
+                downloadMetadata.writeText(Json.encodeToString(metadata))
+
+                cacheMetadata.delete()
+            }
+        }
+
+        val cacheThumbnail = cacheFolder.getChild(".thumbnail")
+        val downloadThumbnail = downloadFolder.getChild(".thumbnail")
+
+        if (cacheThumbnail.exists() && !downloadThumbnail.exists()) {
+            kotlin.runCatching {
+                if (!downloadThumbnail.exists())
+                    downloadThumbnail.createNewFile()
+
+                downloadThumbnail.outputStream()?.use { target -> cacheThumbnail.inputStream()?.use { source ->
+                    source.copyTo(target)
+                } }
+                cacheThumbnail.delete()
+            }
+        }
 
         metadata.imageList?.forEach { imageName ->
             imageName ?: return@forEach
@@ -212,37 +239,13 @@ class Cache private constructor(context: Context, val galleryID: Int) : ContextW
                 return@forEach
 
             kotlin.runCatching {
-                target.createNewFile()
+                if (!target.exists())
+                    target.createNewFile()
+
                 target.outputStream()?.use { target -> source.inputStream()?.use { source ->
                     source.copyTo(target)
                 } }
             }
         }
-
-        val cacheThumbnail = cacheFolder.getChild(".thumbnail")
-        val downloadThumbnail = downloadFolder.getChild(".thumbnail")
-
-        if (cacheThumbnail.exists() && !downloadThumbnail.exists()) {
-            kotlin.runCatching {
-                downloadThumbnail.createNewFile()
-                downloadThumbnail.outputStream()?.use { target -> cacheThumbnail.inputStream()?.use { source ->
-                    source.copyTo(target)
-                } }
-                cacheThumbnail.delete()
-            }
-        }
-
-        val cacheMetadata = cacheFolder.getChild(".metadata")
-        val downloadMetadata = downloadFolder.getChild(".metadata")
-
-        if (cacheMetadata.exists() && !downloadMetadata.exists()) {
-            kotlin.runCatching {
-                downloadMetadata.createNewFile()
-                downloadMetadata.writeText(Json.encodeToString(metadata))
-                cacheMetadata.delete()
-            }
-        }
-
-        cacheFolder.delete()
     }
 }

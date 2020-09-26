@@ -16,7 +16,7 @@
  *     along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.arlib.floatingsearchview
+package xyz.quaver.pupil.ui.view
 
 import android.content.Context
 import android.graphics.PorterDuff
@@ -36,21 +36,21 @@ import androidx.core.content.ContextCompat
 import androidx.core.content.res.ResourcesCompat
 import androidx.swiperefreshlayout.widget.CircularProgressDrawable
 import androidx.vectordrawable.graphics.drawable.AnimatedVectorDrawableCompat
-import com.arlib.floatingsearchview.suggestions.SearchSuggestionsAdapter
-import com.arlib.floatingsearchview.suggestions.model.SearchSuggestion
-import com.arlib.floatingsearchview.util.view.SearchInputView
+import xyz.quaver.floatingsearchview.FloatingSearchView
+import xyz.quaver.floatingsearchview.suggestions.model.SearchSuggestion
+import xyz.quaver.floatingsearchview.util.MenuPopupHelper
+import xyz.quaver.floatingsearchview.util.view.MenuView
+import xyz.quaver.floatingsearchview.util.view.SearchInputView
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.favoriteTags
 import xyz.quaver.pupil.types.*
 import java.util.*
 
-class FloatingSearchViewDayNight @JvmOverloads constructor(context: Context, attrs: AttributeSet? = null) :
+class FloatingSearchView @JvmOverloads constructor(context: Context, attrs: AttributeSet? = null) :
     FloatingSearchView(context, attrs),
     FloatingSearchView.OnSearchListener,
-    SearchSuggestionsAdapter.OnBindSuggestionCallback,
     TextWatcher
 {
-
     private val searchInputView = findViewById<SearchInputView>(R.id.search_bar_text)
 
     var onHistoryDeleteClickedListener: ((String) -> Unit)? = null
@@ -60,8 +60,10 @@ class FloatingSearchViewDayNight @JvmOverloads constructor(context: Context, att
         searchInputView.imeOptions = EditorInfo.IME_FLAG_NO_EXTRACT_UI
 
         searchInputView.addTextChangedListener(this)
-        setOnSearchListener(this)
-        setOnBindSuggestionCallback(this)
+        onSearchListener = this
+        onBindSuggestionCallback = { a, b, c, d, e ->
+            onBindSuggestion(a, b, c, d, e)
+        }
     }
 
     override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
@@ -83,7 +85,7 @@ class FloatingSearchViewDayNight @JvmOverloads constructor(context: Context, att
         when (searchSuggestion) {
             is TagSuggestion -> {
                 val tag = "${searchSuggestion.n}:${searchSuggestion.s.replace(Regex("\\s"), "_")}"
-                with(searchInputView.text) {
+                with(searchInputView.text!!) {
                     delete(if (lastIndexOf(' ') == -1) 0 else lastIndexOf(' ') + 1, length)
 
                     if (!this.contains(tag))
@@ -91,9 +93,9 @@ class FloatingSearchViewDayNight @JvmOverloads constructor(context: Context, att
                 }
             }
             is Suggestion -> {
-                with(searchInputView.text) {
+                with(searchInputView.text!!) {
                     clear()
-                    append(searchSuggestion.str)
+                    append(searchSuggestion.body)
                 }
             }
             is FavoriteHistorySwitch -> onFavoriteHistorySwitchClickListener?.invoke()
@@ -102,14 +104,14 @@ class FloatingSearchViewDayNight @JvmOverloads constructor(context: Context, att
 
     override fun onSearchAction(currentQuery: String?) {}
 
-    override fun onBindSuggestion(
+    fun onBindSuggestion(
         suggestionView: View?,
         leftIcon: ImageView?,
         textView: TextView?,
         item: SearchSuggestion?,
         itemPosition: Int
     ) {
-        when(item) {
+      when(item) {
             is TagSuggestion -> {
                 val tag = "${item.n}:${item.s.replace(Regex("\\s"), "_")}"
 
@@ -199,7 +201,7 @@ class FloatingSearchViewDayNight @JvmOverloads constructor(context: Context, att
                     isClickable = true
 
                     setOnClickListener {
-                        onHistoryDeleteClickedListener?.invoke(item.str)
+                        onHistoryDeleteClickedListener?.invoke(item.body)
                     }
                 }
             }
@@ -214,11 +216,5 @@ class FloatingSearchViewDayNight @JvmOverloads constructor(context: Context, att
                 leftIcon?.setImageDrawable(ResourcesCompat.getDrawable(resources, R.drawable.close, context.theme))
             }
         }
-    }
-
-    // hack to remove color attributes which should not be reused
-    override fun onSaveInstanceState(): Parcelable? {
-        super.onSaveInstanceState()
-        return null
     }
 }
