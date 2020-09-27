@@ -12,7 +12,7 @@
     <string name="settings_galleries_per_page">한 번에 로드할 갤러리 수</string>
     <string name="settings_search_title">검색 설정</string>
     <string name="settings_title">설정</string>
-    <string name="update_notification_description">apk 다운로드중&#8230;</string>
+    <string name="update_notification_description">업데이트 다운로드중&#8230;</string>
     <string name="update_title">업데이트가 있습니다!</string>
     <string name="warning">경고</string>
     <string name="main_no_result">결과 없음</string>

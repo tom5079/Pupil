@@ -20,7 +20,6 @@ package xyz.quaver.pupil.adapters
 
 import android.content.Context
 import android.graphics.drawable.Drawable
-import android.net.Uri
 import android.util.SparseBooleanArray
 import android.view.LayoutInflater
 import android.view.View
@@ -36,7 +35,6 @@ import com.daimajia.swipe.adapters.RecyclerSwipeAdapter
 import com.daimajia.swipe.interfaces.SwipeAdapterInterface
 import com.github.piasy.biv.loader.ImageLoader
 import kotlinx.android.synthetic.main.item_galleryblock.view.*
-import kotlinx.android.synthetic.main.item_reader.view.*
 import kotlinx.coroutines.*
 import xyz.quaver.hitomi.getReader
 import xyz.quaver.io.util.getChild
@@ -158,7 +156,9 @@ class GalleryBlockAdapter(private val galleries: List<Int>) : RecyclerSwipeAdapt
                     })
                     ssiv?.recycle()
                     CoroutineScope(Dispatchers.IO).launch {
-                        showImage(cache.getThumbnail() ?: Uri.EMPTY)
+                        cache.getThumbnail().let { launch(Dispatchers.Main) {
+                            showImage(it)
+                        } }
                     }
                 }
 
