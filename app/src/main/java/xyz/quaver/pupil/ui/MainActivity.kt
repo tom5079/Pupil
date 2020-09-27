@@ -141,17 +141,6 @@ class MainActivity :
         }
     }
 
-    override fun onResume() {
-        super.onResume()
-
-        runOnUiThread {
-            cancelFetch()
-            clearGalleries()
-            fetchGalleries(query, sortMode)
-            loadBlocks()
-        }
-    }
-
     override fun onDestroy() {
         super.onDestroy()
 
