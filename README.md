@@ -1,5 +1,3 @@
-# Pupil
-
 ![Banner](https://github.com/tom5079/Pupil/blob/gh-pages/assets/images/pupil-banner.png?raw=true)
 *Pupil, Hitomi.la viewer for Android*  
 
@@ -21,4 +19,4 @@ or Build app yourself
 
 # Contribution
 
-Any kind of contribution is appriciated. Feel free to leave PR! 
+Any kind of contribution is appriciated. Feel free to leave PR!
