@@ -122,6 +122,8 @@ class MainActivity :
 
         checkUpdate(this)
 
+
+
         initView()
     }
 

@@ -132,7 +132,7 @@ class Cache private constructor(context: Context, val galleryID: Int) : ContextW
     }
 
     @Suppress("BlockingMethodInNonBlockingContext")
-    suspend fun getThumbnail(): Uri? =
+    suspend fun getThumbnail(): Uri =
         findFile(".thumbnail")?.uri
             ?: getGalleryBlock()?.thumbnails?.firstOrNull()?.let { withContext(Dispatchers.IO) {
                 kotlin.runCatching {
@@ -144,7 +144,7 @@ class Cache private constructor(context: Context, val galleryID: Int) : ContextW
                 }.getOrNull()?.let { thumbnail -> kotlin.runCatching {
                     cacheFolder.getChild(".thumbnail").also { it.writeBytes(thumbnail) }
                 }.getOrNull()?.uri }
-            } }
+            } } ?: Uri.EMPTY
 
     suspend fun getReader(): Reader? {
         val mirrors = Preferences.get<String>("mirrors").let { if (it.isEmpty()) emptyList() else it.split('>') }
