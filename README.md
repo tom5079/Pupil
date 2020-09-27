@@ -6,14 +6,8 @@
 ![Download](https://img.shields.io/github/downloads/tom5079/Pupil/latest/Pupil-v5.1.1-hotfix1.apk?color=%234fc3f7&label=DOWNLOAD%20APP&style=for-the-badge)  
 [![](https://discordapp.com/api/guilds/610452916612104194/embed.png?style=banner2)](https://discord.gg/Stj4b5v)  
 
-# Screenshot
-![Main Screen](https://github.com/tom5079/Pupil/blob/gh-pages/assets/images/main-screenshot.png?raw=true)
-*Main Screen*
-
-![Reader Screen](https://github.com/tom5079/Pupil/blob/gh-pages/assets/images/reader-screenshot.png?raw=true)
-*Reader Screen*
-
-Images are censored to be SFW
+# Features
+![Main Screen](https://github.com/tom5079/Pupil/blob/gh-pages/assets/images/main-screenshot.jpg?raw=true)
 
 # Installation
 
