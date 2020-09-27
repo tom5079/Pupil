@@ -44,8 +44,7 @@ import java.net.Proxy
 class ProxyDialog(context: Context) : AlertDialog(context) {
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        setContentView(build())
-        window?.attributes?.width = ViewGroup.LayoutParams.MATCH_PARENT
+        setView(build())
 
         super.onCreate(savedInstanceState)
     }
