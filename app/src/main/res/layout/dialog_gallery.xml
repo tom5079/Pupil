@@ -40,7 +40,7 @@
                 android:layout_height="wrap_content"
                 android:padding="8dp">
 
-                <ImageView
+                <com.github.piasy.biv.view.BigImageView
                     android:id="@+id/gallery_cover"
                     android:layout_width="150dp"
                     android:layout_height="wrap_content"

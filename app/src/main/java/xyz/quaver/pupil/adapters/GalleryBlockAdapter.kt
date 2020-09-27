@@ -26,28 +26,19 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.LinearLayout
 import androidx.cardview.widget.CardView
-import androidx.core.view.children
+import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
-import androidx.swiperefreshlayout.widget.CircularProgressDrawable
 import androidx.vectordrawable.graphics.drawable.Animatable2Compat
 import androidx.vectordrawable.graphics.drawable.AnimatedVectorDrawableCompat
-import com.bumptech.glide.RequestManager
-import com.bumptech.glide.load.DataSource
-import com.bumptech.glide.load.engine.DiskCacheStrategy
-import com.bumptech.glide.load.engine.GlideException
-import com.bumptech.glide.request.RequestListener
-import com.bumptech.glide.request.target.Target
 import com.daimajia.swipe.SwipeLayout
 import com.daimajia.swipe.adapters.RecyclerSwipeAdapter
 import com.daimajia.swipe.interfaces.SwipeAdapterInterface
+import com.github.piasy.biv.loader.ImageLoader
 import kotlinx.android.synthetic.main.item_galleryblock.view.*
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+import kotlinx.android.synthetic.main.item_reader.view.*
+import kotlinx.coroutines.*
 import xyz.quaver.hitomi.getReader
 import xyz.quaver.io.util.getChild
-import xyz.quaver.pupil.BuildConfig
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.favoriteTags
 import xyz.quaver.pupil.favorites
@@ -57,11 +48,9 @@ import xyz.quaver.pupil.util.Preferences
 import xyz.quaver.pupil.util.downloader.Cache
 import xyz.quaver.pupil.util.downloader.DownloadManager
 import xyz.quaver.pupil.util.wordCapitalize
-import java.util.*
-import kotlin.collections.ArrayList
-import kotlin.concurrent.schedule
+import java.io.File
 
-class GalleryBlockAdapter(private val glide: RequestManager, private val galleries: List<Int>) : RecyclerSwipeAdapter<RecyclerView.ViewHolder>(), SwipeAdapterInterface {
+class GalleryBlockAdapter(private val galleries: List<Int>) : RecyclerSwipeAdapter<RecyclerView.ViewHolder>(), SwipeAdapterInterface {
 
     enum class ViewType {
         NEXT,
@@ -69,12 +58,11 @@ class GalleryBlockAdapter(private val glide: RequestManager, private val galleri
         PREV
     }
 
-    val timer = Timer()
-
+    var update = true
     var thin: Boolean = Preferences["thin"]
 
     inner class GalleryViewHolder(val view: View) : RecyclerView.ViewHolder(view) {
-        var timerTask: TimerTask? = null
+        var updateJob: Job? = null
 
         private fun updateProgress(context: Context, galleryID: Int) {
             val cache = Cache.getInstance(context, galleryID)
@@ -144,54 +132,41 @@ class GalleryBlockAdapter(private val glide: RequestManager, private val galleri
                 val artists = galleryBlock.artists
                 val series = galleryBlock.series
 
-                if (thin)
-                    galleryblock_thumbnail.layoutParams.width = context.resources.getDimensionPixelSize(
-                        R.dimen.galleryblock_thumbnail_thin
-                    )
-
-                galleryblock_thumbnail.setImageDrawable(CircularProgressDrawable(context).also {
-                    it.start()
-                })
-
-                CoroutineScope(Dispatchers.IO).launch {
-                    val thumbnail = cache.getThumbnail()
-
-                    glide
-                        .load(thumbnail)
-                        .skipMemoryCache(true)
-                        .diskCacheStrategy(DiskCacheStrategy.NONE)
-                        .error(R.drawable.image_broken_variant)
-                        .listener(object: RequestListener<Drawable> {
-                            override fun onLoadFailed(
-                                e: GlideException?,
-                                model: Any?,
-                                target: Target<Drawable>?,
-                                isFirstResource: Boolean
-                            ): Boolean {
-                                Cache.getInstance(context, galleryID).let {
-                                    it.cacheFolder.getChild(".thumbnail").let { if (it.exists()) it.delete() }
-                                    it.downloadFolder?.getChild(".thumbnail")?.let { if (it.exists()) it.delete() }
-                                }
-                                return false
+                galleryblock_thumbnail.apply {
+                    setOnClickListener {
+                        view.performClick()
+                    }
+                    setOnLongClickListener {
+                        view.performLongClick()
+                    }
+                    setFailureImage(ContextCompat.getDrawable(context, R.drawable.image_broken_variant))
+                    setImageLoaderCallback(object: ImageLoader.Callback {
+                        override fun onFail(error: Exception?) {
+                            Cache.getInstance(context, galleryID).let { cache ->
+                                cache.cacheFolder.getChild(".thumbnail").let { if (it.exists()) it.delete() }
+                                cache.downloadFolder?.getChild(".thumbnail")?.let { if (it.exists()) it.delete() }
                             }
+                        }
 
-                            override fun onResourceReady(
-                                resource: Drawable?,
-                                model: Any?,
-                                target: Target<Drawable>?,
-                                dataSource: DataSource?,
-                                isFirstResource: Boolean
-                            ): Boolean = false
-                        })
-                        .apply {
-                            if (BuildConfig.CENSOR)
-                                override(5, 8)
-                        }.let { launch(Dispatchers.Main) { it.into(galleryblock_thumbnail) } }
+                        override fun onCacheHit(imageType: Int, image: File?) {}
+                        override fun onCacheMiss(imageType: Int, image: File?) {}
+                        override fun onFinish() {}
+                        override fun onProgress(progress: Int) {}
+                        override fun onStart() {}
+                        override fun onSuccess(image: File?) {}
+                    })
+                    ssiv?.recycle()
+                    CoroutineScope(Dispatchers.IO).launch {
+                        showImage(cache.getThumbnail())
+                    }
                 }
 
-                if (timerTask == null)
-                    timerTask = timer.schedule(0, 1000) {
-                        updateProgress(context, galleryID)
+                if (updateJob == null)
+                    updateJob = CoroutineScope(Dispatchers.Main).launch {
+                        while (update) {
+                            updateProgress(context, galleryID)
+                            delay(1000)
+                        }
                     }
 
                 galleryblock_title.text = galleryBlock.title
@@ -386,8 +361,8 @@ class GalleryBlockAdapter(private val glide: RequestManager, private val galleri
         super.onViewDetachedFromWindow(holder)
 
         if (holder is GalleryViewHolder) {
-            holder.timerTask?.cancel()
-            holder.timerTask = null
+            holder.updateJob?.cancel()
+            holder.updateJob = null
         }
     }
 

@@ -18,32 +18,35 @@
 
 package xyz.quaver.pupil.adapters
 
+import android.net.Uri
 import android.view.ViewGroup
-import android.widget.ImageView
+import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
-import com.bumptech.glide.RequestManager
-import com.bumptech.glide.load.engine.DiskCacheStrategy
-import xyz.quaver.pupil.BuildConfig
+import com.github.piasy.biv.view.BigImageView
+import xyz.quaver.pupil.R
 
-class ThumbnailAdapter(private val glide: RequestManager, var thumbnails: List<String>) : RecyclerView.Adapter<ThumbnailAdapter.ViewHolder>() {
+class ThumbnailAdapter(var thumbnails: List<String>) : RecyclerView.Adapter<ThumbnailAdapter.ViewHolder>() {
 
-    class ViewHolder(val view: ImageView) : RecyclerView.ViewHolder(view)
+    class ViewHolder(val view: BigImageView) : RecyclerView.ViewHolder(view) {
+        fun clear() {
+            view.ssiv?.recycle()
+        }
+    }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
-        return ViewHolder(ImageView(parent.context))
+        return ViewHolder(BigImageView(parent.context).apply {
+            setFailureImage(ContextCompat.getDrawable(context, R.drawable.image_broken_variant))
+        })
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        glide
-            .load(thumbnails[position])
-            .diskCacheStrategy(DiskCacheStrategy.NONE)
-            .apply {
-                if (BuildConfig.CENSOR)
-                    override(5, 8)
-            }
-            .into(holder.view)
+        holder.view.showImage(Uri.parse(thumbnails[position]))
     }
 
     override fun getItemCount() = thumbnails.size
+
+    override fun onViewRecycled(holder: ViewHolder) {
+        holder.clear()
+    }
 
 }

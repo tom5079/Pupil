@@ -20,6 +20,7 @@ package xyz.quaver.pupil.util.downloader
 
 import android.content.Context
 import android.content.ContextWrapper
+import android.net.Uri
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -131,8 +132,8 @@ class Cache private constructor(context: Context, val galleryID: Int) : ContextW
     }
 
     @Suppress("BlockingMethodInNonBlockingContext")
-    suspend fun getThumbnail(): ByteArray? =
-        findFile(".thumbnail")?.readBytes()
+    suspend fun getThumbnail(): Uri? =
+        findFile(".thumbnail")?.uri
             ?: getGalleryBlock()?.thumbnails?.firstOrNull()?.let { withContext(Dispatchers.IO) {
                 kotlin.runCatching {
                     val request = Request.Builder()
@@ -140,9 +141,9 @@ class Cache private constructor(context: Context, val galleryID: Int) : ContextW
                         .build()
 
                     client.newCall(request).execute().also { if (it.code() != 200) throw IOException() }.body()?.use { it.bytes() }
-                }.getOrNull()?.also { kotlin.run {
-                    cacheFolder.getChild(".thumbnail").writeBytes(it)
-                } }
+                }.getOrNull()?.let { thumbnail -> kotlin.runCatching {
+                    cacheFolder.getChild(".thumbnail").also { it.writeBytes(thumbnail) }
+                }.getOrNull()?.uri }
             } }
 
     suspend fun getReader(): Reader? {

@@ -32,7 +32,6 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.cardview.widget.CardView
 import androidx.core.view.GravityCompat
-import com.bumptech.glide.Glide
 import com.google.android.material.appbar.AppBarLayout
 import com.google.android.material.navigation.NavigationView
 import com.google.android.material.snackbar.Snackbar
@@ -156,7 +155,7 @@ class MainActivity :
     override fun onDestroy() {
         super.onDestroy()
 
-        (main_recyclerview?.adapter as? GalleryBlockAdapter)?.timer?.cancel()
+        (main_recyclerview?.adapter as? GalleryBlockAdapter)?.update = false
     }
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
@@ -263,11 +262,7 @@ class MainActivity :
                     if (it?.isEmpty() == false) {
                         val galleryID = it.random()
 
-                        GalleryDialog(
-                            this@MainActivity,
-                            Glide.with(this@MainActivity),
-                            galleryID
-                        ).apply {
+                        GalleryDialog(this@MainActivity, galleryID).apply {
                             onChipClickedHandler.add {
                                 runOnUiThread {
                                     query = it.toQuery()
@@ -318,7 +313,7 @@ class MainActivity :
     @SuppressLint("ClickableViewAccessibility")
     private fun setupRecyclerView() {
         with(main_recyclerview) {
-            adapter = GalleryBlockAdapter(Glide.with(this@MainActivity), galleries).apply {
+            adapter = GalleryBlockAdapter(galleries).apply {
                 onChipClickedHandler.add {
                     runOnUiThread {
                         query = it.toQuery()
@@ -381,11 +376,7 @@ class MainActivity :
 
                     val galleryID = galleries[position]
 
-                    GalleryDialog(
-                        this@MainActivity,
-                        Glide.with(this@MainActivity),
-                        galleryID
-                    ).apply {
+                    GalleryDialog(this@MainActivity, galleryID).apply {
                         onChipClickedHandler.add {
                             runOnUiThread {
                                 query = it.toQuery()
@@ -983,15 +974,5 @@ class MainActivity :
                     }
             }
         }
-    }
-
-    override fun onLowMemory() {
-        super.onLowMemory()
-        Glide.get(this).onLowMemory()
-    }
-
-    override fun onTrimMemory(level: Int) {
-        super.onTrimMemory(level)
-        Glide.get(this).onTrimMemory(level)
     }
 }
