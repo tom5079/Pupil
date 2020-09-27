@@ -332,16 +332,13 @@ class MainActivity :
                 }
                 onDownloadClickedHandler = { position ->
                     val galleryID = galleries[position]
-                    if (Preferences["cache_disable"])
-                        Toast.makeText(context, R.string.settings_download_when_cache_disable_warning, Toast.LENGTH_SHORT).show()
+
+                    if (DownloadManager.getInstance(context).isDownloading(galleryID)) {     //download in progress
+                        DownloadService.cancel(this@MainActivity, galleryID)
+                    }
                     else {
-                        if (DownloadManager.getInstance(context).isDownloading(galleryID)) {     //download in progress
-                            DownloadService.cancel(this@MainActivity, galleryID)
-                        }
-                        else {
-                            DownloadManager.getInstance(context).addDownloadFolder(galleryID)
-                            DownloadService.download(this@MainActivity, galleryID)
-                        }
+                        DownloadManager.getInstance(context).addDownloadFolder(galleryID)
+                        DownloadService.download(this@MainActivity, galleryID)
                     }
 
                     closeAllItems()

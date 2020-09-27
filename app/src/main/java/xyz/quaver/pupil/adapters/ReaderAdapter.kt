@@ -18,34 +18,23 @@
 
 package xyz.quaver.pupil.adapters
 
-import android.graphics.drawable.Drawable
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.core.view.updateLayoutParams
 import androidx.recyclerview.widget.RecyclerView
-import com.bumptech.glide.Glide
-import com.bumptech.glide.load.DataSource
-import com.bumptech.glide.load.engine.DiskCacheStrategy
-import com.bumptech.glide.load.engine.GlideException
-import com.bumptech.glide.load.model.GlideUrl
-import com.bumptech.glide.load.model.LazyHeaders
-import com.bumptech.glide.request.RequestListener
-import com.bumptech.glide.request.target.Target
+import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView
+import com.facebook.drawee.view.SimpleDraweeView
+import com.github.piasy.biv.view.FrescoImageViewFactory
+import com.github.piasy.biv.view.ImageShownCallback
 import kotlinx.android.synthetic.main.item_reader.view.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import xyz.quaver.Code
 import xyz.quaver.hitomi.Reader
-import xyz.quaver.hitomi.getReferer
-import xyz.quaver.hitomi.imageUrlFromImage
-import xyz.quaver.hiyobi.createImgList
-import xyz.quaver.pupil.BuildConfig
 import xyz.quaver.pupil.R
-import xyz.quaver.pupil.services.DownloadService
 import xyz.quaver.pupil.ui.ReaderActivity
-import xyz.quaver.pupil.util.Preferences
 import xyz.quaver.pupil.util.downloader.Cache
 import java.util.*
 import kotlin.concurrent.schedule
@@ -57,18 +46,45 @@ class ReaderAdapter(private val activity: ReaderActivity,
     var reader: Reader? = null
     val timer = Timer()
 
-    private val glide = Glide.with(activity)
-
     var isFullScreen = false
 
-    var onItemClickListener : ((Int) -> (Unit))? = null
+    var onItemClickListener : (() -> (Unit))? = null
 
-    class ViewHolder(val view: View) : RecyclerView.ViewHolder(view)
+    class ViewHolder(val view: View) : RecyclerView.ViewHolder(view) {
+        fun clear() {
+            view.image.mainView.let {
+                when (it) {
+                    is SubsamplingScaleImageView ->
+                        it.recycle()
+                    is SimpleDraweeView ->
+                        it.controller = null
+                }
+            }
+        }
+    }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         return LayoutInflater.from(parent.context).inflate(
             R.layout.item_reader, parent, false
         ).let {
+            with (it) {
+                image.setImageViewFactory(FrescoImageViewFactory())
+                image.setImageShownCallback(object: ImageShownCallback {
+                    override fun onThumbnailShown() {}
+                    override fun onMainImageShown() {
+                        placeholder.updateLayoutParams<ConstraintLayout.LayoutParams> {
+                            dimensionRatio = null
+                        }
+                    }
+                })
+                image.setOnClickListener {
+                    onItemClickListener?.invoke()
+                }
+                setOnClickListener {
+                    onItemClickListener?.invoke()
+                }
+            }
+
             ViewHolder(it)
         }
     }
@@ -80,126 +96,52 @@ class ReaderAdapter(private val activity: ReaderActivity,
         if (cache == null)
             cache = Cache.getInstance(holder.view.context, galleryID)
 
-        if (isFullScreen) {
-            holder.view.layoutParams.height = ConstraintLayout.LayoutParams.MATCH_PARENT
-        } else {
-            holder.view.layoutParams.height = ConstraintLayout.LayoutParams.WRAP_CONTENT
+        holder.view.layoutParams.height =
+            if (isFullScreen)
+                ConstraintLayout.LayoutParams.MATCH_PARENT
+            else
+                ConstraintLayout.LayoutParams.WRAP_CONTENT
 
-            (holder.view.progress_layout.layoutParams as ConstraintLayout.LayoutParams)
-                .dimensionRatio = "${reader!!.galleryInfo.files[position].width}:${reader!!.galleryInfo.files[position].height}"
-        }
+        holder.view.image.layoutParams.height =
+            if (isFullScreen)
+                ConstraintLayout.LayoutParams.MATCH_PARENT
+            else
+                ConstraintLayout.LayoutParams.WRAP_CONTENT
 
-        holder.view.image.setOnPhotoTapListener { _, _, _ ->
-            onItemClickListener?.invoke(position)
-        }
-
-        holder.view.setOnClickListener {
-            onItemClickListener?.invoke(position)
+        holder.view.placeholder.updateLayoutParams<ConstraintLayout.LayoutParams> {
+            dimensionRatio = "${reader!!.galleryInfo.files[position].width}:${reader!!.galleryInfo.files[position].height}"
         }
 
         holder.view.reader_index.text = (position+1).toString()
 
-        if (Preferences["cache_disable"]) {
-            val lowQuality: Boolean = Preferences["low_quality"]
+        val image = cache!!.getImage(position)
+        val progress = activity.downloader?.progress?.get(galleryID)?.get(position)
 
-            val url = when (reader!!.code) {
-                Code.HITOMI ->
-                    GlideUrl(
-                        imageUrlFromImage(
-                            galleryID,
-                            reader!!.galleryInfo.files[position],
-                            !lowQuality
-                        )
-                    , LazyHeaders.Builder().addHeader("Referer", getReferer(galleryID)).build())
-                Code.HIYOBI ->
-                    GlideUrl(createImgList(galleryID, reader!!, lowQuality)[position].path)
-                else -> null
-            }
-            holder.view.image.post {
-                glide
-                    .load(url!!)
-                    .diskCacheStrategy(DiskCacheStrategy.NONE)
-                    .skipMemoryCache(false)
-                    .error(R.drawable.image_broken_variant)
-                    .apply {
-                        if (BuildConfig.CENSOR)
-                            override(5, 8)
-                        else
-                            override(
-                                holder.view.context.resources.displayMetrics.widthPixels,
-                                holder.view.context.resources.getDimensionPixelSize(R.dimen.reader_max_height)
-                            )
-                    }
-                    .error(R.drawable.image_broken_variant)
-                    .into(holder.view.image)
-            }
+        if (progress?.isInfinite() == true && image != null) {
+            holder.view.progress_group.visibility = View.INVISIBLE
+            holder.view.image.showImage(image.uri)
         } else {
-            val image = cache!!.getImage(position)
-            val progress = activity.downloader?.progress?.get(galleryID)?.get(position)
+            holder.view.progress_group.visibility = View.VISIBLE
+            holder.view.reader_item_progressbar.progress =
+                if (progress?.isInfinite() == true)
+                    100
+                else
+                    progress?.roundToInt() ?: 0
 
-            if (progress?.isInfinite() == true && image != null) {
-                holder.view.reader_item_progressbar.visibility = View.INVISIBLE
+            holder.clear()
 
-                CoroutineScope(Dispatchers.IO).launch {
-                    glide
-                        .load(image.uri)
-                        .diskCacheStrategy(DiskCacheStrategy.NONE)
-                        .skipMemoryCache(true)
-                        .apply {
-                            if (BuildConfig.CENSOR)
-                                override(5, 8)
-                            else
-                                override(
-                                    holder.view.context.resources.displayMetrics.widthPixels,
-                                    holder.view.context.resources.getDimensionPixelSize(R.dimen.reader_max_height)
-                                )
-                        }
-                        .error(R.drawable.image_broken_variant)
-                        .listener(object: RequestListener<Drawable> {
-                            override fun onLoadFailed(
-                                e: GlideException?,
-                                model: Any?,
-                                target: Target<Drawable>?,
-                                isFirstResource: Boolean
-                            ): Boolean {
-                                cache!!.metadata.imageList?.set(position, null)
-                                image.delete()
-                                DownloadService.cancel(holder.view.context, galleryID)
-                                DownloadService.download(holder.view.context, galleryID, true)
-                                return true
-                            }
-
-                            override fun onResourceReady(
-                                resource: Drawable?,
-                                model: Any?,
-                                target: Target<Drawable>?,
-                                dataSource: DataSource?,
-                                isFirstResource: Boolean
-                            ) = false
-                        }).let { launch(Dispatchers.Main) { it.into(holder.view.image) } }
-                }
-            } else {
-                holder.view.reader_item_progressbar.visibility = View.VISIBLE
-
-                glide.clear(holder.view.image)
-
-                holder.view.reader_item_progressbar.progress =
-                    if (progress?.isInfinite() == true)
-                        100
-                    else
-                        progress?.roundToInt() ?: 0
-
-                holder.view.image.setImageDrawable(null)
-
-                timer.schedule(1000) {
-                    CoroutineScope(Dispatchers.Main).launch {
-                        notifyItemChanged(position)
-                    }
+            timer.schedule(1000) {
+                CoroutineScope(Dispatchers.Main).launch {
+                    notifyItemChanged(position)
                 }
             }
         }
     }
 
     override fun getItemCount() = reader?.galleryInfo?.files?.size ?: 0
+
+    override fun onViewRecycled(holder: ViewHolder) {
+        holder.clear()
+    }
 
 }

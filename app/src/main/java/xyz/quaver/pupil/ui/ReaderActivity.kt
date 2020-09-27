@@ -139,38 +139,7 @@ class ReaderActivity : BaseActivity() {
             return
         }
 
-        if (Preferences["cache_disable"]) {
-            reader_download_progressbar.visibility = View.GONE
-            CoroutineScope(Dispatchers.IO).launch {
-                val reader = cache.getReader()
-
-                launch(Dispatchers.Main) initDownloader@{
-                    if (reader == null) {
-                        Snackbar
-                            .make(reader_layout, R.string.reader_failed_to_find_gallery, Snackbar.LENGTH_INDEFINITE)
-                            .show()
-                        return@initDownloader
-                    }
-
-                    histories.add(galleryID)
-                    (reader_recyclerview.adapter as ReaderAdapter).apply {
-                        this.reader = reader
-                        notifyDataSetChanged()
-                    }
-                    title = reader.galleryInfo.title ?: ""
-                    menu?.findItem(R.id.reader_menu_page_indicator)?.title = "$currentPage/${reader.galleryInfo.files.size}"
-
-                    menu?.findItem(R.id.reader_type)?.icon = ContextCompat.getDrawable(this@ReaderActivity,
-                        when (reader.code) {
-                            Code.HITOMI -> R.drawable.hitomi
-                            Code.HIYOBI -> R.drawable.ic_hiyobi
-                            else -> android.R.color.transparent
-                        })
-                }
-            }
-        } else
-            initDownloadListener()
-
+        initDownloadListener()
         initView()
     }
 
@@ -396,19 +365,15 @@ class ReaderActivity : BaseActivity() {
             animateDownloadFAB(DownloadManager.getInstance(this@ReaderActivity).getDownloadFolder(galleryID) != null) //If download in progress, animate button
 
             setOnClickListener {
-                if (PreferenceManager.getDefaultSharedPreferences(context).getBoolean("cache_disable", false))
-                    Toast.makeText(context, R.string.settings_download_when_cache_disable_warning, Toast.LENGTH_SHORT).show()
-                else {
-                    val downloadManager = DownloadManager.getInstance(this@ReaderActivity)
+                val downloadManager = DownloadManager.getInstance(this@ReaderActivity)
 
-                    if (downloadManager.isDownloading(galleryID)) {
-                        downloadManager.deleteDownloadFolder(galleryID)
-                        animateDownloadFAB(false)
-                    } else {
-                        downloadManager.addDownloadFolder(galleryID)
-                        DownloadService.download(context, galleryID, true)
-                        animateDownloadFAB(true)
-                    }
+                if (downloadManager.isDownloading(galleryID)) {
+                    downloadManager.deleteDownloadFolder(galleryID)
+                    animateDownloadFAB(false)
+                } else {
+                    downloadManager.addDownloadFolder(galleryID)
+                    DownloadService.download(context, galleryID, true)
+                    animateDownloadFAB(true)
                 }
             }
         }
