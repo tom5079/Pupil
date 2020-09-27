@@ -110,7 +110,7 @@
 			<ImageView
 				android:id="@+id/galleryblock_thumbnail"
 				android:layout_width="150dp"
-				android:layout_height="wrap_content"
+				android:layout_height="0dp"
 				android:contentDescription="@string/galleryblock_thumbnail_description"
 				android:adjustViewBounds="true"
 				app:layout_constraintLeft_toLeftOf="parent"
@@ -188,7 +188,7 @@
 				android:layout_width="wrap_content"
 				android:layout_height="wrap_content"
 				app:barrierDirection="bottom"
-				app:constraint_referenced_ids="galleryblock_thumbnail,galleryblock_tag_group"/>
+				app:constraint_referenced_ids="galleryblock_tag_group"/>
 
 			<View
 				android:id="@+id/divider"

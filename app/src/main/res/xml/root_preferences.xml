@@ -45,10 +45,6 @@
             app:title="@string/settings_download_folder"/>
 
         <SwitchPreferenceCompat
-            app:key="cache_disable"
-            app:title="@string/settings_cache_disable"/>
-
-        <SwitchPreferenceCompat
             app:key="nomedia"
             app:title="@string/settings_nomedia_title"/>
 

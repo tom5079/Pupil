@@ -80,7 +80,7 @@ class GalleryBlockAdapter(private val glide: RequestManager, private val galleri
             val cache = Cache.getInstance(context, galleryID)
 
             CoroutineScope(Dispatchers.Main).launch {
-                if (cache.metadata.reader == null || Preferences["cache_disable"]) {
+                if (cache.metadata.reader == null) {
                     view.galleryblock_progressbar_layout.visibility = View.GONE
                     view.galleryblock_progress_complete.visibility = View.INVISIBLE
                     return@launch

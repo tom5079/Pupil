@@ -26,14 +26,13 @@ import android.os.Build
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.content.ContextCompat
 import androidx.preference.PreferenceManager
+import com.github.piasy.biv.BigImageViewer
+import com.github.piasy.biv.loader.fresco.FrescoImageLoader
 import com.google.android.gms.common.GooglePlayServicesNotAvailableException
 import com.google.android.gms.common.GooglePlayServicesRepairableException
 import com.google.android.gms.security.ProviderInstaller
 import com.google.firebase.analytics.FirebaseAnalytics
 import com.google.firebase.crashlytics.FirebaseCrashlytics
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
 import okhttp3.Response
@@ -118,20 +117,6 @@ class Pupil : Application() {
         favoriteTags = SavedSet(File(ContextCompat.getDataDir(this), "favorites_tags.json"), Tag.parse(""))
         searchHistory = SavedSet(File(ContextCompat.getDataDir(this), "search_histories.json"), "")
 
-        if (Preferences["new_history"]) {
-            CoroutineScope(Dispatchers.IO).launch {
-                histories.reversed().let {
-                    histories.clear()
-                    histories.addAll(it)
-                }
-                favorites.reversed().let {
-                    favorites.clear()
-                    favorites.addAll(it)
-                }
-            }
-            Preferences["new_history"] = true
-        }
-
         if (BuildConfig.DEBUG)
             FirebaseAnalytics.getInstance(this).setAnalyticsCollectionEnabled(false)
 
@@ -142,6 +127,8 @@ class Pupil : Application() {
         } catch (e: GooglePlayServicesNotAvailableException) {
             e.printStackTrace()
         }
+
+        BigImageViewer.initialize(FrescoImageLoader.with(this))
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
