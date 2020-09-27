@@ -1,0 +1,3 @@
+files:
+  - source: /en/tags.json
+    translation: /%two_letters_code%/tags.json
