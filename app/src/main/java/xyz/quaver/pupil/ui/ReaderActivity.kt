@@ -43,7 +43,6 @@ import androidx.recyclerview.widget.PagerSnapHelper
 import androidx.recyclerview.widget.RecyclerView
 import androidx.vectordrawable.graphics.drawable.Animatable2Compat
 import androidx.vectordrawable.graphics.drawable.AnimatedVectorDrawableCompat
-import com.bumptech.glide.Glide
 import com.google.android.material.snackbar.Snackbar
 import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.google.mlkit.vision.face.Face
@@ -99,7 +98,6 @@ class ReaderActivity : BaseActivity() {
         }
     }
 
-    private val timer = Timer()
     private val snapHelper = PagerSnapHelper()
     private var menu: Menu? = null
 
@@ -239,8 +237,7 @@ class ReaderActivity : BaseActivity() {
     override fun onDestroy() {
         super.onDestroy()
 
-        timer.cancel()
-        (reader_recyclerview?.adapter as? ReaderAdapter)?.timer?.cancel()
+        update = false
     }
 
     override fun onBackPressed() {
@@ -275,44 +272,53 @@ class ReaderActivity : BaseActivity() {
         }
     }
 
+    private var update = true
     private fun initDownloadListener() {
-        timer.schedule(1000, 1000) {
-            val downloader = downloader ?: return@schedule
+        CoroutineScope(Dispatchers.Main).launch {
+            while (update) {
+                delay(1000)
 
-            if (!downloader.progress.containsKey(galleryID))  //loading
-                return@schedule
+                val downloader = downloader ?: continue
 
-            if (downloader.progress[galleryID]?.isEmpty() == true) {      //Gallery not found
-                timer.cancel()
-                Snackbar
-                    .make(reader_layout, R.string.reader_failed_to_find_gallery, Snackbar.LENGTH_INDEFINITE)
-                    .show()
-            }
+                if (!downloader.progress.containsKey(galleryID))  //loading
+                    continue
 
-            histories.add(galleryID)
+                if (downloader.progress[galleryID]?.isEmpty() == true) {      //Gallery not found
+                    update = false
+                    Snackbar
+                        .make(reader_layout, R.string.reader_failed_to_find_gallery, Snackbar.LENGTH_INDEFINITE)
+                        .show()
 
-            runOnUiThread {
+                    return@launch
+                }
+
+                histories.add(galleryID)
+
                 reader_download_progressbar.max = reader_recyclerview.adapter?.itemCount ?: 0
-                reader_download_progressbar.progress = downloader.progress[galleryID]?.count { it.isInfinite() } ?: 0
+                reader_download_progressbar.progress =
+                    downloader.progress[galleryID]?.count { it.isInfinite() } ?: 0
 
                 if (title == getString(R.string.reader_loading)) {
                     val reader = cache.metadata.reader
 
                     if (reader != null) {
-                        with (reader_recyclerview.adapter as ReaderAdapter) {
+                        with(reader_recyclerview.adapter as ReaderAdapter) {
                             this.reader = reader
                             notifyDataSetChanged()
                         }
 
                         title = reader.galleryInfo.title
-                        menu?.findItem(R.id.reader_menu_page_indicator)?.title = "$currentPage/${reader.galleryInfo.files.size}"
+                        menu?.findItem(R.id.reader_menu_page_indicator)?.title =
+                            "$currentPage/${reader.galleryInfo.files.size}"
 
-                        menu?.findItem(R.id.reader_type)?.icon = ContextCompat.getDrawable(this@ReaderActivity,
+                        menu?.findItem(R.id.reader_type)?.icon = ContextCompat.getDrawable(
+                            this@ReaderActivity,
                             when (reader.code) {
                                 Code.HITOMI -> R.drawable.hitomi
                                 Code.HIYOBI -> R.drawable.ic_hiyobi
                                 else -> android.R.color.transparent
-                            })
+                            }
+                        )
                     }
                 }
 
@@ -601,15 +607,5 @@ class ReaderActivity : BaseActivity() {
                 cameraEnabled = false
             }
         }
-    }
-
-    override fun onLowMemory() {
-        super.onLowMemory()
-        Glide.get(this).onLowMemory()
-    }
-
-    override fun onTrimMemory(level: Int) {
-        super.onTrimMemory(level)
-        Glide.get(this).onTrimMemory(level)
     }
 }

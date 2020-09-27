@@ -21,17 +21,19 @@ package xyz.quaver.pupil.adapters
 import android.view.ViewGroup
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.bumptech.glide.RequestManager
 import kotlin.math.min
 
-class ThumbnailPageAdapter(private val glide: RequestManager, private val thumbnails: List<String>) : RecyclerView.Adapter<ThumbnailPageAdapter.ViewHolder>() {
+class ThumbnailPageAdapter(private val thumbnails: List<String>) : RecyclerView.Adapter<ThumbnailPageAdapter.ViewHolder>() {
 
     class ViewHolder(val view: RecyclerView) : RecyclerView.ViewHolder(view)
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         return ViewHolder(RecyclerView(parent.context).apply {
-            layoutManager = GridLayoutManager(parent.context, 3)
-            adapter = ThumbnailAdapter(glide, listOf())
+            val layoutManager = GridLayoutManager(parent.context, 3)
+            val adapter = ThumbnailAdapter(listOf())
+
+            this.layoutManager = layoutManager
+            this.adapter = adapter
             layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
         })
     }
@@ -41,7 +43,7 @@ class ThumbnailPageAdapter(private val glide: RequestManager, private val thumbn
             thumbnails = this@ThumbnailPageAdapter.thumbnails.slice(9*position until min(9*position+9, this@ThumbnailPageAdapter.thumbnails.size))
             notifyDataSetChanged()
 
-            holder.view.layoutManager?.scrollToPosition(itemCount-1)
+            (holder.view.layoutManager as GridLayoutManager).scrollToPosition(8)
         }
     }
 

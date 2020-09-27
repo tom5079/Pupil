@@ -10,4 +10,6 @@
 
 	<dimen name="thumb_width">24dp</dimen>
 	<dimen name="thumb_height">72dp</dimen>
+
+	<dimen name="thumbnail_page_height">300dp</dimen>
 </resources>

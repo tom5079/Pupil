@@ -20,16 +20,17 @@ package xyz.quaver.pupil.ui.dialog
 
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
+import android.view.ViewGroup
 import android.widget.LinearLayout.LayoutParams
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.widget.ViewPager2
-import com.bumptech.glide.RequestManager
 import com.google.android.material.snackbar.Snackbar
 import kotlinx.android.synthetic.main.dialog_gallery.*
 import kotlinx.android.synthetic.main.dialog_gallery_details.view.*
@@ -54,7 +55,7 @@ import xyz.quaver.pupil.util.ItemClickSupport
 import xyz.quaver.pupil.util.downloader.Cache
 import xyz.quaver.pupil.util.wordCapitalize
 
-class GalleryDialog(context: Context, private val glide: RequestManager, private val galleryID: Int) : AlertDialog(context) {
+class GalleryDialog(context: Context, private val galleryID: Int) : AlertDialog(context) {
 
     val onChipClickedHandler = ArrayList<((Tag) -> (Unit))>()
 
@@ -105,12 +106,7 @@ class GalleryDialog(context: Context, private val glide: RequestManager, private
                         }
                     }
 
-                    glide
-                        .load(gallery.cover)
-                        .apply {
-                            if (BuildConfig.CENSOR)
-                                override(5, 8)
-                        }.into(gallery_cover)
+                    gallery_cover.showImage(Uri.parse(gallery.cover))
 
                     addDetails(gallery)
                     addThumbnails(gallery)
@@ -195,7 +191,8 @@ class GalleryDialog(context: Context, private val glide: RequestManager, private
             gallery_details.setText(R.string.gallery_thumbnails)
 
             val pager = ViewPager2(context).apply {
-                adapter = ThumbnailPageAdapter(glide, gallery.thumbnails)
+                adapter = ThumbnailPageAdapter(gallery.thumbnails)
+                layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT)
             }
 
             gallery_details_contents.addView(
@@ -215,7 +212,7 @@ class GalleryDialog(context: Context, private val glide: RequestManager, private
         val inflater = LayoutInflater.from(context)
         val galleries = ArrayList<Int>()
 
-        val adapter = GalleryBlockAdapter(glide, galleries).apply {
+        val adapter = GalleryBlockAdapter(galleries).apply {
             onChipClickedHandler.add { tag ->
                 this@GalleryDialog.onChipClickedHandler.forEach { handler ->
                     handler.invoke(tag)
@@ -238,11 +235,7 @@ class GalleryDialog(context: Context, private val glide: RequestManager, private
                         histories.add(galleries[position])
                     }
                     onItemLongClickListener = { _, position, _ ->
-                        GalleryDialog(
-                            context,
-                            glide,
-                            galleries[position]
-                        ).apply {
+                        GalleryDialog(context, galleries[position]).apply {
                             onChipClickedHandler.add { tag ->
                                 this@GalleryDialog.onChipClickedHandler.forEach { it.invoke(tag) }
                             }
