@@ -17,6 +17,8 @@
     <string name="reader_imageview_description" translatable="false">Content ImageView</string>
     <string name="page_indicator_placeholder" translatable="false">-/-</string>
 
+    <string name="galleryblock_artist_with_group" translatable="false">%s (%s)</string>
+
     <!-- Translate needed down here -->
 
     <string name="warning">Warning</string>
