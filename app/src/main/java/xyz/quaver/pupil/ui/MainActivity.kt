@@ -146,7 +146,7 @@ class MainActivity :
     override fun onDestroy() {
         super.onDestroy()
 
-        (main_recyclerview?.adapter as? GalleryBlockAdapter)?.update = false
+        (main_recyclerview?.adapter as? GalleryBlockAdapter)?.updateAll = false
     }
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {

@@ -192,7 +192,8 @@ class Cache private constructor(context: Context, val galleryID: Int) : ContextW
     fun putImage(index: Int, fileName: String, data: ByteArray) {
         val file = cacheFolder.getChild(fileName)
 
-        file.createNewFile()
+        if (!file.exists())
+            file.createNewFile()
         file.writeBytes(data)
         setMetadata { metadata -> metadata.imageList!![index] = fileName }
     }

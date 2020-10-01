@@ -57,11 +57,11 @@ class GalleryBlockAdapter(private val galleries: List<Int>) : RecyclerSwipeAdapt
         PREV
     }
 
-    var update = true
+    var updateAll = true
     var thin: Boolean = Preferences["thin"]
 
     inner class GalleryViewHolder(val view: View) : RecyclerView.ViewHolder(view) {
-        var updateJob: Job? = null
+        var update = true
 
         private fun updateProgress(context: Context, galleryID: Int) {
             val cache = Cache.getInstance(context, galleryID)
@@ -162,13 +162,12 @@ class GalleryBlockAdapter(private val galleries: List<Int>) : RecyclerSwipeAdapt
                     }
                 }
 
-                if (updateJob == null)
-                    updateJob = CoroutineScope(Dispatchers.Main).launch {
-                        while (update) {
-                            updateProgress(context, galleryID)
-                            delay(1000)
-                        }
+                CoroutineScope(Dispatchers.Main).launch {
+                    while (updateAll && update) {
+                        updateProgress(context, galleryID)
+                        delay(1000)
                     }
+                }
 
                 galleryblock_title.text = galleryBlock.title
                 with(galleryblock_artist) {
@@ -361,10 +360,8 @@ class GalleryBlockAdapter(private val galleries: List<Int>) : RecyclerSwipeAdapt
     override fun onViewDetachedFromWindow(holder: RecyclerView.ViewHolder) {
         super.onViewDetachedFromWindow(holder)
 
-        if (holder is GalleryViewHolder) {
-            holder.updateJob?.cancel()
-            holder.updateJob = null
-        }
+        if (holder is GalleryViewHolder)
+            holder.update = false
     }
 
     override fun getItemCount() =
