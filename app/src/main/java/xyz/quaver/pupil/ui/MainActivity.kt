@@ -287,12 +287,22 @@ class MainActivity :
                     setTitle(R.string.main_open_gallery_by_id)
 
                     setPositiveButton(android.R.string.ok) { _, _ ->
-                            val galleryID = editText.text.toString().toIntOrNull() ?: return@setPositiveButton
-                            val intent = Intent(this@MainActivity, ReaderActivity::class.java).apply {
-                                putExtra("galleryID", galleryID)
-                            }
+                        val galleryID = editText.text.toString().toIntOrNull() ?: return@setPositiveButton
 
-                            startActivity(intent)
+                        GalleryDialog(this@MainActivity, galleryID).apply {
+                            onChipClickedHandler.add {
+                                runOnUiThread {
+                                    query = it.toQuery()
+                                    currentPage = 0
+
+                                    cancelFetch()
+                                    clearGalleries()
+                                    fetchGalleries(query, sortMode)
+                                    loadBlocks()
+                                }
+                                dismiss()
+                            }
+                        }.show()
                     }
                 }.show()
             }
