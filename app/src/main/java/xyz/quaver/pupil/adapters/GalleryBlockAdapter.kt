@@ -43,7 +43,6 @@ import xyz.quaver.pupil.R
 import xyz.quaver.pupil.favoriteTags
 import xyz.quaver.pupil.favorites
 import xyz.quaver.pupil.types.Tag
-import xyz.quaver.pupil.ui.view.TagChip
 import xyz.quaver.pupil.util.Preferences
 import xyz.quaver.pupil.util.downloader.Cache
 import xyz.quaver.pupil.util.downloader.DownloadManager
@@ -215,27 +214,32 @@ class GalleryBlockAdapter(private val galleries: List<Int>) : RecyclerSwipeAdapt
                     }
                 }
 
-                galleryblock_tag_group.removeAllViews()
-                CoroutineScope(Dispatchers.Default).launch {
-                    galleryBlock.relatedTags.sortedBy {
-                        val tag = Tag.parse(it)
-
-                        if (favoriteTags.contains(tag))
-                            -1
-                        else
-                            when(Tag.parse(it).area) {
-                                "female" -> 0
-                                "male" -> 1
-                                else -> 2
-                            }
-                    }.map {
-                        TagChip(context, Tag.parse(it)).apply {
-                            setOnClickListener { view ->
-                                for (callback in onChipClickedHandler)
-                                    callback.invoke((view as TagChip).tag)
-                            }
+                with(galleryblock_tag_group) {
+                    onClickListener = {
+                        onChipClickedHandler.forEach { callback ->
+                            callback.invoke(it)
                         }
-                    }.let { launch(Dispatchers.Main) { it.forEach { galleryblock_tag_group.addView(it) } } }
+                    }
+
+                    tags.clear()
+                    tags.addAll(
+                        galleryBlock.relatedTags.sortedBy {
+                            val tag = Tag.parse(it)
+
+                            if (favoriteTags.contains(tag))
+                                -1
+                            else
+                                when(Tag.parse(it).area) {
+                                    "female" -> 0
+                                    "male" -> 1
+                                    else -> 2
+                                }
+                        }.map {
+                            Tag.parse(it)
+                        }
+                    )
+
+                    refresh()
                 }
 
                 galleryblock_id.text = galleryBlock.id.toString()

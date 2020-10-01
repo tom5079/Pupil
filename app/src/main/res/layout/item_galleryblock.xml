@@ -171,7 +171,7 @@
 				app:barrierDirection="bottom"
 				app:constraint_referenced_ids="galleryblock_language"/>
 
-			<com.google.android.material.chip.ChipGroup
+			<xyz.quaver.pupil.ui.view.TagChipGroup
 				android:id="@+id/galleryblock_tag_group"
 				android:layout_width="0dp"
 				android:layout_height="wrap_content"
