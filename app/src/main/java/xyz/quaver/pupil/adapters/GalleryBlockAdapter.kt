@@ -36,6 +36,7 @@ import com.daimajia.swipe.interfaces.SwipeAdapterInterface
 import com.github.piasy.biv.loader.ImageLoader
 import kotlinx.android.synthetic.main.item_galleryblock.view.*
 import kotlinx.coroutines.*
+import xyz.quaver.hitomi.getGallery
 import xyz.quaver.hitomi.getReader
 import xyz.quaver.io.util.getChild
 import xyz.quaver.pupil.R
@@ -171,10 +172,27 @@ class GalleryBlockAdapter(private val galleries: List<Int>) : RecyclerSwipeAdapt
 
                 galleryblock_title.text = galleryBlock.title
                 with(galleryblock_artist) {
-                    text = artists.joinToString(", ") { it.wordCapitalize() }
+                    text = artists.joinToString { it.wordCapitalize() }
                     visibility = when {
                         artists.isNotEmpty() -> View.VISIBLE
                         else -> View.GONE
+                    }
+
+                    CoroutineScope(Dispatchers.IO).launch {
+                        val gallery = runCatching {
+                            getGallery(galleryID)
+                        }.getOrNull()
+
+                        if (gallery?.groups?.isNotEmpty() != true)
+                            return@launch
+
+                        launch(Dispatchers.Main) {
+                            text = context.getString(
+                                R.string.galleryblock_artist_with_group,
+                                artists.joinToString { it.wordCapitalize() },
+                                gallery.groups.joinToString { it.wordCapitalize() }
+                            )
+                        }
                     }
                 }
                 with(galleryblock_series) {
