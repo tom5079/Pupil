@@ -23,6 +23,7 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.text.InputType
+import android.text.util.Linkify
 import android.view.KeyEvent
 import android.view.MenuItem
 import android.view.MotionEvent
@@ -31,6 +32,7 @@ import android.widget.*
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.cardview.widget.CardView
+import androidx.core.text.util.LinkifyCompat
 import androidx.core.view.GravityCompat
 import com.google.android.material.appbar.AppBarLayout
 import com.google.android.material.navigation.NavigationView
@@ -58,6 +60,7 @@ import xyz.quaver.pupil.util.checkUpdate
 import xyz.quaver.pupil.util.downloader.Cache
 import xyz.quaver.pupil.util.downloader.DownloadManager
 import xyz.quaver.pupil.util.restore
+import java.util.regex.Pattern
 import kotlin.math.abs
 import kotlin.math.ceil
 import kotlin.math.min
@@ -201,6 +204,8 @@ class MainActivity :
                 prevP1 = p1
             }
         )
+
+        Linkify.addLinks(main_noresult, Pattern.compile(getString(R.string.https_text)), null, null, { _, _ -> getString(R.string.https) })
 
         //NavigationView
         main_nav_view.setNavigationItemSelectedListener(this)
