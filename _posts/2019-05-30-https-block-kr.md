@@ -3,6 +3,7 @@ layout: default
 lang: ko
 title: 접속 불가 현상 해결법
 description: 히토미 뷰어 Pupil 접속 불가 현상 해결법
+date: 2020-10-01
 ---
 
 **현재 Intra/유니콘/Aspear 등으로 접속이 불가능합니다.**
