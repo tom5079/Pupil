@@ -283,8 +283,6 @@ class GalleryBlockAdapter(private val galleries: List<Int>) : RecyclerSwipeAdapt
 
                 // Make some views invisible to make it thinner
                 if (thin) {
-                    galleryblock_language.visibility = View.GONE
-                    galleryblock_type.visibility = View.GONE
                     galleryblock_tag_group.visibility = View.GONE
                 }
             }
