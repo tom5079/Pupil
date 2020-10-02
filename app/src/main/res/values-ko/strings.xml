@@ -150,4 +150,6 @@
     <string name="camera_denied">카메라 권한이 거부되었기 때문에 눈 깜빡임 감지가 불가능합니다</string>
     <string name="no_camera">이 장치에는 전면 카메라가 없습니다</string>
     <string name="error">오류</string>
+    <string name="settings_cache_limit">캐시 크기 제한</string>
+    <string name="settings_cache_unlimited">무제한</string>
 </resources>

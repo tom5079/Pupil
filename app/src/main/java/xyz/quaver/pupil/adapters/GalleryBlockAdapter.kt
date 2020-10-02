@@ -61,9 +61,18 @@ class GalleryBlockAdapter(private val galleries: List<Int>) : RecyclerSwipeAdapt
     var thin: Boolean = Preferences["thin"]
 
     inner class GalleryViewHolder(val view: View) : RecyclerView.ViewHolder(view) {
-        var update = true
+        private var galleryID: Int = 0
 
-        private fun updateProgress(context: Context, galleryID: Int) {
+        init {
+            CoroutineScope(Dispatchers.Main).launch {
+                while (updateAll) {
+                    updateProgress(view.context)
+                    delay(1000)
+                }
+            }
+        }
+
+        private fun updateProgress(context: Context) {
             val cache = Cache.getInstance(context, galleryID)
 
             CoroutineScope(Dispatchers.Main).launch {
@@ -116,9 +125,13 @@ class GalleryBlockAdapter(private val galleries: List<Int>) : RecyclerSwipeAdapt
         }
 
         fun bind(galleryID: Int) {
+            this.galleryID = galleryID
+
             val cache = Cache.getInstance(view.context, galleryID)
 
-            val galleryBlock = cache.metadata.galleryBlock ?: return
+            val galleryBlock = runBlocking {
+                cache.getGalleryBlock()
+            } ?: return
 
             with(view) {
                 val resources = context.resources
@@ -159,13 +172,6 @@ class GalleryBlockAdapter(private val galleries: List<Int>) : RecyclerSwipeAdapt
                         cache.getThumbnail().let { launch(Dispatchers.Main) {
                             showImage(it)
                         } }
-                    }
-                }
-
-                CoroutineScope(Dispatchers.Main).launch {
-                    while (updateAll && update) {
-                        updateProgress(context, galleryID)
-                        delay(1000)
                     }
                 }
 
@@ -375,13 +381,6 @@ class GalleryBlockAdapter(private val galleries: List<Int>) : RecyclerSwipeAdapt
                 override fun onUpdate(layout: SwipeLayout?, leftOffset: Int, topOffset: Int) {}
             })
         }
-    }
-
-    override fun onViewDetachedFromWindow(holder: RecyclerView.ViewHolder) {
-        super.onViewDetachedFromWindow(holder)
-
-        if (holder is GalleryViewHolder)
-            holder.update = false
     }
 
     override fun getItemCount() =
