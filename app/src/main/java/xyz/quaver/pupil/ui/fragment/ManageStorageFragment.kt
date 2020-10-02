@@ -31,6 +31,7 @@ import xyz.quaver.io.util.deleteRecursively
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.histories
 import xyz.quaver.pupil.util.byteToString
+import xyz.quaver.pupil.util.downloader.Cache
 import xyz.quaver.pupil.util.downloader.DownloadManager
 import java.io.File
 
@@ -60,6 +61,8 @@ class ManageStorageFragment : PreferenceFragmentCompat(), Preference.OnPreferenc
                         setPositiveButton(android.R.string.ok) { _, _ ->
                             if (dir.exists())
                                 dir.deleteRecursively()
+
+                            Cache.instances.clear()
 
                             summary = context.getString(R.string.settings_storage_usage, byteToString(0))
                             CoroutineScope(Dispatchers.IO).launch {

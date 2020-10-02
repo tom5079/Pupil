@@ -9,6 +9,10 @@
     <string name="email" translatable="false">mailto:pupil.hentai@gmail.com</string>
     <string name="discord" translatable="false">https://discord.gg/Stj4b5v</string>
 
+    <!-- Korean only -->
+    <string name="https_text" translatable="false">해결법</string>
+    <string name="https" translatable="false">https://bit.ly/34dUBwy</string>
+
     <string name="backup_url" translatable="false">http://ix.io/</string>
 
     <string name="main_settings" translatable="false">Settings</string>
@@ -16,6 +20,8 @@
 
     <string name="reader_imageview_description" translatable="false">Content ImageView</string>
     <string name="page_indicator_placeholder" translatable="false">-/-</string>
+
+    <string name="galleryblock_artist_with_group" translatable="false">%s (%s)</string>
 
     <!-- Translate needed down here -->
 
@@ -155,6 +161,9 @@
     <string name="settings_download_folder_available">%s available</string>
     <string name="settings_download_folder_custom">Custom Location</string>
     <string name="settings_download_folder_not_writable">This folder is not writable. Please select another folder.</string>
+    <string name="settings_cache_limit">Cache Limit</string>
+    <string name="settings_cache_unlimited">Unlimited</string>
+    <string name="settings_nomedia_title">Hide image from gallery</string>
     <string name="settings_low_quality">Low quality images</string>
     <string name="settings_low_quality_summary">Load low quality images to improve load speed and data usage</string>
 
@@ -173,7 +182,6 @@
     <string name="settings_security_mode_summary">Enable security mode to make the screen invisible on recent app window</string>
     <string name="settings_dark_mode_title">Dark mode</string>
     <string name="settings_dark_mode_summary">Protect yourself against light attacks!</string>
-    <string name="settings_nomedia_title">Hide image from gallery</string>
     <string name="settings_import_old_galleries">Import old galleries</string>
     <string name="settings_user_id">User ID</string>
     <string name="settings_user_id_toast">User ID is copied to clipboard</string>

@@ -112,6 +112,11 @@ class Pupil : Application() {
             Preferences.remove("download_folder")
         }
 
+        if (!Preferences["reset_secure", false]) {
+            Preferences["security_mode"] = false
+            Preferences["reset_secure"] = true
+        }
+
         histories = SavedSet(File(ContextCompat.getDataDir(this), "histories.json"), 0)
         favorites = SavedSet(File(ContextCompat.getDataDir(this), "favorites.json"), 0)
         favoriteTags = SavedSet(File(ContextCompat.getDataDir(this), "favorites_tags.json"), Tag.parse(""))
