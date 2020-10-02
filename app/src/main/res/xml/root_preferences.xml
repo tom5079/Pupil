@@ -44,6 +44,14 @@
             app:key="download_folder"
             app:title="@string/settings_download_folder"/>
 
+        <ListPreference
+            app:key="cache_limit"
+            app:title="@string/settings_cache_limit"
+            app:entries="@array/cache_size_text"
+            app:entryValues="@array/cache_size"
+            app:defaultValue="8"
+            app:useSimpleSummaryProvider="true"/>
+
         <SwitchPreferenceCompat
             app:key="nomedia"
             app:title="@string/settings_nomedia_title"/>

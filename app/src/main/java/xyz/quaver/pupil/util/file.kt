@@ -19,35 +19,63 @@
 package xyz.quaver.pupil.util
 
 import android.content.Context
-import android.os.storage.StorageManager
-import androidx.core.content.ContextCompat
-import androidx.core.net.toUri
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import xyz.quaver.pupil.histories
+import xyz.quaver.pupil.util.downloader.Cache
+import xyz.quaver.pupil.util.downloader.DownloadManager
 import java.io.File
-import java.io.FileOutputStream
-import java.lang.reflect.Array
-import java.net.URL
 
-@Suppress("DEPRECATION")
-@Deprecated("Use downloader.Cache instead")
-fun getCachedGallery(context: Context, galleryID: Int) =
-    File(getDownloadDirectory(context), galleryID.toString()).let {
-        if (it.exists())
-            it
-        else
-            File(context.cacheDir, "imageCache/$galleryID")
+val mutex = Mutex()
+fun cleanCache(context: Context) = CoroutineScope(Dispatchers.IO).launch {
+    if (mutex.isLocked) return@launch
+
+    mutex.withLock {
+        val cacheFolder = File(context.cacheDir, "imageCache")
+        val downloadManager = DownloadManager.getInstance(context)
+
+        cacheFolder.listFiles { file ->
+            val galleryID = file.name.toIntOrNull() ?: return@listFiles true
+
+            !(downloadManager.downloadFolderMap.containsKey(galleryID) || histories.contains(galleryID))
+        }?.forEach {
+            it.deleteRecursively()
+        }
+
+        DownloadManager.getInstance(context).downloadFolderMap.keys.forEach {
+            val folder = File(cacheFolder, it.toString())
+
+            if (!downloadManager.isDownloading(it) && folder.exists()) {
+                folder.deleteRecursively()
+            }
+        }
+
+        val limit = (Preferences.get<String>("cache_limit").toLongOrNull() ?: 0L)*1024*1024*1024
+
+        if (limit == 0L) return@withLock
+
+        val cacheSize = {
+            var size = 0L
+
+            cacheFolder.walk().forEach {
+                size += it.length()
+            }
+
+            size
+        }
+
+        if (cacheSize.invoke() > limit)
+            while (cacheSize.invoke() > limit/2) {
+                val caches = cacheFolder.list() ?: return@withLock
+
+                (histories.firstOrNull {
+                    caches.contains(it.toString()) && !downloadManager.isDownloading(it)
+                } ?: return@withLock).let {
+                    Cache.delete(it)
+                }
+            }
     }
-
-@Suppress("DEPRECATION")
-@Deprecated("Use downloader.Cache instead")
-fun getDownloadDirectory(context: Context) =
-    Preferences.get<String>("dl_location").let {
-        if (it.isNotEmpty() && !it.startsWith("content"))
-            File(it)
-        else
-            context.getExternalFilesDir(null)!!
-    }
-
-@Suppress("DEPRECATION")
-@Deprecated("Use FileX instead")
-fun File.isParentOf(another: File) =
-    another.absolutePath.startsWith(this.absolutePath)
+}

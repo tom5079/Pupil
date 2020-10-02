@@ -42,7 +42,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import xyz.quaver.hitomi.Gallery
 import xyz.quaver.hitomi.getGallery
-import xyz.quaver.pupil.BuildConfig
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.adapters.GalleryBlockAdapter
 import xyz.quaver.pupil.adapters.ThumbnailPageAdapter
@@ -54,6 +53,8 @@ import xyz.quaver.pupil.ui.view.TagChip
 import xyz.quaver.pupil.util.ItemClickSupport
 import xyz.quaver.pupil.util.downloader.Cache
 import xyz.quaver.pupil.util.wordCapitalize
+import java.util.*
+import kotlin.collections.ArrayList
 
 class GalleryDialog(context: Context, private val galleryID: Int) : AlertDialog(context) {
 
@@ -113,7 +114,12 @@ class GalleryDialog(context: Context, private val galleryID: Int) : AlertDialog(
                     addRelated(gallery)
                 }
             } catch (e: Exception) {
-                Snackbar.make(gallery_layout, R.string.unable_to_connect, Snackbar.LENGTH_INDEFINITE).show()
+                Snackbar.make(gallery_layout, R.string.unable_to_connect, Snackbar.LENGTH_INDEFINITE).apply {
+                    if (Locale.getDefault().language == "ko")
+                        setAction(context.getText(R.string.https_text)) {
+                            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(context.getString(R.string.https))))
+                        }
+                }.show()
             }
         }
     }

@@ -47,22 +47,6 @@
 
         </com.google.android.material.appbar.AppBarLayout>
 
-        <androidx.core.widget.ContentLoadingProgressBar
-            style="?android:attr/progressBarStyle"
-            android:id="@+id/main_progressbar"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:indeterminate="true"/>
-
-        <TextView
-            android:id="@+id/main_noresult"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:text="@string/main_no_result"
-            android:visibility="invisible"/>
-
         <com.qtalk.recyclerviewfastscroller.RecyclerViewFastScroller
             android:layout_width="match_parent"
             android:layout_height="match_parent"
@@ -85,6 +69,24 @@
                 app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"/>
 
         </com.qtalk.recyclerviewfastscroller.RecyclerViewFastScroller>
+
+        <androidx.core.widget.ContentLoadingProgressBar
+            style="?android:attr/progressBarStyle"
+            android:id="@+id/main_progressbar"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:indeterminate="true"/>
+
+        <TextView
+            android:id="@+id/main_noresult"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:gravity="center"
+            android:text="@string/main_no_result"
+            android:linksClickable="true"
+            android:visibility="invisible"/>
 
         <com.github.clans.fab.FloatingActionMenu
                 android:id="@+id/main_fab"

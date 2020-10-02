@@ -36,13 +36,13 @@ import com.daimajia.swipe.interfaces.SwipeAdapterInterface
 import com.github.piasy.biv.loader.ImageLoader
 import kotlinx.android.synthetic.main.item_galleryblock.view.*
 import kotlinx.coroutines.*
+import xyz.quaver.hitomi.getGallery
 import xyz.quaver.hitomi.getReader
 import xyz.quaver.io.util.getChild
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.favoriteTags
 import xyz.quaver.pupil.favorites
 import xyz.quaver.pupil.types.Tag
-import xyz.quaver.pupil.ui.view.TagChip
 import xyz.quaver.pupil.util.Preferences
 import xyz.quaver.pupil.util.downloader.Cache
 import xyz.quaver.pupil.util.downloader.DownloadManager
@@ -57,13 +57,22 @@ class GalleryBlockAdapter(private val galleries: List<Int>) : RecyclerSwipeAdapt
         PREV
     }
 
-    var update = true
+    var updateAll = true
     var thin: Boolean = Preferences["thin"]
 
     inner class GalleryViewHolder(val view: View) : RecyclerView.ViewHolder(view) {
-        var updateJob: Job? = null
+        private var galleryID: Int = 0
 
-        private fun updateProgress(context: Context, galleryID: Int) {
+        init {
+            CoroutineScope(Dispatchers.Main).launch {
+                while (updateAll) {
+                    updateProgress(view.context)
+                    delay(1000)
+                }
+            }
+        }
+
+        private fun updateProgress(context: Context) {
             val cache = Cache.getInstance(context, galleryID)
 
             CoroutineScope(Dispatchers.Main).launch {
@@ -116,9 +125,13 @@ class GalleryBlockAdapter(private val galleries: List<Int>) : RecyclerSwipeAdapt
         }
 
         fun bind(galleryID: Int) {
+            this.galleryID = galleryID
+
             val cache = Cache.getInstance(view.context, galleryID)
 
-            val galleryBlock = cache.metadata.galleryBlock ?: return
+            val galleryBlock = runBlocking {
+                cache.getGalleryBlock()
+            } ?: return
 
             with(view) {
                 val resources = context.resources
@@ -162,20 +175,29 @@ class GalleryBlockAdapter(private val galleries: List<Int>) : RecyclerSwipeAdapt
                     }
                 }
 
-                if (updateJob == null)
-                    updateJob = CoroutineScope(Dispatchers.Main).launch {
-                        while (update) {
-                            updateProgress(context, galleryID)
-                            delay(1000)
-                        }
-                    }
-
                 galleryblock_title.text = galleryBlock.title
                 with(galleryblock_artist) {
-                    text = artists.joinToString(", ") { it.wordCapitalize() }
+                    text = artists.joinToString { it.wordCapitalize() }
                     visibility = when {
                         artists.isNotEmpty() -> View.VISIBLE
                         else -> View.GONE
+                    }
+
+                    CoroutineScope(Dispatchers.IO).launch {
+                        val gallery = runCatching {
+                            getGallery(galleryID)
+                        }.getOrNull()
+
+                        if (gallery?.groups?.isNotEmpty() != true)
+                            return@launch
+
+                        launch(Dispatchers.Main) {
+                            text = context.getString(
+                                R.string.galleryblock_artist_with_group,
+                                artists.joinToString { it.wordCapitalize() },
+                                gallery.groups.joinToString { it.wordCapitalize() }
+                            )
+                        }
                     }
                 }
                 with(galleryblock_series) {
@@ -198,27 +220,32 @@ class GalleryBlockAdapter(private val galleries: List<Int>) : RecyclerSwipeAdapt
                     }
                 }
 
-                galleryblock_tag_group.removeAllViews()
-                CoroutineScope(Dispatchers.Default).launch {
-                    galleryBlock.relatedTags.sortedBy {
-                        val tag = Tag.parse(it)
-
-                        if (favoriteTags.contains(tag))
-                            -1
-                        else
-                            when(Tag.parse(it).area) {
-                                "female" -> 0
-                                "male" -> 1
-                                else -> 2
-                            }
-                    }.map {
-                        TagChip(context, Tag.parse(it)).apply {
-                            setOnClickListener { view ->
-                                for (callback in onChipClickedHandler)
-                                    callback.invoke((view as TagChip).tag)
-                            }
+                with(galleryblock_tag_group) {
+                    onClickListener = {
+                        onChipClickedHandler.forEach { callback ->
+                            callback.invoke(it)
                         }
-                    }.let { launch(Dispatchers.Main) { it.forEach { galleryblock_tag_group.addView(it) } } }
+                    }
+
+                    tags.clear()
+                    tags.addAll(
+                        galleryBlock.relatedTags.sortedBy {
+                            val tag = Tag.parse(it)
+
+                            if (favoriteTags.contains(tag))
+                                -1
+                            else
+                                when(Tag.parse(it).area) {
+                                    "female" -> 0
+                                    "male" -> 1
+                                    else -> 2
+                                }
+                        }.map {
+                            Tag.parse(it)
+                        }
+                    )
+
+                    refresh()
                 }
 
                 galleryblock_id.text = galleryBlock.id.toString()
@@ -262,8 +289,6 @@ class GalleryBlockAdapter(private val galleries: List<Int>) : RecyclerSwipeAdapt
 
                 // Make some views invisible to make it thinner
                 if (thin) {
-                    galleryblock_language.visibility = View.GONE
-                    galleryblock_type.visibility = View.GONE
                     galleryblock_tag_group.visibility = View.GONE
                 }
             }
@@ -355,15 +380,6 @@ class GalleryBlockAdapter(private val galleries: List<Int>) : RecyclerSwipeAdapt
                 override fun onStartClose(layout: SwipeLayout?) {}
                 override fun onUpdate(layout: SwipeLayout?, leftOffset: Int, topOffset: Int) {}
             })
-        }
-    }
-
-    override fun onViewDetachedFromWindow(holder: RecyclerView.ViewHolder) {
-        super.onViewDetachedFromWindow(holder)
-
-        if (holder is GalleryViewHolder) {
-            holder.updateJob?.cancel()
-            holder.updateJob = null
         }
     }
 
