@@ -42,6 +42,7 @@ import xyz.quaver.pupil.R
 import xyz.quaver.pupil.client
 import xyz.quaver.pupil.interceptors
 import xyz.quaver.pupil.ui.ReaderActivity
+import xyz.quaver.pupil.util.cleanCache
 import xyz.quaver.pupil.util.downloader.Cache
 import xyz.quaver.pupil.util.downloader.DownloadManager
 import xyz.quaver.pupil.util.ellipsize
@@ -295,6 +296,8 @@ class DownloadService : Service() {
     }
 
     fun download(galleryID: Int, priority: Boolean = false, startId: Int? = null): Job = CoroutineScope(Dispatchers.IO).launch {
+        cleanCache(this@DownloadService)
+
         if (progress.containsKey(galleryID))
             cancel(galleryID)
 

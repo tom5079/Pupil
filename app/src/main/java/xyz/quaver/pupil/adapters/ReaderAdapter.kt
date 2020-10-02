@@ -62,7 +62,14 @@ class ReaderAdapter(
 
     class ViewHolder(val view: View) : RecyclerView.ViewHolder(view) {
         fun clear() {
-            view.image.ssiv?.recycle()
+            view.image.mainView.let {
+                when (it) {
+                    is SubsamplingScaleImageView ->
+                        it.recycle()
+                    is SimpleDraweeView ->
+                        it.controller = null
+                }
+            }
         }
     }
 

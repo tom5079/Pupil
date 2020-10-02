@@ -186,7 +186,7 @@ class Cache private constructor(context: Context, val galleryID: Int) : ContextW
     }
 
     fun getImage(index: Int): FileX? =
-        metadata.imageList?.get(index)?.let { findFile(it) }
+        metadata.imageList?.getOrNull(index)?.let { findFile(it) }
 
     @Suppress("BlockingMethodInNonBlockingContext")
     fun putImage(index: Int, fileName: String, data: ByteArray) {

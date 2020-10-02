@@ -38,7 +38,7 @@ android {
         minSdkVersion 16
         targetSdkVersion 30
         versionCode 61
-        versionName "5.1.2"
+        versionName "5.1.2-alpha1"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
     }
@@ -90,6 +90,7 @@ dependencies {
     implementation "androidx.constraintlayout:constraintlayout:2.0.1"
     implementation "androidx.gridlayout:gridlayout:1.0.0"
     implementation "androidx.biometric:biometric:1.0.1"
+    implementation "androidx.work:work-runtime-ktx:2.4.0"
 
     implementation "com.daimajia.swipelayout:library:1.2.0@aar"
 
@@ -125,7 +126,7 @@ dependencies {
     implementation "ru.noties.markwon:core:3.1.0"
 
     implementation "xyz.quaver:libpupil:1.7.2"
-    implementation "xyz.quaver:documentfilex:0.2.15"
+    implementation "xyz.quaver:documentfilex:0.3"
     implementation "xyz.quaver:floatingsearchview:1.0.7"
 
     testImplementation "junit:junit:4.13"
