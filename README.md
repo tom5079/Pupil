@@ -2,7 +2,7 @@
 *Pupil, Hitomi.la viewer for Android*  
 
 ![](https://img.shields.io/github/downloads/tom5079/Pupil/total)  
-[![](https://img.shields.io/github/downloads/tom5079/Pupil/latest/Pupil-v5.1.2-hotfix2.apk?color=%234fc3f7&label=DOWNLOAD%20APP&style=for-the-badge)](https://github.com/tom5079/Pupil/releases/download/5.1.2-hotfix2/Pupil-v5.1.2-hotfix2.apk)  
+[![](https://img.shields.io/github/downloads/tom5079/Pupil/latest/Pupil-v5.1.2-hotfix3.apk?color=%234fc3f7&label=DOWNLOAD%20APP&style=for-the-badge)](https://github.com/tom5079/Pupil/releases/download/5.1.2-hotfix3/Pupil-v5.1.2-hotfix3.apk)  
 [![](https://discordapp.com/api/guilds/610452916612104194/embed.png?style=banner2)](https://discord.gg/Stj4b5v)  
 
 # Features
