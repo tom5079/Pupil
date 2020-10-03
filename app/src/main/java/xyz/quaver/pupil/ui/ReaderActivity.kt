@@ -292,8 +292,6 @@ class ReaderActivity : BaseActivity() {
                     return@launch
                 }
 
-                histories.add(galleryID)
-
                 reader_download_progressbar.max = reader_recyclerview.adapter?.itemCount ?: 0
                 reader_download_progressbar.progress =
                     downloader.progress[galleryID]?.count { it.isInfinite() } ?: 0
