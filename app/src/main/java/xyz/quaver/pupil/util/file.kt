@@ -37,14 +37,6 @@ fun cleanCache(context: Context) = CoroutineScope(Dispatchers.IO).launch {
         val cacheFolder = File(context.cacheDir, "imageCache")
         val downloadManager = DownloadManager.getInstance(context)
 
-        DownloadManager.getInstance(context).downloadFolderMap.keys.forEach {
-            val folder = File(cacheFolder, it.toString())
-
-            if (!downloadManager.isDownloading(it) && folder.exists()) {
-                Cache.delete(it)
-            }
-        }
-
         val limit = (Preferences.get<String>("cache_limit").toLongOrNull() ?: 0L)*1024*1024*1024
 
         if (limit == 0L) return@withLock
@@ -66,7 +58,7 @@ fun cleanCache(context: Context) = CoroutineScope(Dispatchers.IO).launch {
                 (histories.firstOrNull {
                     caches.contains(it.toString()) && !downloadManager.isDownloading(it)
                 } ?: return@withLock).let {
-                    Cache.delete(it)
+                    Cache.delete(context, it)
                 }
             }
     }

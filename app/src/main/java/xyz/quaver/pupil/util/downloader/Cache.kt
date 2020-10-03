@@ -24,6 +24,8 @@ import android.net.Uri
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
@@ -37,6 +39,7 @@ import xyz.quaver.io.FileX
 import xyz.quaver.io.util.*
 import xyz.quaver.pupil.client
 import xyz.quaver.pupil.util.Preferences
+import java.io.File
 import java.io.IOException
 import java.util.concurrent.ConcurrentHashMap
 
@@ -60,8 +63,8 @@ class Cache private constructor(context: Context, val galleryID: Int) : ContextW
             }
 
         @Synchronized
-        fun delete(galleryID: Int) {
-            instances[galleryID]?.cacheFolder?.deleteRecursively()
+        fun delete(context: Context, galleryID: Int) {
+            File(context.cacheDir, "imageCache/$galleryID").deleteRecursively()
             instances.remove(galleryID)
         }
     }
@@ -142,7 +145,12 @@ class Cache private constructor(context: Context, val galleryID: Int) : ContextW
 
                     client.newCall(request).execute().also { if (it.code() != 200) throw IOException() }.body()?.use { it.bytes() }
                 }.getOrNull()?.let { thumbnail -> kotlin.runCatching {
-                    cacheFolder.getChild(".thumbnail").also { it.writeBytes(thumbnail) }
+                    cacheFolder.getChild(".thumbnail").also {
+                        if (!it.exists())
+                            it.createNewFile()
+
+                        it.writeBytes(thumbnail)
+                    }
                 }.getOrNull()?.uri }
             } } ?: Uri.EMPTY
 
@@ -198,56 +206,64 @@ class Cache private constructor(context: Context, val galleryID: Int) : ContextW
         setMetadata { metadata -> metadata.imageList!![index] = fileName }
     }
 
+    private val lock = ConcurrentHashMap<Int, Mutex>()
     @Suppress("BlockingMethodInNonBlockingContext")
     fun moveToDownload() = CoroutineScope(Dispatchers.IO).launch {
         val downloadFolder = downloadFolder ?: return@launch
 
-        val cacheMetadata = cacheFolder.getChild(".metadata")
-        val downloadMetadata = downloadFolder.getChild(".metadata")
-
-        if (downloadMetadata.exists() || !cacheMetadata.exists())
+        if (lock[galleryID]?.isLocked == true)
             return@launch
 
-        if (cacheMetadata.exists()) {
-            kotlin.runCatching {
-                downloadMetadata.createNewFile()
-                downloadMetadata.writeText(Json.encodeToString(metadata))
+        (lock[galleryID] ?: Mutex().also { lock[galleryID] = it }).withLock {
+            val cacheMetadata = cacheFolder.getChild(".metadata")
+            val downloadMetadata = downloadFolder.getChild(".metadata")
 
-                cacheMetadata.delete()
+            if (!cacheMetadata.exists())
+                return@launch
+
+            if (cacheMetadata.exists()) {
+                kotlin.runCatching {
+                    if (!downloadMetadata.exists())
+                        downloadMetadata.createNewFile()
+
+                    downloadMetadata.writeText(Json.encodeToString(metadata))
+                }
             }
-        }
 
-        val cacheThumbnail = cacheFolder.getChild(".thumbnail")
-        val downloadThumbnail = downloadFolder.getChild(".thumbnail")
+            val cacheThumbnail = cacheFolder.getChild(".thumbnail")
+            val downloadThumbnail = downloadFolder.getChild(".thumbnail")
 
-        if (cacheThumbnail.exists() && !downloadThumbnail.exists()) {
-            kotlin.runCatching {
-                if (!downloadThumbnail.exists())
-                    downloadThumbnail.createNewFile()
+            if (cacheThumbnail.exists()) {
+                kotlin.runCatching {
+                    if (!downloadThumbnail.exists())
+                        downloadThumbnail.createNewFile()
 
-                downloadThumbnail.outputStream()?.use { target -> cacheThumbnail.inputStream()?.use { source ->
-                    source.copyTo(target)
-                } }
-                cacheThumbnail.delete()
+                    downloadThumbnail.outputStream()?.use { target -> target.channel.truncate(0L); cacheThumbnail.inputStream()?.use { source ->
+                        source.copyTo(target)
+                    } }
+                    cacheThumbnail.delete()
+                }
             }
-        }
 
-        metadata.imageList?.forEach { imageName ->
-            imageName ?: return@forEach
-            val target = downloadFolder.getChild(imageName)
-            val source = cacheFolder.getChild(imageName)
+            metadata.imageList?.forEach { imageName ->
+                imageName ?: return@forEach
+                val target = downloadFolder.getChild(imageName)
+                val source = cacheFolder.getChild(imageName)
 
-            if (!source.exists() || target.exists())
-                return@forEach
+                if (!source.exists())
+                    return@forEach
 
-            kotlin.runCatching {
-                if (!target.exists())
-                    target.createNewFile()
+                kotlin.runCatching {
+                    if (!target.exists())
+                        target.createNewFile()
 
-                target.outputStream()?.use { target -> source.inputStream()?.use { source ->
-                    source.copyTo(target)
-                } }
+                    target.outputStream()?.use { target -> target.channel.truncate(0L); source.inputStream()?.use { source ->
+                        source.copyTo(target)
+                    } }
+                }
             }
+
+            cacheFolder.deleteRecursively()
         }
     }
 }
