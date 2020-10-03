@@ -77,7 +77,6 @@ class GalleryDialog(context: Context, private val galleryID: Int) : AlertDialog(
                 context.startActivity(Intent(context, ReaderActivity::class.java).apply {
                     putExtra("galleryID", galleryID)
                 })
-                histories.add(galleryID)
             }
         }
 
@@ -238,7 +237,6 @@ class GalleryDialog(context: Context, private val galleryID: Int) : AlertDialog(
                         context.startActivity(Intent(context, ReaderActivity::class.java).apply {
                             putExtra("galleryID", galleries[position])
                         })
-                        histories.add(galleries[position])
                     }
                     onItemLongClickListener = { _, position, _ ->
                         GalleryDialog(context, galleries[position]).apply {
