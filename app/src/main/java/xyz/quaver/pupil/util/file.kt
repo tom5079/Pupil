@@ -37,19 +37,11 @@ fun cleanCache(context: Context) = CoroutineScope(Dispatchers.IO).launch {
         val cacheFolder = File(context.cacheDir, "imageCache")
         val downloadManager = DownloadManager.getInstance(context)
 
-        cacheFolder.listFiles { file ->
-            val galleryID = file.name.toIntOrNull() ?: return@listFiles true
-
-            !(downloadManager.downloadFolderMap.containsKey(galleryID) || histories.contains(galleryID))
-        }?.forEach {
-            it.deleteRecursively()
-        }
-
         DownloadManager.getInstance(context).downloadFolderMap.keys.forEach {
             val folder = File(cacheFolder, it.toString())
 
             if (!downloadManager.isDownloading(it) && folder.exists()) {
-                folder.deleteRecursively()
+                Cache.delete(it)
             }
         }
 
