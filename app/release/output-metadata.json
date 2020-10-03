@@ -12,7 +12,7 @@
       "filters": [],
       "properties": [],
       "versionCode": 61,
-      "versionName": "5.1.2",
+      "versionName": "5.1.2-hotfix2",
       "enabled": true,
       "outputFile": "app-release.apk"
     }
