@@ -37,10 +37,7 @@ import okhttp3.Callback
 import okhttp3.Response
 import okhttp3.ResponseBody
 import okio.*
-import xyz.quaver.pupil.PupilInterceptor
-import xyz.quaver.pupil.R
-import xyz.quaver.pupil.client
-import xyz.quaver.pupil.interceptors
+import xyz.quaver.pupil.*
 import xyz.quaver.pupil.ui.ReaderActivity
 import xyz.quaver.pupil.util.cleanCache
 import xyz.quaver.pupil.util.downloader.Cache
@@ -290,7 +287,7 @@ class DownloadService : Service() {
     fun delete(galleryID: Int, startId: Int? = null) = CoroutineScope(Dispatchers.IO).launch {
         cancel(galleryID)
         DownloadManager.getInstance(this@DownloadService).deleteDownloadFolder(galleryID)
-        Cache.delete(galleryID)
+        Cache.delete(this@DownloadService, galleryID)
 
         startId?.let { stopSelf(it) }
     }
@@ -313,6 +310,8 @@ class DownloadService : Service() {
             progress[galleryID] = mutableListOf()
             return@launch
         }
+
+        histories.add(galleryID)
 
         progress[galleryID] = MutableList(reader.galleryInfo.files.size) { 0F }
 

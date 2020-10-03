@@ -313,7 +313,7 @@ fun xyz.quaver.pupil.util.downloader.DownloadManager.migrate() {
                 )
 
                 synchronized(Cache) {
-                    Cache.delete(galleryID)
+                    Cache.delete(this@migrate, galleryID)
                 }
                 downloadFolderMap[galleryID] = folder.name
 
