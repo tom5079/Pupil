@@ -22,21 +22,6 @@
 
 -dontobfuscate
 
--keep public class * implements com.bumptech.glide.module.GlideModule
--keep class * extends com.bumptech.glide.module.AppGlideModule {
- <init>(...);
-}
--keep public enum com.bumptech.glide.load.ImageHeaderParser$** {
-  **[] $VALUES;
-  public *;
-}
--keep class com.bumptech.glide.load.data.ParcelFileDescriptorRewinder$InternalRewinder {
-  *** rewind();
-}
-
--keep public class * extends com.bumptech.glide.module.AppGlideModule
--keep class com.bumptech.glide.GeneratedAppGlideModuleImpl
-
 -keepattributes *Annotation*, InnerClasses
 -dontnote kotlinx.serialization.SerializationKt
 -keep,includedescriptorclasses class xyz.quaver.**$$serializer { *; } # <-- change package name to your app's
@@ -48,4 +33,3 @@
 }
 -keep class xyz.quaver.pupil.ui.fragment.ManageFavoritesFragment
 -keep class xyz.quaver.pupil.ui.fragment.ManageStorageFragment
--keep class xyz.quaver.pupil.util.Preferences

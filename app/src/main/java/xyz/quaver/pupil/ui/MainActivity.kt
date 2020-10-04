@@ -378,7 +378,7 @@ class MainActivity :
                     if (v !is CardView)
                         return@listener false
 
-                    val galleryID = galleries[position]
+                    val galleryID = galleries.getOrNull(position) ?: return@listener true
 
                     GalleryDialog(this@MainActivity, galleryID).apply {
                         onChipClickedHandler.add {

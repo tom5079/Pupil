@@ -33,11 +33,9 @@ import android.view.animation.Animation
 import android.view.animation.AnticipateInterpolator
 import android.view.animation.OvershootInterpolator
 import android.view.animation.TranslateAnimation
-import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
-import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.PagerSnapHelper
 import androidx.recyclerview.widget.RecyclerView
@@ -59,7 +57,6 @@ import xyz.quaver.Code
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.adapters.ReaderAdapter
 import xyz.quaver.pupil.favorites
-import xyz.quaver.pupil.histories
 import xyz.quaver.pupil.services.DownloadService
 import xyz.quaver.pupil.util.Preferences
 import xyz.quaver.pupil.util.camera
@@ -67,8 +64,6 @@ import xyz.quaver.pupil.util.closeCamera
 import xyz.quaver.pupil.util.downloader.Cache
 import xyz.quaver.pupil.util.downloader.DownloadManager
 import xyz.quaver.pupil.util.startCamera
-import java.util.*
-import kotlin.concurrent.schedule
 
 class ReaderActivity : BaseActivity() {
 
@@ -88,6 +83,8 @@ class ReaderActivity : BaseActivity() {
     private val conn = object: ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
             downloader = (service as DownloadService.Binder).service.also {
+                it.priority = 0
+
                 if (!it.progress.containsKey(galleryID))
                     DownloadService.download(this@ReaderActivity, galleryID, true)
             }
@@ -230,14 +227,16 @@ class ReaderActivity : BaseActivity() {
         if (downloader != null)
             unbindService(conn)
 
-        if (!DownloadManager.getInstance(this).isDownloading(galleryID))
-            DownloadService.cancel(this, galleryID)
+        downloader?.priority = galleryID
     }
 
     override fun onDestroy() {
         super.onDestroy()
 
         update = false
+
+        if (!DownloadManager.getInstance(this).isDownloading(galleryID))
+            DownloadService.cancel(this, galleryID)
     }
 
     override fun onBackPressed() {
