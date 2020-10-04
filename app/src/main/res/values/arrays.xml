@@ -2,6 +2,7 @@
 <resources>
 
     <string-array name="settings_galleries_per_page">
+        <item>5</item>
         <item>10</item>
         <item>25</item>
         <item>50</item>
