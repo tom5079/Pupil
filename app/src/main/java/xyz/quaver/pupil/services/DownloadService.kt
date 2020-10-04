@@ -27,7 +27,6 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.app.TaskStackBuilder
 import androidx.core.content.ContextCompat
-import com.google.firebase.crashlytics.FirebaseCrashlytics
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -46,6 +45,7 @@ import xyz.quaver.pupil.util.ellipsize
 import xyz.quaver.pupil.util.normalizeID
 import xyz.quaver.pupil.util.requestBuilders
 import java.io.IOException
+import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.math.ceil
 import kotlin.math.log10
@@ -88,7 +88,7 @@ class DownloadService : Service() {
                     PendingIntent.FLAG_UPDATE_CURRENT),
             ).build()
 
-        notification.put(galleryID, NotificationCompat.Builder(this, "download").apply {
+        notification[galleryID] = NotificationCompat.Builder(this, "download").apply {
             setContentTitle(getString(R.string.reader_loading))
             setContentText(getString(R.string.reader_notification_text))
             setSmallIcon(R.drawable.ic_notification)
@@ -96,7 +96,7 @@ class DownloadService : Service() {
             addAction(action)
             setProgress(0, 0, true)
             setOngoing(true)
-        })
+        }
 
         notify(galleryID)
     }
@@ -121,7 +121,7 @@ class DownloadService : Service() {
                 .setProgress(max, progress, false)
                 .setContentText("$progress/$max")
 
-        if (DownloadManager.getInstance(this).getDownloadFolder(galleryID) != null)
+        if (DownloadManager.getInstance(this).getDownloadFolder(galleryID) != null || galleryID == priority)
             notification.let { notificationManager.notify(galleryID, it.build()) }
         else
             notificationManager.cancel(galleryID)
@@ -196,6 +196,7 @@ class DownloadService : Service() {
     *  Float.POSITIVE_INFINITY -> Download completed
     */
     val progress = ConcurrentHashMap<Int, MutableList<Float>>()
+    var priority = 0
 
     fun isCompleted(galleryID: Int) = progress[galleryID]?.toList()?.all { it == Float.POSITIVE_INFINITY } == true
 

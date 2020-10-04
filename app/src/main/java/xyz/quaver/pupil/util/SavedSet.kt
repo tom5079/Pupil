@@ -22,8 +22,9 @@ import kotlinx.serialization.*
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
 import java.io.File
+import java.util.*
 
-class SavedSet <T: Any> (private val file: File, private val any: T, private val set: MutableSet<T> = mutableSetOf()) : MutableSet<T> by set {
+class SavedSet <T: Any> (private val file: File, private val any: T, private val set: MutableSet<T> = Collections.synchronizedSet(mutableSetOf())) : MutableSet<T> by set {
 
     @Suppress("UNCHECKED_CAST")
     @OptIn(ExperimentalSerializationApi::class)

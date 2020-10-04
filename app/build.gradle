@@ -37,7 +37,7 @@ android {
         applicationId "xyz.quaver.pupil"
         minSdkVersion 16
         targetSdkVersion 30
-        versionCode 61
+        versionCode 62
         versionName "5.1.3"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
@@ -51,7 +51,6 @@ android {
             applicationIdSuffix ".debug"
             versionNameSuffix "-DEBUG"
 
-            buildConfigField("Boolean", "CENSOR", "false")
             proguardFiles getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
 
             ext.enableCrashlytics = false
@@ -61,7 +60,6 @@ android {
             minifyEnabled true
             shrinkResources true
 
-            buildConfigField("Boolean", "CENSOR", "false")
             proguardFiles getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
         }
     }
@@ -79,7 +77,6 @@ android {
 dependencies {
     implementation fileTree(dir: "libs", include: ["*.jar", "*.aar"])
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
-    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.9"
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.3.9"
     implementation "org.jetbrains.kotlinx:kotlinx-serialization-json:1.0.0-RC2"
     
