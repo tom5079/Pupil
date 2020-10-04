@@ -294,10 +294,10 @@ class DownloadService : Service() {
     }
 
     fun download(galleryID: Int, priority: Boolean = false, startId: Int? = null): Job = CoroutineScope(Dispatchers.IO).launch {
-        cleanCache(this@DownloadService)
+        if (DownloadManager.getInstance(this@DownloadService).isDownloading(galleryID))
+            return@launch
 
-        if (progress.containsKey(galleryID))
-            cancel(galleryID)
+        cleanCache(this@DownloadService)
 
         val cache = Cache.getInstance(this@DownloadService, galleryID)
 
