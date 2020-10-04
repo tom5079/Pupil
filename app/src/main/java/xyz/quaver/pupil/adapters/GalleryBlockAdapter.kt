@@ -126,6 +126,7 @@ class GalleryBlockAdapter(private val galleries: List<Int>) : RecyclerSwipeAdapt
 
         fun bind(galleryID: Int) {
             this.galleryID = galleryID
+            updateProgress(view.context)
 
             val cache = Cache.getInstance(view.context, galleryID)
 
