@@ -12,6 +12,7 @@ tags = dict()
 count_regex = re.compile(r".+\((\d+)\)$")
 
 for index in indices:
+    print('.', end='')
     url = f'https://hitomi.la/alltags-{index}.html'
 
     soup = BeautifulSoup(requests.get(url).text, 'html.parser')
