@@ -4,6 +4,8 @@ Tags will be updated every day at 00:00 UTC
 
 ## Participating in tag translation
 
+[한글 설명서](https://github.com/tom5079/Pupil/blob/tags/docs/README-ko.md)
+
 ### Rules
 * Each translation file should be located in the root folder
 * Each translation file should be named in following format: [`<ISO 639-1 Code>.json`](https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes)
