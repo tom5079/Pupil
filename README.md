@@ -20,13 +20,13 @@ If the target file exists, go to 1-2
 
 If the target language file doesn't exist, you have to create one.
 
-Click `Create New File` Button at the upper right corner  
+1) Click `Create New File` Button at the upper right corner  
 ![](https://github.com/tom5079/Pupil/blob/tags/docs/images/add-file.PNG?raw=true)
 
-Name the file according to the naming rule  
+2) Name the file according to the naming rule  
 ![](https://github.com/tom5079/Pupil/blob/tags/docs/images/filename.png?raw=true)
 
-Copy-paste all the content of [`template.json`](https://raw.githubusercontent.com/tom5079/Pupil/tags/template.json)
+3) Copy-paste all the content of [`template.json`](https://raw.githubusercontent.com/tom5079/Pupil/tags/template.json)
 
 ### 1-2. Edit Existing File
 
