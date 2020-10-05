@@ -21,8 +21,6 @@ for index in indices:
         count = int(count_regex.match(item.text).group(1))
 
         tags[tag] = count
-    
-    break
 
 tag_regex = re.compile(r".+:(.+)$")
 def clean(tag):
