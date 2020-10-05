@@ -1,7 +1,7 @@
 #!/bin/bash
 
-TAGS_PYTHON=/home/tom5079/.virtualenvs/tags/bin/python
-TAGS_FOLDER=/mnt/d/Workspace/Pupil-gh-pages
+TAGS_PYTHON=
+TAGS_FOLDER=
 
 $TAGS_PYTHON -m pip install -r $TAGS_FOLDER/scripts/requirements.txt > NUL
 
