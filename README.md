@@ -13,10 +13,7 @@ Tags will be updated every day at 00:00 UTC
 
 ### 1. Access Editor
 
-If the target file does not exist, go to 1-1  
-If the target file exists, go to 1-2
-
-### 1-1. Add language file
+### 1-1. (Optional) Add language file
 
 If the target language file doesn't exist, you have to create one.
 
