@@ -25,6 +25,7 @@ import com.google.android.material.chip.Chip
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.favoriteTags
 import xyz.quaver.pupil.types.Tag
+import xyz.quaver.pupil.util.translations
 import xyz.quaver.pupil.util.wordCapitalize
 
 @SuppressLint("ViewConstructor")
@@ -90,7 +91,7 @@ class TagChip(context: Context, _tag: Tag) : Chip(context) {
 
         text = when (tag.area) {
             "language" -> languages[tag.tag]
-            else -> tag.tag.wordCapitalize()
+            else -> (translations[tag.tag] ?: tag.tag).wordCapitalize()
         }
 
         setEnsureMinTouchTargetSize(false)

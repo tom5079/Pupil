@@ -23,6 +23,9 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import androidx.core.content.ContextCompat
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonObject
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import xyz.quaver.Code
@@ -129,3 +132,9 @@ fun String.ellipsize(n: Int): String =
         this.slice(0 until n) + "…"
     else
         this
+
+operator fun JsonElement.get(index: Int) =
+    this.jsonArray[index]
+
+operator fun JsonElement.get(tag: String) =
+    this.jsonObject[tag]

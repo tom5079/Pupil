@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<PreferenceScreen
-    xmlns:app="http://schemas.android.com/apk/res-auto">
+<PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <Preference
         app:key="app_version"
@@ -75,6 +74,12 @@
 
     <PreferenceCategory
         app:title="@string/settings_miscellaneous_title">
+
+        <ListPreference
+            app:key="tag_language"
+            app:title="@string/settings_tag_language"
+            app:defaultValue="en"
+            app:useSimpleSummaryProvider="true"/>
 
         <Preference
             app:key="mirrors"
