@@ -21,8 +21,13 @@ package xyz.quaver.pupil.ui.view
 import android.content.Context
 import android.content.res.TypedArray
 import android.util.AttributeSet
+import android.util.Log
 import com.google.android.material.chip.Chip
 import com.google.android.material.chip.ChipGroup
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.launch
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.types.Tag
 import xyz.quaver.pupil.types.Tags
@@ -69,16 +74,22 @@ class TagChipGroup @JvmOverloads constructor(context: Context, attr: AttributeSe
     fun refresh() {
         this.removeAllViews()
 
-        tags.take(maxChipSize).forEach {
-            this.addView(TagChip(context, it).apply {
-                setOnClickListener {
-                    onClickListener?.invoke(this.tag)
+        CoroutineScope(Dispatchers.Main).launch {
+            tags.take(maxChipSize).map {
+                CoroutineScope(Dispatchers.Default).async {
+                    TagChip(context, it).apply {
+                        setOnClickListener {
+                            onClickListener?.invoke(this.tag)
+                        }
+                    }
                 }
-            })
-        }
+            }.forEach {
+                addView(it.await())
+            }
 
-        if (maxChipSize > 0 && this.size > maxChipSize)
-            addView(moreView)
+            if (maxChipSize > 0 && tags.size > maxChipSize && parent == null)
+                addView(moreView)
+        }
     }
 
     init {

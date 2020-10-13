@@ -1,19 +1,17 @@
 {
-  "version": 1,
+  "version": 2,
   "artifactType": {
     "type": "APK",
     "kind": "Directory"
   },
   "applicationId": "xyz.quaver.pupil",
-  "variantName": "release",
+  "variantName": "processReleaseResources",
   "elements": [
     {
       "type": "SINGLE",
       "filters": [],
-      "properties": [],
       "versionCode": 63,
-      "versionName": "5.1.4-hotfix1",
-      "enabled": true,
+      "versionName": "5.1.5",
       "outputFile": "app-release.apk"
     }
   ]

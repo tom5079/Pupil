@@ -20,6 +20,7 @@ package xyz.quaver.pupil.adapters
 
 import android.content.Context
 import android.graphics.drawable.Drawable
+import android.util.Log
 import android.util.SparseBooleanArray
 import android.view.LayoutInflater
 import android.view.View
@@ -229,24 +230,29 @@ class GalleryBlockAdapter(private val galleries: List<Int>) : RecyclerSwipeAdapt
                     }
 
                     tags.clear()
-                    tags.addAll(
-                        galleryBlock.relatedTags.sortedBy {
-                            val tag = Tag.parse(it)
 
-                            if (favoriteTags.contains(tag))
-                                -1
-                            else
-                                when(Tag.parse(it).area) {
-                                    "female" -> 0
-                                    "male" -> 1
-                                    else -> 2
-                                }
-                        }.map {
-                            Tag.parse(it)
+                    CoroutineScope(Dispatchers.IO).launch {
+                        tags.addAll(
+                            galleryBlock.relatedTags.sortedBy {
+                                val tag = Tag.parse(it)
+
+                                if (favoriteTags.contains(tag))
+                                    -1
+                                else
+                                    when(Tag.parse(it).area) {
+                                        "female" -> 0
+                                        "male" -> 1
+                                        else -> 2
+                                    }
+                            }.map {
+                                Tag.parse(it)
+                            }
+                        )
+
+                        launch(Dispatchers.Main) {
+                            refresh()
                         }
-                    )
-
-                    refresh()
+                    }
                 }
 
                 galleryblock_id.text = galleryBlock.id.toString()
