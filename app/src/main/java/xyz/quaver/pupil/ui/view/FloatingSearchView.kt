@@ -57,7 +57,7 @@ class FloatingSearchView @JvmOverloads constructor(context: Context, attrs: Attr
     var onFavoriteHistorySwitchClickListener: (() -> Unit)? = null
 
     init {
-        searchInputView.imeOptions = EditorInfo.IME_FLAG_NO_EXTRACT_UI
+        searchInputView.imeOptions = EditorInfo.IME_FLAG_NO_EXTRACT_UI or searchInputView.imeOptions
 
         searchInputView.addTextChangedListener(this)
         onSearchListener = this
