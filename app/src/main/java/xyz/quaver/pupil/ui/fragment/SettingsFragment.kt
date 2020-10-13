@@ -21,14 +21,16 @@ package xyz.quaver.pupil.ui.fragment
 import android.app.Activity
 import android.content.*
 import android.os.Bundle
+import android.os.LocaleList
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatDelegate
-import androidx.preference.Preference
-import androidx.preference.PreferenceCategory
-import androidx.preference.PreferenceFragmentCompat
-import androidx.preference.SwitchPreferenceCompat
+import androidx.core.os.LocaleListCompat
+import androidx.preference.*
 import com.google.android.gms.oss.licenses.OssLicensesMenuActivity
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import xyz.quaver.io.FileX
 import xyz.quaver.io.util.getChild
 import xyz.quaver.pupil.R
@@ -37,6 +39,7 @@ import xyz.quaver.pupil.ui.SettingsActivity
 import xyz.quaver.pupil.ui.dialog.*
 import xyz.quaver.pupil.util.*
 import xyz.quaver.pupil.util.downloader.DownloadManager
+import java.util.*
 
 class SettingsFragment :
     PreferenceFragmentCompat(),
@@ -123,6 +126,9 @@ class SettingsFragment :
             this ?: return false
 
             when (key) {
+                "tag_language" -> {
+                    updateTranslations()
+                }
                 "nomedia" -> {
                     val create = (newValue as? Boolean) ?: return false
 
@@ -242,6 +248,25 @@ class SettingsFragment :
                                 }
 
                             onPreferenceClickListener = this@SettingsFragment
+                        }
+                        "tag_language" -> {
+                            this as ListPreference
+
+                            isEnabled = false
+
+                            CoroutineScope(Dispatchers.IO).launch {
+                                val languages = getAvailableLanguages().distinct().toTypedArray()
+
+                                entries = languages.map { Locale(it).let { loc -> loc.getDisplayLanguage(loc) } }.toTypedArray()
+                                entryValues = languages
+
+                                launch(Dispatchers.Main) {
+                                    isEnabled = true
+                                }
+                            }
+
+                            onPreferenceChangeListener = this@SettingsFragment
+
                         }
                         "mirrors" -> {
                             onPreferenceClickListener = this@SettingsFragment

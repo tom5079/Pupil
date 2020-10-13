@@ -55,7 +55,7 @@ fun cleanCache(context: Context) = CoroutineScope(Dispatchers.IO).launch {
             while (cacheSize.invoke() > limit/2) {
                 val caches = cacheFolder.list() ?: return@withLock
 
-                (histories.firstOrNull {
+                (histories.toList().firstOrNull {
                     caches.contains(it.toString()) && !downloadManager.isDownloading(it)
                 } ?: return@withLock).let {
                     Cache.delete(context, it)
