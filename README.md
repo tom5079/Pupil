@@ -3,7 +3,7 @@
 Tags will be updated every day at 00:00 UTC
 
 ## License
-Check [LICENSE.md](https://github.com/tom5079/Pupil/blob/master/LICENSE)
+Check [LICENSE](https://github.com/tom5079/Pupil/blob/tags/LICENSE.md)
 
 ## Participating in tag translation
 
