@@ -22,13 +22,18 @@ import kotlinx.android.parcel.IgnoredOnParcel
 import kotlinx.android.parcel.Parcelize
 import xyz.quaver.floatingsearchview.suggestions.model.SearchSuggestion
 import xyz.quaver.hitomi.Suggestion
+import xyz.quaver.pupil.util.translations
 
 @Parcelize
 data class TagSuggestion(val s: String, val t: Int, val u: String, val n: String) : SearchSuggestion {
     constructor(s: Suggestion) : this(s.s, s.t, s.u, s.n)
 
     @IgnoredOnParcel
-    override val body = s
+    override val body =
+        if (translations[s] != null)
+            "${translations[s]} ($s)"
+        else
+            s
 }
 
 @Parcelize

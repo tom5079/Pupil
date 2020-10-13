@@ -164,9 +164,7 @@ class FloatingSearchView @JvmOverloads constructor(context: Context, attrs: Attr
                     }
                 }
 
-                if (item.t == -1) {
-                    textView?.text = item.s
-                } else {
+                if (item.t > 0) {
                     (suggestionView as? LinearLayout)?.let {
                         val count = it.findViewById<TextView>(R.id.count)
                         if (count == null)
