@@ -2,6 +2,9 @@
 
 Tags will be updated every day at 00:00 UTC
 
+## License
+Check [LICENSE](https://github.com/tom5079/Pupil/blob/tags/LICENSE.md)
+
 ## Participating in tag translation
 
 [한글 설명서](https://github.com/tom5079/Pupil/blob/tags/docs/README-ko.md)
