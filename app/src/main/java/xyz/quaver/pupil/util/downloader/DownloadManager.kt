@@ -80,7 +80,7 @@ class DownloadManager private constructor(context: Context) : ContextWrapper(con
                 }.invoke()
             }
 
-            return downloadFolderMapInstance!!
+            return downloadFolderMapInstance ?: mutableMapOf()
         }
 
 

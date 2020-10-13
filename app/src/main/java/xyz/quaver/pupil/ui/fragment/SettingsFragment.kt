@@ -255,13 +255,15 @@ class SettingsFragment :
                             isEnabled = false
 
                             CoroutineScope(Dispatchers.IO).launch {
-                                val languages = getAvailableLanguages().distinct().toTypedArray()
+                                kotlin.runCatching {
+                                    val languages = getAvailableLanguages().distinct().toTypedArray()
 
-                                entries = languages.map { Locale(it).let { loc -> loc.getDisplayLanguage(loc) } }.toTypedArray()
-                                entryValues = languages
+                                    entries = languages.map { Locale(it).let { loc -> loc.getDisplayLanguage(loc) } }.toTypedArray()
+                                    entryValues = languages
 
-                                launch(Dispatchers.Main) {
-                                    isEnabled = true
+                                    launch(Dispatchers.Main) {
+                                        isEnabled = true
+                                    }
                                 }
                             }
 
