@@ -24,7 +24,7 @@ import kotlinx.serialization.json.Json
 import java.io.File
 import java.util.*
 
-class SavedSet <T: Any> (private val file: File, private val any: T, private val set: MutableSet<T> = Collections.synchronizedSet(mutableSetOf())) : MutableSet<T> by set {
+class SavedSet <T: Any> (private val file: File, private val any: T, private val set: MutableSet<T> = mutableSetOf()) : MutableSet<T> by set {
 
     @Suppress("UNCHECKED_CAST")
     @OptIn(ExperimentalSerializationApi::class)
@@ -39,24 +39,23 @@ class SavedSet <T: Any> (private val file: File, private val any: T, private val
         load()
     }
 
+    @Synchronized
     fun load() {
-        synchronized(this) {
-            set.clear()
-            kotlin.runCatching {
-                Json.decodeFromString(serializer, file.readText())
-            }.onSuccess {
-                set.addAll(it)
-            }
+        set.clear()
+        kotlin.runCatching {
+            Json.decodeFromString(serializer, file.readText())
+        }.onSuccess {
+            set.addAll(it)
         }
     }
 
+    @Synchronized
     @OptIn(ExperimentalSerializationApi::class)
     fun save() {
-        synchronized(this) {
-            file.writeText(Json.encodeToString(serializer, set.toList()))
-        }
+        file.writeText(Json.encodeToString(serializer, set.toList()))
     }
 
+    @Synchronized
     override fun add(element: T): Boolean {
         load()
 
@@ -67,6 +66,7 @@ class SavedSet <T: Any> (private val file: File, private val any: T, private val
         }
     }
 
+    @Synchronized
     override fun addAll(elements: Collection<T>): Boolean {
         load()
 
@@ -77,6 +77,7 @@ class SavedSet <T: Any> (private val file: File, private val any: T, private val
         }
     }
 
+    @Synchronized
     override fun remove(element: T): Boolean {
         load()
 
@@ -85,6 +86,7 @@ class SavedSet <T: Any> (private val file: File, private val any: T, private val
         }
     }
 
+    @Synchronized
     override fun clear() {
         set.clear()
         save()
