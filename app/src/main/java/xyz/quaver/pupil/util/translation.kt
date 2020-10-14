@@ -42,11 +42,13 @@ var translations: Map<String, String> = run {
 @Suppress("BlockingMethodInNonBlockingContext")
 fun updateTranslations() = CoroutineScope(Dispatchers.IO).launch {
     translations = emptyMap()
-    translations = Json.decodeFromString<Map<String, String>>(client.newCall(
-        Request.Builder()
-            .url(contentURL + "${Preferences["tag_language", ""]}.json")
-            .build()
-    ).execute().also { if (it.code() != 200) return@launch }.body()?.use { it.string() } ?: return@launch).filterValues { it.isNotEmpty() }
+    kotlin.runCatching {
+        translations = Json.decodeFromString<Map<String, String>>(client.newCall(
+            Request.Builder()
+                .url(contentURL + "${Preferences["tag_language", ""]}.json")
+                .build()
+        ).execute().also { if (it.code() != 200) return@launch }.body()?.use { it.string() } ?: return@launch).filterValues { it.isNotEmpty() }
+    }
 }
 
 fun getAvailableLanguages(): List<String> {

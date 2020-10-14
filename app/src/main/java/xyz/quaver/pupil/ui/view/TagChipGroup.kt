@@ -24,10 +24,7 @@ import android.util.AttributeSet
 import android.util.Log
 import com.google.android.material.chip.Chip
 import com.google.android.material.chip.ChipGroup
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.types.Tag
 import xyz.quaver.pupil.types.Tags
@@ -71,10 +68,12 @@ class TagChipGroup @JvmOverloads constructor(context: Context, attr: AttributeSe
         maxChipSize = attr.getInt(R.styleable.TagChipGroup_maxTag, Defaults.maxChipSize)
     }
 
+    private var refreshJob: Job? = null
     fun refresh() {
+        refreshJob?.cancel()
         this.removeAllViews()
 
-        CoroutineScope(Dispatchers.Main).launch {
+        refreshJob = CoroutineScope(Dispatchers.Main).launch {
             tags.take(maxChipSize).map {
                 CoroutineScope(Dispatchers.Default).async {
                     TagChip(context, it).apply {
