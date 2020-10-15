@@ -258,7 +258,7 @@ class ReaderActivity : BaseActivity() {
         //currentPage is 1-based
         return when(keyCode) {
             KeyEvent.KEYCODE_VOLUME_UP -> {
-                (reader_recyclerview.layoutManager as LinearLayoutManager?)?.scrollToPositionWithOffset(currentPage-2, 0)
+                (reader_recyclerview.layoutManager as LinearLayoutManager).scrollToPositionWithOffset(currentPage-2, 0)
 
                 true
             }
@@ -339,7 +339,7 @@ class ReaderActivity : BaseActivity() {
                         scrollMode(false)
                         fullscreen(true)
                     } else {
-                        (reader_recyclerview.layoutManager as LinearLayoutManager?)?.scrollToPosition(currentPage) //Moves to next page because currentPage is 1-based indexing
+                        (reader_recyclerview.layoutManager as LinearLayoutManager).scrollToPositionWithOffset(currentPage, 0) //Moves to next page because currentPage is 1-based indexing
                     }
                 }
             }
@@ -359,7 +359,6 @@ class ReaderActivity : BaseActivity() {
                         return
                     currentPage = layoutManager.findFirstVisibleItemPosition()+1
                     menu?.findItem(R.id.reader_menu_page_indicator)?.title = "$currentPage/${recyclerView.adapter!!.itemCount}"
-
                 }
             })
         }
@@ -455,7 +454,11 @@ class ReaderActivity : BaseActivity() {
             reader_recyclerview.layoutManager = LinearLayoutManager(this)
         } else {
             snapHelper.attachToRecyclerView(reader_recyclerview)
-            reader_recyclerview.layoutManager = LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, Preferences["rtl", false])
+            reader_recyclerview.layoutManager = object: LinearLayoutManager(this, HORIZONTAL, Preferences["rtl", false]) {
+                override fun calculateExtraLayoutSpace(state: RecyclerView.State, extraLayoutSpace: IntArray) {
+                    extraLayoutSpace.fill(600)
+                }
+            }
         }
 
         (reader_recyclerview.layoutManager as LinearLayoutManager).scrollToPositionWithOffset(currentPage-1, 0)
