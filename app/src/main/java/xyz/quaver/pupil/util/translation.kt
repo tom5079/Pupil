@@ -45,7 +45,7 @@ fun updateTranslations() = CoroutineScope(Dispatchers.IO).launch {
     kotlin.runCatching {
         translations = Json.decodeFromString<Map<String, String>>(client.newCall(
             Request.Builder()
-                .url(contentURL + "${Preferences["tag_language", ""]}.json")
+                .url(contentURL + "${Preferences["tag_translation", ""].let { if (it.isEmpty()) Locale.getDefault().language else it }}.json")
                 .build()
         ).execute().also { if (it.code() != 200) return@launch }.body()?.use { it.string() } ?: return@launch).filterValues { it.isNotEmpty() }
     }

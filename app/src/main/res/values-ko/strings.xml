@@ -152,7 +152,7 @@
     <string name="error">오류</string>
     <string name="settings_cache_limit">캐시 크기 제한</string>
     <string name="settings_cache_unlimited">무제한</string>
-    <string name="settings_tag_language">태그 언어</string>
-    <string name="settings_tag_language_message">Github에서 번역에 참여하세요</string>
+    <string name="settings_tag_translation">태그 언어</string>
+    <string name="settings_tag_translation_message">Github에서 번역에 참여하세요</string>
     <string name="settings_concurrent_download">병렬 다운로드</string>
 </resources>

@@ -124,7 +124,7 @@ class SettingsFragment :
             this ?: return false
 
             when (key) {
-                "tag_language" -> {
+                "tag_translation" -> {
                     updateTranslations()
                 }
                 "nomedia" -> {
@@ -247,7 +247,7 @@ class SettingsFragment :
 
                             onPreferenceClickListener = this@SettingsFragment
                         }
-                        "tag_language" -> {
+                        "tag_translation" -> {
                             this as ListPreference
 
                             isEnabled = false

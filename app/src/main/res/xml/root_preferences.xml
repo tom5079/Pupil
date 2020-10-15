@@ -76,9 +76,8 @@
         app:title="@string/settings_miscellaneous_title">
 
         <ListPreference
-            app:key="tag_language"
-            app:title="@string/settings_tag_language"
-            app:defaultValue="en"
+            app:key="tag_translation"
+            app:title="@string/settings_tag_translation"
             app:useSimpleSummaryProvider="true"/>
 
         <Preference
