@@ -30,6 +30,8 @@
 
     <string name="ignore_update">Ignore</string>
 
+    <string name="copied_to_clipboard">Copied to clipboard</string>
+
     <string name="channel_download">Download</string>
     <string name="channel_download_description">Shows download status</string>
 
@@ -187,7 +189,6 @@
     <string name="settings_dark_mode_summary">Protect yourself against light attacks!</string>
     <string name="settings_import_old_galleries">Import old galleries</string>
     <string name="settings_user_id">User ID</string>
-    <string name="settings_user_id_toast">User ID is copied to clipboard</string>
     <string name="settings_oss">Open Source Notice</string>
 
     <!-- MANAGE FAVORITES -->

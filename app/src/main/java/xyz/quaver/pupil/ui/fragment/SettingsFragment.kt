@@ -21,11 +21,9 @@ package xyz.quaver.pupil.ui.fragment
 import android.app.Activity
 import android.content.*
 import android.os.Bundle
-import android.os.LocaleList
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatDelegate
-import androidx.core.os.LocaleListCompat
 import androidx.preference.*
 import com.google.android.gms.oss.licenses.OssLicensesMenuActivity
 import kotlinx.coroutines.CoroutineScope
@@ -112,7 +110,7 @@ class SettingsFragment :
                     (context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager).setPrimaryClip(
                         ClipData.newPlainText("user_id", Preferences.get<String>("user_id"))
                     )
-                    Toast.makeText(context, R.string.settings_user_id_toast, Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, R.string.copied_to_clipboard, Toast.LENGTH_SHORT).show()
                 }
                 else -> return false
             }
