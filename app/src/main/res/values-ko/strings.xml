@@ -128,7 +128,7 @@
     <string name="settings_lock_fingerprint_prompt_subtitle">힘세고 강한 지문 인식</string>
     <string name="default_query_dialog_filter_loli">판사님 저는 페도가 아닙니다</string>
     <string name="settings_user_id">유저 ID</string>
-    <string name="settings_user_id_toast">유저 ID를 클립보드에 복사했습니다</string>
+    <string name="copied_to_clipboard">클립보드에 복사됨</string>
     <string name="reader_fab_retry">재시도</string>
     <string name="reader_fab_auto">눈 깜빡임 감지 스크롤</string>
     <string name="search_all">모든 갤러리 검색</string>

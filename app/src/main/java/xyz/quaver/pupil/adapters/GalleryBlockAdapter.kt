@@ -18,6 +18,8 @@
 
 package xyz.quaver.pupil.adapters
 
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.content.Context
 import android.graphics.drawable.Drawable
 import android.util.Log
@@ -26,6 +28,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.LinearLayout
+import android.widget.Toast
 import androidx.cardview.widget.CardView
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
@@ -92,6 +95,13 @@ class GalleryBlockAdapter(private val galleries: List<Int>) : RecyclerSwipeAdapt
                     with(view.galleryblock_progressbar_layout) {
                         if (visibility == View.GONE)
                             visibility = View.VISIBLE
+                    }
+
+                    view.galleryblock_id.setOnClickListener {
+                        (context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager).setPrimaryClip(
+                            ClipData.newPlainText("gallery_id", galleryID.toString())
+                        )
+                        Toast.makeText(context, R.string.copied_to_clipboard, Toast.LENGTH_SHORT).show()
                     }
 
                     if (!imageList.contains(null)) {
