@@ -19,7 +19,6 @@
 package xyz.quaver.pupil.adapters
 
 import android.content.Context
-import android.graphics.DiscretePathEffect
 import android.graphics.drawable.Animatable
 import android.net.Uri
 import android.view.LayoutInflater
