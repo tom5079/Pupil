@@ -197,9 +197,7 @@
 				android:id="@+id/galleryblock_id"
 				android:layout_width="wrap_content"
 				android:layout_height="wrap_content"
-				android:layout_marginLeft="8dp"
-				android:layout_marginTop="8dp"
-				android:layout_marginBottom="8dp"
+				android:layout_margin="8dp"
 				app:layout_constraintTop_toBottomOf="@id/divider"
 				app:layout_constraintBottom_toBottomOf="parent"
 				app:layout_constraintLeft_toLeftOf="parent"/>
