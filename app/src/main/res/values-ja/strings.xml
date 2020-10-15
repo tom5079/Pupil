@@ -152,7 +152,7 @@
     <string name="error">エラー</string>
     <string name="settings_cache_limit">キャッシュサイズ制限</string>
     <string name="settings_cache_unlimited">制限なし</string>
-    <string name="settings_tag_language">タグ言語</string>
-    <string name="settings_tag_language_message">Githubにて翻訳に参加できます</string>
+    <string name="settings_tag_translation">タグ言語</string>
+    <string name="settings_tag_translation_message">Githubにて翻訳に参加できます</string>
     <string name="settings_concurrent_download">並列ダウンロード</string>
 </resources>
