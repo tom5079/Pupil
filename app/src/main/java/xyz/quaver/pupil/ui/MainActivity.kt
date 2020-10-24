@@ -125,13 +125,9 @@ class MainActivity :
         if (Preferences["download_folder", ""].isEmpty())
             DownloadLocationDialogFragment().show(supportFragmentManager, "Download Location Dialog")
 
-        initView()
-    }
-
-    override fun onResume() {
-        super.onResume()
-
         checkUpdate(this)
+
+        initView()
     }
 
     @OptIn(ExperimentalStdlibApi::class)
