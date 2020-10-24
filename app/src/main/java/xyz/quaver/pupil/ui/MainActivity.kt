@@ -934,7 +934,7 @@ class MainActivity :
                         }
                     }
                 }
-            }
+            }.toList()
         }
     }
 
