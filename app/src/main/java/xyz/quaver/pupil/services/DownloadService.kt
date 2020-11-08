@@ -45,7 +45,6 @@ import xyz.quaver.pupil.util.ellipsize
 import xyz.quaver.pupil.util.normalizeID
 import xyz.quaver.pupil.util.requestBuilders
 import java.io.IOException
-import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.math.ceil
 import kotlin.math.log10
@@ -203,6 +202,8 @@ class DownloadService : Service() {
     private val callback = object: Callback {
 
         override fun onFailure(call: Call, e: IOException) {
+            e.printStackTrace()
+
             if (e.message?.contains("cancel", true) == false) {
                 val galleryID = (call.request().tag() as Tag).galleryID
 
@@ -235,6 +236,7 @@ class DownloadService : Service() {
                             startId?.let { stopSelf(it) }
                         }
                     }.onFailure {
+                        it.printStackTrace()
                         cancel(galleryID)
                         download(galleryID)
                     }
