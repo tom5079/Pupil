@@ -32,6 +32,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.preference.PreferenceManager
+import com.google.firebase.crashlytics.FirebaseCrashlytics
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -256,6 +257,13 @@ fun xyz.quaver.pupil.util.downloader.DownloadManager.migrate() {
 
     job?.cancel()
     job = CoroutineScope(Dispatchers.IO).launch {
+        val images = listOf(
+            "jpg",
+            "png",
+            "gif",
+            "webp"
+        )
+
         val downloadFolders = downloadFolder.listFiles { folder ->
             folder.isDirectory && !downloadFolderMap.values.contains(folder.name)
         }?.map {
@@ -273,52 +281,56 @@ fun xyz.quaver.pupil.util.downloader.DownloadManager.migrate() {
                 .setProgress(index, downloadFolders.size, false)
             notificationManager.notify(R.id.notification_id_import, notification.build())
 
-            kotlin.runCatching {
-                val metadata = kotlin.runCatching {
-                    folder.getChild(".metadata").readText()?.let { Json.parseToJsonElement(it).jsonObject }
-                }.getOrNull()
+            val metadata = kotlin.runCatching {
+                folder.getChild(".metadata").readText()?.let { Json.parseToJsonElement(it) }
+            }.getOrNull()
 
-                val galleryID = folder.name.toIntOrNull() ?: return@runCatching
+            val galleryID = metadata?.get("reader")?.get("galleryInfo")?.get("id")?.content?.toIntOrNull()
+                ?: folder.name.toIntOrNull() ?: return@forEachIndexed
 
-                val galleryBlock: GalleryBlock? = kotlin.runCatching {
-                    metadata?.get("galleryBlock")?.let { Json.decodeFromJsonElement<GalleryBlock>(it) }
-                }.getOrNull() ?: getGalleryBlock(galleryID)
-                val reader: Reader? = kotlin.runCatching {
-                    metadata?.get("reader")?.let { Json.decodeFromJsonElement<Reader>(it) }
-                }.getOrNull() ?: getReader(galleryID)
+            val galleryBlock: GalleryBlock? = kotlin.runCatching {
+                metadata?.get("galleryBlock")?.let { Json.decodeFromJsonElement<GalleryBlock>(it) }
+            }.getOrNull() ?: kotlin.runCatching {
+                getGalleryBlock(galleryID)
+            }.getOrNull() ?: kotlin.runCatching {
+                xyz.quaver.hiyobi.getGalleryBlock(galleryID)
+            }.getOrNull()
 
-                metadata?.get("thumbnail")?.jsonPrimitive?.contentOrNull?.also { thumbnail ->
-                    val file = folder.getChild(".thumbnail").also {
-                        if (it.exists())
-                            it.delete()
-                        it.createNewFile()
-                    }
+            val reader: Reader? = kotlin.runCatching {
+                metadata?.get("reader")?.let { Json.decodeFromJsonElement<Reader>(it) }
+            }.getOrNull() ?: kotlin.runCatching {
+                getReader(galleryID)
+            }.getOrNull() ?: kotlin.runCatching {
+                xyz.quaver.hiyobi.getReader(galleryID)
+            }.getOrNull()
 
-                    file.writeBytes(Base64.decode(thumbnail, Base64.DEFAULT))
+            metadata?.get("thumbnail")?.jsonPrimitive?.contentOrNull?.also { thumbnail ->
+                val file = folder.getChild(".thumbnail").also {
+                    if (it.exists())
+                        it.delete()
+                    it.createNewFile()
                 }
 
-                val list: MutableList<String?> =
-                    MutableList(reader!!.galleryInfo.files.size) { null }
-
-                folder.listFiles { file ->
-                    file?.nameWithoutExtension?.let {
-                        Regex("""\d{5}""").matches(it) && it.toIntOrNull() != null
-                    } == true
-                }?.forEach {
-                    list[it.nameWithoutExtension.toInt()] = it.name
-                }
-
-                folder.getChild(".metadata").also { if (it.exists()) it.delete(); it.createNewFile() }.writeText(
-                    Json.encodeToString(Metadata(galleryBlock, reader, list))
-                )
-
-                synchronized(Cache) {
-                    Cache.delete(this@migrate, galleryID)
-                }
-                downloadFolderMap[galleryID] = folder.name
-
-                downloadFolder.getChild(".download").let { if (!it.exists()) it.createNewFile(); it.writeText(Json.encodeToString(downloadFolderMap)) }
+                file.writeBytes(Base64.decode(thumbnail, Base64.DEFAULT))
             }
+
+            val list: MutableList<String?> =
+                MutableList(reader!!.galleryInfo.files.size) { null }
+
+            folder.list { _, name ->
+                name?.substringAfterLast('.') in images
+            }?.sorted()?.take(list.size)?.forEachIndexed { i, name ->
+                list[i] = name
+            }
+
+            folder.getChild(".metadata").also { if (it.exists()) it.delete(); it.createNewFile() }.writeText(
+                Json.encodeToString(Metadata(galleryBlock, reader, list))
+            )
+
+            Cache.delete(this@migrate, galleryID)
+            downloadFolderMap[galleryID] = folder.name
+
+            downloadFolder.getChild(".download").let { if (!it.exists()) it.createNewFile(); it.writeText(Json.encodeToString(downloadFolderMap)) }
         }
 
         notification
