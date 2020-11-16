@@ -22,14 +22,11 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.graphics.drawable.Drawable
-import android.util.Log
-import android.util.SparseBooleanArray
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.LinearLayout
 import android.widget.Toast
-import androidx.cardview.widget.CardView
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import androidx.vectordrawable.graphics.drawable.Animatable2Compat
@@ -39,6 +36,7 @@ import com.daimajia.swipe.adapters.RecyclerSwipeAdapter
 import com.daimajia.swipe.interfaces.SwipeAdapterInterface
 import com.github.piasy.biv.loader.ImageLoader
 import kotlinx.android.synthetic.main.item_galleryblock.view.*
+import kotlinx.android.synthetic.main.view_progress_card.view.*
 import kotlinx.coroutines.*
 import xyz.quaver.hitomi.getGallery
 import xyz.quaver.hitomi.getReader
@@ -47,6 +45,7 @@ import xyz.quaver.pupil.R
 import xyz.quaver.pupil.favoriteTags
 import xyz.quaver.pupil.favorites
 import xyz.quaver.pupil.types.Tag
+import xyz.quaver.pupil.ui.view.ProgressCard
 import xyz.quaver.pupil.util.Preferences
 import xyz.quaver.pupil.util.downloader.Cache
 import xyz.quaver.pupil.util.downloader.DownloadManager
@@ -76,62 +75,34 @@ class GalleryBlockAdapter(private val galleries: List<Int>) : RecyclerSwipeAdapt
             }
         }
 
-        private fun updateProgress(context: Context) {
-            val cache = Cache.getInstance(context, galleryID)
+        private fun updateProgress(context: Context) = CoroutineScope(Dispatchers.Main).launch {
+            with(view.galleryblock_card) {
+                val imageList = Cache.getInstance(context, galleryID).metadata.imageList
 
-            CoroutineScope(Dispatchers.Main).launch {
-                if (cache.metadata.reader == null) {
-                    view.galleryblock_progressbar_layout.visibility = View.GONE
-                    view.galleryblock_progress_complete.visibility = View.INVISIBLE
-                    return@launch
+                if (imageList == null) {
+                    max = 0
+                    return@with
                 }
 
-                with(view.galleryblock_progressbar) {
-                    val imageList = cache.metadata.imageList!!
+                progress = imageList.count { it != null }
+                max = imageList.size
 
-                    progress = imageList.count { it != null }
-                    max = imageList.size
-
-                    with(view.galleryblock_progressbar_layout) {
-                        if (visibility == View.GONE)
-                            visibility = View.VISIBLE
-                    }
-
-                    view.galleryblock_id.setOnClickListener {
-                        (context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager).setPrimaryClip(
-                            ClipData.newPlainText("gallery_id", galleryID.toString())
-                        )
-                        Toast.makeText(context, R.string.copied_to_clipboard, Toast.LENGTH_SHORT).show()
-                    }
-
-                    if (!imageList.contains(null)) {
-                        val downloadManager = DownloadManager.getInstance(context)
-
-                        if (completeFlag.get(galleryID, false)) {
-                            with(view.galleryblock_progress_complete) {
-                                setImageResource(
-                                    if (downloadManager.getDownloadFolder(galleryID) != null)
-                                        R.drawable.ic_progressbar
-                                    else R.drawable.ic_progressbar_cache
-                                )
-                                visibility = View.VISIBLE
-                            }
-                        } else {
-                            with(view.galleryblock_progress_complete) {
-                                setImageDrawable(AnimatedVectorDrawableCompat.create(context,
-                                    if (downloadManager.getDownloadFolder(galleryID) != null)
-                                        R.drawable.ic_progressbar_complete
-                                    else R.drawable.ic_progressbar_complete_cache
-                                ).apply {
-                                    this?.start()
-                                })
-                                visibility = View.VISIBLE
-                            }
-                            completeFlag.put(galleryID, true)
-                        }
-                    } else
-                        view.galleryblock_progress_complete.visibility = View.INVISIBLE
+                view.galleryblock_id.setOnClickListener {
+                    (context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager).setPrimaryClip(
+                        ClipData.newPlainText("gallery_id", galleryID.toString())
+                    )
+                    Toast.makeText(context, R.string.copied_to_clipboard, Toast.LENGTH_SHORT).show()
                 }
+
+                type = if (!imageList.contains(null)) {
+                    val downloadManager = DownloadManager.getInstance(context)
+
+                    if (downloadManager.getDownloadFolder(galleryID) == null)
+                        ProgressCard.Type.CACHE
+                    else
+                        ProgressCard.Type.DOWNLOAD
+                } else
+                    ProgressCard.Type.LOADING
             }
         }
 
@@ -326,8 +297,6 @@ class GalleryBlockAdapter(private val galleries: List<Int>) : RecyclerSwipeAdapt
         }
     }
 
-    val completeFlag = SparseBooleanArray()
-
     val onChipClickedHandler = ArrayList<((Tag) -> Unit)>()
     var onDownloadClickedHandler: ((Int) -> Unit)? = null
     var onDeleteClickedHandler: ((Int) -> Unit)? = null
@@ -341,7 +310,7 @@ class GalleryBlockAdapter(private val galleries: List<Int>) : RecyclerSwipeAdapt
             return when(ViewType.values()[type]) {
                 ViewType.NEXT -> NextViewHolder(view as LinearLayout)
                 ViewType.PREV -> PrevViewHolder(view as LinearLayout)
-                ViewType.GALLERY -> GalleryViewHolder(view as CardView)
+                ViewType.GALLERY -> GalleryViewHolder(view as ProgressCard)
             }
         }
 
@@ -361,30 +330,21 @@ class GalleryBlockAdapter(private val galleries: List<Int>) : RecyclerSwipeAdapt
 
             holder.bind(galleryID)
 
-            with(holder.view.galleryblock_primary) {
-                setOnClickListener {
-                    holder.view.performClick()
-                }
-                setOnLongClickListener {
-                    holder.view.performLongClick()
-                }
-            }
-
-            holder.view.galleryblock_download.setOnClickListener {
+            holder.view.galleryblock_card.download.setOnClickListener {
                 onDownloadClickedHandler?.invoke(position)
             }
 
-            holder.view.galleryblock_delete.setOnClickListener {
+            holder.view.galleryblock_card.delete.setOnClickListener {
                 onDeleteClickedHandler?.invoke(position)
             }
 
             mItemManger.bindView(holder.view, position)
 
-            holder.view.galleryblock_swipe_layout.addSwipeListener(object: SwipeLayout.SwipeListener {
+            holder.view.galleryblock_card.swipe_layout.addSwipeListener(object: SwipeLayout.SwipeListener {
                 override fun onStartOpen(layout: SwipeLayout?) {
                     mItemManger.closeAllExcept(layout)
 
-                    holder.view.galleryblock_download.text =
+                    holder.view.galleryblock_card.download.text =
                         if (DownloadManager.getInstance(holder.view.context).isDownloading(galleryID))
                             holder.view.context.getString(android.R.string.cancel)
                         else
@@ -413,5 +373,5 @@ class GalleryBlockAdapter(private val galleries: List<Int>) : RecyclerSwipeAdapt
         }.ordinal
     }
 
-    override fun getSwipeLayoutResourceId(position: Int) = R.id.galleryblock_swipe_layout
+    override fun getSwipeLayoutResourceId(position: Int) = R.id.swipe_layout
 }

@@ -36,6 +36,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.cardview.widget.CardView
 import androidx.core.view.GravityCompat
+import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.appbar.AppBarLayout
 import com.google.android.material.navigation.NavigationView
 import com.google.android.material.snackbar.Snackbar
@@ -56,6 +57,7 @@ import xyz.quaver.pupil.services.DownloadService
 import xyz.quaver.pupil.types.*
 import xyz.quaver.pupil.ui.dialog.DownloadLocationDialogFragment
 import xyz.quaver.pupil.ui.dialog.GalleryDialog
+import xyz.quaver.pupil.ui.view.ProgressCard
 import xyz.quaver.pupil.util.ItemClickSupport
 import xyz.quaver.pupil.util.Preferences
 import xyz.quaver.pupil.util.checkUpdate
@@ -359,14 +361,12 @@ class MainActivity :
                             loadBlocks()
                         }
 
-                    completeFlag.put(galleryID, false)
-
                     closeAllItems()
                 }
             }
             ItemClickSupport.addTo(this).apply {
                 onItemClickListener = listener@{ _, position, v ->
-                    if (v !is CardView)
+                    if (v !is ProgressCard)
                         return@listener
 
                     val intent = Intent(this@MainActivity, ReaderActivity::class.java)
@@ -377,7 +377,7 @@ class MainActivity :
                 }
 
                 onItemLongClickListener = listener@{ _, position, v ->
-                    if (v !is CardView)
+                    if (v !is ProgressCard)
                         return@listener false
 
                     val galleryID = galleries.getOrNull(position) ?: return@listener true
@@ -835,7 +835,6 @@ class MainActivity :
         with(main_recyclerview.adapter as GalleryBlockAdapter?) {
             this ?: return@with
 
-            this.completeFlag.clear()
             this.notifyDataSetChanged()
         }
 

@@ -17,217 +17,133 @@
   ~     along with this program.  If not, see <http://www.gnu.org/licenses/>.
   -->
 
-<androidx.cardview.widget.CardView
+<xyz.quaver.pupil.ui.view.ProgressCard
 	xmlns:android="http://schemas.android.com/apk/res/android"
 	xmlns:app="http://schemas.android.com/apk/res-auto"
 	xmlns:tools="http://schemas.android.com/tools"
+	android:id="@+id/galleryblock_card"
 	android:layout_width="match_parent"
 	android:layout_height="wrap_content"
-	android:layout_margin="8dp"
-	app:cardCornerRadius="8dp"
-	android:clipChildren="true"
 	tools:ignore="RtlHardcoded">
 
-	<com.daimajia.swipe.SwipeLayout
-		android:id="@+id/galleryblock_swipe_layout"
-		android:layout_width="match_parent"
+	<com.github.piasy.biv.view.BigImageView
+		android:id="@+id/galleryblock_thumbnail"
+		android:layout_width="150dp"
+		android:layout_height="0dp"
+		android:contentDescription="@string/galleryblock_thumbnail_description"
+		android:adjustViewBounds="true"
+		android:clickable="false"
+		app:layout_constraintHeight_default="spread"
+		app:layout_constraintHeight_min="200dp"
+		app:layout_constraintLeft_toLeftOf="@id/progressbar"
+		app:layout_constraintTop_toBottomOf="@id/progressbar"
+		app:layout_constraintBottom_toTopOf="@id/barrier"/>
+
+	<TextView
+		style="@style/TextAppearance.AppCompat.Headline"
+		android:id="@+id/galleryblock_title"
+		android:layout_width="0dp"
 		android:layout_height="wrap_content"
-		app:drag_edge="right"
-		app:show_mode="pull_out">
+		android:layout_marginTop="8dp"
+		android:layout_marginLeft="8dp"
+		app:layout_constraintLeft_toRightOf="@id/galleryblock_thumbnail"
+		app:layout_constraintRight_toRightOf="parent"
+		app:layout_constraintTop_toBottomOf="@id/progressbar" />
 
-		<LinearLayout
-            android:layout_width="wrap_content"
-			android:layout_height="match_parent">
+	<TextView
+		style="@style/TextAppearance.AppCompat.Medium"
+		android:id="@+id/galleryblock_artist"
+		android:layout_width="0dp"
+		android:layout_height="wrap_content"
+		android:layout_marginLeft="8dp"
+		app:layout_constraintLeft_toRightOf="@id/galleryblock_thumbnail"
+		app:layout_constraintRight_toRightOf="parent"
+		app:layout_constraintTop_toBottomOf="@id/galleryblock_title" />
 
-			<TextView
-				android:id="@+id/galleryblock_download"
-				android:layout_width="wrap_content"
-				android:layout_height="match_parent"
-				android:minWidth="70dp"
-				android:padding="8dp"
-				android:gravity="center"
-				android:background="@android:color/holo_blue_dark"
-				android:textColor="@android:color/white"
-				android:text="@string/main_download"
-				android:foreground="?android:attr/selectableItemBackground"
-				android:focusable="true"
-				android:clickable="true"
-				tools:ignore="UnusedAttribute" />
+	<TextView
+		android:id="@+id/galleryblock_series"
+		android:layout_width="0dp"
+		android:layout_height="wrap_content"
+		android:layout_marginLeft="8dp"
+		app:layout_constraintTop_toBottomOf="@id/galleryblock_artist"
+		app:layout_constraintLeft_toRightOf="@id/galleryblock_thumbnail"
+		app:layout_constraintRight_toRightOf="parent"/>
 
-			<TextView
-				android:id="@+id/galleryblock_delete"
-				android:layout_width="wrap_content"
-				android:layout_height="match_parent"
-				android:minWidth="70dp"
-				android:padding="8dp"
-				android:gravity="center"
-				android:background="@android:color/holo_red_dark"
-				android:textColor="@android:color/white"
-				android:text="@string/main_delete"
-				android:foreground="?android:attr/selectableItemBackground"
-				android:focusable="true"
-				android:clickable="true"
-				tools:ignore="UnusedAttribute" />
+	<TextView
+		android:id="@+id/galleryblock_type"
+		android:layout_width="wrap_content"
+		android:layout_height="wrap_content"
+		android:layout_marginLeft="8dp"
+		app:layout_constraintTop_toBottomOf="@id/galleryblock_series"
+		app:layout_constraintLeft_toRightOf="@id/galleryblock_thumbnail" />
 
-		</LinearLayout>
+	<TextView
+		android:id="@+id/galleryblock_language"
+		android:layout_width="wrap_content"
+		android:layout_height="wrap_content"
+		android:layout_marginLeft="8dp"
+		android:layout_marginBottom="8dp"
+		app:layout_constraintTop_toBottomOf="@id/galleryblock_type"
+		app:layout_constraintLeft_toRightOf="@id/galleryblock_thumbnail" />
 
-		<androidx.constraintlayout.widget.ConstraintLayout
-			android:id="@+id/galleryblock_primary"
-			android:layout_width="match_parent"
-			android:layout_height="wrap_content"
-			android:background="?android:attr/selectableItemBackground"
-			android:focusable="true"
-			android:clickable="true">
+	<xyz.quaver.pupil.ui.view.TagChipGroup
+		android:id="@+id/galleryblock_tag_group"
+		android:layout_width="0dp"
+		android:layout_height="wrap_content"
+		android:layout_marginLeft="8dp"
+		android:layout_marginTop="16dp"
+		android:layout_marginBottom="16dp"
+		app:chipSpacing="4dp"
+		app:layout_constraintTop_toBottomOf="@id/galleryblock_language"
+		app:layout_constraintLeft_toRightOf="@id/galleryblock_thumbnail"
+		app:layout_constraintRight_toRightOf="parent"/>
 
-			<FrameLayout
-				android:id="@+id/galleryblock_progressbar_layout"
-				android:layout_width="match_parent"
-				android:layout_height="4dp"
-				android:visibility="gone"
-				app:layout_constraintTop_toTopOf="parent">
+	<androidx.constraintlayout.widget.Barrier
+		android:id="@+id/barrier"
+		android:layout_width="wrap_content"
+		android:layout_height="wrap_content"
+		app:barrierDirection="bottom"
+		app:constraint_referenced_ids="galleryblock_thumbnail, galleryblock_tag_group"/>
 
-				<androidx.core.widget.ContentLoadingProgressBar
-					style="?android:attr/progressBarStyleHorizontal"
-					android:id="@+id/galleryblock_progressbar"
-					android:layout_width="match_parent"
-					android:layout_height="wrap_content"
-					android:layout_marginBottom="-4dp"
-					android:layout_marginTop="-4dp"
-					android:progress="50"
-					android:layout_gravity="center_vertical"/>
+	<View
+		android:id="@+id/divider"
+		android:layout_width="match_parent"
+		android:layout_height="1dp"
+		android:background="?android:attr/listDivider"
+		app:layout_constraintTop_toBottomOf="@id/barrier"
+		android:layout_margin="8dp"/>
 
-				<ImageView
-					android:id="@+id/galleryblock_progress_complete"
-					android:layout_width="match_parent"
-					android:layout_height="4dp"
-					android:visibility="invisible"
-					android:scaleType="fitXY"
-					android:contentDescription="@string/reader_imageview_description"
-					app:layout_constraintTop_toTopOf="parent"/>
+	<TextView
+		android:id="@+id/galleryblock_id"
+		android:layout_width="wrap_content"
+		android:layout_height="wrap_content"
+		android:layout_margin="8dp"
+		app:layout_constraintTop_toBottomOf="@id/divider"
+		app:layout_constraintBottom_toBottomOf="parent"
+		app:layout_constraintLeft_toLeftOf="parent"/>
 
-			</FrameLayout>
+	<TextView
+		android:id="@+id/galleryblock_pagecount"
+		android:layout_width="wrap_content"
+		android:layout_height="wrap_content"
+		android:layout_marginTop="8dp"
+		android:layout_marginBottom="8dp"
+		app:layout_constraintTop_toBottomOf="@id/divider"
+		app:layout_constraintBottom_toBottomOf="parent"
+		app:layout_constraintLeft_toLeftOf="parent"
+		app:layout_constraintRight_toRightOf="parent" />
 
-			<com.github.piasy.biv.view.BigImageView
-				android:id="@+id/galleryblock_thumbnail"
-				android:layout_width="150dp"
-				android:layout_height="0dp"
-				android:contentDescription="@string/galleryblock_thumbnail_description"
-				android:adjustViewBounds="true"
-				app:layout_constraintHeight_default="spread"
-				app:layout_constraintHeight_min="200dp"
-				app:layout_constraintLeft_toLeftOf="parent"
-				app:layout_constraintTop_toBottomOf="@id/galleryblock_progressbar_layout"
-				app:layout_constraintBottom_toTopOf="@id/barrier"/>
+	<ImageView
+		android:id="@+id/galleryblock_favorite"
+		android:contentDescription="@string/app_name"
+		android:layout_width="32dp"
+		android:layout_height="32dp"
+		android:layout_marginRight="8dp"
+		android:layout_marginTop="8dp"
+		android:layout_marginBottom="8dp"
+		app:srcCompat="@drawable/ic_star_empty"
+		app:layout_constraintTop_toBottomOf="@id/divider"
+		app:layout_constraintBottom_toBottomOf="parent"
+		app:layout_constraintRight_toRightOf="parent" />
 
-			<TextView
-				style="@style/TextAppearance.AppCompat.Headline"
-				android:id="@+id/galleryblock_title"
-				android:layout_width="0dp"
-				android:layout_height="wrap_content"
-				android:layout_marginTop="8dp"
-				android:layout_marginLeft="8dp"
-				app:layout_constraintLeft_toRightOf="@id/galleryblock_thumbnail"
-				app:layout_constraintRight_toRightOf="parent"
-				app:layout_constraintTop_toBottomOf="@id/galleryblock_progressbar_layout"/>
-
-			<TextView
-				style="@style/TextAppearance.AppCompat.Medium"
-				android:id="@+id/galleryblock_artist"
-				android:layout_width="0dp"
-				android:layout_height="wrap_content"
-				android:layout_marginLeft="8dp"
-				app:layout_constraintLeft_toRightOf="@id/galleryblock_thumbnail"
-				app:layout_constraintRight_toRightOf="parent"
-				app:layout_constraintTop_toBottomOf="@id/galleryblock_title"/>
-
-			<TextView
-				android:id="@+id/galleryblock_series"
-				android:layout_width="0dp"
-				android:layout_height="wrap_content"
-				android:layout_marginLeft="8dp"
-				app:layout_constraintTop_toBottomOf="@id/galleryblock_artist"
-				app:layout_constraintLeft_toRightOf="@id/galleryblock_thumbnail"
-				app:layout_constraintRight_toRightOf="parent"/>
-
-			<TextView
-				android:id="@+id/galleryblock_type"
-				android:layout_width="wrap_content"
-				android:layout_height="wrap_content"
-				android:layout_marginLeft="8dp"
-				app:layout_constraintTop_toBottomOf="@id/galleryblock_series"
-				app:layout_constraintLeft_toRightOf="@id/galleryblock_thumbnail" />
-
-			<TextView
-				android:id="@+id/galleryblock_language"
-				android:layout_width="wrap_content"
-				android:layout_height="wrap_content"
-				android:layout_marginLeft="8dp"
-				android:layout_marginBottom="8dp"
-				app:layout_constraintTop_toBottomOf="@id/galleryblock_type"
-				app:layout_constraintLeft_toRightOf="@id/galleryblock_thumbnail" />
-
-			<xyz.quaver.pupil.ui.view.TagChipGroup
-				android:id="@+id/galleryblock_tag_group"
-				android:layout_width="0dp"
-				android:layout_height="wrap_content"
-				android:layout_marginLeft="8dp"
-				android:layout_marginTop="16dp"
-				android:layout_marginBottom="16dp"
-				app:chipSpacing="4dp"
-				app:layout_constraintTop_toBottomOf="@id/galleryblock_language"
-				app:layout_constraintLeft_toRightOf="@id/galleryblock_thumbnail"
-				app:layout_constraintRight_toRightOf="parent"/>
-
-			<androidx.constraintlayout.widget.Barrier
-				android:id="@+id/barrier"
-				android:layout_width="wrap_content"
-				android:layout_height="wrap_content"
-				app:barrierDirection="bottom"
-				app:constraint_referenced_ids="galleryblock_thumbnail, galleryblock_tag_group"/>
-
-			<View
-				android:id="@+id/divider"
-				android:layout_width="match_parent"
-				android:layout_height="1dp"
-				android:background="?android:attr/listDivider"
-				app:layout_constraintTop_toBottomOf="@id/barrier"
-				android:layout_margin="8dp"/>
-
-			<TextView
-				android:id="@+id/galleryblock_id"
-				android:layout_width="wrap_content"
-				android:layout_height="wrap_content"
-				android:layout_margin="8dp"
-				app:layout_constraintTop_toBottomOf="@id/divider"
-				app:layout_constraintBottom_toBottomOf="parent"
-				app:layout_constraintLeft_toLeftOf="parent"/>
-
-			<TextView
-				android:id="@+id/galleryblock_pagecount"
-				android:layout_width="wrap_content"
-				android:layout_height="wrap_content"
-				android:layout_marginTop="8dp"
-				android:layout_marginBottom="8dp"
-				app:layout_constraintTop_toBottomOf="@id/divider"
-				app:layout_constraintBottom_toBottomOf="parent"
-				app:layout_constraintLeft_toLeftOf="parent"
-				app:layout_constraintRight_toRightOf="parent" />
-
-			<ImageView
-				android:id="@+id/galleryblock_favorite"
-				android:contentDescription="@string/app_name"
-				android:layout_width="32dp"
-				android:layout_height="32dp"
-				android:layout_marginRight="8dp"
-				android:layout_marginTop="8dp"
-				android:layout_marginBottom="8dp"
-				app:srcCompat="@drawable/ic_star_empty"
-				app:layout_constraintTop_toBottomOf="@id/divider"
-				app:layout_constraintBottom_toBottomOf="parent"
-				app:layout_constraintRight_toRightOf="parent" />
-
-		</androidx.constraintlayout.widget.ConstraintLayout>
-
-	</com.daimajia.swipe.SwipeLayout>
-
-</androidx.cardview.widget.CardView>
+</xyz.quaver.pupil.ui.view.ProgressCard>
