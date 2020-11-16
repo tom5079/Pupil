@@ -46,7 +46,6 @@ import xyz.quaver.pupil.R
 import xyz.quaver.pupil.adapters.GalleryBlockAdapter
 import xyz.quaver.pupil.adapters.ThumbnailPageAdapter
 import xyz.quaver.pupil.favoriteTags
-import xyz.quaver.pupil.histories
 import xyz.quaver.pupil.types.Tag
 import xyz.quaver.pupil.ui.ReaderActivity
 import xyz.quaver.pupil.ui.view.TagChip
