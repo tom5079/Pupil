@@ -23,9 +23,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import androidx.core.content.ContextCompat
-import kotlinx.serialization.json.JsonElement
-import kotlinx.serialization.json.jsonArray
-import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.*
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import xyz.quaver.Code
@@ -138,3 +136,6 @@ operator fun JsonElement.get(index: Int) =
 
 operator fun JsonElement.get(tag: String) =
     this.jsonObject[tag]
+
+val JsonElement.content
+    get() = this.jsonPrimitive.contentOrNull
