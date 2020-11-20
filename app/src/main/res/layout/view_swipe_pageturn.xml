@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<merge
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:parentTag="android.widget.FrameLayout">
+
+    <TextView
+        android:id="@+id/prev"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top|center"
+        android:maxLines="1"
+        android:ellipsize="end"
+        app:drawableStartCompat="@drawable/navigate_prev"
+        app:drawableLeftCompat="@drawable/navigate_prev"
+        app:drawableTint="@color/colorAccent" />
+
+    <TextView
+        android:id="@+id/next"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|center"
+        android:maxLines="1"
+        android:ellipsize="end"
+        app:drawableEndCompat="@drawable/navigate_next"
+        app:drawableRightCompat="@drawable/navigate_next"
+        app:drawableTint="@color/colorAccent" />
+
+</merge>

@@ -71,7 +71,7 @@
     <string name="main_fab_random">Open a random gallery</string>
     <string name="main_fab_cancel">Cancel all downloads</string>
 
-    <string name="main_move">Move to page %1$d</string>
+    <string name="main_move_to_page">Move to page %1$d</string>
 
     <string name="main_download">DOWNLOAD</string>
     <string name="main_delete">DELETE</string>
