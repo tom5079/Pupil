@@ -4,13 +4,14 @@ import android.content.Context
 import android.util.AttributeSet
 import android.view.View
 import android.view.ViewGroup
+import androidx.cardview.widget.CardView
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.drawable.DrawableCompat
 import kotlinx.android.synthetic.main.view_progress_card.view.*
 import xyz.quaver.pupil.R
 
-class ProgressCard @JvmOverloads constructor(context: Context, attr: AttributeSet? = null, defStyle: Int = R.attr.cardViewStyle) : ConstraintLayout(context, attr, defStyle) {
+class ProgressCard @JvmOverloads constructor(context: Context, attr: AttributeSet? = null, defStyle: Int = R.attr.cardViewStyle) : CardView(context, attr, defStyle) {
 
     enum class Type {
         LOADING,
@@ -61,10 +62,11 @@ class ProgressCard @JvmOverloads constructor(context: Context, attr: AttributeSe
         }
     }
 
-    override fun addView(child: View?, params: ViewGroup.LayoutParams?) =
+    override fun addView(child: View?, index: Int, params: ViewGroup.LayoutParams?) {
         if (childCount == 0)
-            super.addView(child, params)
+            super.addView(child, index, params)
         else
-            content.addView(child, params)
+            content.addView(child, index, params)
+    }
 
 }

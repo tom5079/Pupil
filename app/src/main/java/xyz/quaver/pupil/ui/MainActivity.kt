@@ -26,18 +26,16 @@ import android.text.InputType
 import android.text.util.Linkify
 import android.view.KeyEvent
 import android.view.MenuItem
-import android.view.MotionEvent
 import android.view.View
+import android.view.animation.DecelerateInterpolator
 import android.widget.EditText
-import android.widget.ImageView
-import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.cardview.widget.CardView
 import androidx.core.view.GravityCompat
+import androidx.core.view.ViewCompat
 import androidx.recyclerview.widget.RecyclerView
-import com.google.android.material.appbar.AppBarLayout
 import com.google.android.material.navigation.NavigationView
 import com.google.android.material.snackbar.Snackbar
 import com.google.firebase.crashlytics.FirebaseCrashlytics
@@ -57,6 +55,7 @@ import xyz.quaver.pupil.services.DownloadService
 import xyz.quaver.pupil.types.*
 import xyz.quaver.pupil.ui.dialog.DownloadLocationDialogFragment
 import xyz.quaver.pupil.ui.dialog.GalleryDialog
+import xyz.quaver.pupil.ui.view.MainView
 import xyz.quaver.pupil.ui.view.ProgressCard
 import xyz.quaver.pupil.util.ItemClickSupport
 import xyz.quaver.pupil.util.Preferences
@@ -65,10 +64,7 @@ import xyz.quaver.pupil.util.downloader.Cache
 import xyz.quaver.pupil.util.downloader.DownloadManager
 import xyz.quaver.pupil.util.restore
 import java.util.regex.Pattern
-import kotlin.math.abs
-import kotlin.math.ceil
-import kotlin.math.min
-import kotlin.math.roundToInt
+import kotlin.math.*
 
 class MainActivity :
     BaseActivity(),
@@ -192,22 +188,22 @@ class MainActivity :
     }
 
     private fun initView() {
-        var prevP1 = 0
-        main_appbar_layout.addOnOffsetChangedListener(
-            AppBarLayout.OnOffsetChangedListener { _, p1 ->
-                main_searchview.translationY = p1.toFloat()
-                main_recyclerview.scrollBy(0, prevP1 - p1)
+        main_recyclerview.addOnScrollListener(object: RecyclerView.OnScrollListener() {
+            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                // -height of the search view < translationY < 0
+                main_searchview.translationY =
+                    min(
+                        max(
+                        main_searchview.translationY - dy,
+                        -main_searchview.findViewById<CardView>(R.id.search_query_section).height.toFloat()
+                    ), 0F)
 
-                with(main_fab) {
-                    if (prevP1 > p1)
-                        hideMenuButton(true)
-                    else if (prevP1 < p1)
-                        showMenuButton(true)
-                }
-
-                prevP1 = p1
+                if (dy > 0)
+                    main_fab.hideMenuButton(true)
+                else if (dy < 0)
+                    main_fab.showMenuButton(true)
             }
-        )
+        })
 
         Linkify.addLinks(main_noresult, Pattern.compile(getString(R.string.https_text)), null, null, { _, _ -> getString(R.string.https) })
 
@@ -312,6 +308,44 @@ class MainActivity :
             }
         }
 
+        with(main_view) {
+            setOnPageTurnListener(object: MainView.OnPageTurnListener {
+                override fun onPrev(page: Int) {
+                    currentPage--
+
+                    // disable pageturn until the contents are loaded
+                    setCurrentPage(1, false)
+
+                    ViewCompat.animate(main_searchview)
+                        .setDuration(100)
+                        .setInterpolator(DecelerateInterpolator())
+                        .translationY(0F)
+
+                    cancelFetch()
+                    clearGalleries()
+                    fetchGalleries(query, sortMode)
+                    loadBlocks()
+                }
+
+                override fun onNext(page: Int) {
+                    currentPage++
+
+                    // disable pageturn until the contents are loaded
+                    setCurrentPage(1, false)
+
+                    ViewCompat.animate(main_searchview)
+                        .setDuration(100)
+                        .setInterpolator(DecelerateInterpolator())
+                        .translationY(0F)
+
+                    cancelFetch()
+                    clearGalleries()
+                    fetchGalleries(query, sortMode)
+                    loadBlocks()
+                }
+            })
+        }
+
         setupSearchBar()
         setupRecyclerView()
         fetchGalleries(query, sortMode)
@@ -399,207 +433,6 @@ class MainActivity :
 
                     true
                 }
-            }
-
-            var origin = 0f
-            var target = -1
-            val perPage = Preferences["per_page", "25"].toInt()
-            setOnTouchListener { _, event ->
-                when(event.action) {
-                    MotionEvent.ACTION_UP -> {
-                        origin = 0f
-
-                        with(main_recyclerview.adapter as GalleryBlockAdapter) {
-                            if(showPrev) {
-                                showPrev = false
-
-                                val prev = main_recyclerview.layoutManager?.getChildAt(0)
-
-                                if (prev is LinearLayout) {
-                                    val icon = prev.findViewById<ImageView>(R.id.icon_prev)
-                                    prev.layoutParams.height = 1
-                                    icon.layoutParams.height = 1
-                                    icon.rotation = 180f
-                                }
-
-                                prev?.requestLayout()
-
-                                notifyItemRemoved(0)
-                            }
-
-                            if(showNext) {
-                                showNext = false
-
-                                val next = main_recyclerview.layoutManager?.let {
-                                    getChildAt(childCount-1)
-                                }
-
-                                if (next is LinearLayout) {
-                                    val icon = next.findViewById<ImageView>(R.id.icon_next)
-                                    next.layoutParams.height = 1
-                                    icon.layoutParams.height = 1
-                                    icon.rotation = 0f
-                                }
-
-                                next?.requestLayout()
-
-                                notifyItemRemoved(itemCount)
-                            }
-                        }
-
-                        if (target != -1) {
-                            currentPage = target
-
-                            runOnUiThread {
-                                cancelFetch()
-                                clearGalleries()
-                                loadBlocks()
-                            }
-
-                            target = -1
-                        }
-                    }
-                    MotionEvent.ACTION_DOWN -> origin = event.y
-                    MotionEvent.ACTION_MOVE -> {
-                        if (origin == 0f)
-                            origin = event.y
-
-                        val dist = event.y - origin
-
-                        when {
-                            !canScrollVertically(-1) -> {
-                                //TOP
-
-                                //Scrolling UP
-                                if (dist > 0 && currentPage != 0) {
-                                    with(main_recyclerview.adapter as GalleryBlockAdapter) {
-                                        if(!showPrev) {
-                                            showPrev = true
-                                            notifyItemInserted(0)
-                                        }
-                                    }
-
-                                    val prev = main_recyclerview.layoutManager?.getChildAt(0)
-
-                                    if (prev is LinearLayout) {
-                                        val icon = prev.findViewById<ImageView>(R.id.icon_prev)
-                                        val text = prev.findViewById<TextView>(R.id.text_prev).apply {
-                                            text = getString(R.string.main_move, currentPage)
-                                        }
-                                        if (dist < 360) {
-                                            prev.layoutParams.height = (dist/2).roundToInt()
-                                            icon.layoutParams.height = (dist/2).roundToInt()
-                                            icon.rotation = dist+180
-                                            text.layoutParams.width = dist.roundToInt()
-
-                                            target = -1
-                                        }
-                                        else {
-                                            prev.layoutParams.height = 180
-                                            icon.layoutParams.height = 180
-                                            icon.rotation = 180f
-                                            text.layoutParams.width = LinearLayout.LayoutParams.WRAP_CONTENT
-
-                                            target = currentPage-1
-                                        }
-                                    }
-
-                                    prev?.requestLayout()
-
-                                    return@setOnTouchListener true
-                                } else {
-                                    with(main_recyclerview.adapter as GalleryBlockAdapter) {
-                                        if(showPrev) {
-                                            showPrev = false
-
-                                            val prev = main_recyclerview.layoutManager?.getChildAt(0)
-
-                                            if (prev is LinearLayout) {
-                                                val icon = prev.findViewById<ImageView>(R.id.icon_prev)
-                                                prev.layoutParams.height = 1
-                                                icon.layoutParams.height = 1
-                                                icon.rotation = 180f
-                                            }
-
-                                            prev?.requestLayout()
-
-                                            notifyItemRemoved(0)
-                                        }
-                                    }
-                                }
-                            }
-                            !canScrollVertically(1) -> {
-                                //BOTTOM
-
-                                //Scrolling DOWN
-                                if (dist < 0 && currentPage != ceil(totalItems.toDouble()/perPage).roundToInt()-1) {
-                                    with(main_recyclerview.adapter as GalleryBlockAdapter) {
-                                        if(!showNext) {
-                                            showNext = true
-                                            notifyItemInserted(itemCount-1)
-                                        }
-                                    }
-
-                                    val next = main_recyclerview.layoutManager?.let {
-                                        getChildAt(childCount-1)
-                                    }
-
-                                    val absDist = abs(dist)
-
-                                    if (next is LinearLayout) {
-                                        val icon = next.findViewById<ImageView>(R.id.icon_next)
-                                        val text = next.findViewById<TextView>(R.id.text_next).apply {
-                                            text = getString(R.string.main_move, currentPage+2)
-                                        }
-
-                                        if (absDist < 360) {
-                                            next.layoutParams.height = (absDist/2).roundToInt()
-                                            icon.layoutParams.height = (absDist/2).roundToInt()
-                                            icon.rotation = -absDist
-                                            text.layoutParams.width = absDist.roundToInt()
-
-                                            target = -1
-                                        } else {
-                                            next.layoutParams.height = 180
-                                            icon.layoutParams.height = 180
-                                            icon.rotation = 0f
-                                            text.layoutParams.width = LinearLayout.LayoutParams.WRAP_CONTENT
-
-                                            target = currentPage+1
-                                        }
-                                    }
-
-                                    next?.requestLayout()
-
-                                    return@setOnTouchListener true
-                                } else {
-                                    with(main_recyclerview.adapter as GalleryBlockAdapter) {
-                                        if(showNext) {
-                                            showNext = false
-
-                                            val next = main_recyclerview.layoutManager?.let {
-                                                getChildAt(childCount-1)
-                                            }
-
-                                            if (next is LinearLayout) {
-                                                val icon = next.findViewById<ImageView>(R.id.icon_next)
-                                                next.layoutParams.height = 1
-                                                icon.layoutParams.height = 1
-                                                icon.rotation = 180f
-                                            }
-
-                                            next?.requestLayout()
-
-                                            notifyItemRemoved(itemCount)
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-
-                false
             }
         }
     }
@@ -829,7 +662,7 @@ class MainActivity :
         loadingJob?.cancel()
     }
 
-    private fun clearGalleries() {
+    private fun clearGalleries() = CoroutineScope(Dispatchers.Main).launch {
         galleries.clear()
 
         with(main_recyclerview.adapter as GalleryBlockAdapter?) {
@@ -838,7 +671,6 @@ class MainActivity :
             this.notifyDataSetChanged()
         }
 
-        main_appbar_layout.setExpanded(true)
         main_noresult.visibility = View.INVISIBLE
         main_progressbar.show()
     }
@@ -957,6 +789,10 @@ class MainActivity :
                 }
 
                 return@launch
+            }
+
+            launch(Dispatchers.Main) {
+                main_view.setCurrentPage(currentPage + 1, galleryIDs.size > (currentPage+1)*perPage)
             }
 
             galleryIDs.slice(currentPage*perPage until min(currentPage*perPage+perPage, galleryIDs.size)).chunked(5).let { chunks ->
