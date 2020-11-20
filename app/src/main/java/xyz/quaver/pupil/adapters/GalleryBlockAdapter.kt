@@ -54,12 +54,6 @@ import java.io.File
 
 class GalleryBlockAdapter(private val galleries: List<Int>) : RecyclerSwipeAdapter<RecyclerView.ViewHolder>(), SwipeAdapterInterface {
 
-    enum class ViewType {
-        NEXT,
-        GALLERY,
-        PREV
-    }
-
     var updateAll = true
     var thin: Boolean = Preferences["thin"]
 
@@ -282,51 +276,20 @@ class GalleryBlockAdapter(private val galleries: List<Int>) : RecyclerSwipeAdapt
             }
         }
     }
-    class NextViewHolder(view: LinearLayout) : RecyclerView.ViewHolder(view)
-    class PrevViewHolder(view: LinearLayout) : RecyclerView.ViewHolder(view)
-
-    class ViewHolderFactory {
-        companion object {
-            fun getLayoutID(type: Int): Int {
-                return when(ViewType.values()[type]) {
-                    ViewType.NEXT -> R.layout.item_next
-                    ViewType.PREV -> R.layout.item_prev
-                    ViewType.GALLERY -> R.layout.item_galleryblock
-                }
-            }
-        }
-    }
 
     val onChipClickedHandler = ArrayList<((Tag) -> Unit)>()
     var onDownloadClickedHandler: ((Int) -> Unit)? = null
     var onDeleteClickedHandler: ((Int) -> Unit)? = null
 
-    var showNext = false
-    var showPrev = false
-
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
-
-        fun getViewHolder(type: Int, view: View): RecyclerView.ViewHolder {
-            return when(ViewType.values()[type]) {
-                ViewType.NEXT -> NextViewHolder(view as LinearLayout)
-                ViewType.PREV -> PrevViewHolder(view as LinearLayout)
-                ViewType.GALLERY -> GalleryViewHolder(view as ProgressCard)
-            }
-        }
-
-        return getViewHolder(
-            viewType,
-            LayoutInflater.from(parent.context).inflate(
-                ViewHolderFactory.getLayoutID(viewType),
-                parent,
-                false
-            )
+        return GalleryViewHolder(
+            LayoutInflater.from(parent.context).inflate(R.layout.item_galleryblock, parent, false)
         )
     }
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
         if (holder is GalleryViewHolder) {
-            val galleryID = galleries[position-(if (showPrev) 1 else 0)]
+            val galleryID = galleries[position]
 
             holder.bind(galleryID)
 
@@ -360,18 +323,7 @@ class GalleryBlockAdapter(private val galleries: List<Int>) : RecyclerSwipeAdapt
         }
     }
 
-    override fun getItemCount() =
-        galleries.size +
-        (if (showNext) 1 else 0) +
-        (if (showPrev) 1 else 0)
-
-    override fun getItemViewType(position: Int): Int {
-        return when {
-            showPrev && position == 0 -> ViewType.PREV
-            showNext && position == galleries.size+(if (showPrev) 1 else 0) -> ViewType.NEXT
-            else -> ViewType.GALLERY
-        }.ordinal
-    }
+    override fun getItemCount() = galleries.size
 
     override fun getSwipeLayoutResourceId(position: Int) = R.id.swipe_layout
 }
