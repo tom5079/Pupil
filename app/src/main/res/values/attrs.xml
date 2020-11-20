@@ -21,4 +21,11 @@
     <declare-styleable name="TagChipGroup">
         <attr name="maxTag" format="integer"/>
     </declare-styleable>
+
+    <declare-styleable name="RippleCircleStatus">
+        <attr name="half" format="enum">
+            <enum name="top" value="1"/>
+            <enum name="bottom" value="-1"/>
+        </attr>
+    </declare-styleable>
 </resources>

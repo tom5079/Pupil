@@ -1,15 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 
-<androidx.cardview.widget.CardView
+<merge
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:clipChildren="true"
-    app:cardCornerRadius="4dp"
-    android:layout_margin="8dp"
-    app:cardUseCompatPadding="true">
+    tools:parentTag="androidx.cardview.widget.CardView">
 
     <com.daimajia.swipe.SwipeLayout
         android:id="@+id/swipe_layout"
@@ -54,13 +51,14 @@
 
         </LinearLayout>
 
-        <androidx.constraintlayout.widget.ConstraintLayout
+        <LinearLayout
             android:id="@+id/content"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:clickable="true"
             android:focusable="true"
-            android:background="?android:attr/selectableItemBackground">
+            android:background="?android:attr/selectableItemBackground"
+            android:orientation="vertical">
 
             <androidx.core.widget.ContentLoadingProgressBar
                 style="?android:attr/progressBarStyleHorizontal"
@@ -70,8 +68,8 @@
                 android:progress="50"
                 app:layout_constraintTop_toTopOf="parent"/>
 
-        </androidx.constraintlayout.widget.ConstraintLayout>
+        </LinearLayout>
 
     </com.daimajia.swipe.SwipeLayout>
 
-</androidx.cardview.widget.CardView>
+</merge>

@@ -22,7 +22,6 @@ import android.content.Context
 import android.graphics.PorterDuff
 import android.graphics.PorterDuffColorFilter
 import android.graphics.drawable.Animatable
-import android.os.Parcelable
 import android.text.Editable
 import android.text.TextWatcher
 import android.util.AttributeSet
@@ -38,8 +37,6 @@ import androidx.swiperefreshlayout.widget.CircularProgressDrawable
 import androidx.vectordrawable.graphics.drawable.AnimatedVectorDrawableCompat
 import xyz.quaver.floatingsearchview.FloatingSearchView
 import xyz.quaver.floatingsearchview.suggestions.model.SearchSuggestion
-import xyz.quaver.floatingsearchview.util.MenuPopupHelper
-import xyz.quaver.floatingsearchview.util.view.MenuView
 import xyz.quaver.floatingsearchview.util.view.SearchInputView
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.favoriteTags
