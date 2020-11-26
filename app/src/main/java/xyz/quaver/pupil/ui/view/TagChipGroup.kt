@@ -32,7 +32,7 @@ import xyz.quaver.pupil.types.Tags
 class TagChipGroup @JvmOverloads constructor(context: Context, attr: AttributeSet? = null, attrStyle: Int = R.attr.chipGroupStyle, val tags: Tags = Tags()) : ChipGroup(context, attr, attrStyle), MutableSet<Tag> by tags {
 
     object Defaults {
-        val maxChipSize = 10
+        const val maxChipSize = 10
     }
 
     var maxChipSize: Int = Defaults.maxChipSize
@@ -86,7 +86,7 @@ class TagChipGroup @JvmOverloads constructor(context: Context, attr: AttributeSe
                 addView(it.await())
             }
 
-            if (maxChipSize > 0 && tags.size > maxChipSize && parent == null)
+            if (maxChipSize > 0 && tags.size > maxChipSize)
                 addView(moreView)
         }
     }

@@ -10,8 +10,8 @@
     {
       "type": "SINGLE",
       "filters": [],
-      "versionCode": 63,
-      "versionName": "5.1.6-hotfix7-alpha5",
+      "versionCode": 64,
+      "versionName": "5.1.7-alpha1",
       "outputFile": "app-release.apk"
     }
   ]
