@@ -55,7 +55,7 @@ class DownloadFolderNameDialogFragment : DialogFragment() {
     }
 
     private fun initView() {
-        val galleryID = Cache.instances.let { if (it.size == 0) 1199708 else it.keys.elementAt((0 until it.size).random()) }
+        val galleryID = Cache.instances.let { if (it.size == 0) "1199708" else it.keys.elementAt((0 until it.size).random()) }
         val galleryBlock = runBlocking {
             Cache.getInstance(requireContext(), galleryID).getGalleryBlock()
         }

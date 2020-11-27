@@ -51,7 +51,7 @@ import kotlin.math.log10
 
 private typealias ProgressListener = (DownloadService.Tag, Long, Long, Boolean) -> Unit
 class DownloadService : Service() {
-    data class Tag(val galleryID: Int, val index: Int, val startId: Int? = null)
+    data class Tag(val galleryID: String, val index: Int, val startId: Int? = null)
 
     //region Notification
     private val notificationManager by lazy {
@@ -66,15 +66,15 @@ class DownloadService : Service() {
             .setOngoing(true)
     }
 
-    private val notification = ConcurrentHashMap<Int, NotificationCompat.Builder?>()
+    private val notification = ConcurrentHashMap<String, NotificationCompat.Builder?>()
 
-    private fun initNotification(galleryID: Int) {
+    private fun initNotification(galleryID: String) {
         val intent = Intent(this, ReaderActivity::class.java)
             .putExtra("galleryID", galleryID)
 
         val pendingIntent = TaskStackBuilder.create(this).run {
             addNextIntentWithParentStack(intent)
-            getPendingIntent(galleryID, PendingIntent.FLAG_UPDATE_CURRENT)
+            getPendingIntent(galleryID.hashCode(), PendingIntent.FLAG_UPDATE_CURRENT)
         }
         val action =
             NotificationCompat.Action.Builder(0, getText(android.R.string.cancel),
@@ -101,7 +101,7 @@ class DownloadService : Service() {
     }
 
     @SuppressLint("RestrictedApi")
-    private fun notify(galleryID: Int) {
+    private fun notify(galleryID: String) {
         val max = progress[galleryID]?.size ?: 0
         val progress = progress[galleryID]?.count { it == Float.POSITIVE_INFINITY } ?: 0
 
@@ -114,16 +114,16 @@ class DownloadService : Service() {
                 .setOngoing(false)
                 .mActions.clear()
 
-            notificationManager.cancel(galleryID)
+            notificationManager.cancel(galleryID.hashCode())
         } else
             notification
                 .setProgress(max, progress, false)
                 .setContentText("$progress/$max")
 
         if (DownloadManager.getInstance(this).getDownloadFolder(galleryID) != null || galleryID == priority)
-            notification.let { notificationManager.notify(galleryID, it.build()) }
+            notification.let { notificationManager.notify(galleryID.hashCode(), it.build()) }
         else
-            notificationManager.cancel(galleryID)
+            notificationManager.cancel(galleryID.hashCode())
     }
     //endregion
 
@@ -194,10 +194,10 @@ class DownloadService : Service() {
     *  0 <= value < 100 -> Download in progress
     *  Float.POSITIVE_INFINITY -> Download completed
     */
-    val progress = ConcurrentHashMap<Int, MutableList<Float>>()
-    var priority = 0
+    val progress = ConcurrentHashMap<String, MutableList<Float>>()
+    var priority = ""
 
-    fun isCompleted(galleryID: Int) = progress[galleryID]?.toList()?.all { it == Float.POSITIVE_INFINITY } == true
+    fun isCompleted(galleryID: String) = progress[galleryID]?.toList()?.all { it == Float.POSITIVE_INFINITY } == true
 
     private val callback = object: Callback {
 
@@ -266,7 +266,7 @@ class DownloadService : Service() {
         startId?.let { stopSelf(it) }
     }
 
-    fun cancel(galleryID: Int, startId: Int? = null) {
+    fun cancel(galleryID: String, startId: Int? = null) {
         client.dispatcher().queuedCalls().filter {
             (it.request().tag() as? Tag)?.galleryID == galleryID
         }.forEach {
@@ -282,12 +282,12 @@ class DownloadService : Service() {
 
         progress.remove(galleryID)
         notification.remove(galleryID)
-        notificationManager.cancel(galleryID)
+        notificationManager.cancel(galleryID.hashCode())
 
         startId?.let { stopSelf(it) }
     }
 
-    fun delete(galleryID: Int, startId: Int? = null) = CoroutineScope(Dispatchers.IO).launch {
+    fun delete(galleryID: String, startId: Int? = null) = CoroutineScope(Dispatchers.IO).launch {
         cancel(galleryID)
         DownloadManager.getInstance(this@DownloadService).deleteDownloadFolder(galleryID)
         Cache.delete(this@DownloadService, galleryID)
@@ -295,7 +295,7 @@ class DownloadService : Service() {
         startId?.let { stopSelf(it) }
     }
 
-    fun download(galleryID: Int, priority: Boolean = false, startId: Int? = null): Job = CoroutineScope(Dispatchers.IO).launch {
+    fun download(galleryID: String, priority: Boolean = false, startId: Int? = null): Job = CoroutineScope(Dispatchers.IO).launch {
         if (DownloadManager.getInstance(this@DownloadService).isDownloading(galleryID))
             return@launch
 
@@ -316,7 +316,7 @@ class DownloadService : Service() {
 
         histories.add(galleryID)
 
-        progress[galleryID] = MutableList(reader.galleryInfo.files.size) { 0F }
+        progress[galleryID] = MutableList(reader.files.size) { 0F }
 
         cache.metadata.imageList?.let {
             it.forEachIndexed { index, image ->
@@ -329,15 +329,15 @@ class DownloadService : Service() {
                     .getDownloadFolder(galleryID) != null )
                 Cache.getInstance(this@DownloadService, galleryID).moveToDownload()
 
-            notificationManager.cancel(galleryID)
+            notificationManager.cancel(galleryID.hashCode())
             startId?.let { stopSelf(it) }
             return@launch
         }
 
-        notification[galleryID]?.setContentTitle(reader.galleryInfo.title?.ellipsize(30))
+        notification[galleryID]?.setContentTitle(reader.title?.ellipsize(30))
         notify(galleryID)
 
-        val queued = mutableSetOf<Int>()
+        val queued = mutableSetOf<String>()
 
         if (priority) {
             client.dispatcher().queuedCalls().forEach {
@@ -372,7 +372,7 @@ class DownloadService : Service() {
             ContextCompat.startForegroundService(context, Intent(context, DownloadService::class.java).apply(extras))
         }
 
-        fun download(context: Context, galleryID: Int, priority: Boolean = false) {
+        fun download(context: Context, galleryID: String, priority: Boolean = false) {
             command(context) {
                 putExtra(KEY_COMMAND, COMMAND_DOWNLOAD)
                 putExtra(KEY_PRIORITY, priority)
@@ -380,14 +380,14 @@ class DownloadService : Service() {
             }
         }
 
-        fun cancel(context: Context, galleryID: Int? = null) {
+        fun cancel(context: Context, galleryID: String? = null) {
             command(context) {
                 putExtra(KEY_COMMAND, COMMAND_CANCEL)
                 galleryID?.let { putExtra(KEY_ID, it) }
             }
         }
 
-        fun delete(context: Context, galleryID: Int) {
+        fun delete(context: Context, galleryID: String) {
             command(context) {
                 putExtra(KEY_COMMAND, COMMAND_DELETE)
                 putExtra(KEY_ID, galleryID)
@@ -399,11 +399,11 @@ class DownloadService : Service() {
         startForeground(R.id.downloader_notification_id, serviceNotification.build())
 
         when (intent?.getStringExtra(KEY_COMMAND)) {
-            COMMAND_DOWNLOAD -> intent.getIntExtra(KEY_ID, -1).let { if (it > 0)
+            COMMAND_DOWNLOAD -> intent.getStringExtra(KEY_ID).let { if (!it.isNullOrEmpty())
                 download(it, intent.getBooleanExtra(KEY_PRIORITY, false), startId)
             }
-            COMMAND_CANCEL -> intent.getIntExtra(KEY_ID, -1).let { if (it > 0) cancel(it, startId) else cancel(startId = startId) }
-            COMMAND_DELETE -> intent.getIntExtra(KEY_ID, -1).let { if (it > 0) delete(it, startId) }
+            COMMAND_CANCEL -> intent.getStringExtra(KEY_ID).let { if (!it.isNullOrEmpty()) cancel(it, startId) else cancel(startId = startId) }
+            COMMAND_DELETE -> intent.getStringExtra(KEY_ID).let { if (!it.isNullOrEmpty()) delete(it, startId) }
         }
 
         return START_NOT_STICKY

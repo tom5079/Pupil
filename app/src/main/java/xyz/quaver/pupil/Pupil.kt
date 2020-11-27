@@ -51,9 +51,9 @@ import kotlin.reflect.KClass
 
 typealias PupilInterceptor = (Interceptor.Chain) -> Response
 
-lateinit var histories: SavedSet<Int>
+lateinit var histories: SavedSet<String>
     private set
-lateinit var favorites: SavedSet<Int>
+lateinit var favorites: SavedSet<String>
     private set
 lateinit var favoriteTags: SavedSet<Tag>
     private set
@@ -108,8 +108,6 @@ class Pupil : Application() {
 
                 if (!FileX(this, it).canWrite())
                     throw Exception()
-
-                DownloadManager.getInstance(this).migrate()
             }
         } catch (e: Exception) {
             Preferences.remove("download_folder")
@@ -120,8 +118,8 @@ class Pupil : Application() {
             Preferences["reset_secure"] = true
         }
 
-        histories = SavedSet(File(ContextCompat.getDataDir(this), "histories.json"), 0)
-        favorites = SavedSet(File(ContextCompat.getDataDir(this), "favorites.json"), 0)
+        histories = SavedSet(File(ContextCompat.getDataDir(this), "histories.json"), "")
+        favorites = SavedSet(File(ContextCompat.getDataDir(this), "favorites.json"), "")
         favoriteTags = SavedSet(File(ContextCompat.getDataDir(this), "favorites_tags.json"), Tag.parse(""))
         searchHistory = SavedSet(File(ContextCompat.getDataDir(this), "search_histories.json"), "")
 

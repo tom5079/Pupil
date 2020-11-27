@@ -35,7 +35,6 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.appcompat.app.AppCompatDelegate;
 import androidx.appcompat.content.res.AppCompatResources;
 import androidx.core.content.ContextCompat;
 import androidx.core.view.NestedScrollingChild;
@@ -48,7 +47,7 @@ import androidx.core.widget.TextViewCompat;
 import xyz.quaver.pupil.R;
 
 @SuppressWarnings("NullableProblems")
-public class MainView extends ViewGroup implements NestedScrollingChild, NestedScrollingParent {
+public class SwipePageTurnView extends ViewGroup implements NestedScrollingChild, NestedScrollingParent {
 
     private static final int PAGE_TURN_LAYOUT_SIZE = 48;
     private static final int PAGE_TURN_ANIM_DURATION = 500;
@@ -84,15 +83,15 @@ public class MainView extends ViewGroup implements NestedScrollingChild, NestedS
 
     private OnPageTurnListener mOnPageTurnListener;
 
-    public MainView(@NonNull Context context) {
+    public SwipePageTurnView(@NonNull Context context) {
         this(context, null);
     }
 
-    public MainView(@NonNull Context context, AttributeSet attr) {
+    public SwipePageTurnView(@NonNull Context context, AttributeSet attr) {
         this(context, attr, 0);
     }
 
-    public MainView(@NonNull Context context, AttributeSet attr, int defStyle) {
+    public SwipePageTurnView(@NonNull Context context, AttributeSet attr, int defStyle) {
         super(context, attr, defStyle);
 
         setWillNotDraw(false);

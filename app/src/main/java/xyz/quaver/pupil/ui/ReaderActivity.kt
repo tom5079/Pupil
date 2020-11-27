@@ -49,7 +49,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import xyz.quaver.Code
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.adapters.ReaderAdapter
 import xyz.quaver.pupil.databinding.NumberpickerDialogBinding
@@ -65,7 +64,7 @@ import xyz.quaver.pupil.util.startCamera
 
 class ReaderActivity : BaseActivity() {
 
-    private var galleryID = 0
+    private var galleryID = ""
     private var currentPage = 0
 
     private var isScroll = true
@@ -81,7 +80,7 @@ class ReaderActivity : BaseActivity() {
     private val conn = object: ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
             downloader = (service as DownloadService.Binder).service.also {
-                it.priority = 0
+                it.priority = ""
 
                 if (!it.progress.containsKey(galleryID))
                     DownloadService.download(this@ReaderActivity, galleryID, true)
@@ -130,7 +129,7 @@ class ReaderActivity : BaseActivity() {
         cache = Cache.getInstance(this, galleryID)
         FirebaseCrashlytics.getInstance().setCustomKey("GalleryID", galleryID)
 
-        if (galleryID == 0) {
+        if (galleryID.isEmpty()) {
             onBackPressed()
             return
         }
@@ -151,14 +150,14 @@ class ReaderActivity : BaseActivity() {
             if (uri != null && lastPathSegment != null) {
                 galleryID = when (uri.host) {
                     "hitomi.la" ->
-                        Regex("([0-9]+).html").find(lastPathSegment)?.groupValues?.get(1)?.toIntOrNull() ?: 0
-                    "hiyobi.me" -> lastPathSegment.toInt()
-                    "e-hentai.org" -> uri.pathSegments[1].toInt()
-                    else -> 0
+                        Regex("([0-9]+).html").find(lastPathSegment)?.groupValues?.get(1) ?: ""
+                    "hiyobi.me" -> lastPathSegment
+                    "e-hentai.org" -> uri.pathSegments[1]
+                    else -> ""
                 }
             }
         } else {
-            galleryID = intent.getIntExtra("galleryID", 0)
+            galleryID = intent.getStringExtra("galleryID") ?: ""
         }
     }
 
@@ -184,7 +183,7 @@ class ReaderActivity : BaseActivity() {
 
                 with(binding.numberPicker) {
                     minValue = 1
-                    maxValue = cache.metadata.reader?.galleryInfo?.files?.size ?: 0
+                    maxValue = cache.metadata.reader?.files?.size ?: 0
                     value = currentPage
                 }
                 val dialog = AlertDialog.Builder(this).apply {
@@ -307,17 +306,19 @@ class ReaderActivity : BaseActivity() {
                             notifyDataSetChanged()
                         }
 
-                        title = reader.galleryInfo.title
+                        title = reader.title
                         menu?.findItem(R.id.reader_menu_page_indicator)?.title =
-                            "$currentPage/${reader.galleryInfo.files.size}"
+                            "$currentPage/${reader.files.size}"
 
                         menu?.findItem(R.id.reader_type)?.icon = ContextCompat.getDrawable(
                             this@ReaderActivity,
+                            R.drawable.hitomi
+                            /*
                             when (reader.code) {
                                 Code.HITOMI -> R.drawable.hitomi
                                 Code.HIYOBI -> R.drawable.ic_hiyobi
                                 else -> android.R.color.transparent
-                            }
+                            }*/
                         )
                     }
                 }

@@ -24,8 +24,8 @@
     android:layout_height="match_parent"
     tools:context=".ui.MainActivity">
 
-    <xyz.quaver.pupil.ui.view.MainView
-        android:id="@+id/view"
+    <xyz.quaver.pupil.ui.view.SwipePageTurnView
+        android:id="@+id/swipe_page_turn_view"
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
@@ -52,7 +52,7 @@
 
         </com.qtalk.recyclerviewfastscroller.RecyclerViewFastScroller>
 
-    </xyz.quaver.pupil.ui.view.MainView>
+    </xyz.quaver.pupil.ui.view.SwipePageTurnView>
 
     <androidx.core.widget.ContentLoadingProgressBar
         style="?android:attr/progressBarStyle"
