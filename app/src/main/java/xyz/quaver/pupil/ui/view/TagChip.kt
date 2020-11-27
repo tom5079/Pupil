@@ -24,6 +24,7 @@ import androidx.core.content.ContextCompat
 import com.google.android.material.chip.Chip
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.favoriteTags
+import xyz.quaver.pupil.sources.hitomi.Hitomi
 import xyz.quaver.pupil.types.Tag
 import xyz.quaver.pupil.util.translations
 import xyz.quaver.pupil.util.wordCapitalize
@@ -38,12 +39,6 @@ class TagChip(context: Context, _tag: Tag) : Chip(context) {
                 else -> Tag("tag", _tag.tag)
             }
         }
-
-    private val languages = context.resources.getStringArray(R.array.languages).map {
-        it.split("|").let { split ->
-            Pair(split[0], split[1])
-        }
-    }.toMap()
 
     init {
         when(tag.area) {
@@ -90,7 +85,8 @@ class TagChip(context: Context, _tag: Tag) : Chip(context) {
         }
 
         text = when (tag.area) {
-            "language" -> languages[tag.tag]
+            // TODO languageMap
+            "language" -> Hitomi.languageMap[tag.tag]
             else -> (translations[tag.tag] ?: tag.tag).wordCapitalize()
         }
 

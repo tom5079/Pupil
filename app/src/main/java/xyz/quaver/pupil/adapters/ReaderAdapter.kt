@@ -18,34 +18,24 @@
 
 package xyz.quaver.pupil.adapters
 
-import android.content.Context
-import android.graphics.drawable.Animatable
-import android.net.Uri
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.ImageView
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.ContextCompat
 import androidx.core.view.updateLayoutParams
 import androidx.recyclerview.widget.RecyclerView
 import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView
-import com.facebook.drawee.backends.pipeline.Fresco
-import com.facebook.drawee.controller.BaseControllerListener
-import com.facebook.drawee.drawable.ScalingUtils
-import com.facebook.drawee.interfaces.DraweeController
 import com.facebook.drawee.view.SimpleDraweeView
-import com.facebook.imagepipeline.image.ImageInfo
-import com.github.piasy.biv.view.BigImageView
-import com.github.piasy.biv.view.ImageShownCallback
-import com.github.piasy.biv.view.ImageViewFactory
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import xyz.quaver.hitomi.GalleryInfo
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.databinding.ReaderItemBinding
 import xyz.quaver.pupil.ui.ReaderActivity
 import xyz.quaver.pupil.util.downloader.Cache
-import java.io.File
 import kotlin.math.roundToInt
 
 class ReaderAdapter(
@@ -61,26 +51,6 @@ class ReaderAdapter(
     inner class ViewHolder(private val binding: ReaderItemBinding) : RecyclerView.ViewHolder(binding.root) {
         init {
             with (binding.image) {
-                setImageViewFactory(FrescoImageViewFactory().apply {
-                    updateView = { imageInfo ->
-                        binding.image.updateLayoutParams<ConstraintLayout.LayoutParams> {
-                            dimensionRatio = "${imageInfo.width}:${imageInfo.height}"
-                        }
-                    }
-                })
-                setImageShownCallback(object : ImageShownCallback {
-                    override fun onMainImageShown() {
-                        binding.image.mainView.let { v ->
-                            when (v) {
-                                is SubsamplingScaleImageView ->
-                                    if (!isFullScreen) binding.image.layoutParams.height = ViewGroup.LayoutParams.WRAP_CONTENT
-                            }
-                        }
-                    }
-
-                    override fun onThumbnailShown() {}
-                })
-
                 setFailureImage(ContextCompat.getDrawable(itemView.context, R.drawable.image_broken_variant))
                 setOnClickListener {
                     onItemClickListener?.invoke()
@@ -164,87 +134,4 @@ class ReaderAdapter(
         holder.clear()
     }
 
-}
-
-class FrescoImageViewFactory : ImageViewFactory() {
-    var updateView: ((ImageInfo) -> Unit)? = null
-
-    override fun createAnimatedImageView(
-        context: Context, imageType: Int,
-        initScaleType: Int
-    ): View {
-        val view = SimpleDraweeView(context)
-        view.hierarchy.actualImageScaleType = scaleType(initScaleType)
-        return view
-    }
-
-    override fun loadAnimatedContent(
-        view: View, imageType: Int,
-        imageFile: File
-    ) {
-        if (view is SimpleDraweeView) {
-            val controller: DraweeController = Fresco.newDraweeControllerBuilder()
-                .setUri(Uri.parse("file://" + imageFile.absolutePath))
-                .setAutoPlayAnimations(true)
-                .setControllerListener(object: BaseControllerListener<ImageInfo>() {
-                    override fun onIntermediateImageSet(id: String?, imageInfo: ImageInfo?) {
-                        imageInfo?.let { updateView?.invoke(it) }
-                    }
-
-                    override fun onFinalImageSet(id: String?, imageInfo: ImageInfo?, animatable: Animatable?) {
-                        imageInfo?.let { updateView?.invoke(it) }
-                    }
-                })
-                .build()
-            view.controller = controller
-        }
-    }
-
-    override fun createThumbnailView(
-        context: Context,
-        scaleType: ImageView.ScaleType, willLoadFromNetwork: Boolean
-    ): View {
-        return if (willLoadFromNetwork) {
-            val thumbnailView = SimpleDraweeView(context)
-            thumbnailView.hierarchy.actualImageScaleType = scaleType(scaleType)
-            thumbnailView
-        } else {
-            super.createThumbnailView(context, scaleType, false)
-        }
-    }
-
-    override fun loadThumbnailContent(view: View, thumbnail: Uri) {
-        if (view is SimpleDraweeView) {
-            val controller: DraweeController = Fresco.newDraweeControllerBuilder()
-                .setUri(thumbnail)
-                .build()
-            view.controller = controller
-        }
-    }
-
-    private fun scaleType(value: Int): ScalingUtils.ScaleType {
-        return when (value) {
-            BigImageView.INIT_SCALE_TYPE_CENTER -> ScalingUtils.ScaleType.CENTER
-            BigImageView.INIT_SCALE_TYPE_CENTER_CROP -> ScalingUtils.ScaleType.CENTER_CROP
-            BigImageView.INIT_SCALE_TYPE_CENTER_INSIDE -> ScalingUtils.ScaleType.CENTER_INSIDE
-            BigImageView.INIT_SCALE_TYPE_FIT_END -> ScalingUtils.ScaleType.FIT_END
-            BigImageView.INIT_SCALE_TYPE_FIT_START -> ScalingUtils.ScaleType.FIT_START
-            BigImageView.INIT_SCALE_TYPE_FIT_XY -> ScalingUtils.ScaleType.FIT_XY
-            BigImageView.INIT_SCALE_TYPE_FIT_CENTER -> ScalingUtils.ScaleType.FIT_CENTER
-            else -> ScalingUtils.ScaleType.FIT_CENTER
-        }
-    }
-
-    private fun scaleType(scaleType: ImageView.ScaleType): ScalingUtils.ScaleType {
-        return when (scaleType) {
-            ImageView.ScaleType.CENTER -> ScalingUtils.ScaleType.CENTER
-            ImageView.ScaleType.CENTER_CROP -> ScalingUtils.ScaleType.CENTER_CROP
-            ImageView.ScaleType.CENTER_INSIDE -> ScalingUtils.ScaleType.CENTER_INSIDE
-            ImageView.ScaleType.FIT_END -> ScalingUtils.ScaleType.FIT_END
-            ImageView.ScaleType.FIT_START -> ScalingUtils.ScaleType.FIT_START
-            ImageView.ScaleType.FIT_XY -> ScalingUtils.ScaleType.FIT_XY
-            ImageView.ScaleType.FIT_CENTER -> ScalingUtils.ScaleType.FIT_CENTER
-            else -> ScalingUtils.ScaleType.FIT_CENTER
-        }
-    }
 }

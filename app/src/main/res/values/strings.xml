@@ -100,7 +100,7 @@
     <string name="galleryblock_series">Series: %1$s</string>
     <string name="galleryblock_type">Type: %1$s</string>
     <string name="galleryblock_language">Language: %1$s</string>
-    <string name="galleryblock_pagecount" translatable="false">%dP</string>
+    <string name="galleryblock_pagecount" translatable="false">%sP</string>
 
     <!-- READER -->
 

@@ -19,24 +19,21 @@
 package xyz.quaver.pupil.ui.dialog
 
 import android.app.Dialog
-import android.content.Context
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
 import android.widget.ArrayAdapter
 import androidx.appcompat.app.AlertDialog
+import androidx.fragment.app.DialogFragment
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.databinding.DefaultQueryDialogBinding
+import xyz.quaver.pupil.sources.hitomi.Hitomi
 import xyz.quaver.pupil.types.Tags
 import xyz.quaver.pupil.util.Preferences
 
-class DefaultQueryDialog(context : Context) : AlertDialog(context) {
-
-    private val languages = context.resources.getStringArray(R.array.languages).map {
-        it.split("|").let { split ->
-            Pair(split[0], split[1])
-        }
-    }.toMap()
+class DefaultQueryDialogFragment() : DialogFragment() {
+    // TODO languageMap
+    private val languages = Hitomi.languageMap
     private val reverseLanguages = languages.entries.associate { (k, v) -> v to k }
 
     private val excludeBL = "-male:yaoi"
@@ -45,40 +42,46 @@ class DefaultQueryDialog(context : Context) : AlertDialog(context) {
 
     var onPositiveButtonClickListener : ((Tags) -> (Unit))? = null
 
-    private lateinit var binding: DefaultQueryDialogBinding
+    private var _binding: DefaultQueryDialogBinding? = null
+    private val binding get() = _binding!!
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-
-        setTitle(R.string.default_query_dialog_title)
-        binding = DefaultQueryDialogBinding.inflate(layoutInflater)
-        setView(binding.root)
+    override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
+        _binding = DefaultQueryDialogBinding.inflate(layoutInflater)
 
         initView()
 
-        setButton(Dialog.BUTTON_POSITIVE, context.getString(android.R.string.ok)) { _, _ ->
-            val newTags = Tags.parse(binding.edittext.text.toString())
+        return AlertDialog.Builder(requireContext()).apply {
+            setTitle(R.string.default_query_dialog_title)
+            setView(binding.root)
+            setPositiveButton(android.R.string.ok) { _, _ ->
+                val newTags = Tags.parse(binding.edittext.text.toString())
 
-            with(binding.languageSelector) {
-                if (selectedItemPosition != 0)
-                    newTags.add("language:${reverseLanguages[selectedItem]}")
+                with(binding.languageSelector) {
+                    if (selectedItemPosition != 0)
+                        newTags.add("language:${reverseLanguages[selectedItem]}")
+                }
+
+                if (binding.BLCheckbox.isChecked)
+                    newTags.add(excludeBL)
+
+                if (binding.guroCheckbox.isChecked)
+                    excludeGuro.forEach { tag ->
+                        newTags.add(tag)
+                    }
+
+                if (binding.loliCheckbox.isChecked)
+                    excludeLoli.forEach { tag ->
+                        newTags.add(tag)
+                    }
+
+                onPositiveButtonClickListener?.invoke(newTags)
             }
+        }.create()
+    }
 
-            if (binding.BLCheckbox.isChecked)
-                newTags.add(excludeBL)
-
-            if (binding.guroCheckbox.isChecked)
-                excludeGuro.forEach { tag ->
-                    newTags.add(tag)
-                }
-
-            if (binding.loliCheckbox.isChecked)
-                excludeLoli.forEach { tag ->
-                    newTags.add(tag)
-                }
-
-            onPositiveButtonClickListener?.invoke(newTags)
-        }
+    override fun onDestroy() {
+        super.onDestroy()
+        _binding = null
     }
 
     private fun initView() {

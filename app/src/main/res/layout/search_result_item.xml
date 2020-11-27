@@ -34,16 +34,12 @@
 		android:layout_width="match_parent"
 		android:layout_height="wrap_content">
 
-		<com.github.piasy.biv.view.BigImageView
+		<com.facebook.drawee.view.SimpleDraweeView
 			android:id="@+id/thumbnail"
 			android:layout_width="150dp"
 			android:layout_height="wrap_content"
 			android:contentDescription="@string/galleryblock_thumbnail_description"
 			android:adjustViewBounds="true"
-			android:clickable="false"
-			android:duplicateParentState="true"
-			app:layout_constraintHeight_default="spread"
-			app:layout_constraintHeight_min="200dp"
 			app:layout_constraintLeft_toLeftOf="parent"
 			app:layout_constraintTop_toTopOf="parent"
 			app:layout_constraintBottom_toTopOf="@id/barrier"/>
@@ -70,30 +66,12 @@
 			app:layout_constraintTop_toBottomOf="@id/title" />
 
 		<TextView
-			android:id="@+id/series"
-			android:layout_width="0dp"
+			android:id="@+id/extra"
+			android:layout_width="wrap_content"
 			android:layout_height="wrap_content"
 			android:layout_marginLeft="8dp"
 			app:layout_constraintTop_toBottomOf="@id/artist"
-			app:layout_constraintLeft_toRightOf="@id/thumbnail"
-			app:layout_constraintRight_toRightOf="parent"/>
-
-		<TextView
-			android:id="@+id/type"
-			android:layout_width="wrap_content"
-			android:layout_height="wrap_content"
-			android:layout_marginLeft="8dp"
-			app:layout_constraintTop_toBottomOf="@id/series"
-			app:layout_constraintLeft_toRightOf="@id/thumbnail" />
-
-		<TextView
-			android:id="@+id/language"
-			android:layout_width="wrap_content"
-			android:layout_height="wrap_content"
-			android:layout_marginLeft="8dp"
-			android:layout_marginBottom="8dp"
-			app:layout_constraintTop_toBottomOf="@id/type"
-			app:layout_constraintLeft_toRightOf="@id/thumbnail" />
+			app:layout_constraintLeft_toRightOf="@id/thumbnail"/>
 
 		<xyz.quaver.pupil.ui.view.TagChipGroup
 			android:id="@+id/tag_group"
@@ -103,7 +81,7 @@
 			android:layout_marginTop="16dp"
 			android:layout_marginBottom="16dp"
 			app:chipSpacing="4dp"
-			app:layout_constraintTop_toBottomOf="@id/language"
+			app:layout_constraintTop_toBottomOf="@id/extra"
 			app:layout_constraintLeft_toRightOf="@id/thumbnail"
 			app:layout_constraintRight_toRightOf="parent"/>
 

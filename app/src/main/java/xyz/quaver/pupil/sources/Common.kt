@@ -18,20 +18,39 @@
 
 package xyz.quaver.pupil.sources
 
-import com.google.android.gms.vision.L
+import kotlinx.coroutines.channels.Channel
+import xyz.quaver.pupil.R
 import kotlin.reflect.KClass
 
-interface SearchResult {
-    val id: String
-    val title: String
-    val thumbnail: String
-    val artists: List<String>
+data class SearchResult(
+    val id: String,
+    val title: String,
+    val thumbnail: String,
+    val artists: String,
+    val extra: Map<ExtraType, suspend () -> String>,
+    val tags: List<String>
+) {
+    enum class ExtraType {
+        GROUP,
+        CHARACTER,
+        SERIES,
+        TYPE,
+        LANGUAGE,
+        PAGECOUNT
+    }
+
+    companion object {
+        val extraTypeMap = mapOf(
+            ExtraType.SERIES to R.string.galleryblock_series,
+            ExtraType.TYPE to R.string.galleryblock_type,
+            ExtraType.LANGUAGE to R.string.galleryblock_language,
+            ExtraType.PAGECOUNT to R.string.galleryblock_pagecount
+        )
+    }
 }
 
-// Might be better to use channel on Query_Result
-interface Source<Query_SortMode: Enum<*>, Query_Result: SearchResult> {
-    val querySortModeClass: KClass<Query_SortMode>
-    val queryResultClass: KClass<Query_Result>
+interface Source<Query_SortMode: Enum<*>> {
+    val querySortModeClass: KClass<Query_SortMode>?
 
-    suspend fun query(query: String, range: IntRange, sortMode: Query_SortMode? = null) : Pair<List<Query_Result>, Int>
+    suspend fun query(query: String, range: IntRange, sortMode: Query_SortMode? = null) : Pair<Channel<SearchResult>, Int>
 }

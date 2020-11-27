@@ -18,35 +18,31 @@
 
 package xyz.quaver.pupil.sources.hitomi
 
-import kotlinx.coroutines.yield
-import xyz.quaver.hitomi.doSearch
-import xyz.quaver.hitomi.getGalleryBlock
+import kotlinx.coroutines.*
+import kotlinx.coroutines.channels.Channel
+import xyz.quaver.hitomi.*
+import xyz.quaver.pupil.sources.SearchResult
+import xyz.quaver.pupil.sources.SearchResult.ExtraType
 import xyz.quaver.pupil.sources.Source
-import kotlin.math.min
+import xyz.quaver.pupil.util.wordCapitalize
 import kotlin.math.max
+import kotlin.math.min
 
-class Hitomi : Source<Hitomi.SortMode, Hitomi.SearchResult> {
+class Hitomi : Source<Hitomi.SortMode> {
 
     override val querySortModeClass = SortMode::class
-    override val queryResultClass = SearchResult::class
 
     enum class SortMode {
         NEWEST,
         POPULAR
     }
 
-    data class SearchResult(
-        override val id: String,
-        override val title: String,
-        override val thumbnail: String,
-        override val artists: List<String>,
-    ) : xyz.quaver.pupil.sources.SearchResult
-
     var cachedQuery: String? = null
+    var cachedSortMode: SortMode? = null
     val cache = mutableListOf<Int>()
 
-    override suspend fun query(query: String, range: IntRange, sortMode: SortMode?): Pair<List<SearchResult>, Int> {
-        if (cachedQuery != query) {
+    override suspend fun query(query: String, range: IntRange, sortMode: SortMode?): Pair<Channel<SearchResult>, Int> {
+        if (cachedQuery != query || cachedSortMode != sortMode || cache.isEmpty()) {
             cachedQuery = null
             cache.clear()
             yield()
@@ -57,17 +53,85 @@ class Hitomi : Source<Hitomi.SortMode, Hitomi.SearchResult> {
             cachedQuery = query
         }
 
+        val channel = Channel<SearchResult>()
         val sanitizedRange = max(0, range.first) .. min(range.last, cache.size-1)
-        return Pair(cache.slice(sanitizedRange).map {
-            getGalleryBlock(it).let { gallery ->
-                SearchResult(
-                    gallery.id.toString(),
-                    gallery.title,
-                    gallery.thumbnails.first(),
-                    gallery.artists
-                )
+
+        CoroutineScope(Dispatchers.IO).launch {
+            cache.slice(sanitizedRange).map {
+                async {
+                    getGalleryBlock(it)
+                }
+            }.forEach {
+                kotlin.runCatching {
+                    yield()
+                    channel.send(transform(it.await()))
+                }.onFailure {
+                    channel.close()
+                }
             }
-        }, cache.size)
+
+            channel.close()
+        }
+
+        return Pair(channel, cache.size)
+    }
+
+    companion object {
+        val languageMap = mapOf(
+            "indonesian" to "Bahasa Indonesia",
+            "catalan" to "català",
+            "cebuano" to "Cebuano",
+            "czech" to "Čeština",
+            "danish" to "Dansk",
+            "german" to "Deutsch",
+            "estonian" to "eesti",
+            "english" to "English",
+            "spanish" to "Español",
+            "esperanto" to "Esperanto",
+            "french" to "Français",
+            "italian" to "Italiano",
+            "latin" to "Latina",
+            "hungarian" to "magyar",
+            "dutch" to "Nederlands",
+            "norwegian" to "norsk",
+            "polish" to "polski",
+            "portuguese" to "Português",
+            "romanian" to "română",
+            "albanian" to "shqip",
+            "slovak" to "Slovenčina",
+            "finnish" to "Suomi",
+            "swedish" to "Svenska",
+            "tagalog" to "Tagalog",
+            "vietnamese" to "tiếng việt",
+            "turkish" to "Türkçe",
+            "greek" to "Ελληνικά",
+            "mongolian" to "Монгол",
+            "russian" to "Русский",
+            "ukrainian" to "Українська",
+            "hebrew" to "עברית",
+            "arabic" to "العربية",
+            "persian" to "فارسی",
+            "thai" to "ไทย",
+            "korean" to "한국어",
+            "chinese" to "中文",
+            "japanese" to "日本語"
+        )
+
+        fun transform(galleryBlock: GalleryBlock): SearchResult =
+            SearchResult(
+                galleryBlock.id.toString(),
+                galleryBlock.title,
+                galleryBlock.thumbnails.first(),
+                galleryBlock.artists.joinToString { it.wordCapitalize() },
+                mapOf(
+                    ExtraType.GROUP to { getGallery(galleryBlock.id).groups.joinToString { it.wordCapitalize() } },
+                    ExtraType.SERIES to { galleryBlock.series.joinToString { it.wordCapitalize() } },
+                    ExtraType.TYPE to { galleryBlock.type.wordCapitalize() },
+                    ExtraType.LANGUAGE to { languageMap[galleryBlock.language] ?: galleryBlock.language },
+                    ExtraType.PAGECOUNT to { getGalleryInfo(galleryBlock.id).files.size.toString() }
+                ),
+                galleryBlock.relatedTags
+            )
     }
 
 }

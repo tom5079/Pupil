@@ -65,7 +65,7 @@
                 android:id="@+id/progressbar"
                 android:layout_width="match_parent"
                 android:layout_height="4dp"
-                android:progress="50"
+                android:visibility="gone"
                 app:layout_constraintTop_toTopOf="parent"/>
 
         </LinearLayout>

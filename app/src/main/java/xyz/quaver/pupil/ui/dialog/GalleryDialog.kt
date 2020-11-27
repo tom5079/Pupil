@@ -208,7 +208,7 @@ class GalleryDialog(context: Context, private val galleryID: String) : AlertDial
         val galleries = mutableListOf<SearchResult>()
 
         val adapter = SearchResultsAdapter(galleries).apply {
-            onChipClickedHandler.add { tag ->
+            onChipClickedHandler = { tag ->
                 this@GalleryDialog.onChipClickedHandler.forEach { handler ->
                     handler.invoke(tag)
                 }
@@ -218,7 +218,7 @@ class GalleryDialog(context: Context, private val galleryID: String) : AlertDial
         GalleryDialogDetailsBinding.inflate(layoutInflater, binding.contents, true).apply {
             type.setText(R.string.gallery_related)
 
-            RecyclerView(context).apply {
+            contents.addView(RecyclerView(context).apply {
                 layoutManager = LinearLayoutManager(context)
                 this.adapter = adapter
 
@@ -238,19 +238,12 @@ class GalleryDialog(context: Context, private val galleryID: String) : AlertDial
                         true
                     }
                 }
-            }
+            })
 
             CoroutineScope(Dispatchers.IO).launch {
                 gallery.related.forEach { galleryID ->
                     Cache.getInstance(context, galleryID.toString()).getGalleryBlock()?.let {
-                        galleries.add(
-                            Hitomi.SearchResult(
-                                it.id.toString(),
-                                it.title,
-                                it.thumbnails.first(),
-                                it.artists
-                            )
-                        )
+                        galleries.add(Hitomi.transform(it))
                     }
 
                     withContext(Dispatchers.Main) {
