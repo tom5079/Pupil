@@ -24,7 +24,7 @@
     android:padding="16dp">
 
     <TextView
-        android:id="@+id/proxy_title"
+        android:id="@+id/title"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:paddingBottom="16dp"
@@ -35,46 +35,46 @@
         app:layout_constraintLeft_toLeftOf="parent"/>
 
     <TextView
-        android:id="@+id/proxy_type_text"
+        android:id="@+id/type_text"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        app:layout_constraintTop_toBottomOf="@id/proxy_title"
+        app:layout_constraintTop_toBottomOf="@id/title"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintLeft_toLeftOf="parent"
         android:text="@string/proxy_dialog_type"
         android:textAppearance="?android:attr/listSeparatorTextViewStyle"/>
 
     <Spinner
-        android:id="@+id/proxy_type_selector"
+        android:id="@+id/type_selector"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        app:layout_constraintTop_toBottomOf="@id/proxy_type_text"/>
+        app:layout_constraintTop_toBottomOf="@id/type_text"/>
 
     <TextView
-        android:id="@+id/proxy_server_text"
+        android:id="@+id/server_text"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        app:layout_constraintTop_toBottomOf="@id/proxy_type_selector"
+        app:layout_constraintTop_toBottomOf="@id/type_selector"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintLeft_toLeftOf="parent"
         android:text="@string/proxy_dialog_server"
         android:textAppearance="?android:attr/listSeparatorTextViewStyle"/>
 
     <LinearLayout
-        android:id="@+id/proxy_address_layout"
+        android:id="@+id/address_layout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        app:layout_constraintTop_toBottomOf="@id/proxy_server_text">
+        app:layout_constraintTop_toBottomOf="@id/server_text">
 
         <androidx.appcompat.widget.AppCompatEditText
-            android:id="@+id/proxy_addr"
+            android:id="@+id/addr"
             android:layout_width="0dp"
             android:layout_weight="2"
             android:layout_height="wrap_content"
             android:hint="@string/proxy_dialog_addr_hint"/>
 
         <androidx.appcompat.widget.AppCompatEditText
-            android:id="@+id/proxy_port"
+            android:id="@+id/port"
             android:layout_width="0dp"
             android:layout_weight="1"
             android:layout_height="wrap_content"
@@ -83,39 +83,39 @@
     </LinearLayout>
 
     <androidx.appcompat.widget.AppCompatEditText
-        android:id="@+id/proxy_username"
+        android:id="@+id/username"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        app:layout_constraintTop_toBottomOf="@id/proxy_address_layout"
+        app:layout_constraintTop_toBottomOf="@id/address_layout"
         android:hint="@string/proxy_dialog_username_hint"
         android:enabled="false"/>
 
     <androidx.appcompat.widget.AppCompatEditText
-        android:id="@+id/proxy_password"
+        android:id="@+id/password"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        app:layout_constraintTop_toBottomOf="@id/proxy_username"
+        app:layout_constraintTop_toBottomOf="@id/username"
         android:hint="@string/proxy_dialog_password_hint"
         android:enabled="false"/>
 
     <Button
-        android:id="@+id/proxy_cancel"
+        android:id="@+id/cancel_button"
         style="?borderlessButtonStyle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@android:string/cancel"
-        app:layout_constraintTop_toBottomOf="@id/proxy_password"
+        app:layout_constraintTop_toBottomOf="@id/password"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toStartOf="@id/proxy_ok"
-        app:layout_constraintRight_toLeftOf="@id/proxy_ok"/>
+        app:layout_constraintEnd_toStartOf="@id/ok_button"
+        app:layout_constraintRight_toLeftOf="@id/ok_button"/>
 
     <Button
-        android:id="@+id/proxy_ok"
+        android:id="@+id/ok_button"
         style="?borderlessButtonStyle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@android:string/ok"
-        app:layout_constraintTop_toBottomOf="@id/proxy_password"
+        app:layout_constraintTop_toBottomOf="@id/password"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintRight_toRightOf="parent"/>

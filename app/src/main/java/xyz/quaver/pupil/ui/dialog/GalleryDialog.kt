@@ -22,7 +22,6 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
-import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.LinearLayout.LayoutParams
@@ -32,10 +31,6 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.widget.ViewPager2
 import com.google.android.material.snackbar.Snackbar
-import kotlinx.android.synthetic.main.dialog_gallery.*
-import kotlinx.android.synthetic.main.dialog_gallery_details.view.*
-import kotlinx.android.synthetic.main.dialog_gallery_dotindicator.view.*
-import kotlinx.android.synthetic.main.item_gallery_details.view.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -45,6 +40,7 @@ import xyz.quaver.hitomi.getGallery
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.adapters.GalleryBlockAdapter
 import xyz.quaver.pupil.adapters.ThumbnailPageAdapter
+import xyz.quaver.pupil.databinding.*
 import xyz.quaver.pupil.favoriteTags
 import xyz.quaver.pupil.types.Tag
 import xyz.quaver.pupil.ui.ReaderActivity
@@ -59,9 +55,12 @@ class GalleryDialog(context: Context, private val galleryID: Int) : AlertDialog(
 
     val onChipClickedHandler = ArrayList<((Tag) -> (Unit))>()
 
+    private lateinit var binding: GalleryDialogBinding
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.dialog_gallery)
+        binding = GalleryDialogBinding.inflate(layoutInflater)
+        setContentView(binding.root)
 
         window?.attributes.apply {
             this ?: return@apply
@@ -70,7 +69,7 @@ class GalleryDialog(context: Context, private val galleryID: Int) : AlertDialog(
             height = LayoutParams.MATCH_PARENT
         }
 
-        with(gallery_fab) {
+        with(binding.fab) {
             setImageDrawable(ContextCompat.getDrawable(context, R.drawable.arrow_right))
             setOnClickListener {
                 context.startActivity(Intent(context, ReaderActivity::class.java).apply {
@@ -83,12 +82,12 @@ class GalleryDialog(context: Context, private val galleryID: Int) : AlertDialog(
             try {
                 val gallery = getGallery(galleryID)
 
-                gallery_cover.post {
-                    gallery_progressbar.visibility = View.GONE
-                    gallery_title.text = gallery.title
-                    gallery_artist.text = gallery.artists.joinToString(", ") { it.wordCapitalize() }
+                launch (Dispatchers.Main) {
+                    binding.progressbar.visibility = View.GONE
+                    binding.title.text = gallery.title
+                    binding.artist.text = gallery.artists.joinToString(", ") { it.wordCapitalize() }
 
-                    with(gallery_type) {
+                    with(binding.type) {
                         text = gallery.type.wordCapitalize()
                         setOnClickListener {
                             gallery.type.let {
@@ -105,14 +104,14 @@ class GalleryDialog(context: Context, private val galleryID: Int) : AlertDialog(
                         }
                     }
 
-                    gallery_cover.showImage(Uri.parse(gallery.cover))
+                    binding.cover.showImage(Uri.parse(gallery.cover))
 
                     addDetails(gallery)
                     addThumbnails(gallery)
                     addRelated(gallery)
                 }
             } catch (e: Exception) {
-                Snackbar.make(gallery_layout, R.string.unable_to_connect, Snackbar.LENGTH_INDEFINITE).apply {
+                Snackbar.make(binding.root, R.string.unable_to_connect, Snackbar.LENGTH_INDEFINITE).apply {
                     if (Locale.getDefault().language == "ko")
                         setAction(context.getText(R.string.https_text)) {
                             context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(context.getString(R.string.https))))
@@ -123,10 +122,8 @@ class GalleryDialog(context: Context, private val galleryID: Int) : AlertDialog(
     }
 
     private fun addDetails(gallery: Gallery) {
-        val inflater = LayoutInflater.from(context)
-
-        inflater.inflate(R.layout.dialog_gallery_details, gallery_contents, false).apply {
-            gallery_details.setText(R.string.gallery_details)
+        GalleryDialogDetailsBinding.inflate(layoutInflater, binding.contents, true).apply {
+            type.setText(R.string.gallery_details)
 
             listOf(
                 R.string.gallery_artists,
@@ -163,13 +160,13 @@ class GalleryDialog(context: Context, private val galleryID: Int) : AlertDialog(
                     }
                 )
             ).filter {
-                (_, content) -> content.isNotEmpty()
+                    (_, content) -> content.isNotEmpty()
             }.forEach { (title, content) ->
-                inflater.inflate(R.layout.item_gallery_details, gallery_details_contents, false).apply {
-                    gallery_details_type.setText(title)
+                GalleryDialogTagsBinding.inflate(layoutInflater, contents, true).apply {
+                    type.setText(title)
 
                     content.forEach { tag ->
-                        gallery_details_tags.addView(
+                        tags.addView(
                             TagChip(context, tag).apply {
                                 setOnClickListener {
                                     onChipClickedHandler.forEach { handler ->
@@ -179,41 +176,33 @@ class GalleryDialog(context: Context, private val galleryID: Int) : AlertDialog(
                             }
                         )
                     }
-                }.let {
-                    gallery_details_contents.addView(it)
                 }
             }
-        }.let {
-            gallery_contents.addView(it)
         }
     }
 
     private fun addThumbnails(gallery: Gallery) {
-        val inflater = LayoutInflater.from(context)
-
-        inflater.inflate(R.layout.dialog_gallery_details, gallery_contents, false).apply {
-            gallery_details.setText(R.string.gallery_thumbnails)
+        GalleryDialogDetailsBinding.inflate(layoutInflater, binding.contents, true).apply {
+            type.setText(R.string.gallery_thumbnails)
 
             val pager = ViewPager2(context).apply {
                 adapter = ThumbnailPageAdapter(gallery.thumbnails)
                 layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT)
             }
 
-            gallery_details_contents.addView(
+            contents.addView(
                 pager,
                 LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT)
             )
 
-            LayoutInflater.from(context).inflate(R.layout.dialog_gallery_dotindicator, gallery_details_contents)
-
-            gallery_dotindicator.setViewPager2(pager)
-        }.let {
-            gallery_contents.addView(it)
+            // TODO: Change to direct allocation
+            GalleryDialogDotindicatorBinding.inflate(layoutInflater, contents, true).apply {
+                dotindicator.setViewPager2(pager)
+            }
         }
     }
 
     private fun addRelated(gallery: Gallery) {
-        val inflater = LayoutInflater.from(context)
         val galleries = ArrayList<Int>()
 
         val adapter = GalleryBlockAdapter(galleries).apply {
@@ -224,8 +213,8 @@ class GalleryDialog(context: Context, private val galleryID: Int) : AlertDialog(
             }
         }
 
-        inflater.inflate(R.layout.dialog_gallery_details, gallery_contents, false).apply {
-            gallery_details.setText(R.string.gallery_related)
+        GalleryDialogDetailsBinding.inflate(layoutInflater, binding.contents, true).apply {
+            type.setText(R.string.gallery_related)
 
             RecyclerView(context).apply {
                 layoutManager = LinearLayoutManager(context)
@@ -247,22 +236,18 @@ class GalleryDialog(context: Context, private val galleryID: Int) : AlertDialog(
                         true
                     }
                 }
-            }.let {
-                gallery_details_contents.addView(it, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT))
             }
-        }.let {
-            gallery_contents.addView(it)
-        }
 
-        CoroutineScope(Dispatchers.IO).launch {
-            gallery.related.forEach { galleryID ->
-                Cache.getInstance(context, galleryID).getGalleryBlock()?.let {
-                    galleries.add(galleryID)
+            CoroutineScope(Dispatchers.IO).launch {
+                gallery.related.forEach { galleryID ->
+                    Cache.getInstance(context, galleryID).getGalleryBlock()?.let {
+                        galleries.add(galleryID)
+                    }
                 }
-            }
 
-            withContext(Dispatchers.Main) {
-                adapter.notifyDataSetChanged()
+                withContext(Dispatchers.Main) {
+                    adapter.notifyDataSetChanged()
+                }
             }
         }
     }

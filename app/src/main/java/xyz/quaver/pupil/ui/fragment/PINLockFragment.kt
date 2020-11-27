@@ -24,30 +24,34 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import com.andrognito.pinlockview.PinLockListener
-import kotlinx.android.synthetic.main.fragment_pin_lock.view.*
-import xyz.quaver.pupil.R
+import xyz.quaver.pupil.databinding.PinLockFragmentBinding
 
-class PINLockFragment : Fragment(), PinLockListener {
+class PINLockFragment : Fragment() {
+
+    private var _binding: PinLockFragmentBinding? = null
+    val binding get() = _binding!!
 
     var onPINEntered: ((String) -> Unit)? = null
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
-        return inflater.inflate(R.layout.fragment_pin_lock, container, false).apply {
-            pin_lock_view.attachIndicatorDots(indicator_dots)
-            pin_lock_view.setPinLockListener(this@PINLockFragment)
-        }
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
+        _binding = PinLockFragmentBinding.inflate(inflater, container, false)
+
+        binding.pinLockView.attachIndicatorDots(binding.indicatorDots)
+        binding.pinLockView.setPinLockListener(object: PinLockListener {
+            override fun onComplete(p0: String?) {
+                onPINEntered?.invoke(p0 ?: "")
+            }
+
+            override fun onEmpty() {}
+            override fun onPinChange(p0: Int, p1: String?) {}
+        })
+
+        return binding.root
     }
 
-    override fun onComplete(pin: String?) {
-        onPINEntered?.invoke(pin!!)
-    }
-
-    override fun onEmpty() {
-
-    }
-
-    override fun onPinChange(pinLength: Int, intermediatePin: String?) {
-
+    override fun onDestroy() {
+        super.onDestroy()
+        _binding = null
     }
 
 }

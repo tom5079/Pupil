@@ -26,38 +26,36 @@ import androidx.fragment.app.Fragment
 import com.andrognito.patternlockview.PatternLockView
 import com.andrognito.patternlockview.listener.PatternLockViewListener
 import com.andrognito.patternlockview.utils.PatternLockUtils
-import kotlinx.android.synthetic.main.fragment_pattern_lock.*
-import kotlinx.android.synthetic.main.fragment_pattern_lock.view.*
-import xyz.quaver.pupil.R
+import xyz.quaver.pupil.databinding.PatternLockFragmentBinding
 
-class PatternLockFragment : Fragment(), PatternLockViewListener {
+class PatternLockFragment : Fragment() {
+
+    private var _binding: PatternLockFragmentBinding? = null
+    val binding get() = _binding!!
 
     var onPatternDrawn: ((String) -> Unit)? = null
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
-        return inflater.inflate(R.layout.fragment_pattern_lock, container, false).apply {
-            lock_pattern_view.addPatternLockListener(this@PatternLockFragment)
-        }
+    ): View {
+        _binding = PatternLockFragmentBinding.inflate(inflater, container, false)
+        binding.patternLockView.addPatternLockListener(object: PatternLockViewListener {
+            override fun onComplete(pattern: MutableList<PatternLockView.Dot>?) {
+                val password = PatternLockUtils.patternToMD5(binding.patternLockView, pattern)
+                onPatternDrawn?.invoke(password)
+            }
+
+            override fun onCleared() {}
+            override fun onProgress(progressPattern: MutableList<PatternLockView.Dot>?) {}
+            override fun onStarted() {}
+        })
+        return binding.root
     }
 
-    override fun onCleared() {
-
-    }
-
-    override fun onComplete(pattern: MutableList<PatternLockView.Dot>?) {
-        val password = PatternLockUtils.patternToMD5(lock_pattern_view, pattern)
-        onPatternDrawn?.invoke(password)
-    }
-
-    override fun onProgress(progressPattern: MutableList<PatternLockView.Dot>?) {
-
-    }
-
-    override fun onStarted() {
-
+    override fun onDestroy() {
+        super.onDestroy()
+        _binding = null
     }
 
 }

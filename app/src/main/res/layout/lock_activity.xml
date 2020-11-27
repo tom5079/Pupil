@@ -41,7 +41,7 @@
         app:layout_constraintBottom_toTopOf="@id/lock_button_layout">
 
         <com.google.android.material.floatingactionbutton.FloatingActionButton
-            android:id="@+id/lock_fingerprint"
+            android:id="@+id/fingerprint_btn"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             app:srcCompat="@drawable/fingerprint"
@@ -64,7 +64,7 @@
         android:gravity="center">
 
         <com.google.android.material.floatingactionbutton.FloatingActionButton
-            android:id="@+id/lock_pattern"
+            android:id="@+id/pattern_btn"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             app:tint="@null"
@@ -73,7 +73,7 @@
             app:fabSize="mini"/>
 
         <com.google.android.material.floatingactionbutton.FloatingActionButton
-            android:id="@+id/lock_pin"
+            android:id="@+id/pin_btn"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             app:tint="@null"
@@ -84,7 +84,7 @@
             app:fabSize="mini"/>
 
         <com.google.android.material.floatingactionbutton.FloatingActionButton
-            android:id="@+id/lock_password"
+            android:id="@+id/password_btn"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             app:tint="@null"

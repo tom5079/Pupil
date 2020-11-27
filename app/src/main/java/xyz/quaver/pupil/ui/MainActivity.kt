@@ -39,8 +39,6 @@ import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.navigation.NavigationView
 import com.google.android.material.snackbar.Snackbar
 import com.google.firebase.crashlytics.FirebaseCrashlytics
-import kotlinx.android.synthetic.main.activity_main.*
-import kotlinx.android.synthetic.main.activity_main_content.*
 import kotlinx.coroutines.*
 import xyz.quaver.floatingsearchview.FloatingSearchView
 import xyz.quaver.floatingsearchview.suggestions.model.SearchSuggestion
@@ -51,6 +49,7 @@ import xyz.quaver.hitomi.getGalleryIDsFromNozomi
 import xyz.quaver.hitomi.getSuggestionsForQuery
 import xyz.quaver.pupil.*
 import xyz.quaver.pupil.adapters.GalleryBlockAdapter
+import xyz.quaver.pupil.databinding.MainActivityBinding
 import xyz.quaver.pupil.services.DownloadService
 import xyz.quaver.pupil.types.*
 import xyz.quaver.pupil.ui.dialog.DownloadLocationDialogFragment
@@ -103,18 +102,20 @@ class MainActivity :
     private var loadingJob: Job? = null
     private var currentPage = 0
 
+    private lateinit var binding: MainActivityBinding
+
     override fun onCreate(savedInstanceState: Bundle?) {
-        AppCompatDelegate.setCompatVectorFromResourcesEnabled(true)
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
+        binding = MainActivityBinding.inflate(layoutInflater)
+        setContentView(binding.root)
 
         if (intent.action == Intent.ACTION_VIEW) {
             intent.dataString?.let { url ->
                 restore(url,
                     onFailure = {
-                        Snackbar.make(this.main_recyclerview, R.string.settings_backup_failed, Snackbar.LENGTH_LONG).show()
+                        Snackbar.make(binding.contents.recyclerview, R.string.settings_backup_failed, Snackbar.LENGTH_LONG).show()
                     }, onSuccess = {
-                        Snackbar.make(this.main_recyclerview, getString(R.string.settings_restore_success, it.size), Snackbar.LENGTH_LONG).show()
+                        Snackbar.make(binding.contents.recyclerview, getString(R.string.settings_restore_success, it.size), Snackbar.LENGTH_LONG).show()
                     }
                 )
             }
@@ -131,7 +132,7 @@ class MainActivity :
     @OptIn(ExperimentalStdlibApi::class)
     override fun onBackPressed() {
         when {
-            main_drawer_layout.isDrawerOpen(GravityCompat.START) -> main_drawer_layout.closeDrawer(GravityCompat.START)
+            binding.drawer.isDrawerOpen(GravityCompat.START) -> binding.drawer.closeDrawer(GravityCompat.START)
             queryStack.removeLastOrNull() != null && queryStack.isNotEmpty() -> runOnUiThread {
                 query = queryStack.last()
 
@@ -147,7 +148,7 @@ class MainActivity :
     override fun onDestroy() {
         super.onDestroy()
 
-        (main_recyclerview?.adapter as? GalleryBlockAdapter)?.updateAll = false
+        (binding.contents.recyclerview.adapter as? GalleryBlockAdapter)?.updateAll = false
     }
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
@@ -188,36 +189,36 @@ class MainActivity :
     }
 
     private fun initView() {
-        main_recyclerview.addOnScrollListener(object: RecyclerView.OnScrollListener() {
+        binding.contents.recyclerview.addOnScrollListener(object: RecyclerView.OnScrollListener() {
             override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
                 // -height of the search view < translationY < 0
-                main_searchview.translationY =
+                binding.contents.searchview.translationY =
                     min(
                         max(
-                        main_searchview.translationY - dy,
-                        -main_searchview.findViewById<CardView>(R.id.search_query_section).height.toFloat()
+                        binding.contents.searchview.translationY - dy,
+                        -binding.contents.searchview.findViewById<CardView>(R.id.search_query_section).height.toFloat()
                     ), 0F)
 
                 if (dy > 0)
-                    main_fab.hideMenuButton(true)
+                    binding.contents.fab.hideMenuButton(true)
                 else if (dy < 0)
-                    main_fab.showMenuButton(true)
+                    binding.contents.fab.showMenuButton(true)
             }
         })
 
-        Linkify.addLinks(main_noresult, Pattern.compile(getString(R.string.https_text)), null, null, { _, _ -> getString(R.string.https) })
+        Linkify.addLinks(binding.contents.noresult, Pattern.compile(getString(R.string.https_text)), null, null, { _, _ -> getString(R.string.https) })
 
         //NavigationView
-        main_nav_view.setNavigationItemSelectedListener(this)
+        binding.navView.setNavigationItemSelectedListener(this)
 
-        with(main_fab_cancel) {
+        with(binding.contents.cancelFab) {
             setImageResource(R.drawable.cancel)
             setOnClickListener {
                 DownloadService.cancel(this@MainActivity)
             }
         }
 
-        with(main_fab_jump) {
+        with(binding.contents.jumpFab) {
             setImageResource(R.drawable.ic_jump)
             setOnClickListener {
                 val perPage = Preferences["per_page", "25"].toInt()
@@ -245,7 +246,7 @@ class MainActivity :
             }
         }
 
-        with(main_fab_random) {
+        with(binding.contents.randomFab) {
             setImageResource(R.drawable.shuffle_variant)
             setOnClickListener {
                 runBlocking {
@@ -275,7 +276,7 @@ class MainActivity :
             }
         }
 
-        with(main_fab_id) {
+        with(binding.contents.idFab) {
             setImageResource(R.drawable.numeric)
             setOnClickListener {
                 val editText = EditText(context).apply {
@@ -308,7 +309,7 @@ class MainActivity :
             }
         }
 
-        with(main_view) {
+        with(binding.contents.view) {
             setOnPageTurnListener(object: MainView.OnPageTurnListener {
                 override fun onPrev(page: Int) {
                     currentPage--
@@ -316,7 +317,7 @@ class MainActivity :
                     // disable pageturn until the contents are loaded
                     setCurrentPage(1, false)
 
-                    ViewCompat.animate(main_searchview)
+                    ViewCompat.animate(binding.contents.searchview)
                         .setDuration(100)
                         .setInterpolator(DecelerateInterpolator())
                         .translationY(0F)
@@ -333,7 +334,7 @@ class MainActivity :
                     // disable pageturn until the contents are loaded
                     setCurrentPage(1, false)
 
-                    ViewCompat.animate(main_searchview)
+                    ViewCompat.animate(binding.contents.searchview)
                         .setDuration(100)
                         .setInterpolator(DecelerateInterpolator())
                         .translationY(0F)
@@ -354,7 +355,7 @@ class MainActivity :
 
     @SuppressLint("ClickableViewAccessibility")
     private fun setupRecyclerView() {
-        with(main_recyclerview) {
+        with(binding.contents.recyclerview) {
             adapter = GalleryBlockAdapter(galleries).apply {
                 onChipClickedHandler.add {
                     runOnUiThread {
@@ -454,10 +455,10 @@ class MainActivity :
 
     private var suggestionJob : Job? = null
     private fun setupSearchBar() {
-        with(main_searchview as xyz.quaver.pupil.ui.view.FloatingSearchView) {
+        with(binding.contents.searchview) {
             onMenuStatusChangeListener = object: FloatingSearchView.OnMenuStatusChangeListener {
                 override fun onMenuOpened() {
-                    (this@MainActivity.main_recyclerview.adapter as GalleryBlockAdapter).closeAllItems()
+                    (binding.contents.recyclerview.adapter as GalleryBlockAdapter).closeAllItems()
                 }
 
                 override fun onMenuClosed() {
@@ -541,7 +542,7 @@ class MainActivity :
                 }
             }
 
-            attachNavigationDrawerToMenuButton(main_drawer_layout)
+            attachNavigationDrawerToMenuButton(binding.drawer)
         }
     }
 
@@ -552,7 +553,7 @@ class MainActivity :
                 val thin = !item.isChecked
 
                 item.isChecked = thin
-                main_recyclerview.apply {
+                binding.contents.recyclerview.apply {
                     (adapter as GalleryBlockAdapter).apply {
                         this.thin = thin
 
@@ -593,7 +594,7 @@ class MainActivity :
 
     override fun onNavigationItemSelected(item: MenuItem): Boolean {
         runOnUiThread {
-            main_drawer_layout.closeDrawers()
+            binding.drawer.closeDrawers()
 
             when(item.itemId) {
                 R.id.main_drawer_home -> {
@@ -665,14 +666,14 @@ class MainActivity :
     private fun clearGalleries() = CoroutineScope(Dispatchers.Main).launch {
         galleries.clear()
 
-        with(main_recyclerview.adapter as GalleryBlockAdapter?) {
+        with(binding.contents.recyclerview.adapter as GalleryBlockAdapter?) {
             this ?: return@with
 
             this.notifyDataSetChanged()
         }
 
-        main_noresult.visibility = View.INVISIBLE
-        main_progressbar.show()
+        binding.contents.noresult.visibility = View.INVISIBLE
+        binding.contents.progressbar.show()
     }
 
     private fun fetchGalleries(query: String, sortMode: SortMode) {
@@ -687,7 +688,7 @@ class MainActivity :
         }
 
         if (query.isNotEmpty() && mode != Mode.SEARCH) {
-            Snackbar.make(this@MainActivity.main_recyclerview, R.string.search_all, Snackbar.LENGTH_SHORT).apply {
+            Snackbar.make(binding.contents.recyclerview, R.string.search_all, Snackbar.LENGTH_SHORT).apply {
                 setAction(android.R.string.ok) {
                     cancelFetch()
                     clearGalleries()
@@ -784,15 +785,15 @@ class MainActivity :
                     FirebaseCrashlytics.getInstance().recordException(e)
 
                 withContext(Dispatchers.Main) {
-                    main_noresult.visibility = View.VISIBLE
-                    main_progressbar.hide()
+                    binding.contents.noresult.visibility = View.VISIBLE
+                    binding.contents.progressbar.hide()
                 }
 
                 return@launch
             }
 
             launch(Dispatchers.Main) {
-                main_view.setCurrentPage(currentPage + 1, galleryIDs.size > (currentPage+1)*perPage)
+                binding.contents.view.setCurrentPage(currentPage + 1, galleryIDs.size > (currentPage+1)*perPage)
             }
 
             galleryIDs.slice(currentPage*perPage until min(currentPage*perPage+perPage, galleryIDs.size)).chunked(5).let { chunks ->
@@ -806,10 +807,10 @@ class MainActivity :
                     }.forEach {
                         it.await()?.also {
                             withContext(Dispatchers.Main) {
-                                main_progressbar.hide()
+                                binding.contents.progressbar.hide()
 
                                 galleries.add(it)
-                                main_recyclerview.adapter!!.notifyItemInserted(galleries.size - 1)
+                                binding.contents.recyclerview.adapter!!.notifyItemInserted(galleries.size - 1)
                             }
                         }
                     }

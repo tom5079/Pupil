@@ -18,23 +18,19 @@
 
 package xyz.quaver.pupil.ui.dialog
 
-import android.annotation.SuppressLint
-import android.app.Dialog
 import android.content.Context
 import android.os.Bundle
-import android.view.LayoutInflater
 import android.view.View
-import android.view.ViewGroup
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
 import androidx.appcompat.app.AlertDialog
-import kotlinx.android.synthetic.main.dialog_proxy.view.*
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.client
 import xyz.quaver.pupil.clientBuilder
 import xyz.quaver.pupil.clientHolder
+import xyz.quaver.pupil.databinding.ProxyDialogBinding
 import xyz.quaver.pupil.util.Preferences
 import xyz.quaver.pupil.util.ProxyInfo
 import xyz.quaver.pupil.util.getProxyInfo
@@ -43,33 +39,35 @@ import java.net.Proxy
 
 class ProxyDialog(context: Context) : AlertDialog(context) {
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        setView(build())
+    private lateinit var binding: ProxyDialogBinding
 
+    override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        binding = ProxyDialogBinding.inflate(layoutInflater)
+        setView(binding.root)
+
+        initView()
     }
 
-    @SuppressLint("InflateParams")
-    private fun build() : View {
+    private fun initView() {
         val proxyInfo = getProxyInfo()
 
-        val view = LayoutInflater.from(context).inflate(R.layout.dialog_proxy, null)
-
         val enabler = { enable: Boolean ->
-            view?.proxy_addr?.isEnabled = enable
-            view?.proxy_port?.isEnabled = enable
-            view?.proxy_username?.isEnabled = enable
-            view?.proxy_password?.isEnabled = enable
+            binding.addr.isEnabled = enable
+            binding.port.isEnabled = enable
+            binding.username.isEnabled = enable
+            binding.password.isEnabled = enable
 
             if (!enable) {
-                view?.proxy_addr?.text = null
-                view?.proxy_port?.text = null
-                view?.proxy_username?.text = null
-                view?.proxy_password?.text = null
+                binding.addr.text = null
+                binding.port.text = null
+                binding.username.text = null
+                binding.password.text = null
             }
         }
 
-        with(view.proxy_type_selector) {
+        with(binding.typeSelector) {
             adapter = ArrayAdapter(
                 context,
                 android.R.layout.simple_spinner_dropdown_item,
@@ -87,29 +85,29 @@ class ProxyDialog(context: Context) : AlertDialog(context) {
             }
         }
 
-        view.proxy_addr.setText(proxyInfo.host)
-        view.proxy_port.setText(proxyInfo.port?.toString())
-        view.proxy_username.setText(proxyInfo.username)
-        view.proxy_password.setText(proxyInfo.password)
+        binding.addr.setText(proxyInfo.host)
+        binding.port.setText(proxyInfo.port?.toString())
+        binding.username.setText(proxyInfo.username)
+        binding.password.setText(proxyInfo.password)
 
         enabler.invoke(proxyInfo.type != Proxy.Type.DIRECT)
 
-        view.proxy_cancel.setOnClickListener {
+        binding.cancelButton.setOnClickListener {
             dismiss()
         }
 
-        view.proxy_ok.setOnClickListener {
-            val type = Proxy.Type.values()[view.proxy_type_selector.selectedItemPosition]
-            val addr = view.proxy_addr.text?.toString()
-            val port = view.proxy_port.text?.toString()?.toIntOrNull()
-            val username = view.proxy_username.text?.toString()
-            val password = view.proxy_password.text?.toString()
+        binding.okButton.setOnClickListener {
+            val type = Proxy.Type.values()[binding.typeSelector.selectedItemPosition]
+            val addr = binding.addr.text?.toString()
+            val port = binding.port.text?.toString()?.toIntOrNull()
+            val username = binding.username.text?.toString()
+            val password = binding.password.text?.toString()
 
             if (type != Proxy.Type.DIRECT) {
                 if (addr == null || addr.isEmpty())
-                    view.proxy_addr.error = context.getText(R.string.proxy_dialog_error)
+                    binding.addr.error = context.getText(R.string.proxy_dialog_error)
                 if (port == null)
-                    view.proxy_port.error = context.getText(R.string.proxy_dialog_error)
+                    binding.port.error = context.getText(R.string.proxy_dialog_error)
 
                 if (addr == null || addr.isEmpty() || port == null)
                     return@setOnClickListener
@@ -126,8 +124,6 @@ class ProxyDialog(context: Context) : AlertDialog(context) {
 
             dismiss()
         }
-
-        return view
     }
 
 }

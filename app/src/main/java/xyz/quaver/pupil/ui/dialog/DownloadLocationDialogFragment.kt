@@ -18,27 +18,24 @@
 
 package xyz.quaver.pupil.ui.dialog
 
-import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.Dialog
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
-import android.view.View
-import android.widget.LinearLayout
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
 import androidx.fragment.app.DialogFragment
 import com.google.android.material.snackbar.Snackbar
-import kotlinx.android.synthetic.main.dialog_download_folder_name.view.*
-import kotlinx.android.synthetic.main.item_download_folder.view.*
 import net.rdrei.android.dirchooser.DirectoryChooserActivity
 import net.rdrei.android.dirchooser.DirectoryChooserConfig
 import xyz.quaver.io.FileX
 import xyz.quaver.io.util.toFile
 import xyz.quaver.pupil.R
+import xyz.quaver.pupil.databinding.DownloadLocationDialogBinding
+import xyz.quaver.pupil.databinding.DownloadLocationItemBinding
 import xyz.quaver.pupil.util.Preferences
 import xyz.quaver.pupil.util.byteToString
 import xyz.quaver.pupil.util.downloader.DownloadManager
@@ -46,7 +43,11 @@ import xyz.quaver.pupil.util.migrate
 import java.io.File
 
 class DownloadLocationDialogFragment : DialogFragment() {
-    private val entries = mutableMapOf<File?, View>()
+
+    private var _binding: DownloadLocationDialogBinding? = null
+    private val binding get() = _binding!!
+
+    private val entries = mutableMapOf<File?, DownloadLocationItemBinding>()
 
     private val requestDownloadFolderLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
         if (it.resultCode == Activity.RESULT_OK) {
@@ -63,7 +64,7 @@ class DownloadLocationDialogFragment : DialogFragment() {
                     context.contentResolver.takePersistableUriPermission(uri, takeFlags)
 
                 if (kotlin.runCatching { FileX(context, uri).canWrite() }.getOrDefault(false)) {
-                    entries[null]?.location_available?.text = uri.toFile(context)?.canonicalPath
+                    entries[null]?.locationAvailable?.text = uri.toFile(context)?.canonicalPath
                     Preferences["download_folder"] = uri.toString()
                 } else {
                     Snackbar.make(
@@ -75,7 +76,7 @@ class DownloadLocationDialogFragment : DialogFragment() {
                     val downloadFolder = DownloadManager.getInstance(context).downloadFolder.canonicalPath
                     val key = entries.keys.firstOrNull { it?.canonicalPath == downloadFolder }
                     entries[key]!!.button.isChecked = true
-                    if (key == null) entries[key]!!.location_available.text = downloadFolder
+                    if (key == null) entries[key]!!.locationAvailable.text = downloadFolder
                 }
             }
         }
@@ -98,49 +99,44 @@ class DownloadLocationDialogFragment : DialogFragment() {
                 val downloadFolder = DownloadManager.getInstance(context).downloadFolder.canonicalPath
                 val key = entries.keys.firstOrNull { it?.canonicalPath == downloadFolder }
                 entries[key]!!.button.isChecked = true
-                if (key == null) entries[key]!!.location_available.text = downloadFolder
+                if (key == null) entries[key]!!.locationAvailable.text = downloadFolder
             }
             else {
-                entries[null]?.location_available?.text = directory
+                entries[null]?.locationAvailable?.text = directory
                 Preferences["download_folder"] = File(directory).toURI().toString()
             }
         }
     }
 
-    @SuppressLint("InflateParams")
-    private fun build() : View? {
-        val context = context ?: return null
-
-        val view = layoutInflater.inflate(R.layout.dialog_download_folder, null) as LinearLayout
-
-        val externalFilesDirs = ContextCompat.getExternalFilesDirs(context, null)
+    private fun initView() {
+        val externalFilesDirs = ContextCompat.getExternalFilesDirs(requireContext(), null)
 
         externalFilesDirs.forEachIndexed { index, dir ->
             dir ?: return@forEachIndexed
 
-            view.addView(layoutInflater.inflate(R.layout.item_download_folder, view, false).apply {
-                location_type.text = context.getString(when (index) {
+            DownloadLocationItemBinding.inflate(layoutInflater, binding.root, true).apply {
+                locationType.text = requireContext().getString(when (index) {
                     0 -> R.string.settings_download_folder_internal
                     else -> R.string.settings_download_folder_removable
                 })
-                location_available.text = context.getString(
+                locationAvailable.text = requireContext().getString(
                     R.string.settings_download_folder_available,
                     byteToString(dir.freeSpace)
                 )
-                setOnClickListener {
-                    entries.values.forEach {
-                        it.button.isChecked = false
+                root.setOnClickListener {
+                    entries.values.forEach { _ ->
+                        button.isChecked = false
                     }
                     button.performClick()
                     Preferences["download_folder"] = dir.toUri().toString()
                 }
                 entries[dir] = this
-            })
+            }
         }
 
-        view.addView(layoutInflater.inflate(R.layout.item_download_folder, view, false).apply {
-            location_type.text = context.getString(R.string.settings_download_folder_custom)
-            setOnClickListener {
+        DownloadLocationItemBinding.inflate(layoutInflater, binding.root, true).apply {
+            locationType.text = requireContext().getString(R.string.settings_download_folder_custom)
+            root.setOnClickListener {
                 entries.values.forEach {
                     it.button.isChecked = false
                 }
@@ -166,31 +162,35 @@ class DownloadLocationDialogFragment : DialogFragment() {
                 }
             }
             entries[null] = this
-        })
+        }
 
-        val downloadFolder = DownloadManager.getInstance(context).downloadFolder.canonicalPath
+        val downloadFolder = DownloadManager.getInstance(requireContext()).downloadFolder.canonicalPath
         val key = entries.keys.firstOrNull { it?.canonicalPath == downloadFolder }
         entries[key]!!.button.isChecked = true
-        if (key == null) entries[key]!!.location_available.text = downloadFolder
-
-        return view
+        if (key == null) entries[key]!!.locationAvailable.text = downloadFolder
     }
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
-        val builder = AlertDialog.Builder(requireContext())
+        _binding = DownloadLocationDialogBinding.inflate(layoutInflater)
 
-        builder
-            .setTitle(R.string.settings_download_folder)
-            .setView(build())
-            .setPositiveButton(requireContext().getText(android.R.string.ok)) { _, _ ->
+        initView()
+
+        return AlertDialog.Builder(requireContext()).apply {
+            setTitle(R.string.settings_download_folder)
+            setView(binding.root)
+            setPositiveButton(requireContext().getText(android.R.string.ok)) { _, _ ->
                 if (Preferences["download_folder", ""].isEmpty())
-                    Preferences["download_folder"] = context?.getExternalFilesDir(null)?.toUri()?.toString() ?: ""
+                    Preferences["download_folder"] = context.getExternalFilesDir(null)?.toUri()?.toString() ?: ""
 
                 DownloadManager.getInstance(requireContext()).migrate()
             }
 
-        isCancelable = false
+            isCancelable = false
+        }.create()
+    }
 
-        return builder.create()
+    override fun onDestroy() {
+        super.onDestroy()
+        _binding = null
     }
 }

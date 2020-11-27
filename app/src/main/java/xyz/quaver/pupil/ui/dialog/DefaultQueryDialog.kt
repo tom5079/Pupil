@@ -18,19 +18,15 @@
 
 package xyz.quaver.pupil.ui.dialog
 
-import android.annotation.SuppressLint
 import android.app.Dialog
 import android.content.Context
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
-import android.view.LayoutInflater
-import android.view.View
 import android.widget.ArrayAdapter
 import androidx.appcompat.app.AlertDialog
-import kotlinx.android.synthetic.main.dialog_default_query.*
-import kotlinx.android.synthetic.main.dialog_default_query.view.*
 import xyz.quaver.pupil.R
+import xyz.quaver.pupil.databinding.DefaultQueryDialogBinding
 import xyz.quaver.pupil.types.Tags
 import xyz.quaver.pupil.util.Preferences
 
@@ -49,46 +45,48 @@ class DefaultQueryDialog(context : Context) : AlertDialog(context) {
 
     var onPositiveButtonClickListener : ((Tags) -> (Unit))? = null
 
-    @SuppressLint("InflateParams")
-    override fun onCreate(savedInstanceState: Bundle?) {
-        setTitle(R.string.default_query_dialog_title)
-        setView(build())
-        setButton(Dialog.BUTTON_POSITIVE, context.getString(android.R.string.ok)) { _, _ ->
-            val newTags = Tags.parse(default_query_dialog_edittext.text.toString())
+    private lateinit var binding: DefaultQueryDialogBinding
 
-            with(default_query_dialog_language_selector) {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        setTitle(R.string.default_query_dialog_title)
+        binding = DefaultQueryDialogBinding.inflate(layoutInflater)
+        setView(binding.root)
+
+        initView()
+
+        setButton(Dialog.BUTTON_POSITIVE, context.getString(android.R.string.ok)) { _, _ ->
+            val newTags = Tags.parse(binding.edittext.text.toString())
+
+            with(binding.languageSelector) {
                 if (selectedItemPosition != 0)
                     newTags.add("language:${reverseLanguages[selectedItem]}")
             }
 
-            if (default_query_dialog_BL_checkbox.isChecked)
+            if (binding.BLCheckbox.isChecked)
                 newTags.add(excludeBL)
 
-            if (default_query_dialog_guro_checkbox.isChecked)
+            if (binding.guroCheckbox.isChecked)
                 excludeGuro.forEach { tag ->
                     newTags.add(tag)
                 }
 
-            if (default_query_dialog_loli_checkbox.isChecked)
+            if (binding.loliCheckbox.isChecked)
                 excludeLoli.forEach { tag ->
                     newTags.add(tag)
                 }
 
             onPositiveButtonClickListener?.invoke(newTags)
         }
-
-        super.onCreate(savedInstanceState)
     }
 
-    @SuppressLint("InflateParams")
-    private fun build() : View {
+    private fun initView() {
         val tags = Tags.parse(
             Preferences["default_query"]
         )
 
-        val view = LayoutInflater.from(context).inflate(R.layout.dialog_default_query, null)
-
-        with(view.default_query_dialog_language_selector) {
+        with(binding.languageSelector) {
             adapter =
                 ArrayAdapter(
                     context,
@@ -111,13 +109,13 @@ class DefaultQueryDialog(context : Context) : AlertDialog(context) {
             }
         }
 
-        with(view.default_query_dialog_BL_checkbox) {
+        with(binding.BLCheckbox) {
             isChecked = tags.contains(excludeBL)
             if (tags.contains(excludeBL))
                 tags.remove(excludeBL)
         }
 
-        with(view.default_query_dialog_guro_checkbox) {
+        with(binding.guroCheckbox) {
             isChecked = excludeGuro.all { tags.contains(it) }
             if (excludeGuro.all { tags.contains(it) })
                 excludeGuro.forEach {
@@ -125,7 +123,7 @@ class DefaultQueryDialog(context : Context) : AlertDialog(context) {
                 }
         }
 
-        with(view.default_query_dialog_loli_checkbox) {
+        with(binding.loliCheckbox) {
             isChecked = excludeLoli.all { tags.contains(it) }
             if (excludeLoli.all { tags.contains(it) })
                 excludeLoli.forEach {
@@ -133,7 +131,7 @@ class DefaultQueryDialog(context : Context) : AlertDialog(context) {
                 }
         }
 
-        with(view.default_query_dialog_edittext) {
+        with(binding.edittext) {
             setText(tags.toString(), android.widget.TextView.BufferType.EDITABLE)
             addTextChangedListener(object : TextWatcher {
                 override fun beforeTextChanged(
@@ -158,8 +156,6 @@ class DefaultQueryDialog(context : Context) : AlertDialog(context) {
                 }
             })
         }
-
-        return view
     }
 
 }

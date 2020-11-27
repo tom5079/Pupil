@@ -18,8 +18,8 @@
 
 package xyz.quaver.pupil.types
 
-import kotlinx.android.parcel.IgnoredOnParcel
-import kotlinx.android.parcel.Parcelize
+import kotlinx.parcelize.IgnoredOnParcel
+import kotlinx.parcelize.Parcelize
 import xyz.quaver.floatingsearchview.suggestions.model.SearchSuggestion
 import xyz.quaver.hitomi.Suggestion
 import xyz.quaver.pupil.util.translations

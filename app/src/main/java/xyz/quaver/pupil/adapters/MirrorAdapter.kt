@@ -22,17 +22,29 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.view.LayoutInflater
 import android.view.MotionEvent
-import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
-import kotlinx.android.synthetic.main.item_mirrors.view.*
 import xyz.quaver.pupil.R
+import xyz.quaver.pupil.databinding.MirrorsItemBinding
 import xyz.quaver.pupil.util.Preferences
 import java.util.*
 
 class MirrorAdapter(context: Context) : RecyclerView.Adapter<MirrorAdapter.ViewHolder>() {
 
-    class ViewHolder(val view: View) : RecyclerView.ViewHolder(view)
+    @SuppressLint("ClickableViewAccessibility")
+    inner class ViewHolder(val binding: MirrorsItemBinding) : RecyclerView.ViewHolder(binding.root) {
+        init {
+            binding.mirrorButton.setOnTouchListener { _, event ->
+                if (event.action == MotionEvent.ACTION_DOWN)
+                    onStartDrag?.invoke(this)
+
+                true
+            }
+        }
+        fun bind(mirror: String) {
+            binding.mirrorName.text = mirror
+        }
+    }
 
     val mirrors = context.resources.getStringArray(R.array.mirrors).map {
         it.split('|').let { split ->
@@ -62,23 +74,11 @@ class MirrorAdapter(context: Context) : RecyclerView.Adapter<MirrorAdapter.ViewH
 
     @SuppressLint("ClickableViewAccessibility")
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        with(holder.view) {
-            mirror_name.text = mirrors[list.elementAt(position)]
-            mirror_button.setOnTouchListener { _, event ->
-                if (event.action == MotionEvent.ACTION_DOWN)
-                    onStartDrag?.invoke(holder)
-
-                true
-            }
-        }
+        holder.bind(mirrors[list.elementAt(position)] ?: error(""))
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
-        return LayoutInflater.from(parent.context).inflate(
-            R.layout.item_mirrors, parent, false
-        ).let {
-            ViewHolder(it)
-        }
+        return ViewHolder(MirrorsItemBinding.inflate(LayoutInflater.from(parent.context), parent, false))
     }
 
     override fun getItemCount() = mirrors.size
