@@ -23,12 +23,21 @@
 -dontobfuscate
 
 -keepattributes *Annotation*, InnerClasses
--dontnote kotlinx.serialization.SerializationKt
--keep,includedescriptorclasses class xyz.quaver.**$$serializer { *; } # <-- change package name to your app's
--keepclassmembers class xyz.quaver.pupil.** { # <-- change package name to your app's
+-dontnote kotlinx.serialization.AnnotationsKt # core serialization annotations
+
+# kotlinx-serialization-json specific. Add this if you have java.lang.NoClassDefFoundError kotlinx.serialization.json.JsonObjectSerializer
+-keepclassmembers class kotlinx.serialization.json.** {
     *** Companion;
 }
--keepclasseswithmembers class xyz.quaver.pupil.** { # <-- change package name to your app's
+-keepclasseswithmembers class kotlinx.serialization.json.** {
+    kotlinx.serialization.KSerializer serializer(...);
+}
+
+-keep,includedescriptorclasses class xyz.quaver.**$$serializer { *; }
+-keepclassmembers class xyz.quaver.** {
+    *** Companion;
+}
+-keepclasseswithmembers class xyz.quaver.** {
     kotlinx.serialization.KSerializer serializer(...);
 }
 -keep class xyz.quaver.pupil.ui.fragment.ManageFavoritesFragment

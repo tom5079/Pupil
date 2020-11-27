@@ -63,7 +63,7 @@
     <com.github.piasy.biv.view.BigImageView
         android:id="@+id/image"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
+        android:layout_height="wrap_content"
         app:initScaleType="fitCenter"
         app:optimizeDisplay="true"
         app:layout_constraintTop_toTopOf="parent"

@@ -18,22 +18,14 @@
 
 package xyz.quaver.pupil.ui
 
-import android.Manifest
 import android.content.ComponentName
 import android.content.Intent
 import android.content.ServiceConnection
-import android.content.pm.PackageManager
 import android.graphics.drawable.Animatable
 import android.graphics.drawable.Drawable
-import android.os.Build
 import android.os.Bundle
 import android.os.IBinder
 import android.view.*
-import android.view.animation.Animation
-import android.view.animation.AnticipateInterpolator
-import android.view.animation.OvershootInterpolator
-import android.view.animation.TranslateAnimation
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -43,7 +35,6 @@ import androidx.vectordrawable.graphics.drawable.Animatable2Compat
 import androidx.vectordrawable.graphics.drawable.AnimatedVectorDrawableCompat
 import com.google.android.material.snackbar.Snackbar
 import com.google.firebase.crashlytics.FirebaseCrashlytics
-import com.google.mlkit.vision.face.Face
 import com.qtalk.recyclerviewfastscroller.RecyclerViewFastScroller
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -56,11 +47,8 @@ import xyz.quaver.pupil.databinding.ReaderActivityBinding
 import xyz.quaver.pupil.favorites
 import xyz.quaver.pupil.services.DownloadService
 import xyz.quaver.pupil.util.Preferences
-import xyz.quaver.pupil.util.camera
-import xyz.quaver.pupil.util.closeCamera
 import xyz.quaver.pupil.util.downloader.Cache
 import xyz.quaver.pupil.util.downloader.DownloadManager
-import xyz.quaver.pupil.util.startCamera
 
 class ReaderActivity : BaseActivity() {
 
@@ -94,26 +82,6 @@ class ReaderActivity : BaseActivity() {
 
     private val snapHelper = PagerSnapHelper()
     private var menu: Menu? = null
-
-    private val requestPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
-        if (isGranted)
-            toggleCamera()
-        else
-            AlertDialog.Builder(this)
-                .setTitle(R.string.error)
-                .setMessage(R.string.camera_denied)
-                .setPositiveButton(android.R.string.ok) { _, _ ->}
-                .show()
-    }
-
-    enum class Eye {
-        LEFT,
-        RIGHT
-    }
-
-    private var cameraEnabled = false
-    private var eyeType: Eye? = null
-    private var eyeTime: Long = 0L
 
     private lateinit var binding: ReaderActivityBinding
 
@@ -217,14 +185,10 @@ class ReaderActivity : BaseActivity() {
         super.onResume()
 
         bindService(Intent(this, DownloadService::class.java), conn, BIND_AUTO_CREATE)
-
-        if (cameraEnabled)
-            startCamera(this, cameraCallback)
     }
 
     override fun onPause() {
         super.onPause()
-        closeCamera()
 
         if (downloader != null)
             unbindService(conn)
@@ -391,26 +355,6 @@ class ReaderActivity : BaseActivity() {
             }
         }
 
-        with(binding.autoFab) {
-            setImageResource(R.drawable.eye_white)
-            setOnClickListener {
-                when {
-                    ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED -> {
-                        toggleCamera()
-                    }
-                    Build.VERSION.SDK_INT >= 23 && shouldShowRequestPermissionRationale(Manifest.permission.CAMERA) -> {
-                        AlertDialog.Builder(this@ReaderActivity)
-                            .setTitle(R.string.warning)
-                            .setMessage(R.string.camera_denied)
-                            .setPositiveButton(android.R.string.ok) { _, _ ->}
-                            .show()
-                    }
-                    else ->
-                        requestPermissionLauncher.launch(Manifest.permission.CAMERA)
-                }
-            }
-        }
-
         with(binding.fullscreenFab) {
             setImageResource(R.drawable.ic_fullscreen)
             setOnClickListener {
@@ -493,122 +437,6 @@ class ReaderActivity : BaseActivity() {
             } else {
                 setImageResource(R.drawable.ic_download)
                 labelText = getString(R.string.reader_fab_download)
-            }
-        }
-    }
-
-    val cameraCallback: (List<Face>) -> Unit = callback@{ faces ->
-        binding.eyeCard.dot.let {
-            it.visibility = View.VISIBLE
-            CoroutineScope(Dispatchers.Main).launch {
-                delay(50)
-                it.visibility = View.INVISIBLE
-            }
-        }
-
-        if (faces.size != 1)
-            ContextCompat.getDrawable(this, R.drawable.eye_off).let {
-                with(binding.eyeCard) {
-                    leftEye.setImageDrawable(it)
-                    rightEye.setImageDrawable(it)
-                }
-
-                return@callback
-            }
-
-        val (left, right) = Pair(
-            faces[0].rightEyeOpenProbability?.let { it > 0.4 } == true,
-            faces[0].leftEyeOpenProbability?.let { it > 0.4 } == true
-        )
-
-        with(binding.eyeCard) {
-            leftEye.setImageDrawable(
-                ContextCompat.getDrawable(
-                    leftEye.context,
-                    if (left) R.drawable.eye else R.drawable.eye_closed
-                )
-            )
-            rightEye.setImageDrawable(
-                ContextCompat.getDrawable(
-                    rightEye.context,
-                    if (right) R.drawable.eye else R.drawable.eye_closed
-                )
-            )
-        }
-
-        when {
-            // Both closed / opened
-            !left.xor(right) -> {
-                eyeType = null
-                eyeTime = 0L
-            }
-            !left -> {
-                if (eyeType != Eye.LEFT) {
-                    eyeType = Eye.LEFT
-                    eyeTime = System.currentTimeMillis()
-                }
-            }
-            !right -> {
-                if (eyeType != Eye.RIGHT) {
-                    eyeType = Eye.RIGHT
-                    eyeTime = System.currentTimeMillis()
-                }
-            }
-        }
-
-        if (eyeType != null && System.currentTimeMillis() - eyeTime > 100) {
-            (binding.recyclerview.layoutManager as LinearLayoutManager).let {
-                it.scrollToPositionWithOffset(when(eyeType!!) {
-                    Eye.RIGHT -> {
-                        if (it.reverseLayout) currentPage - 2 else currentPage
-                    }
-                    Eye.LEFT -> {
-                        if (it.reverseLayout) currentPage else currentPage - 2
-                    }
-                }, 0)
-            }
-
-            eyeTime = System.currentTimeMillis() + 500
-        }
-    }
-
-    private fun toggleCamera() {
-        val eyes = binding.eyeCard.root
-        when (camera) {
-            null -> {
-                binding.autoFab.labelText = getString(R.string.reader_fab_auto_cancel)
-                binding.autoFab.setImageResource(R.drawable.eye_off_white)
-                eyes.apply {
-                    visibility = View.VISIBLE
-                    TranslateAnimation(0F, 0F, -100F, 0F).apply {
-                        duration = 500
-                        fillAfter = false
-                        interpolator = OvershootInterpolator()
-                    }.let { startAnimation(it) }
-                }
-                startCamera(this, cameraCallback)
-                cameraEnabled = true
-            }
-            else -> {
-                binding.autoFab.labelText = getString(R.string.reader_fab_auto)
-                binding.autoFab.setImageResource(R.drawable.eye_white)
-                eyes.apply {
-                    TranslateAnimation(0F, 0F, 0F, -100F).apply {
-                        duration = 500
-                        fillAfter = false
-                        interpolator = AnticipateInterpolator()
-                        setAnimationListener(object: Animation.AnimationListener {
-                            override fun onAnimationStart(p0: Animation?) {}
-                            override fun onAnimationRepeat(p0: Animation?) {}
-
-                            override fun onAnimationEnd(p0: Animation?) {
-                                eyes.visibility = View.GONE
-                            }
-                        })
-                    }.let { startAnimation(it) }
-                }
-                closeCamera()
-                cameraEnabled = false
             }
         }
     }

@@ -35,14 +35,15 @@ import com.google.android.gms.common.GooglePlayServicesNotAvailableException
 import com.google.android.gms.common.GooglePlayServicesRepairableException
 import com.google.android.gms.security.ProviderInstaller
 import com.google.firebase.analytics.FirebaseAnalytics
+import com.google.firebase.analytics.ktx.analytics
 import com.google.firebase.crashlytics.FirebaseCrashlytics
+import com.google.firebase.ktx.Firebase
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
 import okhttp3.Response
 import xyz.quaver.io.FileX
 import xyz.quaver.pupil.types.Tag
 import xyz.quaver.pupil.util.*
-import xyz.quaver.pupil.util.downloader.DownloadManager
 import xyz.quaver.setClient
 import java.io.File
 import java.util.*
@@ -73,6 +74,8 @@ val client: OkHttpClient
 
 class Pupil : Application() {
 
+    private lateinit var firebaseAnalytics: FirebaseAnalytics
+
     override fun onCreate() {
         AppCompatDelegate.setCompatVectorFromResourcesEnabled(true)
 
@@ -83,6 +86,7 @@ class Pupil : Application() {
             else userID
         }
 
+        firebaseAnalytics = Firebase.analytics
         FirebaseCrashlytics.getInstance().setUserId(userID)
 
         val proxyInfo = getProxyInfo()

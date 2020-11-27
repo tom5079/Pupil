@@ -85,12 +85,12 @@ class SettingsFragment :
                     DownloadLocationDialogFragment().show(parentFragmentManager, "Download Location Dialog")
                 }
                 "default_query" -> {
-                    DefaultQueryDialog(requireContext()).apply {
+                    DefaultQueryDialogFragment().apply {
                         onPositiveButtonClickListener = { newTags ->
                             Preferences["default_query"] = newTags.toString()
                             summary = newTags.toString()
                         }
-                    }.show()
+                    }.show(parentFragmentManager, "Default Query Dialog")
                 }
                 "app_lock" -> {
                     val intent = Intent(requireContext(), LockActivity::class.java).apply {

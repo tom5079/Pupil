@@ -38,6 +38,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.navigation.NavigationView
 import com.google.android.material.snackbar.Snackbar
 import kotlinx.coroutines.*
+import kotlinx.coroutines.channels.Channel
 import xyz.quaver.floatingsearchview.FloatingSearchView
 import xyz.quaver.floatingsearchview.suggestions.model.SearchSuggestion
 import xyz.quaver.floatingsearchview.util.view.MenuView
@@ -50,6 +51,7 @@ import xyz.quaver.pupil.services.DownloadService
 import xyz.quaver.pupil.sources.SearchResult
 import xyz.quaver.pupil.sources.Source
 import xyz.quaver.pupil.sources.hitomi.Hitomi
+import xyz.quaver.pupil.sources.hitomi.Hiyobi
 import xyz.quaver.pupil.types.*
 import xyz.quaver.pupil.ui.dialog.DownloadLocationDialogFragment
 import xyz.quaver.pupil.ui.dialog.GalleryDialog
@@ -62,6 +64,7 @@ import xyz.quaver.pupil.util.downloader.DownloadManager
 import xyz.quaver.pupil.util.restore
 import java.util.regex.Pattern
 import kotlin.math.*
+import kotlin.random.Random
 
 class MainActivity :
     BaseActivity(),
@@ -80,10 +83,10 @@ class MainActivity :
     private var queryStack = mutableListOf<String>()
 
     @Suppress("UNCHECKED_CAST")
-    private var source: Source<Enum<*>, SearchResult> = Hitomi() as Source<Enum<*>, SearchResult>
+    private var source: Source<Enum<*>> = Hiyobi() as Source<Enum<*>>
     private var sortMode = Hitomi.SortMode.NEWEST
 
-    private var searchJob: Deferred<Pair<List<SearchResult>, Int>>? = null
+    private var searchJob: Deferred<Pair<Channel<SearchResult>, Int>>? = null
     private var totalItems = 0
     private var currentPage = 1
 
@@ -112,6 +115,12 @@ class MainActivity :
         checkUpdate(this)
 
         initView()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+
+        (binding.contents.recyclerview.adapter as SearchResultsAdapter).progressUpdateScope.cancel()
     }
 
     @OptIn(ExperimentalStdlibApi::class)
@@ -215,25 +224,29 @@ class MainActivity :
         with(binding.contents.randomFab) {
             setImageResource(R.drawable.shuffle_variant)
             setOnClickListener {
-                runBlocking {
-                    withTimeoutOrNull(100) {
-                        searchJob?.await()
-                    }
-                }.let {
-                    if (it?.first?.isEmpty() == false) {
-                        val random = it.first.random()
+                if (totalItems > 0)
+                    CoroutineScope(Dispatchers.IO).launch {
+                        val random = Random.Default.nextInt(totalItems)
 
-                        GalleryDialog(this@MainActivity, random.id).apply {
-                            onChipClickedHandler.add {
-                                query = it.toQuery()
-                                currentPage = 1
+                        val randomResult =
+                            source.query(
+                                query + Preferences["default_query", ""],
+                                random .. random,
+                                sortMode
+                            ).first.receive()
 
-                                query()
-                                dismiss()
-                            }
-                        }.show()
+                        launch(Dispatchers.Main) {
+                            GalleryDialog(this@MainActivity, randomResult.id).apply {
+                                onChipClickedHandler.add {
+                                    query = it.toQuery()
+                                    currentPage = 1
+
+                                    query()
+                                    dismiss()
+                                }
+                            }.show()
+                        }
                     }
-                }
             }
         }
 
@@ -273,11 +286,6 @@ class MainActivity :
                     // disable pageturn until the contents are loaded
                     setCurrentPage(1, false)
 
-                    ViewCompat.animate(binding.contents.searchview)
-                        .setDuration(100)
-                        .setInterpolator(DecelerateInterpolator())
-                        .translationY(0F)
-
                     query()
                 }
 
@@ -306,9 +314,9 @@ class MainActivity :
     private fun setupRecyclerView() {
         with(binding.contents.recyclerview) {
             adapter = SearchResultsAdapter(searchResults).apply {
-                onChipClickedHandler.add {
+                onChipClickedHandler = {
                     query = it.toQuery()
-                    currentPage = 0
+                    currentPage = 1
 
                     query()
                 }
@@ -353,7 +361,7 @@ class MainActivity :
                     GalleryDialog(this@MainActivity, result.id).apply {
                         onChipClickedHandler.add {
                             query = it.toQuery()
-                            currentPage = 0
+                            currentPage = 1
 
                             query()
                             dismiss()
@@ -535,6 +543,11 @@ class MainActivity :
 
         binding.contents.noresult.visibility = View.INVISIBLE
         binding.contents.progressbar.show()
+
+        ViewCompat.animate(binding.contents.searchview)
+            .setDuration(100)
+            .setInterpolator(DecelerateInterpolator())
+            .translationY(0F)
     }
     private fun query() {
         val perPage = Preferences["per_page", "25"].toInt()
@@ -550,22 +563,21 @@ class MainActivity :
                     sortMode
                 )
             }.also {
-                val results: List<SearchResult>
-
                 it.await().let { r ->
-                    results = r.first
                     totalItems = r.second
+                    r.first
+                }.let { channel ->
+                    binding.contents.progressbar.hide()
+                    binding.contents.swipePageTurnView.setCurrentPage(currentPage, totalItems > currentPage*perPage)
+
+                    for (result in channel) {
+                        searchResults.add(result)
+                        binding.contents.recyclerview.adapter?.notifyItemInserted(searchResults.size)
+                    }
                 }
 
-                binding.contents.progressbar.hide()
-                binding.contents.swipePageTurnView.setCurrentPage(currentPage, totalItems > currentPage*perPage)
-
-                if (results.isEmpty()) {
+                if (searchResults.isEmpty())
                     binding.contents.noresult.visibility = View.VISIBLE
-                } else {
-                    searchResults.addAll(results)
-                    binding.contents.recyclerview.adapter?.notifyDataSetChanged()
-                }
             }
         }
     }
