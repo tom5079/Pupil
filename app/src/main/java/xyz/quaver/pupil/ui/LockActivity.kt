@@ -29,10 +29,8 @@ import androidx.biometric.BiometricPrompt
 import androidx.core.content.ContextCompat
 import com.andrognito.patternlockview.PatternLockView
 import com.google.android.material.snackbar.Snackbar
-import kotlinx.android.synthetic.main.activity_lock.*
-import kotlinx.android.synthetic.main.fragment_pattern_lock.*
-import kotlinx.android.synthetic.main.fragment_pin_lock.*
 import xyz.quaver.pupil.R
+import xyz.quaver.pupil.databinding.LockActivityBinding
 import xyz.quaver.pupil.ui.fragment.PINLockFragment
 import xyz.quaver.pupil.ui.fragment.PatternLockFragment
 import xyz.quaver.pupil.util.Lock
@@ -44,6 +42,8 @@ class LockActivity : AppCompatActivity() {
 
     private lateinit var lockManager: LockManager
     private var mode: String? = null
+
+    private lateinit var binding: LockActivityBinding
 
     private val patternLockFragment = PatternLockFragment().apply {
         var lastPass = ""
@@ -57,7 +57,7 @@ class LockActivity : AppCompatActivity() {
                         setResult(Activity.RESULT_OK)
                         finish()
                     } else
-                        lock_pattern_view.setViewMode(PatternLockView.PatternViewMode.WRONG)
+                        binding.patternLockView.setViewMode(PatternLockView.PatternViewMode.WRONG)
                 }
                 "add_lock" -> {
                     if (lastPass.isEmpty()) {
@@ -69,7 +69,7 @@ class LockActivity : AppCompatActivity() {
                             LockManager(context!!).add(Lock.generate(Lock.Type.PATTERN, it))
                             finish()
                         } else {
-                            lock_pattern_view.setViewMode(PatternLockView.PatternViewMode.WRONG)
+                            binding.patternLockView.setViewMode(PatternLockView.PatternViewMode.WRONG)
                             lastPass = ""
 
                             Snackbar.make(view!!, R.string.settings_lock_wrong_confirm, Snackbar.LENGTH_LONG).show()
@@ -92,15 +92,15 @@ class LockActivity : AppCompatActivity() {
                         setResult(Activity.RESULT_OK)
                         finish()
                     } else {
-                        indicator_dots.startAnimation(AnimationUtils.loadAnimation(context, R.anim.shake).apply {
+                        binding.indicatorDots.startAnimation(AnimationUtils.loadAnimation(context, R.anim.shake).apply {
                             setAnimationListener(object: Animation.AnimationListener {
                                 override fun onAnimationEnd(animation: Animation?) {
-                                    pin_lock_view.resetPinLockView()
-                                    pin_lock_view.isEnabled = true
+                                    binding.pinLockView.resetPinLockView()
+                                    binding.pinLockView.isEnabled = true
                                 }
 
                                 override fun onAnimationStart(animation: Animation?) {
-                                    pin_lock_view.isEnabled = false
+                                    binding.pinLockView.isEnabled = false
                                 }
 
                                 override fun onAnimationRepeat(animation: Animation?) {
@@ -114,22 +114,22 @@ class LockActivity : AppCompatActivity() {
                     if (lastPass.isEmpty()) {
                         lastPass = it
 
-                        pin_lock_view.resetPinLockView()
+                        binding.pinLockView.resetPinLockView()
                         Snackbar.make(view!!, R.string.settings_lock_confirm, Snackbar.LENGTH_LONG).show()
                     } else {
                         if (lastPass == it) {
                             LockManager(context!!).add(Lock.generate(Lock.Type.PIN, it))
                             finish()
                         } else {
-                            indicator_dots.startAnimation(AnimationUtils.loadAnimation(context, R.anim.shake).apply {
+                            binding.indicatorDots.startAnimation(AnimationUtils.loadAnimation(context, R.anim.shake).apply {
                                 setAnimationListener(object: Animation.AnimationListener {
                                     override fun onAnimationEnd(animation: Animation?) {
-                                        pin_lock_view.resetPinLockView()
-                                        pin_lock_view.isEnabled = true
+                                        binding.pinLockView.resetPinLockView()
+                                        binding.pinLockView.isEnabled = true
                                     }
 
                                     override fun onAnimationStart(animation: Animation?) {
-                                        pin_lock_view.isEnabled = false
+                                        binding.pinLockView.isEnabled = false
                                     }
 
                                     override fun onAnimationRepeat(animation: Animation?) {
@@ -173,7 +173,8 @@ class LockActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_lock)
+        binding = LockActivityBinding.inflate(layoutInflater)
+        setContentView(binding.root)
 
         lockManager = try {
             LockManager(this)
@@ -210,7 +211,7 @@ class LockActivity : AppCompatActivity() {
                     Preferences["lock_fingerprint"]
                     && BiometricManager.from(this).canAuthenticate() == BiometricManager.BIOMETRIC_SUCCESS
                 ) {
-                    lock_fingerprint.apply {
+                    binding.fingerprintBtn.apply {
                         isEnabled = true
                         setOnClickListener {
                             showBiometricPrompt()
@@ -219,7 +220,7 @@ class LockActivity : AppCompatActivity() {
                     showBiometricPrompt()
                 }
 
-                lock_pattern.apply {
+                binding.patternBtn.apply {
                     isEnabled = lockManager.contains(Lock.Type.PATTERN)
                     setOnClickListener {
                         supportFragmentManager.beginTransaction().replace(
@@ -227,7 +228,7 @@ class LockActivity : AppCompatActivity() {
                         ).commit()
                     }
                 }
-                lock_pin.apply {
+                binding.pinBtn.apply {
                     isEnabled = lockManager.contains(Lock.Type.PIN)
                     setOnClickListener {
                         supportFragmentManager.beginTransaction().replace(
@@ -235,7 +236,7 @@ class LockActivity : AppCompatActivity() {
                         ).commit()
                     }
                 }
-                lock_password.isEnabled = false
+                binding.passwordBtn.isEnabled = false
 
                 when (lockManager.locks!!.first().type) {
                     Lock.Type.PIN -> {
@@ -253,20 +254,20 @@ class LockActivity : AppCompatActivity() {
                 }
             }
             "add_lock" -> {
-                lock_pattern.isEnabled = false
-                lock_pin.isEnabled = false
-                lock_fingerprint.isEnabled = false
-                lock_password.isEnabled = false
+                binding.patternBtn.isEnabled = false
+                binding.pinBtn.isEnabled = false
+                binding.fingerprintBtn.isEnabled = false
+                binding.passwordBtn.isEnabled = false
 
                 when(intent.getStringExtra("type")!!) {
                     "pattern" -> {
-                        lock_pattern.isEnabled = true
+                        binding.patternBtn.isEnabled = true
                         supportFragmentManager.beginTransaction().add(
                             R.id.lock_content, patternLockFragment
                         ).commit()
                     }
                     "pin" -> {
-                        lock_pin.isEnabled = true
+                        binding.pinBtn.isEnabled = true
                         supportFragmentManager.beginTransaction().add(
                             R.id.lock_content, pinLockFragment
                         ).commit()

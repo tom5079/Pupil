@@ -45,10 +45,6 @@ import com.google.android.material.snackbar.Snackbar
 import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.google.mlkit.vision.face.Face
 import com.qtalk.recyclerviewfastscroller.RecyclerViewFastScroller
-import kotlinx.android.synthetic.main.activity_reader.*
-import kotlinx.android.synthetic.main.activity_reader.view.*
-import kotlinx.android.synthetic.main.dialog_numberpicker.view.*
-import kotlinx.android.synthetic.main.reader_eye_card.view.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -56,6 +52,8 @@ import kotlinx.coroutines.launch
 import xyz.quaver.Code
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.adapters.ReaderAdapter
+import xyz.quaver.pupil.databinding.NumberpickerDialogBinding
+import xyz.quaver.pupil.databinding.ReaderActivityBinding
 import xyz.quaver.pupil.favorites
 import xyz.quaver.pupil.services.DownloadService
 import xyz.quaver.pupil.util.Preferences
@@ -75,7 +73,7 @@ class ReaderActivity : BaseActivity() {
     set(value) {
         field = value
 
-        (reader_recyclerview.adapter as ReaderAdapter).isFullScreen = value
+        (binding.recyclerview.adapter as ReaderAdapter).isFullScreen = value
     }
 
     private lateinit var cache: Cache
@@ -118,9 +116,12 @@ class ReaderActivity : BaseActivity() {
     private var eyeType: Eye? = null
     private var eyeTime: Long = 0L
 
+    private lateinit var binding: ReaderActivityBinding
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_reader)
+        binding = ReaderActivityBinding.inflate(layoutInflater)
+        setContentView(binding.root)
 
         title = getString(R.string.reader_loading)
         supportActionBar?.setDisplayHomeAsUpEnabled(false)
@@ -178,17 +179,19 @@ class ReaderActivity : BaseActivity() {
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when(item.itemId) {
             R.id.reader_menu_page_indicator -> {
-                val view = LayoutInflater.from(this).inflate(R.layout.dialog_numberpicker, reader_layout, false)
-                with(view.dialog_number_picker) {
+                // TODO: Switch to DialogFragment
+                val binding = NumberpickerDialogBinding.inflate(layoutInflater, binding.root, false)
+
+                with(binding.numberPicker) {
                     minValue = 1
                     maxValue = cache.metadata.reader?.galleryInfo?.files?.size ?: 0
                     value = currentPage
                 }
                 val dialog = AlertDialog.Builder(this).apply {
-                    setView(view)
+                    setView(binding.root)
                 }.create()
-                view.dialog_ok.setOnClickListener {
-                    (reader_recyclerview.layoutManager as LinearLayoutManager?)?.scrollToPositionWithOffset(view.dialog_number_picker.value-1, 0)
+                binding.okButton.setOnClickListener {
+                    (this@ReaderActivity.binding.recyclerview.layoutManager as LinearLayoutManager).scrollToPositionWithOffset(binding.numberPicker.value-1, 0)
                     dialog.dismiss()
                 }
 
@@ -258,12 +261,12 @@ class ReaderActivity : BaseActivity() {
         //currentPage is 1-based
         return when(keyCode) {
             KeyEvent.KEYCODE_VOLUME_UP -> {
-                (reader_recyclerview.layoutManager as LinearLayoutManager).scrollToPositionWithOffset(currentPage-2, 0)
+                (binding.recyclerview.layoutManager as LinearLayoutManager).scrollToPositionWithOffset(currentPage-2, 0)
 
                 true
             }
             KeyEvent.KEYCODE_VOLUME_DOWN -> {
-                (reader_recyclerview.layoutManager as LinearLayoutManager?)?.scrollToPositionWithOffset(currentPage, 0)
+                (binding.recyclerview.layoutManager as LinearLayoutManager?)?.scrollToPositionWithOffset(currentPage, 0)
 
                 true
             }
@@ -285,21 +288,21 @@ class ReaderActivity : BaseActivity() {
                 if (downloader.progress[galleryID]?.isEmpty() == true) {      //Gallery not found
                     update = false
                     Snackbar
-                        .make(reader_layout, R.string.reader_failed_to_find_gallery, Snackbar.LENGTH_INDEFINITE)
+                        .make(binding.root, R.string.reader_failed_to_find_gallery, Snackbar.LENGTH_INDEFINITE)
                         .show()
 
                     return@launch
                 }
 
-                reader_download_progressbar.max = reader_recyclerview.adapter?.itemCount ?: 0
-                reader_download_progressbar.progress =
+                binding.downloadProgressbar.max = binding.recyclerview.adapter?.itemCount ?: 0
+                binding.downloadProgressbar.progress =
                     downloader.progress[galleryID]?.count { it.isInfinite() } ?: 0
 
                 if (title == getString(R.string.reader_loading)) {
                     val reader = cache.metadata.reader
 
                     if (reader != null) {
-                        with(reader_recyclerview.adapter as ReaderAdapter) {
+                        with(binding.recyclerview.adapter as ReaderAdapter) {
                             this.reader = reader
                             notifyDataSetChanged()
                         }
@@ -320,7 +323,7 @@ class ReaderActivity : BaseActivity() {
                 }
 
                 if (downloader.isCompleted(galleryID)) {   //Download finished
-                    reader_download_progressbar.visibility = View.GONE
+                    binding.downloadProgressbar.visibility = View.GONE
 
                     animateDownloadFAB(false)
                 }
@@ -329,7 +332,7 @@ class ReaderActivity : BaseActivity() {
     }
 
     private fun initView() {
-        with(reader_recyclerview) {
+        with(binding.recyclerview) {
             adapter = ReaderAdapter(this@ReaderActivity, galleryID).apply {
                 onItemClickListener = {
                     if (isScroll) {
@@ -339,7 +342,7 @@ class ReaderActivity : BaseActivity() {
                         scrollMode(false)
                         fullscreen(true)
                     } else {
-                        (reader_recyclerview.layoutManager as LinearLayoutManager).scrollToPositionWithOffset(currentPage, 0) //Moves to next page because currentPage is 1-based indexing
+                        (binding.recyclerview.layoutManager as LinearLayoutManager).scrollToPositionWithOffset(currentPage, 0) //Moves to next page because currentPage is 1-based indexing
                     }
                 }
             }
@@ -349,9 +352,9 @@ class ReaderActivity : BaseActivity() {
                     super.onScrolled(recyclerView, dx, dy)
 
                     if (dy < 0)
-                        this@ReaderActivity.reader_fab.showMenuButton(true)
+                        binding.fab.showMenuButton(true)
                     else if (dy > 0)
-                        this@ReaderActivity.reader_fab.hideMenuButton(true)
+                        binding.fab.hideMenuButton(true)
 
                     val layoutManager = recyclerView.layoutManager as LinearLayoutManager
 
@@ -363,7 +366,7 @@ class ReaderActivity : BaseActivity() {
             })
         }
 
-        with(reader_fab_download) {
+        with(binding.downloadFab) {
             animateDownloadFAB(DownloadManager.getInstance(this@ReaderActivity).getDownloadFolder(galleryID) != null) //If download in progress, animate button
 
             setOnClickListener {
@@ -380,14 +383,14 @@ class ReaderActivity : BaseActivity() {
             }
         }
 
-        with(reader_fab_retry) {
+        with(binding.retryFab) {
             setImageResource(R.drawable.refresh)
             setOnClickListener {
                 DownloadService.download(context, galleryID)
             }
         }
 
-        with(reader_fab_auto) {
+        with(binding.autoFab) {
             setImageResource(R.drawable.eye_white)
             setOnClickListener {
                 when {
@@ -407,13 +410,13 @@ class ReaderActivity : BaseActivity() {
             }
         }
 
-        with(reader_fab_fullscreen) {
+        with(binding.fullscreenFab) {
             setImageResource(R.drawable.ic_fullscreen)
             setOnClickListener {
                 isFullscreen = true
                 fullscreen(isFullscreen)
 
-                this@ReaderActivity.reader_fab.close(true)
+                binding.fab.close(true)
             }
         }
     }
@@ -423,8 +426,8 @@ class ReaderActivity : BaseActivity() {
             if (isFullscreen) {
                 flags = flags or WindowManager.LayoutParams.FLAG_FULLSCREEN
                 supportActionBar?.hide()
-                this@ReaderActivity.reader_fab.visibility = View.INVISIBLE
-                this@ReaderActivity.scroller.let {
+                binding.fab.visibility = View.INVISIBLE
+                binding.scroller.let {
                     it.handleWidth = resources.getDimensionPixelSize(R.dimen.thumb_height)
                     it.handleHeight = resources.getDimensionPixelSize(R.dimen.thumb_width)
                     it.handleDrawable = ContextCompat.getDrawable(this@ReaderActivity, R.drawable.thumb_horizontal)
@@ -433,8 +436,8 @@ class ReaderActivity : BaseActivity() {
             } else {
                 flags = flags and WindowManager.LayoutParams.FLAG_FULLSCREEN.inv()
                 supportActionBar?.show()
-                this@ReaderActivity.reader_fab.visibility = View.VISIBLE
-                this@ReaderActivity.scroller.let {
+                binding.fab.visibility = View.VISIBLE
+                binding.scroller.let {
                     it.handleWidth = resources.getDimensionPixelSize(R.dimen.thumb_width)
                     it.handleHeight = resources.getDimensionPixelSize(R.dimen.thumb_height)
                     it.handleDrawable = ContextCompat.getDrawable(this@ReaderActivity, R.drawable.thumb)
@@ -445,27 +448,27 @@ class ReaderActivity : BaseActivity() {
             window.attributes = this
         }
 
-        reader_recyclerview.adapter = reader_recyclerview.adapter   // Force to redraw
+        binding.recyclerview.adapter = binding.recyclerview.adapter   // Force to redraw
     }
 
     private fun scrollMode(isScroll: Boolean) {
         if (isScroll) {
             snapHelper.attachToRecyclerView(null)
-            reader_recyclerview.layoutManager = LinearLayoutManager(this)
+            binding.recyclerview.layoutManager = LinearLayoutManager(this)
         } else {
-            snapHelper.attachToRecyclerView(reader_recyclerview)
-            reader_recyclerview.layoutManager = object: LinearLayoutManager(this, HORIZONTAL, Preferences["rtl", false]) {
+            snapHelper.attachToRecyclerView(binding.recyclerview)
+            binding.recyclerview.layoutManager = object: LinearLayoutManager(this, HORIZONTAL, Preferences["rtl", false]) {
                 override fun calculateExtraLayoutSpace(state: RecyclerView.State, extraLayoutSpace: IntArray) {
                     extraLayoutSpace.fill(600)
                 }
             }
         }
 
-        (reader_recyclerview.layoutManager as LinearLayoutManager).scrollToPositionWithOffset(currentPage-1, 0)
+        (binding.recyclerview.layoutManager as LinearLayoutManager).scrollToPositionWithOffset(currentPage-1, 0)
     }
 
     private fun animateDownloadFAB(animate: Boolean) {
-        with(reader_fab_download) {
+        with(binding.downloadFab) {
             if (animate) {
                 val icon = AnimatedVectorDrawableCompat.create(context, R.drawable.ic_downloading)
 
@@ -494,7 +497,7 @@ class ReaderActivity : BaseActivity() {
     }
 
     val cameraCallback: (List<Face>) -> Unit = callback@{ faces ->
-        eye_card.dot.let {
+        binding.eyeCard.dot.let {
             it.visibility = View.VISIBLE
             CoroutineScope(Dispatchers.Main).launch {
                 delay(50)
@@ -504,9 +507,9 @@ class ReaderActivity : BaseActivity() {
 
         if (faces.size != 1)
             ContextCompat.getDrawable(this, R.drawable.eye_off).let {
-                with(eye_card) {
-                    left_eye.setImageDrawable(it)
-                    right_eye.setImageDrawable(it)
+                with(binding.eyeCard) {
+                    leftEye.setImageDrawable(it)
+                    rightEye.setImageDrawable(it)
                 }
 
                 return@callback
@@ -517,16 +520,16 @@ class ReaderActivity : BaseActivity() {
             faces[0].leftEyeOpenProbability?.let { it > 0.4 } == true
         )
 
-        with(eye_card) {
-            left_eye.setImageDrawable(
+        with(binding.eyeCard) {
+            leftEye.setImageDrawable(
                 ContextCompat.getDrawable(
-                    context,
+                    leftEye.context,
                     if (left) R.drawable.eye else R.drawable.eye_closed
                 )
             )
-            right_eye.setImageDrawable(
+            rightEye.setImageDrawable(
                 ContextCompat.getDrawable(
-                    context,
+                    rightEye.context,
                     if (right) R.drawable.eye else R.drawable.eye_closed
                 )
             )
@@ -553,7 +556,7 @@ class ReaderActivity : BaseActivity() {
         }
 
         if (eyeType != null && System.currentTimeMillis() - eyeTime > 100) {
-            (this@ReaderActivity.reader_recyclerview.layoutManager as LinearLayoutManager).let {
+            (binding.recyclerview.layoutManager as LinearLayoutManager).let {
                 it.scrollToPositionWithOffset(when(eyeType!!) {
                     Eye.RIGHT -> {
                         if (it.reverseLayout) currentPage - 2 else currentPage
@@ -569,11 +572,11 @@ class ReaderActivity : BaseActivity() {
     }
 
     private fun toggleCamera() {
-        val eyes = this@ReaderActivity.eye_card
+        val eyes = binding.eyeCard.root
         when (camera) {
             null -> {
-                reader_fab_auto.labelText = getString(R.string.reader_fab_auto_cancel)
-                reader_fab_auto.setImageResource(R.drawable.eye_off_white)
+                binding.autoFab.labelText = getString(R.string.reader_fab_auto_cancel)
+                binding.autoFab.setImageResource(R.drawable.eye_off_white)
                 eyes.apply {
                     visibility = View.VISIBLE
                     TranslateAnimation(0F, 0F, -100F, 0F).apply {
@@ -586,8 +589,8 @@ class ReaderActivity : BaseActivity() {
                 cameraEnabled = true
             }
             else -> {
-                reader_fab_auto.labelText = getString(R.string.reader_fab_auto)
-                reader_fab_auto.setImageResource(R.drawable.eye_white)
+                binding.autoFab.labelText = getString(R.string.reader_fab_auto)
+                binding.autoFab.setImageResource(R.drawable.eye_white)
                 eyes.apply {
                     TranslateAnimation(0F, 0F, 0F, -100F).apply {
                         duration = 500

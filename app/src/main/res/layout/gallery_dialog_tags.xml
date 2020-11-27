@@ -17,25 +17,24 @@
   ~     along with this program.  If not, see <http://www.gnu.org/licenses/>.
   -->
 
-<androidx.drawerlayout.widget.DrawerLayout
-	xmlns:android="http://schemas.android.com/apk/res/android"
-	xmlns:app="http://schemas.android.com/apk/res-auto"
-	xmlns:tools="http://schemas.android.com/tools"
-	android:id="@+id/main_drawer_layout"
-	android:layout_width="match_parent"
-	android:layout_height="match_parent"
-	tools:openDrawer="start">
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="vertical"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:padding="8dp">
 
-	<include layout="@layout/activity_main_content"
-		android:layout_width="match_parent"
-		android:layout_height="match_parent"/>
+    <TextView
+        style="@style/TextAppearance.MaterialComponents.Body2"
+        android:id="@+id/type"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:paddingBottom="8dp"/>
 
-	<com.google.android.material.navigation.NavigationView
-		android:id="@+id/main_nav_view"
-		android:layout_width="wrap_content"
-		android:layout_height="match_parent"
-		android:layout_gravity="start"
-		app:headerLayout="@layout/nav_header_main"
-		app:menu="@menu/activity_main_drawer"/>
+    <com.google.android.material.chip.ChipGroup
+        android:id="@+id/tags"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:chipSpacingVertical="4dp"/>
 
-</androidx.drawerlayout.widget.DrawerLayout>
+</LinearLayout>

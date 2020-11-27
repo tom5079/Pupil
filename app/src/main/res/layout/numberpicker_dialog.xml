@@ -25,7 +25,7 @@
 
     <TextView
         style="?android:textAppearanceLarge"
-        android:id="@+id/dialog_title"
+        android:id="@+id/title"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/reader_go_to_page"
@@ -33,20 +33,20 @@
         app:layout_constraintStart_toStartOf="parent"/>
 
     <NumberPicker
-        android:id="@+id/dialog_number_picker"
+        android:id="@+id/number_picker"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        app:layout_constraintTop_toBottomOf="@id/dialog_title"
+        app:layout_constraintTop_toBottomOf="@id/title"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"/>
 
     <Button
-        android:id="@+id/dialog_ok"
+        android:id="@+id/ok_button"
         style="?borderlessButtonStyle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@android:string/ok"
-        app:layout_constraintTop_toBottomOf="@id/dialog_number_picker"
+        app:layout_constraintTop_toBottomOf="@id/number_picker"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"/>
 

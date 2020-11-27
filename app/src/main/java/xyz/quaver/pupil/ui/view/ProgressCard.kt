@@ -2,14 +2,14 @@ package xyz.quaver.pupil.ui.view
 
 import android.content.Context
 import android.util.AttributeSet
+import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.cardview.widget.CardView
-import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.drawable.DrawableCompat
-import kotlinx.android.synthetic.main.view_progress_card.view.*
 import xyz.quaver.pupil.R
+import xyz.quaver.pupil.databinding.ProgressCardViewBinding
 
 class ProgressCard @JvmOverloads constructor(context: Context, attr: AttributeSet? = null, defStyle: Int = R.attr.cardViewStyle) : CardView(context, attr, defStyle) {
 
@@ -29,35 +29,35 @@ class ProgressCard @JvmOverloads constructor(context: Context, attr: AttributeSe
                 Type.DOWNLOAD -> R.color.material_green_a700
             }.let {
                 val color = ContextCompat.getColor(context, it)
-                DrawableCompat.setTint(progressbar.progressDrawable, color)
+                DrawableCompat.setTint(binding.progressbar.progressDrawable, color)
             }
         }
 
     var progress: Int
-        get() = progressbar?.progress ?: 0
+        get() = binding.progressbar.progress
         set(value) {
-            progressbar?.progress = value
+            binding.progressbar.progress = value
         }
     var max: Int
-        get() = progressbar?.max ?: 0
+        get() = binding.progressbar.max
         set(value) {
-            progressbar?.max = value
+            binding.progressbar.max = value
 
-            progressbar.visibility =
+            binding.progressbar.visibility =
                 if (value == 0)
                     GONE
                 else
                     VISIBLE
         }
 
-    init {
-        inflate(context, R.layout.view_progress_card, this)
+    val binding = ProgressCardViewBinding.inflate(LayoutInflater.from(context), this)
 
-        content.setOnClickListener {
+    init {
+        binding.content.setOnClickListener {
             performClick()
         }
 
-        content.setOnLongClickListener {
+        binding.content.setOnLongClickListener {
             performLongClick()
         }
     }
@@ -66,7 +66,7 @@ class ProgressCard @JvmOverloads constructor(context: Context, attr: AttributeSe
         if (childCount == 0)
             super.addView(child, index, params)
         else
-            content.addView(child, index, params)
+            binding.content.addView(child, index, params)
     }
 
 }

@@ -17,21 +17,26 @@
   ~     along with this program.  If not, see <http://www.gnu.org/licenses/>.
   -->
 
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    tools:context=".ui.fragment.PatternLockFragment">
+<androidx.drawerlayout.widget.DrawerLayout
+	xmlns:android="http://schemas.android.com/apk/res/android"
+	xmlns:app="http://schemas.android.com/apk/res-auto"
+	xmlns:tools="http://schemas.android.com/tools"
+	android:id="@+id/drawer"
+	android:layout_width="match_parent"
+	android:layout_height="match_parent"
+	tools:openDrawer="start">
 
-    <com.andrognito.patternlockview.PatternLockView
-        android:id="@+id/lock_pattern_view"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_gravity="center"
-        app:aspectRatioEnabled="true"
-        app:normalStateColor="@color/colorPrimary"
-        app:correctStateColor="@color/colorPrimaryDark"
-        app:wrongStateColor="@color/colorAccent"/>
+	<include android:id="@+id/contents"
+		layout="@layout/main_activity_content"
+		android:layout_width="match_parent"
+		android:layout_height="match_parent"/>
 
-</FrameLayout>
+	<com.google.android.material.navigation.NavigationView
+		android:id="@+id/nav_view"
+		android:layout_width="wrap_content"
+		android:layout_height="match_parent"
+		android:layout_gravity="start"
+		app:headerLayout="@layout/nav_header_main"
+		app:menu="@menu/activity_main_drawer"/>
+
+</androidx.drawerlayout.widget.DrawerLayout>

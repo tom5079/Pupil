@@ -25,7 +25,6 @@ import android.graphics.drawable.Drawable
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.LinearLayout
 import android.widget.Toast
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
@@ -35,13 +34,12 @@ import com.daimajia.swipe.SwipeLayout
 import com.daimajia.swipe.adapters.RecyclerSwipeAdapter
 import com.daimajia.swipe.interfaces.SwipeAdapterInterface
 import com.github.piasy.biv.loader.ImageLoader
-import kotlinx.android.synthetic.main.item_galleryblock.view.*
-import kotlinx.android.synthetic.main.view_progress_card.view.*
 import kotlinx.coroutines.*
 import xyz.quaver.hitomi.getGallery
 import xyz.quaver.hitomi.getReader
 import xyz.quaver.io.util.getChild
 import xyz.quaver.pupil.R
+import xyz.quaver.pupil.databinding.GalleryblockItemBinding
 import xyz.quaver.pupil.favoriteTags
 import xyz.quaver.pupil.favorites
 import xyz.quaver.pupil.types.Tag
@@ -57,20 +55,20 @@ class GalleryBlockAdapter(private val galleries: List<Int>) : RecyclerSwipeAdapt
     var updateAll = true
     var thin: Boolean = Preferences["thin"]
 
-    inner class GalleryViewHolder(val view: View) : RecyclerView.ViewHolder(view) {
+    inner class GalleryViewHolder(val binding: GalleryblockItemBinding) : RecyclerView.ViewHolder(binding.root) {
         private var galleryID: Int = 0
 
         init {
             CoroutineScope(Dispatchers.Main).launch {
                 while (updateAll) {
-                    updateProgress(view.context)
+                    updateProgress(itemView.context)
                     delay(1000)
                 }
             }
         }
 
         private fun updateProgress(context: Context) = CoroutineScope(Dispatchers.Main).launch {
-            with(view.galleryblock_card) {
+            with(binding.galleryblockCard) {
                 val imageList = Cache.getInstance(context, galleryID).metadata.imageList
 
                 if (imageList == null) {
@@ -81,7 +79,7 @@ class GalleryBlockAdapter(private val galleries: List<Int>) : RecyclerSwipeAdapt
                 progress = imageList.count { it != null }
                 max = imageList.size
 
-                view.galleryblock_id.setOnClickListener {
+                this@GalleryViewHolder.binding.galleryblockId.setOnClickListener {
                     (context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager).setPrimaryClip(
                         ClipData.newPlainText("gallery_id", galleryID.toString())
                     )
@@ -102,177 +100,175 @@ class GalleryBlockAdapter(private val galleries: List<Int>) : RecyclerSwipeAdapt
 
         fun bind(galleryID: Int) {
             this.galleryID = galleryID
-            updateProgress(view.context)
+            updateProgress(itemView.context)
 
-            val cache = Cache.getInstance(view.context, galleryID)
+            val cache = Cache.getInstance(itemView.context, galleryID)
 
             val galleryBlock = runBlocking {
                 cache.getGalleryBlock()
             } ?: return
 
-            with(view) {
-                val resources = context.resources
-                val languages = resources.getStringArray(R.array.languages).map {
-                    it.split("|").let { split ->
-                        Pair(split[0], split[1])
-                    }
-                }.toMap()
-
-                val artists = galleryBlock.artists
-                val series = galleryBlock.series
-
-                galleryblock_thumbnail.apply {
-                    setOnClickListener {
-                        view.performClick()
-                    }
-                    setOnLongClickListener {
-                        view.performLongClick()
-                    }
-                    setFailureImage(ContextCompat.getDrawable(context, R.drawable.image_broken_variant))
-                    setImageLoaderCallback(object: ImageLoader.Callback {
-                        override fun onFail(error: Exception?) {
-                            Cache.getInstance(context, galleryID).let { cache ->
-                                cache.cacheFolder.getChild(".thumbnail").let { if (it.exists()) it.delete() }
-                                cache.downloadFolder?.getChild(".thumbnail")?.let { if (it.exists()) it.delete() }
-                            }
-                        }
-
-                        override fun onCacheHit(imageType: Int, image: File?) {}
-                        override fun onCacheMiss(imageType: Int, image: File?) {}
-                        override fun onFinish() {}
-                        override fun onProgress(progress: Int) {}
-                        override fun onStart() {}
-                        override fun onSuccess(image: File?) {}
-                    })
-                    ssiv?.recycle()
-                    CoroutineScope(Dispatchers.IO).launch {
-                        cache.getThumbnail().let { launch(Dispatchers.Main) {
-                            showImage(it)
-                        } }
-                    }
+            val resources = itemView.context.resources
+            val languages = resources.getStringArray(R.array.languages).map {
+                it.split("|").let { split ->
+                    Pair(split[0], split[1])
                 }
+            }.toMap()
 
-                galleryblock_title.text = galleryBlock.title
-                with(galleryblock_artist) {
-                    text = artists.joinToString { it.wordCapitalize() }
-                    visibility = when {
-                        artists.isNotEmpty() -> View.VISIBLE
-                        else -> View.GONE
-                    }
+            val artists = galleryBlock.artists
+            val series = galleryBlock.series
 
-                    CoroutineScope(Dispatchers.IO).launch {
-                        val gallery = runCatching {
-                            getGallery(galleryID)
-                        }.getOrNull()
-
-                        if (gallery?.groups?.isNotEmpty() != true)
-                            return@launch
-
-                        launch(Dispatchers.Main) {
-                            text = context.getString(
-                                R.string.galleryblock_artist_with_group,
-                                artists.joinToString { it.wordCapitalize() },
-                                gallery.groups.joinToString { it.wordCapitalize() }
-                            )
-                        }
-                    }
+            binding.galleryblockThumbnail.apply {
+                setOnClickListener {
+                    itemView.performClick()
                 }
-                with(galleryblock_series) {
-                    text =
-                        resources.getString(
-                            R.string.galleryblock_series,
-                            series.joinToString(", ") { it.wordCapitalize() })
-                    visibility = when {
-                        series.isNotEmpty() -> View.VISIBLE
-                        else -> View.GONE
-                    }
+                setOnLongClickListener {
+                    itemView.performLongClick()
                 }
-                galleryblock_type.text = resources.getString(R.string.galleryblock_type, galleryBlock.type).wordCapitalize()
-                with(galleryblock_language) {
-                    text =
-                        resources.getString(R.string.galleryblock_language, languages[galleryBlock.language])
-                    visibility = when {
-                        galleryBlock.language.isNotEmpty() -> View.VISIBLE
-                        else -> View.GONE
-                    }
-                }
-
-                with(galleryblock_tag_group) {
-                    onClickListener = {
-                        onChipClickedHandler.forEach { callback ->
-                            callback.invoke(it)
+                setFailureImage(ContextCompat.getDrawable(context, R.drawable.image_broken_variant))
+                setImageLoaderCallback(object: ImageLoader.Callback {
+                    override fun onFail(error: Exception?) {
+                        Cache.getInstance(context, galleryID).let { cache ->
+                            cache.cacheFolder.getChild(".thumbnail").let { if (it.exists()) it.delete() }
+                            cache.downloadFolder?.getChild(".thumbnail")?.let { if (it.exists()) it.delete() }
                         }
                     }
 
-                    tags.clear()
-
-                    CoroutineScope(Dispatchers.IO).launch {
-                        tags.addAll(
-                            galleryBlock.relatedTags.sortedBy {
-                                val tag = Tag.parse(it)
-
-                                if (favoriteTags.contains(tag))
-                                    -1
-                                else
-                                    when(Tag.parse(it).area) {
-                                        "female" -> 0
-                                        "male" -> 1
-                                        else -> 2
-                                    }
-                            }.map {
-                                Tag.parse(it)
-                            }
-                        )
-
-                        launch(Dispatchers.Main) {
-                            refresh()
-                        }
-                    }
-                }
-
-                galleryblock_id.text = galleryBlock.id.toString()
-                galleryblock_pagecount.text = "-"
+                    override fun onCacheHit(imageType: Int, image: File?) {}
+                    override fun onCacheMiss(imageType: Int, image: File?) {}
+                    override fun onFinish() {}
+                    override fun onProgress(progress: Int) {}
+                    override fun onStart() {}
+                    override fun onSuccess(image: File?) {}
+                })
+                ssiv?.recycle()
                 CoroutineScope(Dispatchers.IO).launch {
-                    val pageCount = kotlin.runCatching {
-                        getReader(galleryBlock.id).galleryInfo.files.size
-                    }.getOrNull() ?: return@launch
-                    withContext(Dispatchers.Main) {
-                        galleryblock_pagecount.text = context.getString(R.string.galleryblock_pagecount, pageCount)
+                    cache.getThumbnail().let { launch(Dispatchers.Main) {
+                        showImage(it)
+                    } }
+                }
+            }
+
+            binding.galleryblockTitle.text = galleryBlock.title
+            with(binding.galleryblockArtist) {
+                text = artists.joinToString { it.wordCapitalize() }
+                visibility = when {
+                    artists.isNotEmpty() -> View.VISIBLE
+                    else -> View.GONE
+                }
+
+                CoroutineScope(Dispatchers.IO).launch {
+                    val gallery = runCatching {
+                        getGallery(galleryID)
+                    }.getOrNull()
+
+                    if (gallery?.groups?.isNotEmpty() != true)
+                        return@launch
+
+                    launch(Dispatchers.Main) {
+                        text = context.getString(
+                            R.string.galleryblock_artist_with_group,
+                            artists.joinToString { it.wordCapitalize() },
+                            gallery.groups.joinToString { it.wordCapitalize() }
+                        )
+                    }
+                }
+            }
+            with(binding.galleryblockSeries) {
+                text =
+                    resources.getString(
+                        R.string.galleryblock_series,
+                        series.joinToString(", ") { it.wordCapitalize() })
+                visibility = when {
+                    series.isNotEmpty() -> View.VISIBLE
+                    else -> View.GONE
+                }
+            }
+            binding.galleryblockType.text = resources.getString(R.string.galleryblock_type, galleryBlock.type).wordCapitalize()
+            with(binding.galleryblockLanguage) {
+                text =
+                    resources.getString(R.string.galleryblock_language, languages[galleryBlock.language])
+                visibility = when {
+                    galleryBlock.language.isNotEmpty() -> View.VISIBLE
+                    else -> View.GONE
+                }
+            }
+
+            with(binding.galleryblockTagGroup) {
+                onClickListener = {
+                    onChipClickedHandler.forEach { callback ->
+                        callback.invoke(it)
                     }
                 }
 
-                with(galleryblock_favorite) {
-                    setImageResource(if (favorites.contains(galleryBlock.id)) R.drawable.ic_star_filled else R.drawable.ic_star_empty)
-                    setOnClickListener {
-                        when {
-                            favorites.contains(galleryBlock.id) -> {
-                                favorites.remove(galleryBlock.id)
+                tags.clear()
 
-                                setImageResource(R.drawable.ic_star_empty)
-                            }
-                            else -> {
-                                favorites.add(galleryBlock.id)
+                CoroutineScope(Dispatchers.IO).launch {
+                    tags.addAll(
+                        galleryBlock.relatedTags.sortedBy {
+                            val tag = Tag.parse(it)
 
-                                setImageDrawable(AnimatedVectorDrawableCompat.create(context, R.drawable.avd_star).apply {
-                                    this ?: return@apply
+                            if (favoriteTags.contains(tag))
+                                -1
+                            else
+                                when(Tag.parse(it).area) {
+                                    "female" -> 0
+                                    "male" -> 1
+                                    else -> 2
+                                }
+                        }.map {
+                            Tag.parse(it)
+                        }
+                    )
 
-                                    registerAnimationCallback(object: Animatable2Compat.AnimationCallback() {
-                                        override fun onAnimationEnd(drawable: Drawable?) {
-                                            setImageResource(R.drawable.ic_star_filled)
-                                        }
-                                    })
-                                    start()
+                    launch(Dispatchers.Main) {
+                        refresh()
+                    }
+                }
+            }
+
+            binding.galleryblockId.text = galleryBlock.id.toString()
+            binding.galleryblockPagecount.text = "-"
+            CoroutineScope(Dispatchers.IO).launch {
+                val pageCount = kotlin.runCatching {
+                    getReader(galleryBlock.id).galleryInfo.files.size
+                }.getOrNull() ?: return@launch
+                withContext(Dispatchers.Main) {
+                    binding.galleryblockPagecount.text = itemView.context.getString(R.string.galleryblock_pagecount, pageCount)
+                }
+            }
+
+            with(binding.galleryblockFavorite) {
+                setImageResource(if (favorites.contains(galleryBlock.id)) R.drawable.ic_star_filled else R.drawable.ic_star_empty)
+                setOnClickListener {
+                    when {
+                        favorites.contains(galleryBlock.id) -> {
+                            favorites.remove(galleryBlock.id)
+
+                            setImageResource(R.drawable.ic_star_empty)
+                        }
+                        else -> {
+                            favorites.add(galleryBlock.id)
+
+                            setImageDrawable(AnimatedVectorDrawableCompat.create(context, R.drawable.avd_star).apply {
+                                this ?: return@apply
+
+                                registerAnimationCallback(object: Animatable2Compat.AnimationCallback() {
+                                    override fun onAnimationEnd(drawable: Drawable?) {
+                                        setImageResource(R.drawable.ic_star_filled)
+                                    }
                                 })
-                            }
+                                start()
+                            })
                         }
                     }
                 }
+            }
 
 
-                // Make some views invisible to make it thinner
-                if (thin) {
-                    galleryblock_tag_group.visibility = View.GONE
-                }
+            // Make some views invisible to make it thinner
+            if (thin) {
+                binding.galleryblockTagGroup.visibility = View.GONE
             }
         }
     }
@@ -282,9 +278,7 @@ class GalleryBlockAdapter(private val galleries: List<Int>) : RecyclerSwipeAdapt
     var onDeleteClickedHandler: ((Int) -> Unit)? = null
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
-        return GalleryViewHolder(
-            LayoutInflater.from(parent.context).inflate(R.layout.item_galleryblock, parent, false)
-        )
+        return GalleryViewHolder(GalleryblockItemBinding.inflate(LayoutInflater.from(parent.context), parent, false))
     }
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
@@ -293,25 +287,25 @@ class GalleryBlockAdapter(private val galleries: List<Int>) : RecyclerSwipeAdapt
 
             holder.bind(galleryID)
 
-            holder.view.galleryblock_card.download.setOnClickListener {
+            holder.binding.galleryblockCard.binding.download.setOnClickListener {
                 onDownloadClickedHandler?.invoke(position)
             }
 
-            holder.view.galleryblock_card.delete.setOnClickListener {
+            holder.binding.galleryblockCard.binding.delete.setOnClickListener {
                 onDeleteClickedHandler?.invoke(position)
             }
 
-            mItemManger.bindView(holder.view, position)
+            mItemManger.bindView(holder.binding.root, position)
 
-            holder.view.galleryblock_card.swipe_layout.addSwipeListener(object: SwipeLayout.SwipeListener {
+            holder.binding.galleryblockCard.binding.swipeLayout.addSwipeListener(object: SwipeLayout.SwipeListener {
                 override fun onStartOpen(layout: SwipeLayout?) {
                     mItemManger.closeAllExcept(layout)
 
-                    holder.view.galleryblock_card.download.text =
-                        if (DownloadManager.getInstance(holder.view.context).isDownloading(galleryID))
-                            holder.view.context.getString(android.R.string.cancel)
+                    holder.binding.galleryblockCard.binding.download.text =
+                        if (DownloadManager.getInstance(holder.binding.root.context).isDownloading(galleryID))
+                            holder.binding.root.context.getString(android.R.string.cancel)
                         else
-                            holder.view.context.getString(R.string.main_download)
+                            holder.binding.root.context.getString(R.string.main_download)
                 }
 
                 override fun onClose(layout: SwipeLayout?) {}

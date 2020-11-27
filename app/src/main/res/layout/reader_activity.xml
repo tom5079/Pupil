@@ -18,7 +18,6 @@
   -->
 
 <androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/reader_layout"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
@@ -40,7 +39,7 @@
         app:popupDrawable="@android:color/transparent">
 
         <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/reader_recyclerview"
+            android:id="@+id/recyclerview"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"/>
@@ -56,13 +55,13 @@
         android:layout_margin="8dp"/>
 
     <ProgressBar
-        android:id="@+id/reader_download_progressbar"
+        android:id="@+id/download_progressbar"
         style="@style/Widget.AppCompat.ProgressBar.Horizontal"
         android:layout_width="match_parent"
         android:layout_height="4dp"/>
     
     <com.github.clans.fab.FloatingActionMenu
-        android:id="@+id/reader_fab"
+        android:id="@+id/fab"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|end"
@@ -70,7 +69,7 @@
         app:menu_colorNormal="@color/colorAccent">
 
         <com.github.clans.fab.FloatingActionButton
-            android:id="@+id/reader_fab_download"
+            android:id="@+id/download_fab"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             app:srcCompat="@drawable/ic_download"
@@ -78,7 +77,7 @@
             app:fab_size="mini"/>
 
         <com.github.clans.fab.FloatingActionButton
-            android:id="@+id/reader_fab_retry"
+            android:id="@+id/retry_fab"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             app:srcCompat="@drawable/refresh"
@@ -86,7 +85,7 @@
             app:fab_size="mini"/>
 
         <com.github.clans.fab.FloatingActionButton
-            android:id="@+id/reader_fab_auto"
+            android:id="@+id/auto_fab"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             app:srcCompat="@drawable/eye_white"
@@ -94,7 +93,7 @@
             app:fab_size="mini"/>
 
         <com.github.clans.fab.FloatingActionButton
-            android:id="@+id/reader_fab_fullscreen"
+            android:id="@+id/fullscreen_fab"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             app:srcCompat="@drawable/ic_fullscreen"

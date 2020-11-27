@@ -39,10 +39,10 @@ import com.facebook.imagepipeline.image.ImageInfo
 import com.github.piasy.biv.view.BigImageView
 import com.github.piasy.biv.view.ImageShownCallback
 import com.github.piasy.biv.view.ImageViewFactory
-import kotlinx.android.synthetic.main.item_reader.view.*
 import kotlinx.coroutines.*
 import xyz.quaver.hitomi.Reader
 import xyz.quaver.pupil.R
+import xyz.quaver.pupil.databinding.ReaderItemBinding
 import xyz.quaver.pupil.ui.ReaderActivity
 import xyz.quaver.pupil.util.downloader.Cache
 import java.io.File
@@ -52,16 +52,93 @@ class ReaderAdapter(
     private val activity: ReaderActivity,
     private val galleryID: Int
 ) : RecyclerView.Adapter<ReaderAdapter.ViewHolder>() {
-
     var reader: Reader? = null
 
     var isFullScreen = false
 
     var onItemClickListener : (() -> (Unit))? = null
 
-    class ViewHolder(val view: View) : RecyclerView.ViewHolder(view) {
+    inner class ViewHolder(private val binding: ReaderItemBinding) : RecyclerView.ViewHolder(binding.root) {
+        init {
+            with (binding.image) {
+                setImageViewFactory(FrescoImageViewFactory().apply {
+                    updateView = { imageInfo ->
+                        binding.image.updateLayoutParams<ConstraintLayout.LayoutParams> {
+                            dimensionRatio = "${imageInfo.width}:${imageInfo.height}"
+                        }
+                    }
+                })
+                setImageShownCallback(object : ImageShownCallback {
+                    override fun onMainImageShown() {
+                        binding.image.mainView.let { v ->
+                            when (v) {
+                                is SubsamplingScaleImageView ->
+                                    if (!isFullScreen) binding.image.layoutParams.height = ViewGroup.LayoutParams.WRAP_CONTENT
+                            }
+                        }
+                    }
+
+                    override fun onThumbnailShown() {}
+                })
+
+                setFailureImage(ContextCompat.getDrawable(itemView.context, R.drawable.image_broken_variant))
+                setOnClickListener {
+                    onItemClickListener?.invoke()
+                }
+            }
+
+            binding.root.setOnClickListener {
+                onItemClickListener?.invoke()
+            }
+        }
+
+        fun bind(position: Int) {
+            if (cache == null)
+                cache = Cache.getInstance(itemView.context, galleryID)
+
+            if (!isFullScreen) {
+                binding.root.setBackgroundResource(R.drawable.reader_item_boundary)
+                binding.image.updateLayoutParams<ConstraintLayout.LayoutParams> {
+                    height = 0
+                    dimensionRatio =
+                        "${reader!!.galleryInfo.files[position].width}:${reader!!.galleryInfo.files[position].height}"
+                }
+            } else {
+                binding.root.layoutParams.height = ViewGroup.LayoutParams.MATCH_PARENT
+                binding.image.updateLayoutParams<ConstraintLayout.LayoutParams> {
+                    height = ConstraintLayout.LayoutParams.MATCH_PARENT
+                    dimensionRatio = null
+                }
+                binding.root.background = null
+            }
+
+            binding.readerIndex.text = (position+1).toString()
+
+            val image = cache!!.getImage(position)
+            val progress = activity.downloader?.progress?.get(galleryID)?.get(position)
+
+            if (progress?.isInfinite() == true && image != null) {
+                binding.progressGroup.visibility = View.INVISIBLE
+                binding.image.showImage(image.uri)
+            } else {
+                binding.progressGroup.visibility = View.VISIBLE
+                binding.readerItemProgressbar.progress =
+                    if (progress?.isInfinite() == true)
+                        100
+                    else
+                        progress?.roundToInt() ?: 0
+
+                clear()
+
+                CoroutineScope(Dispatchers.Main).launch {
+                    delay(1000)
+                    notifyItemChanged(position)
+                }
+            }
+        }
+
         fun clear() {
-            view.image.mainView.let {
+            binding.image.mainView.let {
                 when (it) {
                     is SubsamplingScaleImageView ->
                         it.recycle()
@@ -73,88 +150,12 @@ class ReaderAdapter(
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
-        return LayoutInflater.from(parent.context).inflate(
-            R.layout.item_reader, parent, false
-        ).let {
-            with(it) {
-                image.setImageViewFactory(FrescoImageViewFactory().apply {
-                    updateView = { imageInfo ->
-                        it.image.updateLayoutParams<ConstraintLayout.LayoutParams> {
-                            dimensionRatio = "${imageInfo.width}:${imageInfo.height}"
-                        }
-                    }
-                })
-                image.setImageShownCallback(object : ImageShownCallback {
-                    override fun onMainImageShown() {
-                        it.image.mainView.let { v ->
-                            when (v) {
-                                is SubsamplingScaleImageView ->
-                                    if (!isFullScreen) it.image.layoutParams.height = ViewGroup.LayoutParams.WRAP_CONTENT
-                            }
-                        }
-                    }
-
-                    override fun onThumbnailShown() {}
-                })
-                image.setFailureImage(ContextCompat.getDrawable(context, R.drawable.image_broken_variant))
-                image.setOnClickListener {
-                    this.performClick()
-                }
-                setOnClickListener {
-                    onItemClickListener?.invoke()
-                }
-            }
-
-            ViewHolder(it)
-        }
+        return ViewHolder(ReaderItemBinding.inflate(LayoutInflater.from(parent.context), parent, false))
     }
 
     private var cache: Cache? = null
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        holder.view as ConstraintLayout
-
-        if (cache == null)
-            cache = Cache.getInstance(holder.view.context, galleryID)
-
-        if (!isFullScreen) {
-            holder.view.setBackgroundResource(R.drawable.reader_item_boundary)
-            holder.view.image.updateLayoutParams<ConstraintLayout.LayoutParams> {
-                height = 0
-                dimensionRatio =
-                    "${reader!!.galleryInfo.files[position].width}:${reader!!.galleryInfo.files[position].height}"
-            }
-        } else {
-            holder.view.layoutParams.height = ViewGroup.LayoutParams.MATCH_PARENT
-            holder.view.image.updateLayoutParams<ConstraintLayout.LayoutParams> {
-                height = ConstraintLayout.LayoutParams.MATCH_PARENT
-                dimensionRatio = null
-            }
-            holder.view.background = null
-        }
-
-        holder.view.reader_index.text = (position+1).toString()
-
-        val image = cache!!.getImage(position)
-        val progress = activity.downloader?.progress?.get(galleryID)?.get(position)
-
-        if (progress?.isInfinite() == true && image != null) {
-            holder.view.progress_group.visibility = View.INVISIBLE
-            holder.view.image.showImage(image.uri)
-        } else {
-            holder.view.progress_group.visibility = View.VISIBLE
-            holder.view.reader_item_progressbar.progress =
-                if (progress?.isInfinite() == true)
-                    100
-                else
-                    progress?.roundToInt() ?: 0
-
-            holder.clear()
-
-            CoroutineScope(Dispatchers.Main).launch {
-                delay(1000)
-                notifyItemChanged(position)
-            }
-        }
+        holder.bind(position)
     }
 
     override fun getItemCount() = reader?.galleryInfo?.files?.size ?: 0

@@ -25,7 +25,7 @@
     tools:context=".ui.MainActivity">
 
     <xyz.quaver.pupil.ui.view.MainView
-        android:id="@+id/main_view"
+        android:id="@+id/view"
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
@@ -43,7 +43,7 @@
             app:popupDrawable="@android:color/transparent">
 
             <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/main_recyclerview"
+                android:id="@+id/recyclerview"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:paddingTop="64dp"
@@ -56,14 +56,14 @@
 
     <androidx.core.widget.ContentLoadingProgressBar
         style="?android:attr/progressBarStyle"
-        android:id="@+id/main_progressbar"
+        android:id="@+id/progressbar"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
         android:indeterminate="true"/>
 
     <TextView
-        android:id="@+id/main_noresult"
+        android:id="@+id/noresult"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
@@ -72,7 +72,7 @@
         android:visibility="invisible"/>
 
     <com.github.clans.fab.FloatingActionMenu
-        android:id="@+id/main_fab"
+        android:id="@+id/fab"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|end"
@@ -80,28 +80,28 @@
         app:menu_colorNormal="@color/colorAccent">
 
         <com.github.clans.fab.FloatingActionButton
-            android:id="@+id/main_fab_cancel"
+            android:id="@+id/cancel_fab"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             app:fab_label="@string/main_fab_cancel"
             app:fab_size="mini"/>
 
         <com.github.clans.fab.FloatingActionButton
-            android:id="@+id/main_fab_jump"
+            android:id="@+id/jump_fab"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             app:fab_label="@string/main_jump_title"
             app:fab_size="mini"/>
 
         <com.github.clans.fab.FloatingActionButton
-            android:id="@+id/main_fab_random"
+            android:id="@+id/random_fab"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             app:fab_label="@string/main_fab_random"
             app:fab_size="mini"/>
 
         <com.github.clans.fab.FloatingActionButton
-            android:id="@+id/main_fab_id"
+            android:id="@+id/id_fab"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             app:fab_label="@string/main_open_gallery_by_id"
@@ -110,7 +110,7 @@
     </com.github.clans.fab.FloatingActionMenu>
 
     <xyz.quaver.pupil.ui.view.FloatingSearchView
-        android:id="@+id/main_searchview"
+        android:id="@+id/searchview"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         app:searchBarMarginLeft="6dp"

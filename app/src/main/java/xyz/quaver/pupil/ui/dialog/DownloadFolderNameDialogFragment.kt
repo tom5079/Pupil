@@ -18,17 +18,15 @@
 
 package xyz.quaver.pupil.ui.dialog
 
-import android.annotation.SuppressLint
 import android.app.Dialog
 import android.os.Bundle
-import android.view.View
 import android.view.ViewGroup
 import androidx.core.widget.addTextChangedListener
 import androidx.fragment.app.DialogFragment
 import com.google.android.material.snackbar.Snackbar
-import kotlinx.android.synthetic.main.dialog_download_folder_name.view.*
 import kotlinx.coroutines.runBlocking
 import xyz.quaver.pupil.R
+import xyz.quaver.pupil.databinding.DownloadFolderNameDialogBinding
 import xyz.quaver.pupil.util.Preferences
 import xyz.quaver.pupil.util.downloader.Cache
 import xyz.quaver.pupil.util.formatDownloadFolder
@@ -37,38 +35,48 @@ import xyz.quaver.pupil.util.formatMap
 
 class DownloadFolderNameDialogFragment : DialogFragment() {
 
-    @SuppressLint("InflateParams")
-    private fun build(): View {
+    private var _binding: DownloadFolderNameDialogBinding? = null
+    private val binding get() = _binding!!
+
+    override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
+        _binding = DownloadFolderNameDialogBinding.inflate(layoutInflater)
+
+        initView()
+
+        return Dialog(requireContext()).apply {
+            setContentView(binding.root)
+            window?.attributes?.width = ViewGroup.LayoutParams.MATCH_PARENT
+        }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        _binding = null
+    }
+
+    private fun initView() {
         val galleryID = Cache.instances.let { if (it.size == 0) 1199708 else it.keys.elementAt((0 until it.size).random()) }
         val galleryBlock = runBlocking {
             Cache.getInstance(requireContext(), galleryID).getGalleryBlock()
         }
 
-        return layoutInflater.inflate(R.layout.dialog_download_folder_name, null).apply {
-            message.text = getString(R.string.settings_download_folder_name_message, formatMap.keys.toString(), galleryBlock?.formatDownloadFolder() ?: "")
-            edittext.setText(Preferences["download_folder_name", "[-id-] -title-"])
-            edittext.addTextChangedListener {
-                message.text = getString(R.string.settings_download_folder_name_message, formatMap.keys.toString(), galleryBlock?.formatDownloadFolderTest(it.toString()) ?: "")
+        binding.message.text = getString(R.string.settings_download_folder_name_message, formatMap.keys.toString(), galleryBlock?.formatDownloadFolder() ?: "")
+        binding.edittext.setText(Preferences["download_folder_name", "[-id-] -title-"])
+        binding.edittext.addTextChangedListener {
+            binding.message.text = requireContext().getString(R.string.settings_download_folder_name_message, formatMap.keys.toString(), galleryBlock?.formatDownloadFolderTest(it.toString()) ?: "")
+        }
+        binding.okButton.setOnClickListener {
+            val newValue = binding.edittext.text.toString()
+
+            if ((newValue as? String)?.contains("/") != false) {
+                Snackbar.make(binding.root, R.string.settings_invalid_download_folder_name, Snackbar.LENGTH_SHORT).show()
+                return@setOnClickListener
             }
-            ok_button.setOnClickListener {
-                val newValue = edittext.text.toString()
 
-                if ((newValue as? String)?.contains("/") != false) {
-                    Snackbar.make(this, R.string.settings_invalid_download_folder_name, Snackbar.LENGTH_SHORT).show()
-                    return@setOnClickListener
-                }
+            Preferences["download_folder_name"] = binding.edittext.text.toString()
 
-                Preferences["download_folder_name"] = edittext.text.toString()
-
-                dismiss()
-            }
+            dismiss()
         }
     }
-
-    override fun onCreateDialog(savedInstanceState: Bundle?): Dialog =
-       Dialog(requireContext()).apply {
-           setContentView(build())
-           window?.attributes?.width = ViewGroup.LayoutParams.MATCH_PARENT
-       }
 
 }
