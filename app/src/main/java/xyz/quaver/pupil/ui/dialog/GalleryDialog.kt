@@ -38,10 +38,12 @@ import kotlinx.coroutines.withContext
 import xyz.quaver.hitomi.Gallery
 import xyz.quaver.hitomi.getGallery
 import xyz.quaver.pupil.R
-import xyz.quaver.pupil.adapters.GalleryBlockAdapter
+import xyz.quaver.pupil.adapters.SearchResultsAdapter
 import xyz.quaver.pupil.adapters.ThumbnailPageAdapter
 import xyz.quaver.pupil.databinding.*
 import xyz.quaver.pupil.favoriteTags
+import xyz.quaver.pupil.sources.hitomi.Hitomi
+import xyz.quaver.pupil.sources.SearchResult
 import xyz.quaver.pupil.types.Tag
 import xyz.quaver.pupil.ui.ReaderActivity
 import xyz.quaver.pupil.ui.view.TagChip
@@ -51,7 +53,7 @@ import xyz.quaver.pupil.util.wordCapitalize
 import java.util.*
 import kotlin.collections.ArrayList
 
-class GalleryDialog(context: Context, private val galleryID: Int) : AlertDialog(context) {
+class GalleryDialog(context: Context, private val galleryID: String) : AlertDialog(context) {
 
     val onChipClickedHandler = ArrayList<((Tag) -> (Unit))>()
 
@@ -80,7 +82,7 @@ class GalleryDialog(context: Context, private val galleryID: Int) : AlertDialog(
 
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                val gallery = getGallery(galleryID)
+                val gallery = getGallery(galleryID.toInt())
 
                 launch (Dispatchers.Main) {
                     binding.progressbar.visibility = View.GONE
@@ -203,9 +205,9 @@ class GalleryDialog(context: Context, private val galleryID: Int) : AlertDialog(
     }
 
     private fun addRelated(gallery: Gallery) {
-        val galleries = ArrayList<Int>()
+        val galleries = mutableListOf<SearchResult>()
 
-        val adapter = GalleryBlockAdapter(galleries).apply {
+        val adapter = SearchResultsAdapter(galleries).apply {
             onChipClickedHandler.add { tag ->
                 this@GalleryDialog.onChipClickedHandler.forEach { handler ->
                     handler.invoke(tag)
@@ -223,11 +225,11 @@ class GalleryDialog(context: Context, private val galleryID: Int) : AlertDialog(
                 ItemClickSupport.addTo(this).apply {
                     onItemClickListener = { _, position, _ ->
                         context.startActivity(Intent(context, ReaderActivity::class.java).apply {
-                            putExtra("galleryID", galleries[position])
+                            putExtra("galleryID", galleries[position].id)
                         })
                     }
                     onItemLongClickListener = { _, position, _ ->
-                        GalleryDialog(context, galleries[position]).apply {
+                        GalleryDialog(context, galleries[position].id).apply {
                             onChipClickedHandler.add { tag ->
                                 this@GalleryDialog.onChipClickedHandler.forEach { it.invoke(tag) }
                             }
@@ -240,13 +242,20 @@ class GalleryDialog(context: Context, private val galleryID: Int) : AlertDialog(
 
             CoroutineScope(Dispatchers.IO).launch {
                 gallery.related.forEach { galleryID ->
-                    Cache.getInstance(context, galleryID).getGalleryBlock()?.let {
-                        galleries.add(galleryID)
+                    Cache.getInstance(context, galleryID.toString()).getGalleryBlock()?.let {
+                        galleries.add(
+                            Hitomi.SearchResult(
+                                it.id.toString(),
+                                it.title,
+                                it.thumbnails.first(),
+                                it.artists
+                            )
+                        )
                     }
-                }
 
-                withContext(Dispatchers.Main) {
-                    adapter.notifyDataSetChanged()
+                    withContext(Dispatchers.Main) {
+                        adapter.notifyDataSetChanged()
+                    }
                 }
             }
         }

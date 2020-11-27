@@ -57,8 +57,8 @@ class DownloadManager private constructor(context: Context) : ContextWrapper(con
         }.invoke()
 
     private var prevDownloadFolder: FileX? = null
-    private var downloadFolderMapInstance: MutableMap<Int, String>? = null
-    val downloadFolderMap: MutableMap<Int, String>
+    private var downloadFolderMapInstance: MutableMap<String, String>? = null
+    val downloadFolderMap: MutableMap<String, String>
         @Synchronized
         get() {
             if (prevDownloadFolder != downloadFolder) {
@@ -68,14 +68,14 @@ class DownloadManager private constructor(context: Context) : ContextWrapper(con
 
                     val data = if (file.exists())
                         kotlin.runCatching {
-                            file.readText()?.let { Json.decodeFromString<MutableMap<Int, String>>(it) }
+                            file.readText()?.let { Json.decodeFromString<MutableMap<String, String>>(it) }
                         }.onFailure { file.delete() }.getOrNull()
                     else
                         null
 
                     data ?: {
                         file.createNewFile()
-                        mutableMapOf<Int, String>()
+                        mutableMapOf<String, String>()
                     }.invoke()
                 }.invoke()
             }
@@ -85,7 +85,7 @@ class DownloadManager private constructor(context: Context) : ContextWrapper(con
 
 
     @Synchronized
-    fun isDownloading(galleryID: Int): Boolean {
+    fun isDownloading(galleryID: String): Boolean {
         val isThisGallery: (Call) -> Boolean = { (it.request().tag() as? DownloadService.Tag)?.galleryID == galleryID }
 
         return downloadFolderMap.containsKey(galleryID)
@@ -93,11 +93,11 @@ class DownloadManager private constructor(context: Context) : ContextWrapper(con
     }
 
     @Synchronized
-    fun getDownloadFolder(galleryID: Int): FileX? =
+    fun getDownloadFolder(galleryID: String): FileX? =
         downloadFolderMap[galleryID]?.let { downloadFolder.getChild(it) }
 
     @Synchronized
-    fun addDownloadFolder(galleryID: Int) {
+    fun addDownloadFolder(galleryID: String) {
         val name = runBlocking {
             Cache.getInstance(this@DownloadManager, galleryID).getGalleryBlock()
         }?.formatDownloadFolder() ?: return
@@ -116,7 +116,7 @@ class DownloadManager private constructor(context: Context) : ContextWrapper(con
     }
 
     @Synchronized
-    fun deleteDownloadFolder(galleryID: Int) {
+    fun deleteDownloadFolder(galleryID: String) {
         downloadFolderMap[galleryID]?.let {
             kotlin.runCatching {
                 downloadFolder.getChild(it).deleteRecursively()

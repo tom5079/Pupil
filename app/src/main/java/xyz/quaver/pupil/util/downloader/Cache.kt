@@ -32,9 +32,8 @@ import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import okhttp3.Request
-import xyz.quaver.Code
 import xyz.quaver.hitomi.GalleryBlock
-import xyz.quaver.hitomi.Reader
+import xyz.quaver.hitomi.GalleryInfo
 import xyz.quaver.io.FileX
 import xyz.quaver.io.util.*
 import xyz.quaver.pupil.client
@@ -46,24 +45,24 @@ import java.util.concurrent.ConcurrentHashMap
 @Serializable
 data class Metadata(
     var galleryBlock: GalleryBlock? = null,
-    var reader: Reader? = null,
+    var reader: GalleryInfo? = null,
     var imageList: MutableList<String?>? = null
 ) {
     fun copy(): Metadata = Metadata(galleryBlock, reader, imageList?.let { MutableList(it.size) { i -> it[i] } })
 }
 
-class Cache private constructor(context: Context, val galleryID: Int) : ContextWrapper(context) {
+class Cache private constructor(context: Context, val galleryID: String) : ContextWrapper(context) {
 
     companion object {
-        val instances = ConcurrentHashMap<Int, Cache>()
+        val instances = ConcurrentHashMap<String, Cache>()
 
-        fun getInstance(context: Context, galleryID: Int) =
+        fun getInstance(context: Context, galleryID: String) =
             instances[galleryID] ?: synchronized(this) {
-                instances[galleryID] ?: Cache(context, galleryID).also { instances.put(galleryID, it) }
+                instances[galleryID] ?: Cache(context, galleryID).also { instances[galleryID] = it }
             }
 
         @Synchronized
-        fun delete(context: Context, galleryID: Int) {
+        fun delete(context: Context, galleryID: String) {
             File(context.cacheDir, "imageCache/$galleryID").deleteRecursively()
             instances.remove(galleryID)
         }
@@ -111,8 +110,8 @@ class Cache private constructor(context: Context, val galleryID: Int) : ContextW
 
     suspend fun getGalleryBlock(): GalleryBlock? {
         val sources = listOf(
-            { xyz.quaver.hitomi.getGalleryBlock(galleryID) },
-            { xyz.quaver.hiyobi.getGalleryBlock(galleryID) }
+            { xyz.quaver.hitomi.getGalleryBlock(galleryID.toInt()) }
+           // { xyz.quaver.hiyobi.getGalleryBlock(galleryID) }
         )
 
         return metadata.galleryBlock
@@ -154,22 +153,17 @@ class Cache private constructor(context: Context, val galleryID: Int) : ContextW
                 }.getOrNull()?.uri }
             } } ?: Uri.EMPTY
 
-    suspend fun getReader(): Reader? {
+    suspend fun getReader(): GalleryInfo? {
         val mirrors = Preferences.get<String>("mirrors").let { if (it.isEmpty()) emptyList() else it.split('>') }
 
         val sources = mapOf(
-            Code.HITOMI to { xyz.quaver.hitomi.getReader(galleryID) },
-            Code.HIYOBI to { xyz.quaver.hiyobi.getReader(galleryID) }
-        ).let {
-            if (mirrors.isNotEmpty())
-                it.toSortedMap{ o1, o2 -> mirrors.indexOf(o1.name) - mirrors.indexOf(o2.name) }
-            else
-                it
-        }
+            "hitomi" to { xyz.quaver.hitomi.getGalleryInfo(galleryID.toInt()) },
+            //Code.HIYOBI to { xyz.quaver.hiyobi.getReader(galleryID) }
+        )
 
         return metadata.reader
             ?: withContext(Dispatchers.IO) {
-                var reader: Reader? = null
+                var reader: GalleryInfo? = null
 
                 for (source in sources) {
                     reader = try {
@@ -187,7 +181,7 @@ class Cache private constructor(context: Context, val galleryID: Int) : ContextW
                         metadata.reader = it
 
                         if (metadata.imageList == null)
-                            metadata.imageList = MutableList(reader.galleryInfo.files.size) { null }
+                            metadata.imageList = MutableList(reader.files.size) { null }
                     }
                 }
             }
@@ -206,7 +200,7 @@ class Cache private constructor(context: Context, val galleryID: Int) : ContextW
         setMetadata { metadata -> metadata.imageList!![index] = fileName }
     }
 
-    private val lock = ConcurrentHashMap<Int, Mutex>()
+    private val lock = ConcurrentHashMap<String, Mutex>()
     @Suppress("BlockingMethodInNonBlockingContext")
     fun moveToDownload() = CoroutineScope(Dispatchers.IO).launch {
         val downloadFolder = downloadFolder ?: return@launch

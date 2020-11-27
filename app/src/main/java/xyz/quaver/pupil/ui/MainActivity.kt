@@ -31,35 +31,33 @@ import android.view.animation.DecelerateInterpolator
 import android.widget.EditText
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
-import androidx.appcompat.app.AppCompatDelegate
 import androidx.cardview.widget.CardView
 import androidx.core.view.GravityCompat
 import androidx.core.view.ViewCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.navigation.NavigationView
 import com.google.android.material.snackbar.Snackbar
-import com.google.firebase.crashlytics.FirebaseCrashlytics
 import kotlinx.coroutines.*
 import xyz.quaver.floatingsearchview.FloatingSearchView
 import xyz.quaver.floatingsearchview.suggestions.model.SearchSuggestion
 import xyz.quaver.floatingsearchview.util.view.MenuView
 import xyz.quaver.floatingsearchview.util.view.SearchInputView
-import xyz.quaver.hitomi.doSearch
-import xyz.quaver.hitomi.getGalleryIDsFromNozomi
 import xyz.quaver.hitomi.getSuggestionsForQuery
 import xyz.quaver.pupil.*
-import xyz.quaver.pupil.adapters.GalleryBlockAdapter
+import xyz.quaver.pupil.adapters.SearchResultsAdapter
 import xyz.quaver.pupil.databinding.MainActivityBinding
 import xyz.quaver.pupil.services.DownloadService
+import xyz.quaver.pupil.sources.SearchResult
+import xyz.quaver.pupil.sources.Source
+import xyz.quaver.pupil.sources.hitomi.Hitomi
 import xyz.quaver.pupil.types.*
 import xyz.quaver.pupil.ui.dialog.DownloadLocationDialogFragment
 import xyz.quaver.pupil.ui.dialog.GalleryDialog
-import xyz.quaver.pupil.ui.view.MainView
-import xyz.quaver.pupil.ui.view.ProgressCard
+import xyz.quaver.pupil.ui.view.ProgressCardView
+import xyz.quaver.pupil.ui.view.SwipePageTurnView
 import xyz.quaver.pupil.util.ItemClickSupport
 import xyz.quaver.pupil.util.Preferences
 import xyz.quaver.pupil.util.checkUpdate
-import xyz.quaver.pupil.util.downloader.Cache
 import xyz.quaver.pupil.util.downloader.DownloadManager
 import xyz.quaver.pupil.util.restore
 import java.util.regex.Pattern
@@ -69,20 +67,7 @@ class MainActivity :
     BaseActivity(),
     NavigationView.OnNavigationItemSelectedListener
 {
-
-    enum class Mode {
-        SEARCH,
-        HISTORY,
-        DOWNLOAD,
-        FAVORITE
-    }
-
-    enum class SortMode {
-        NEWEST,
-        POPULAR
-    }
-
-    private val galleries = ArrayList<Int>()
+    private val searchResults = mutableListOf<SearchResult>()
 
     private var query = ""
     set(value) {
@@ -94,13 +79,13 @@ class MainActivity :
     }
     private var queryStack = mutableListOf<String>()
 
-    private var mode = Mode.SEARCH
-    private var sortMode = SortMode.NEWEST
+    @Suppress("UNCHECKED_CAST")
+    private var source: Source<Enum<*>, SearchResult> = Hitomi() as Source<Enum<*>, SearchResult>
+    private var sortMode = Hitomi.SortMode.NEWEST
 
-    private var galleryIDs: Deferred<List<Int>>? = null
+    private var searchJob: Deferred<Pair<List<SearchResult>, Int>>? = null
     private var totalItems = 0
-    private var loadingJob: Job? = null
-    private var currentPage = 0
+    private var currentPage = 1
 
     private lateinit var binding: MainActivityBinding
 
@@ -136,19 +121,10 @@ class MainActivity :
             queryStack.removeLastOrNull() != null && queryStack.isNotEmpty() -> runOnUiThread {
                 query = queryStack.last()
 
-                cancelFetch()
-                clearGalleries()
-                fetchGalleries(query, sortMode)
-                loadBlocks()
+                query()
             }
             else -> super.onBackPressed()
         }
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-
-        (binding.contents.recyclerview.adapter as? GalleryBlockAdapter)?.updateAll = false
     }
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
@@ -157,14 +133,11 @@ class MainActivity :
 
         return when(keyCode) {
             KeyEvent.KEYCODE_VOLUME_UP -> {
-                if (currentPage > 0) {
+                if (currentPage > 1) {
                     runOnUiThread {
                         currentPage--
 
-                        cancelFetch()
-                        clearGalleries()
-                        fetchGalleries(query, sortMode)
-                        loadBlocks()
+                        query()
                     }
                 }
 
@@ -175,10 +148,7 @@ class MainActivity :
                     runOnUiThread {
                         currentPage++
 
-                        cancelFetch()
-                        clearGalleries()
-                        fetchGalleries(query, sortMode)
-                        loadBlocks()
+                        query()
                     }
                 }
 
@@ -229,18 +199,14 @@ class MainActivity :
                     setTitle(R.string.main_jump_title)
                     setMessage(getString(
                         R.string.main_jump_message,
-                        currentPage+1,
+                        currentPage,
                         ceil(totalItems / perPage.toDouble()).roundToInt()
                     ))
 
                     setPositiveButton(android.R.string.ok) { _, _ ->
-                        currentPage = (editText.text.toString().toIntOrNull() ?: return@setPositiveButton)-1
+                        currentPage = (editText.text.toString().toIntOrNull() ?: return@setPositiveButton)
 
-                        runOnUiThread {
-                            cancelFetch()
-                            clearGalleries()
-                            loadBlocks()
-                        }
+                        query()
                     }
                 }.show()
             }
@@ -251,23 +217,18 @@ class MainActivity :
             setOnClickListener {
                 runBlocking {
                     withTimeoutOrNull(100) {
-                        galleryIDs?.await()
+                        searchJob?.await()
                     }
                 }.let {
-                    if (it?.isEmpty() == false) {
-                        val galleryID = it.random()
+                    if (it?.first?.isEmpty() == false) {
+                        val random = it.first.random()
 
-                        GalleryDialog(this@MainActivity, galleryID).apply {
+                        GalleryDialog(this@MainActivity, random.id).apply {
                             onChipClickedHandler.add {
-                                runOnUiThread {
-                                    query = it.toQuery()
-                                    currentPage = 0
+                                query = it.toQuery()
+                                currentPage = 1
 
-                                    cancelFetch()
-                                    clearGalleries()
-                                    fetchGalleries(query, sortMode)
-                                    loadBlocks()
-                                }
+                                query()
                                 dismiss()
                             }
                         }.show()
@@ -288,19 +249,14 @@ class MainActivity :
                     setTitle(R.string.main_open_gallery_by_id)
 
                     setPositiveButton(android.R.string.ok) { _, _ ->
-                        val galleryID = editText.text.toString().toIntOrNull() ?: return@setPositiveButton
+                        val galleryID = editText.text.toString()
 
                         GalleryDialog(this@MainActivity, galleryID).apply {
                             onChipClickedHandler.add {
-                                runOnUiThread {
-                                    query = it.toQuery()
-                                    currentPage = 0
+                                query = it.toQuery()
+                                currentPage = 1
 
-                                    cancelFetch()
-                                    clearGalleries()
-                                    fetchGalleries(query, sortMode)
-                                    loadBlocks()
-                                }
+                                query()
                                 dismiss()
                             }
                         }.show()
@@ -309,8 +265,8 @@ class MainActivity :
             }
         }
 
-        with(binding.contents.view) {
-            setOnPageTurnListener(object: MainView.OnPageTurnListener {
+        with(binding.contents.swipePageTurnView) {
+            setOnPageTurnListener(object: SwipePageTurnView.OnPageTurnListener {
                 override fun onPrev(page: Int) {
                     currentPage--
 
@@ -322,10 +278,7 @@ class MainActivity :
                         .setInterpolator(DecelerateInterpolator())
                         .translationY(0F)
 
-                    cancelFetch()
-                    clearGalleries()
-                    fetchGalleries(query, sortMode)
-                    loadBlocks()
+                    query()
                 }
 
                 override fun onNext(page: Int) {
@@ -339,95 +292,70 @@ class MainActivity :
                         .setInterpolator(DecelerateInterpolator())
                         .translationY(0F)
 
-                    cancelFetch()
-                    clearGalleries()
-                    fetchGalleries(query, sortMode)
-                    loadBlocks()
+                    query()
                 }
             })
         }
 
         setupSearchBar()
         setupRecyclerView()
-        fetchGalleries(query, sortMode)
-        loadBlocks()
+        query()
     }
 
     @SuppressLint("ClickableViewAccessibility")
     private fun setupRecyclerView() {
         with(binding.contents.recyclerview) {
-            adapter = GalleryBlockAdapter(galleries).apply {
+            adapter = SearchResultsAdapter(searchResults).apply {
                 onChipClickedHandler.add {
-                    runOnUiThread {
-                        query = it.toQuery()
-                        currentPage = 0
+                    query = it.toQuery()
+                    currentPage = 0
 
-                        cancelFetch()
-                        clearGalleries()
-                        fetchGalleries(query, sortMode)
-                        loadBlocks()
-                    }
+                    query()
                 }
-                onDownloadClickedHandler = { position ->
-                    val galleryID = galleries[position]
-
-                    if (DownloadManager.getInstance(context).isDownloading(galleryID)) {     //download in progress
-                        DownloadService.cancel(this@MainActivity, galleryID)
+                onDownloadClickedHandler = { id ->
+                    if (DownloadManager.getInstance(context).isDownloading(id)) {     //download in progress
+                        DownloadService.cancel(this@MainActivity, id)
                     }
                     else {
-                        DownloadManager.getInstance(context).addDownloadFolder(galleryID)
-                        DownloadService.download(this@MainActivity, galleryID)
+                        DownloadManager.getInstance(context).addDownloadFolder(id)
+                        DownloadService.download(this@MainActivity, id)
                     }
 
                     closeAllItems()
                 }
 
-                onDeleteClickedHandler = { position ->
-                    val galleryID = galleries[position]
-                    DownloadService.delete(this@MainActivity, galleryID)
+                onDeleteClickedHandler = { id ->
+                    DownloadService.delete(this@MainActivity, id)
 
-                    histories.remove(galleryID)
-
-                    if (this@MainActivity.mode != Mode.SEARCH)
-                        runOnUiThread {
-                            cancelFetch()
-                            clearGalleries()
-                            fetchGalleries(query, sortMode)
-                            loadBlocks()
-                        }
+                    histories.remove(id)
 
                     closeAllItems()
                 }
             }
             ItemClickSupport.addTo(this).apply {
                 onItemClickListener = listener@{ _, position, v ->
-                    if (v !is ProgressCard)
+                    if (v !is ProgressCardView)
                         return@listener
 
                     val intent = Intent(this@MainActivity, ReaderActivity::class.java)
-                    intent.putExtra("galleryID", galleries[position])
+                    intent.putExtra("galleryID", searchResults[position].id)
 
                     //TODO: Maybe sprinkling some transitions will be nice :D
                     startActivity(intent)
                 }
 
                 onItemLongClickListener = listener@{ _, position, v ->
-                    if (v !is ProgressCard)
+                    if (v !is ProgressCardView)
                         return@listener false
 
-                    val galleryID = galleries.getOrNull(position) ?: return@listener true
+                    val result = searchResults.getOrNull(position) ?: return@listener true
 
-                    GalleryDialog(this@MainActivity, galleryID).apply {
+                    GalleryDialog(this@MainActivity, result.id).apply {
                         onChipClickedHandler.add {
-                            runOnUiThread {
-                                query = it.toQuery()
-                                currentPage = 0
+                            query = it.toQuery()
+                            currentPage = 0
 
-                                cancelFetch()
-                                clearGalleries()
-                                fetchGalleries(query, sortMode)
-                                loadBlocks()
-                            }
+                            query()
                             dismiss()
                         }
                     }.show()
@@ -458,7 +386,7 @@ class MainActivity :
         with(binding.contents.searchview) {
             onMenuStatusChangeListener = object: FloatingSearchView.OnMenuStatusChangeListener {
                 override fun onMenuOpened() {
-                    (binding.contents.recyclerview.adapter as GalleryBlockAdapter).closeAllItems()
+                    (binding.contents.recyclerview.adapter as SearchResultsAdapter).closeAllItems()
                 }
 
                 override fun onMenuClosed() {
@@ -532,13 +460,8 @@ class MainActivity :
                 override fun onFocusCleared() {
                     suggestionJob?.cancel()
 
-                    runOnUiThread {
-                        cancelFetch()
-                        clearGalleries()
-                        currentPage = 0
-                        fetchGalleries(query, sortMode)
-                        loadBlocks()
-                    }
+                    currentPage = 1
+                    query()
                 }
             }
 
@@ -550,43 +473,26 @@ class MainActivity :
         when(item?.itemId) {
             R.id.main_menu_settings -> startActivity(Intent(this@MainActivity, SettingsActivity::class.java))
             R.id.main_menu_thin -> {
-                val thin = !item.isChecked
-
-                item.isChecked = thin
-                binding.contents.recyclerview.apply {
-                    (adapter as GalleryBlockAdapter).apply {
-                        this.thin = thin
-
-                        Preferences["thin"] = thin
-                    }
-
-                    adapter = adapter       // Force to redraw
-                }
+                // TODO
             }
             R.id.main_menu_sort_newest -> {
-                sortMode = SortMode.NEWEST
+                sortMode = Hitomi.SortMode.NEWEST
                 item.isChecked = true
 
                 runOnUiThread {
-                    currentPage = 0
+                    currentPage = 1
 
-                    cancelFetch()
-                    clearGalleries()
-                    fetchGalleries(query, sortMode)
-                    loadBlocks()
+                    query()
                 }
             }
             R.id.main_menu_sort_popular -> {
-                sortMode = SortMode.POPULAR
+                sortMode = Hitomi.SortMode.POPULAR
                 item.isChecked = true
 
                 runOnUiThread {
-                    currentPage = 0
+                    currentPage = 1
 
-                    cancelFetch()
-                    clearGalleries()
-                    fetchGalleries(query, sortMode)
-                    loadBlocks()
+                    query()
                 }
             }
         }
@@ -597,46 +503,6 @@ class MainActivity :
             binding.drawer.closeDrawers()
 
             when(item.itemId) {
-                R.id.main_drawer_home -> {
-                    cancelFetch()
-                    clearGalleries()
-                    currentPage = 0
-                    query = ""
-                    queryStack.clear()
-                    mode = Mode.SEARCH
-                    fetchGalleries(query, sortMode)
-                    loadBlocks()
-                }
-                R.id.main_drawer_history -> {
-                    cancelFetch()
-                    clearGalleries()
-                    currentPage = 0
-                    query = ""
-                    queryStack.clear()
-                    mode = Mode.HISTORY
-                    fetchGalleries(query, sortMode)
-                    loadBlocks()
-                }
-                R.id.main_drawer_downloads -> {
-                    cancelFetch()
-                    clearGalleries()
-                    currentPage = 0
-                    query = ""
-                    queryStack.clear()
-                    mode = Mode.DOWNLOAD
-                    fetchGalleries(query, sortMode)
-                    loadBlocks()
-                }
-                R.id.main_drawer_favorite -> {
-                    cancelFetch()
-                    clearGalleries()
-                    currentPage = 0
-                    query = ""
-                    queryStack.clear()
-                    mode = Mode.FAVORITE
-                    fetchGalleries(query, sortMode)
-                    loadBlocks()
-                }
                 R.id.main_drawer_help -> {
                     startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(getString(R.string.help))))
                 }
@@ -659,161 +525,47 @@ class MainActivity :
     }
 
     private fun cancelFetch() {
-        galleryIDs?.cancel()
-        loadingJob?.cancel()
+        searchJob?.cancel()
     }
 
     private fun clearGalleries() = CoroutineScope(Dispatchers.Main).launch {
-        galleries.clear()
+        searchResults.clear()
 
-        with(binding.contents.recyclerview.adapter as GalleryBlockAdapter?) {
-            this ?: return@with
-
-            this.notifyDataSetChanged()
-        }
+        binding.contents.recyclerview.adapter?.notifyDataSetChanged()
 
         binding.contents.noresult.visibility = View.INVISIBLE
         binding.contents.progressbar.show()
     }
-
-    private fun fetchGalleries(query: String, sortMode: SortMode) {
-        val defaultQuery: String = Preferences["default_query"]
-
-        if (query.isNotBlank())
-            searchHistory.add(query)
-
-        if (query != queryStack.lastOrNull()) {
-            queryStack.remove(query)
-            queryStack.add(query)
-        }
-
-        if (query.isNotEmpty() && mode != Mode.SEARCH) {
-            Snackbar.make(binding.contents.recyclerview, R.string.search_all, Snackbar.LENGTH_SHORT).apply {
-                setAction(android.R.string.ok) {
-                    cancelFetch()
-                    clearGalleries()
-                    currentPage = 0
-                    mode = Mode.SEARCH
-                    queryStack.clear()
-                    fetchGalleries(query, sortMode)
-                    loadBlocks()
-                }
-            }.show()
-        }
-
-        galleryIDs = null
-
-        if (galleryIDs?.isActive == true)
-            return
-
-        galleryIDs = CoroutineScope(Dispatchers.IO).async {
-            when(mode) {
-                Mode.SEARCH -> {
-                    when {
-                        query.isEmpty() and defaultQuery.isEmpty() -> {
-                            when(sortMode) {
-                                SortMode.POPULAR -> getGalleryIDsFromNozomi(null, "popular", "all")
-                                else -> getGalleryIDsFromNozomi(null, "index", "all")
-                            }.also {
-                                totalItems = it.size
-                            }
-                        }
-                        else -> doSearch("$defaultQuery $query", sortMode == SortMode.POPULAR).also {
-                            totalItems = it.size
-                        }
-                    }
-                }
-                Mode.HISTORY -> {
-                    when {
-                        query.isEmpty() -> {
-                            histories.reversed().also {
-                                totalItems = it.size
-                            }
-                        }
-                        else -> {
-                            val result = doSearch(query).sorted()
-                            histories.reversed().filter { result.binarySearch(it) >= 0 }.also {
-                                totalItems = it.size
-                            }
-                        }
-                    }
-                }
-                Mode.DOWNLOAD -> {
-                    val downloads = DownloadManager.getInstance(this@MainActivity).downloadFolderMap.keys.toList()
-
-                    when {
-                        query.isEmpty() -> downloads.reversed().also {
-                            totalItems = it.size
-                        }
-                        else -> {
-                            val result = doSearch(query).sorted()
-                            downloads.reversed().filter { result.binarySearch(it) >= 0 }.also {
-                                totalItems = it.size
-                            }
-                        }
-                    }
-                }
-                Mode.FAVORITE -> {
-                    when {
-                        query.isEmpty() -> favorites.reversed().also {
-                            totalItems = it.size
-                        }
-                        else -> {
-                            val result = doSearch(query).sorted()
-                            favorites.reversed().filter { result.binarySearch(it) >= 0 }.also {
-                                totalItems = it.size
-                            }
-                        }
-                    }
-                }
-            }.toList()
-        }
-    }
-
-    private fun loadBlocks() {
+    private fun query() {
         val perPage = Preferences["per_page", "25"].toInt()
 
-        loadingJob = CoroutineScope(Dispatchers.IO).launch {
-            val galleryIDs = try {
-                galleryIDs!!.await().also {
-                    if (it.isEmpty())
-                        throw Exception("No result")
+        cancelFetch()
+        clearGalleries()
+
+        CoroutineScope(Dispatchers.Main).launch {
+            searchJob = async(Dispatchers.IO) {
+                source.query(
+                    query + Preferences["default_query", ""],
+                    (currentPage - 1) * perPage until currentPage * perPage,
+                    sortMode
+                )
+            }.also {
+                val results: List<SearchResult>
+
+                it.await().let { r ->
+                    results = r.first
+                    totalItems = r.second
                 }
-            } catch (e: Exception) {
 
-                if (e.message != "No result")
-                    FirebaseCrashlytics.getInstance().recordException(e)
+                binding.contents.progressbar.hide()
+                binding.contents.swipePageTurnView.setCurrentPage(currentPage, totalItems > currentPage*perPage)
 
-                withContext(Dispatchers.Main) {
+                if (results.isEmpty()) {
                     binding.contents.noresult.visibility = View.VISIBLE
-                    binding.contents.progressbar.hide()
+                } else {
+                    searchResults.addAll(results)
+                    binding.contents.recyclerview.adapter?.notifyDataSetChanged()
                 }
-
-                return@launch
-            }
-
-            launch(Dispatchers.Main) {
-                binding.contents.view.setCurrentPage(currentPage + 1, galleryIDs.size > (currentPage+1)*perPage)
-            }
-
-            galleryIDs.slice(currentPage*perPage until min(currentPage*perPage+perPage, galleryIDs.size)).chunked(5).let { chunks ->
-                for (chunk in chunks)
-                    chunk.map { galleryID ->
-                        async {
-                            Cache.getInstance(this@MainActivity, galleryID).getGalleryBlock()?.let {
-                                galleryID
-                            }
-                        }
-                    }.forEach {
-                        it.await()?.also {
-                            withContext(Dispatchers.Main) {
-                                binding.contents.progressbar.hide()
-
-                                galleries.add(it)
-                                binding.contents.recyclerview.adapter!!.notifyItemInserted(galleries.size - 1)
-                            }
-                        }
-                    }
             }
         }
     }

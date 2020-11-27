@@ -39,7 +39,6 @@ import xyz.quaver.pupil.databinding.DownloadLocationItemBinding
 import xyz.quaver.pupil.util.Preferences
 import xyz.quaver.pupil.util.byteToString
 import xyz.quaver.pupil.util.downloader.DownloadManager
-import xyz.quaver.pupil.util.migrate
 import java.io.File
 
 class DownloadLocationDialogFragment : DialogFragment() {
@@ -181,8 +180,6 @@ class DownloadLocationDialogFragment : DialogFragment() {
             setPositiveButton(requireContext().getText(android.R.string.ok)) { _, _ ->
                 if (Preferences["download_folder", ""].isEmpty())
                     Preferences["download_folder"] = context.getExternalFilesDir(null)?.toUri()?.toString() ?: ""
-
-                DownloadManager.getInstance(requireContext()).migrate()
             }
 
             isCancelable = false

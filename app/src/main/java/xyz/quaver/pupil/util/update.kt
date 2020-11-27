@@ -46,7 +46,6 @@ import okhttp3.Request
 import okhttp3.Response
 import ru.noties.markwon.Markwon
 import xyz.quaver.hitomi.GalleryBlock
-import xyz.quaver.hitomi.Reader
 import xyz.quaver.hitomi.getGalleryBlock
 import xyz.quaver.hitomi.getReader
 import xyz.quaver.io.FileX
@@ -196,7 +195,7 @@ fun checkUpdate(context: Context, force: Boolean = false) {
     }
 }
 
-fun restore(url: String, onFailure: ((Throwable) -> Unit)? = null, onSuccess: ((List<Int>) -> Unit)? = null) {
+fun restore(url: String, onFailure: ((Throwable) -> Unit)? = null, onSuccess: ((List<String>) -> Unit)? = null) {
     if (!URLUtil.isValidUrl(url)) {
         onFailure?.invoke(IllegalArgumentException())
         return
@@ -214,7 +213,7 @@ fun restore(url: String, onFailure: ((Throwable) -> Unit)? = null, onSuccess: ((
 
         override fun onResponse(call: Call, response: Response) {
             kotlin.runCatching {
-                Json.decodeFromString<List<Int>>(response.also { if (it.code() != 200) throw IOException() }.body().use { it?.string() } ?: "[]").let {
+                Json.decodeFromString<List<String>>(response.also { if (it.code() != 200) throw IOException() }.body().use { it?.string() } ?: "[]").let {
                     favorites.addAll(it)
                     onSuccess?.invoke(it)
                 }
@@ -235,113 +234,6 @@ private val receiver = object: BroadcastReceiver() {
                 NotificationManagerCompat.from(context).cancel(R.id.notification_id_import)
                 context.unregisterReceiver(this)
             }
-        }
-    }
-}
-@SuppressLint("RestrictedApi")
-fun xyz.quaver.pupil.util.downloader.DownloadManager.migrate() {
-    registerReceiver(receiver, IntentFilter().apply { addAction(receiver.ACTION_CANCEL) })
-
-    val notificationManager = NotificationManagerCompat.from(this)
-    val action = NotificationCompat.Action.Builder(0, getText(android.R.string.cancel),
-        PendingIntent.getBroadcast(this, R.id.notification_import_cancel_action.normalizeID(), Intent(receiver.ACTION_CANCEL), PendingIntent.FLAG_UPDATE_CURRENT)
-    ).build()
-    val notification = NotificationCompat.Builder(this, "import")
-        .setContentTitle(getText(R.string.import_old_galleries_notification))
-        .setProgress(0, 0, true)
-        .addAction(action)
-        .setSmallIcon(R.drawable.ic_notification)
-        .setOngoing(true)
-
-    DownloadService.cancel(this)
-
-    job?.cancel()
-    job = CoroutineScope(Dispatchers.IO).launch {
-        val images = listOf(
-            "jpg",
-            "png",
-            "gif",
-            "webp"
-        )
-
-        val downloadFolders = downloadFolder.listFiles { folder ->
-            folder.isDirectory && !downloadFolderMap.values.contains(folder.name)
-        }?.map {
-            if (it !is FileX)
-                FileX(this@migrate, it)
-            else
-                it
-        }
-
-        if (downloadFolders.isNullOrEmpty()) return@launch
-
-        downloadFolders.forEachIndexed { index, folder ->
-            notification
-                .setContentText(getString(R.string.import_old_galleries_notification_text, index, downloadFolders.size))
-                .setProgress(index, downloadFolders.size, false)
-            notificationManager.notify(R.id.notification_id_import, notification.build())
-
-            val metadata = kotlin.runCatching {
-                folder.getChild(".metadata").readText()?.let { Json.parseToJsonElement(it) }
-            }.getOrNull()
-
-            val galleryID = metadata?.get("reader")?.get("galleryInfo")?.get("id")?.content?.toIntOrNull()
-                ?: folder.name.toIntOrNull() ?: return@forEachIndexed
-
-            val galleryBlock: GalleryBlock? = kotlin.runCatching {
-                metadata?.get("galleryBlock")?.let { Json.decodeFromJsonElement<GalleryBlock>(it) }
-            }.getOrNull() ?: kotlin.runCatching {
-                getGalleryBlock(galleryID)
-            }.getOrNull() ?: kotlin.runCatching {
-                xyz.quaver.hiyobi.getGalleryBlock(galleryID)
-            }.getOrNull()
-
-            val reader: Reader? = kotlin.runCatching {
-                metadata?.get("reader")?.let { Json.decodeFromJsonElement<Reader>(it) }
-            }.getOrNull() ?: kotlin.runCatching {
-                getReader(galleryID)
-            }.getOrNull() ?: kotlin.runCatching {
-                xyz.quaver.hiyobi.getReader(galleryID)
-            }.getOrNull()
-
-            metadata?.get("thumbnail")?.jsonPrimitive?.contentOrNull?.also { thumbnail ->
-                val file = folder.getChild(".thumbnail").also {
-                    if (it.exists())
-                        it.delete()
-                    it.createNewFile()
-                }
-
-                file.writeBytes(Base64.decode(thumbnail, Base64.DEFAULT))
-            }
-
-            val list: MutableList<String?> =
-                MutableList(reader!!.galleryInfo.files.size) { null }
-
-            folder.list { _, name ->
-                name?.substringAfterLast('.') in images
-            }?.sorted()?.take(list.size)?.forEachIndexed { i, name ->
-                list[i] = name
-            }
-
-            folder.getChild(".metadata").also { if (it.exists()) it.delete(); it.createNewFile() }.writeText(
-                Json.encodeToString(Metadata(galleryBlock, reader, list))
-            )
-
-            Cache.delete(this@migrate, galleryID)
-            downloadFolderMap[galleryID] = folder.name
-
-            downloadFolder.getChild(".download").let { if (!it.exists()) it.createNewFile(); it.writeText(Json.encodeToString(downloadFolderMap)) }
-        }
-
-        notification
-            .setContentText(getText(R.string.import_old_galleries_notification_done))
-            .setProgress(0, 0, false)
-            .setOngoing(false)
-            .mActions.clear()
-        notificationManager.notify(R.id.notification_id_import, notification.build())
-
-        kotlin.runCatching {
-            unregisterReceiver(receiver)
         }
     }
 }

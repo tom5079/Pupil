@@ -11,7 +11,7 @@ import androidx.core.graphics.drawable.DrawableCompat
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.databinding.ProgressCardViewBinding
 
-class ProgressCard @JvmOverloads constructor(context: Context, attr: AttributeSet? = null, defStyle: Int = R.attr.cardViewStyle) : CardView(context, attr, defStyle) {
+class ProgressCardView @JvmOverloads constructor(context: Context, attr: AttributeSet? = null, defStyle: Int = R.attr.cardViewStyle) : CardView(context, attr, defStyle) {
 
     enum class Type {
         LOADING,

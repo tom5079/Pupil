@@ -26,9 +26,8 @@ import androidx.core.content.ContextCompat
 import kotlinx.serialization.json.*
 import okhttp3.OkHttpClient
 import okhttp3.Request
-import xyz.quaver.Code
 import xyz.quaver.hitomi.GalleryBlock
-import xyz.quaver.hitomi.Reader
+import xyz.quaver.hitomi.GalleryInfo
 import xyz.quaver.hitomi.getReferer
 import xyz.quaver.hitomi.imageUrlFromImage
 import xyz.quaver.hiyobi.createImgList
@@ -103,11 +102,17 @@ fun GalleryBlock.formatDownloadFolderTest(format: String): String =
         }
     }.replace(Regex("""[*\\|"?><:/]"""), "").ellipsize(127)
 
-val Reader.requestBuilders: List<Request.Builder>
+val GalleryInfo.requestBuilders: List<Request.Builder>
     get() {
-        val galleryID = this.galleryInfo.id ?: 0
+        val galleryID = this.id ?: 0
         val lowQuality = Preferences["low_quality", true]
 
+        return this.files.map {
+            Request.Builder()
+                .url(imageUrlFromImage(galleryID, it, !lowQuality))
+                .header("Referer", getReferer(galleryID))
+        }
+/*
         return when(code) {
             Code.HITOMI -> {
                 this.galleryInfo.files.map {
@@ -122,9 +127,8 @@ val Reader.requestBuilders: List<Request.Builder>
                         .url(it.path)
                 }
             }
-        }
+        }*/
     }
-
 fun String.ellipsize(n: Int): String =
     if (this.length > n)
         this.slice(0 until n) + "…"
