@@ -98,8 +98,6 @@ class MainActivity :
         binding = MainActivityBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        setSource(sources.values.first())
-
         if (intent.action == Intent.ACTION_VIEW) {
             intent.dataString?.let { url ->
                 restore(url,
@@ -340,6 +338,7 @@ class MainActivity :
 
         setupSearchBar()
         setupRecyclerView()
+        setSource(sources.values.first())
         query()
     }
 

@@ -144,6 +144,7 @@ class SearchResultsAdapter(private val results: List<SearchResult>) : RecyclerSw
 
             binding.thumbnail.controller = Fresco.newDraweeControllerBuilder()
                 .setUri(result.thumbnail)
+                .setOldController(binding.thumbnail.controller)
                 .setControllerListener(controllerListener)
                 .build()
 

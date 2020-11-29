@@ -22,6 +22,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
+import xyz.quaver.hitomi.galleryblockdir
 import xyz.quaver.hiyobi.*
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.sources.DefaultSortMode
@@ -41,7 +42,7 @@ class Hiyobi : Source<DefaultSortMode> {
         val (results, total) = if (query.isEmpty())
             list(range)
         else
-            search(query, range)
+            search(query.trim(), range)
 
         CoroutineScope(Dispatchers.Unconfined).launch {
             results.forEach {
@@ -65,7 +66,8 @@ class Hiyobi : Source<DefaultSortMode> {
                     SearchResult.ExtraType.CHARACTER to { galleryBlock.characters.joinToString { it.value.wordCapitalize() } },
                     SearchResult.ExtraType.SERIES to { galleryBlock.parodys.joinToString { it.value.wordCapitalize() } },
                     SearchResult.ExtraType.TYPE to { galleryBlock.type.name.replace('_', ' ').wordCapitalize() },
-                    SearchResult.ExtraType.PAGECOUNT to { getGalleryInfo(galleryBlock.id).files.size.toString() }
+                    SearchResult.ExtraType.PAGECOUNT to { getGalleryInfo(galleryBlock.id).files.size.toString() },
+                    SearchResult.ExtraType.GROUP to { galleryBlock.groups.joinToString { it.value.wordCapitalize() } }
                 ),
                 galleryBlock.tags.map { it.value }
             )
