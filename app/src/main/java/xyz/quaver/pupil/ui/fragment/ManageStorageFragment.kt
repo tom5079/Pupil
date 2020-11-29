@@ -94,7 +94,12 @@ class ManageStorageFragment : PreferenceFragmentCompat(), Preference.OnPreferenc
                                 }
 
                                 if (dir.exists())
-                                    dir.listFiles()?.forEach { (it as? FileX)?.deleteRecursively() }
+                                    dir.listFiles()?.forEach {
+                                        when (it) {
+                                            is FileX -> it.deleteRecursively()
+                                            else -> it.deleteRecursively()
+                                        }
+                                    }
 
                                 job = launch {
                                     var size = 0L
