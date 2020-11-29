@@ -42,6 +42,7 @@ import okhttp3.Interceptor
 import okhttp3.OkHttpClient
 import okhttp3.Response
 import xyz.quaver.io.FileX
+import xyz.quaver.pupil.sources.initSources
 import xyz.quaver.pupil.types.Tag
 import xyz.quaver.pupil.util.*
 import xyz.quaver.setClient
@@ -88,6 +89,8 @@ class Pupil : Application() {
 
         firebaseAnalytics = Firebase.analytics
         FirebaseCrashlytics.getInstance().setUserId(userID)
+
+        initSources(this)
 
         val proxyInfo = getProxyInfo()
 

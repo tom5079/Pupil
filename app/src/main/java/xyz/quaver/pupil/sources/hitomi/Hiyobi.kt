@@ -23,14 +23,19 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 import xyz.quaver.hiyobi.*
+import xyz.quaver.pupil.R
+import xyz.quaver.pupil.sources.DefaultSortMode
 import xyz.quaver.pupil.sources.SearchResult
 import xyz.quaver.pupil.sources.Source
 import xyz.quaver.pupil.util.wordCapitalize
 
-class Hiyobi : Source<Enum<*>> {
-    override val querySortModeClass = null
+class Hiyobi : Source<DefaultSortMode> {
 
-    override suspend fun query(query: String, range: IntRange, sortMode: Enum<*>?): Pair<Channel<SearchResult>, Int> {
+    override val name: String = "hiyobi.me"
+    override val iconResID: Int = R.drawable.ic_hiyobi
+    override val availableSortMode: Array<DefaultSortMode> = DefaultSortMode.values()
+
+    override suspend fun query(query: String, range: IntRange, sortMode: Enum<*>): Pair<Channel<SearchResult>, Int> {
         val channel = Channel<SearchResult>()
 
         val (results, total) = if (query.isEmpty())
@@ -59,7 +64,7 @@ class Hiyobi : Source<Enum<*>> {
                 mapOf(
                     SearchResult.ExtraType.CHARACTER to { galleryBlock.characters.joinToString { it.value.wordCapitalize() } },
                     SearchResult.ExtraType.SERIES to { galleryBlock.parodys.joinToString { it.value.wordCapitalize() } },
-                    SearchResult.ExtraType.TYPE to { galleryBlock.type.name.wordCapitalize() },
+                    SearchResult.ExtraType.TYPE to { galleryBlock.type.name.replace('_', ' ').wordCapitalize() },
                     SearchResult.ExtraType.PAGECOUNT to { getGalleryInfo(galleryBlock.id).files.size.toString() }
                 ),
                 galleryBlock.tags.map { it.value }

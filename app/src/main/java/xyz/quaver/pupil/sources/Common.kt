@@ -18,9 +18,13 @@
 
 package xyz.quaver.pupil.sources
 
+import android.content.Context
+import android.graphics.drawable.Drawable
+import androidx.core.content.ContextCompat
 import kotlinx.coroutines.channels.Channel
 import xyz.quaver.pupil.R
-import kotlin.reflect.KClass
+import xyz.quaver.pupil.sources.hitomi.Hitomi
+import xyz.quaver.pupil.sources.hitomi.Hiyobi
 
 data class SearchResult(
     val id: String,
@@ -49,8 +53,28 @@ data class SearchResult(
     }
 }
 
-interface Source<Query_SortMode: Enum<*>> {
-    val querySortModeClass: KClass<Query_SortMode>?
+enum class DefaultSortMode {
+    DEFAULT
+}
+interface Source<Query_SortMode : Enum<Query_SortMode>> {
+    val name: String
+    val iconResID: Int
+    val availableSortMode: Array<Query_SortMode>
 
-    suspend fun query(query: String, range: IntRange, sortMode: Query_SortMode? = null) : Pair<Channel<SearchResult>, Int>
+    suspend fun query(query: String, range: IntRange, sortMode: Enum<*>) : Pair<Channel<SearchResult>, Int>
+}
+
+val sources = mutableMapOf<String, Source<*>>()
+val sourceIcons = mutableMapOf<String, Drawable?>()
+
+@Suppress("UNCHECKED_CAST")
+fun initSources(context: Context) {
+    // Add Default Sources
+    listOf(
+        Hitomi(),
+        Hiyobi()
+    ).forEach { 
+        sources[it.name] = it
+        sourceIcons[it.name] = ContextCompat.getDrawable(context, it.iconResID)
+    }
 }

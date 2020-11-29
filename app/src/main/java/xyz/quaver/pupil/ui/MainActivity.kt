@@ -25,23 +25,27 @@ import android.os.Bundle
 import android.text.InputType
 import android.text.util.Linkify
 import android.view.KeyEvent
+import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import android.view.animation.DecelerateInterpolator
 import android.widget.EditText
+import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
-import androidx.cardview.widget.CardView
 import androidx.core.view.GravityCompat
 import androidx.core.view.ViewCompat
+import androidx.core.view.children
+import androidx.core.widget.ImageViewCompat
 import androidx.recyclerview.widget.RecyclerView
+import androidx.swiperefreshlayout.widget.CircularProgressDrawable
+import com.daimajia.swipe.adapters.RecyclerSwipeAdapter
 import com.google.android.material.navigation.NavigationView
 import com.google.android.material.snackbar.Snackbar
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import xyz.quaver.floatingsearchview.FloatingSearchView
 import xyz.quaver.floatingsearchview.suggestions.model.SearchSuggestion
-import xyz.quaver.floatingsearchview.util.view.MenuView
 import xyz.quaver.floatingsearchview.util.view.SearchInputView
 import xyz.quaver.hitomi.getSuggestionsForQuery
 import xyz.quaver.pupil.*
@@ -50,18 +54,16 @@ import xyz.quaver.pupil.databinding.MainActivityBinding
 import xyz.quaver.pupil.services.DownloadService
 import xyz.quaver.pupil.sources.SearchResult
 import xyz.quaver.pupil.sources.Source
-import xyz.quaver.pupil.sources.hitomi.Hitomi
-import xyz.quaver.pupil.sources.hitomi.Hiyobi
+import xyz.quaver.pupil.sources.sourceIcons
+import xyz.quaver.pupil.sources.sources
 import xyz.quaver.pupil.types.*
 import xyz.quaver.pupil.ui.dialog.DownloadLocationDialogFragment
 import xyz.quaver.pupil.ui.dialog.GalleryDialog
+import xyz.quaver.pupil.ui.dialog.SourceSelectDialog
 import xyz.quaver.pupil.ui.view.ProgressCardView
 import xyz.quaver.pupil.ui.view.SwipePageTurnView
-import xyz.quaver.pupil.util.ItemClickSupport
-import xyz.quaver.pupil.util.Preferences
-import xyz.quaver.pupil.util.checkUpdate
+import xyz.quaver.pupil.util.*
 import xyz.quaver.pupil.util.downloader.DownloadManager
-import xyz.quaver.pupil.util.restore
 import java.util.regex.Pattern
 import kotlin.math.*
 import kotlin.random.Random
@@ -82,9 +84,8 @@ class MainActivity :
     }
     private var queryStack = mutableListOf<String>()
 
-    @Suppress("UNCHECKED_CAST")
-    private var source: Source<Enum<*>> = Hiyobi() as Source<Enum<*>>
-    private var sortMode = Hitomi.SortMode.NEWEST
+    private lateinit var source: Source<*>
+    private lateinit var sortMode: Enum<*>
 
     private var searchJob: Deferred<Pair<Channel<SearchResult>, Int>>? = null
     private var totalItems = 0
@@ -96,6 +97,8 @@ class MainActivity :
         super.onCreate(savedInstanceState)
         binding = MainActivityBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        setSource(sources.values.first())
 
         if (intent.action == Intent.ACTION_VIEW) {
             intent.dataString?.let { url ->
@@ -167,6 +170,34 @@ class MainActivity :
         }
     }
 
+    private fun setSource(source: Source<*>) {
+        this.source = source
+        sortMode = source.availableSortMode.first()
+
+        query = ""
+        currentPage = 1
+
+        with (binding.contents.searchview.binding.querySection.menuView) {
+            post {
+                menuItems.findMenu(R.id.sort).subMenu.apply {
+                    clear()
+
+                    source.availableSortMode.forEach {
+                        add(R.id.sort_mode_group_id, it.ordinal, Menu.NONE, it.name)
+                    }
+
+                    setGroupCheckable(R.id.sort_mode_group_id, true, true)
+
+                    children.first().isChecked = true
+                }
+                with (getChildAt(1) as ImageView) {
+                    ImageViewCompat.setImageTintList(this, null)
+                    setImageDrawable(sourceIcons[source.name])
+                }
+            }
+        }
+    }
+
     private fun initView() {
         binding.contents.recyclerview.addOnScrollListener(object: RecyclerView.OnScrollListener() {
             override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
@@ -175,7 +206,7 @@ class MainActivity :
                     min(
                         max(
                         binding.contents.searchview.translationY - dy,
-                        -binding.contents.searchview.findViewById<CardView>(R.id.search_query_section).height.toFloat()
+                        -binding.contents.searchview.binding.querySection.root.height.toFloat()
                     ), 0F)
 
                 if (dy > 0)
@@ -224,6 +255,7 @@ class MainActivity :
         with(binding.contents.randomFab) {
             setImageResource(R.drawable.shuffle_variant)
             setOnClickListener {
+                setImageDrawable(CircularProgressDrawable(context))
                 if (totalItems > 0)
                     CoroutineScope(Dispatchers.IO).launch {
                         val random = Random.Default.nextInt(totalItems)
@@ -236,6 +268,7 @@ class MainActivity :
                             ).first.receive()
 
                         launch(Dispatchers.Main) {
+                            setImageResource(R.drawable.shuffle_variant)
                             GalleryDialog(this@MainActivity, randomResult.id).apply {
                                 onChipClickedHandler.add {
                                     query = it.toQuery()
@@ -394,19 +427,11 @@ class MainActivity :
         with(binding.contents.searchview) {
             onMenuStatusChangeListener = object: FloatingSearchView.OnMenuStatusChangeListener {
                 override fun onMenuOpened() {
-                    (binding.contents.recyclerview.adapter as SearchResultsAdapter).closeAllItems()
+                    (this@MainActivity.binding.contents.recyclerview.adapter as SearchResultsAdapter).closeAllItems()
                 }
 
                 override fun onMenuClosed() {
                     //Do Nothing
-                }
-            }
-
-            post {
-                findViewById<MenuView>(R.id.menu_view).menuItems.firstOrNull {
-                    (it as MenuItem).itemId == R.id.main_menu_thin
-                }?.let {
-                    (it as MenuItem).isChecked = Preferences["thin"]
                 }
             }
 
@@ -473,37 +498,32 @@ class MainActivity :
                 }
             }
 
-            attachNavigationDrawerToMenuButton(binding.drawer)
+            attachNavigationDrawerToMenuButton(this@MainActivity.binding.drawer)
         }
     }
 
-    fun onActionMenuItemSelected(item: MenuItem?) {
-        when(item?.itemId) {
-            R.id.main_menu_settings -> startActivity(Intent(this@MainActivity, SettingsActivity::class.java))
-            R.id.main_menu_thin -> {
-                // TODO
+    private fun onActionMenuItemSelected(item: MenuItem?) {
+        if (item?.groupId == R.id.sort_mode_group_id) {
+            currentPage = 1
+            sortMode = source.availableSortMode.let { availableSortMode ->
+                availableSortMode.getOrElse(item.itemId) { availableSortMode.first() }
             }
-            R.id.main_menu_sort_newest -> {
-                sortMode = Hitomi.SortMode.NEWEST
-                item.isChecked = true
 
-                runOnUiThread {
-                    currentPage = 1
-
-                    query()
-                }
-            }
-            R.id.main_menu_sort_popular -> {
-                sortMode = Hitomi.SortMode.POPULAR
-                item.isChecked = true
-
-                runOnUiThread {
-                    currentPage = 1
-
-                    query()
-                }
-            }
+            query()
         }
+        else
+            when(item?.itemId) {
+                R.id.main_menu_settings -> startActivity(Intent(this@MainActivity, SettingsActivity::class.java))
+                R.id.source -> SourceSelectDialog().apply {
+                    onSourceSelectedListener = {
+                        setSource(it)
+
+                        query()
+
+                        dismiss()
+                    }
+                }.show(supportFragmentManager, null)
+            }
     }
 
     override fun onNavigationItemSelected(item: MenuItem): Boolean {
@@ -539,6 +559,7 @@ class MainActivity :
     private fun clearGalleries() = CoroutineScope(Dispatchers.Main).launch {
         searchResults.clear()
 
+        (binding.contents.recyclerview.adapter as RecyclerSwipeAdapter).mItemManger.closeAllItems()
         binding.contents.recyclerview.adapter?.notifyDataSetChanged()
 
         binding.contents.noresult.visibility = View.INVISIBLE

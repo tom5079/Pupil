@@ -21,6 +21,7 @@ package xyz.quaver.pupil.sources.hitomi
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import xyz.quaver.hitomi.*
+import xyz.quaver.pupil.R
 import xyz.quaver.pupil.sources.SearchResult
 import xyz.quaver.pupil.sources.SearchResult.ExtraType
 import xyz.quaver.pupil.sources.Source
@@ -30,18 +31,20 @@ import kotlin.math.min
 
 class Hitomi : Source<Hitomi.SortMode> {
 
-    override val querySortModeClass = SortMode::class
-
     enum class SortMode {
         NEWEST,
         POPULAR
     }
 
+    override val name: String = "hitomi.la"
+    override val iconResID: Int = R.drawable.hitomi
+    override val availableSortMode: Array<SortMode> = SortMode.values()
+
     var cachedQuery: String? = null
     var cachedSortMode: SortMode? = null
     val cache = mutableListOf<Int>()
 
-    override suspend fun query(query: String, range: IntRange, sortMode: SortMode?): Pair<Channel<SearchResult>, Int> {
+    override suspend fun query(query: String, range: IntRange, sortMode: Enum<*>): Pair<Channel<SearchResult>, Int> {
         if (cachedQuery != query || cachedSortMode != sortMode || cache.isEmpty()) {
             cachedQuery = null
             cache.clear()

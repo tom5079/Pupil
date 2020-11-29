@@ -64,12 +64,7 @@ class GalleryDialog(context: Context, private val galleryID: String) : AlertDial
         binding = GalleryDialogBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        window?.attributes.apply {
-            this ?: return@apply
-
-            width = LayoutParams.MATCH_PARENT
-            height = LayoutParams.MATCH_PARENT
-        }
+        window?.setLayout(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT)
 
         with(binding.fab) {
             setImageDrawable(ContextCompat.getDrawable(context, R.drawable.arrow_right))

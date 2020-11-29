@@ -407,6 +407,16 @@ public class SwipePageTurnView extends ViewGroup implements NestedScrollingChild
         stopNestedScroll();
     }
 
+    @Override
+    public boolean onNestedPreFling(View target, float velocityX, float velocityY) {
+        return dispatchNestedPreFling(velocityX, velocityY);
+    }
+
+    @Override
+    public boolean onNestedFling(View target, float velocityX, float velocityY, boolean consumed) {
+        return dispatchNestedFling(velocityX, velocityY, consumed);
+    }
+
     // NestedScrollingChild
 
     @Override

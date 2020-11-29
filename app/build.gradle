@@ -124,7 +124,7 @@ dependencies {
 
     implementation "xyz.quaver:libpupil:1.9.7"
     implementation "xyz.quaver:documentfilex:0.4-alpha02"
-    implementation "xyz.quaver:floatingsearchview:1.0.7"
+    implementation "xyz.quaver:floatingsearchview:1.0.9"
 
     testImplementation "junit:junit:4.13.1"
     androidTestImplementation "androidx.test.ext:junit:1.1.2"

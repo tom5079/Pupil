@@ -22,6 +22,7 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.os.Build
+import android.view.MenuItem
 import androidx.core.content.ContextCompat
 import kotlinx.serialization.json.*
 import okhttp3.OkHttpClient
@@ -143,3 +144,7 @@ operator fun JsonElement.get(tag: String) =
 
 val JsonElement.content
     get() = this.jsonPrimitive.contentOrNull
+
+fun List<MenuItem>.findMenu(itemID: Int): MenuItem {
+    return first { it.itemId == itemID }
+}
