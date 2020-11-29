@@ -10,4 +10,6 @@
 
     <item name="notification_download_cancel_action" type="id" />
     <item name="notification_import_cancel_action" type="id" />
+
+    <item name="sort_mode_group_id" type="id"/>
 </resources>

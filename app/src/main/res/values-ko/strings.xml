@@ -114,7 +114,6 @@
     <string name="proxy_dialog_error">잘못된 값</string>
     <string name="proxy_dialog_addr_hint">서버 주소</string>
     <string name="proxy_dialog_server">서버</string>
-    <string name="main_menu_thin">간단히 보기</string>
     <string name="main_fab_cancel">다운로드 모두 취소</string>
     <string name="channel_update">업데이트</string>
     <string name="channel_update_description">업데이트 진행상황 표시</string>
