@@ -60,7 +60,7 @@ class LockSettingsFragment : PreferenceFragmentCompat() {
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
         setPreferencesFromResource(R.xml.lock_preferences, rootKey)
 
-        with(findPreference<Preference>("lock_pattern")) {
+        with (findPreference<Preference>("lock_pattern")) {
             this!!
 
             if (LockManager(requireContext()).contains(Lock.Type.PATTERN))
@@ -93,7 +93,7 @@ class LockSettingsFragment : PreferenceFragmentCompat() {
             }
         }
 
-        with(findPreference<Preference>("lock_pin")) {
+        with (findPreference<Preference>("lock_pin")) {
             this!!
 
             if (LockManager(requireContext()).contains(Lock.Type.PIN))
@@ -126,7 +126,7 @@ class LockSettingsFragment : PreferenceFragmentCompat() {
             }
         }
 
-        with(findPreference<Preference>("lock_fingerprint")) {
+        with (findPreference<Preference>("lock_fingerprint")) {
             this!!
 
             setOnPreferenceChangeListener { _, newValue ->

@@ -27,7 +27,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.DialogFragment
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.databinding.DefaultQueryDialogBinding
-import xyz.quaver.pupil.sources.hitomi.Hitomi
+import xyz.quaver.pupil.sources.Hitomi
 import xyz.quaver.pupil.types.Tags
 import xyz.quaver.pupil.util.Preferences
 
@@ -56,7 +56,7 @@ class DefaultQueryDialogFragment() : DialogFragment() {
             setPositiveButton(android.R.string.ok) { _, _ ->
                 val newTags = Tags.parse(binding.edittext.text.toString())
 
-                with(binding.languageSelector) {
+                with (binding.languageSelector) {
                     if (selectedItemPosition != 0)
                         newTags.add("language:${reverseLanguages[selectedItem]}")
                 }
@@ -89,7 +89,7 @@ class DefaultQueryDialogFragment() : DialogFragment() {
             Preferences["default_query"]
         )
 
-        with(binding.languageSelector) {
+        with (binding.languageSelector) {
             adapter =
                 ArrayAdapter(
                     context,
@@ -112,13 +112,13 @@ class DefaultQueryDialogFragment() : DialogFragment() {
             }
         }
 
-        with(binding.BLCheckbox) {
+        with (binding.BLCheckbox) {
             isChecked = tags.contains(excludeBL)
             if (tags.contains(excludeBL))
                 tags.remove(excludeBL)
         }
 
-        with(binding.guroCheckbox) {
+        with (binding.guroCheckbox) {
             isChecked = excludeGuro.all { tags.contains(it) }
             if (excludeGuro.all { tags.contains(it) })
                 excludeGuro.forEach {
@@ -126,7 +126,7 @@ class DefaultQueryDialogFragment() : DialogFragment() {
                 }
         }
 
-        with(binding.loliCheckbox) {
+        with (binding.loliCheckbox) {
             isChecked = excludeLoli.all { tags.contains(it) }
             if (excludeLoli.all { tags.contains(it) })
                 excludeLoli.forEach {
@@ -134,7 +134,7 @@ class DefaultQueryDialogFragment() : DialogFragment() {
                 }
         }
 
-        with(binding.edittext) {
+        with (binding.edittext) {
             setText(tags.toString(), android.widget.TextView.BufferType.EDITABLE)
             addTextChangedListener(object : TextWatcher {
                 override fun beforeTextChanged(

@@ -47,7 +47,6 @@ import kotlinx.coroutines.channels.Channel
 import xyz.quaver.floatingsearchview.FloatingSearchView
 import xyz.quaver.floatingsearchview.suggestions.model.SearchSuggestion
 import xyz.quaver.floatingsearchview.util.view.SearchInputView
-import xyz.quaver.hitomi.getSuggestionsForQuery
 import xyz.quaver.pupil.*
 import xyz.quaver.pupil.adapters.SearchResultsAdapter
 import xyz.quaver.pupil.databinding.MainActivityBinding
@@ -77,14 +76,14 @@ class MainActivity :
     private var query = ""
     set(value) {
         field = value
-        with(findViewById<SearchInputView>(R.id.search_bar_text)) {
+        with (findViewById<SearchInputView>(R.id.search_bar_text)) {
             if (text.toString() != value)
                 setText(query, TextView.BufferType.EDITABLE)
         }
     }
     private var queryStack = mutableListOf<String>()
 
-    private lateinit var source: Source<*>
+    private lateinit var source: Source<*, SearchSuggestion>
     private lateinit var sortMode: Enum<*>
 
     private var searchJob: Deferred<Pair<Channel<SearchResult>, Int>>? = null
@@ -168,7 +167,7 @@ class MainActivity :
         }
     }
 
-    private fun setSource(source: Source<*>) {
+    private fun setSource(source: Source<*, SearchSuggestion>) {
         this.source = source
         sortMode = source.availableSortMode.first()
 
@@ -219,14 +218,14 @@ class MainActivity :
         //NavigationView
         binding.navView.setNavigationItemSelectedListener(this)
 
-        with(binding.contents.cancelFab) {
+        with (binding.contents.cancelFab) {
             setImageResource(R.drawable.cancel)
             setOnClickListener {
                 DownloadService.cancel(this@MainActivity)
             }
         }
 
-        with(binding.contents.jumpFab) {
+        with (binding.contents.jumpFab) {
             setImageResource(R.drawable.ic_jump)
             setOnClickListener {
                 val perPage = Preferences["per_page", "25"].toInt()
@@ -250,7 +249,7 @@ class MainActivity :
             }
         }
 
-        with(binding.contents.randomFab) {
+        with (binding.contents.randomFab) {
             setImageResource(R.drawable.shuffle_variant)
             setOnClickListener {
                 setImageDrawable(CircularProgressDrawable(context))
@@ -259,7 +258,7 @@ class MainActivity :
                         val random = Random.Default.nextInt(totalItems)
 
                         val randomResult =
-                            source.query(
+                            source.search(
                                 query + Preferences["default_query", ""],
                                 random .. random,
                                 sortMode
@@ -281,7 +280,7 @@ class MainActivity :
             }
         }
 
-        with(binding.contents.idFab) {
+        with (binding.contents.idFab) {
             setImageResource(R.drawable.numeric)
             setOnClickListener {
                 val editText = EditText(context).apply {
@@ -309,7 +308,7 @@ class MainActivity :
             }
         }
 
-        with(binding.contents.swipePageTurnView) {
+        with (binding.contents.swipePageTurnView) {
             setOnPageTurnListener(object: SwipePageTurnView.OnPageTurnListener {
                 override fun onPrev(page: Int) {
                     currentPage--
@@ -344,7 +343,7 @@ class MainActivity :
 
     @SuppressLint("ClickableViewAccessibility")
     private fun setupRecyclerView() {
-        with(binding.contents.recyclerview) {
+        with (binding.contents.recyclerview) {
             adapter = SearchResultsAdapter(searchResults).apply {
                 onChipClickedHandler = {
                     query = it.toQuery()
@@ -406,24 +405,9 @@ class MainActivity :
         }
     }
 
-    private var isFavorite = false
-    private val defaultSuggestions: List<SearchSuggestion>
-        get() = when {
-            isFavorite -> {
-                favoriteTags.map {
-                    TagSuggestion(it.tag, -1, "", it.area ?: "tag")
-                } + FavoriteHistorySwitch(getString(R.string.search_show_histories))
-            }
-            else -> {
-                searchHistory.map {
-                    Suggestion(it)
-                }.takeLast(10) + FavoriteHistorySwitch(getString(R.string.search_show_tags))
-            }
-        }.reversed()
-
     private var suggestionJob : Job? = null
     private fun setupSearchBar() {
-        with(binding.contents.searchview) {
+        with (binding.contents.searchview) {
             onMenuStatusChangeListener = object: FloatingSearchView.OnMenuStatusChangeListener {
                 override fun onMenuOpened() {
                     (this@MainActivity.binding.contents.recyclerview.adapter as SearchResultsAdapter).closeAllItems()
@@ -432,15 +416,6 @@ class MainActivity :
                 override fun onMenuClosed() {
                     //Do Nothing
                 }
-            }
-
-            onHistoryDeleteClickedListener = {
-                searchHistory.remove(it)
-                swapSuggestions(defaultSuggestions)
-            }
-            onFavoriteHistorySwitchClickListener = {
-                isFavorite = !isFavorite
-                swapSuggestions(defaultSuggestions)
             }
 
             onMenuItemClickListener = {
@@ -452,12 +427,6 @@ class MainActivity :
 
                 suggestionJob?.cancel()
 
-                if (query.isEmpty() or query.endsWith(' ')) {
-                    swapSuggestions(defaultSuggestions)
-
-                    return@lambda
-                }
-
                 swapSuggestions(listOf(LoadingSuggestion(getText(R.string.reader_loading).toString())))
 
                 val currentQuery = query.split(" ").last()
@@ -466,16 +435,8 @@ class MainActivity :
 
                 suggestionJob = CoroutineScope(Dispatchers.IO).launch {
                     val suggestions = kotlin.runCatching {
-                        getSuggestionsForQuery(currentQuery).map { TagSuggestion(it) }.toMutableList()
-                    }.getOrElse { mutableListOf() }
-
-                    suggestions.filter {
-                        val tag = "${it.n}:${it.s.replace(Regex("\\s"), "_")}"
-                        favoriteTags.contains(Tag.parse(tag))
-                    }.reversed().forEach {
-                        suggestions.remove(it)
-                        suggestions.add(0, it)
-                    }
+                        source.suggestion(currentQuery)
+                    }.getOrElse { emptyList() }
 
                     withContext(Dispatchers.Main) {
                         swapSuggestions(if (suggestions.isNotEmpty()) suggestions else listOf(NoResultSuggestion(getText(R.string.main_no_result).toString())))
@@ -483,10 +444,13 @@ class MainActivity :
                 }
             }
 
+            onSuggestionBinding = { binding, item ->
+                source.onSuggestionBind(binding, item)
+            }
+
             onFocusChangeListener = object: FloatingSearchView.OnFocusChangeListener {
                 override fun onFocus() {
-                    if (query.isEmpty() or query.endsWith(' '))
-                        swapSuggestions(defaultSuggestions)
+
                 }
 
                 override fun onFocusCleared() {
@@ -577,7 +541,7 @@ class MainActivity :
 
         CoroutineScope(Dispatchers.Main).launch {
             searchJob = async(Dispatchers.IO) {
-                source.query(
+                source.search(
                     query + Preferences["default_query", ""],
                     (currentPage - 1) * perPage until currentPage * perPage,
                     sortMode

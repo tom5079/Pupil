@@ -24,7 +24,7 @@ import androidx.core.content.ContextCompat
 import com.google.android.material.chip.Chip
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.favoriteTags
-import xyz.quaver.pupil.sources.hitomi.Hitomi
+import xyz.quaver.pupil.sources.Hitomi
 import xyz.quaver.pupil.types.Tag
 import xyz.quaver.pupil.util.translations
 import xyz.quaver.pupil.util.wordCapitalize

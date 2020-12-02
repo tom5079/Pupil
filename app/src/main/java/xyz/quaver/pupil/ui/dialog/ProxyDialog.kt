@@ -67,7 +67,7 @@ class ProxyDialog(context: Context) : AlertDialog(context) {
             }
         }
 
-        with(binding.typeSelector) {
+        with (binding.typeSelector) {
             adapter = ArrayAdapter(
                 context,
                 android.R.layout.simple_spinner_dropdown_item,

@@ -48,7 +48,7 @@ class ManageStorageFragment : PreferenceFragmentCompat(), Preference.OnPreferenc
     override fun onPreferenceClick(preference: Preference?): Boolean {
         val context = context ?: return false
 
-        with(preference) {
+        with (preference) {
             this ?: return false
 
             when (key) {
@@ -141,7 +141,7 @@ class ManageStorageFragment : PreferenceFragmentCompat(), Preference.OnPreferenc
     private fun initPreferences() {
         val context = context ?: return
 
-        with(findPreference<Preference>("delete_cache")) {
+        with (findPreference<Preference>("delete_cache")) {
             this ?: return@with
 
             val dir = File(context.cacheDir, "imageCache")
@@ -162,7 +162,7 @@ class ManageStorageFragment : PreferenceFragmentCompat(), Preference.OnPreferenc
             onPreferenceClickListener = this@ManageStorageFragment
         }
 
-        with(findPreference<Preference>("delete_downloads")) {
+        with (findPreference<Preference>("delete_downloads")) {
             this ?: return@with
 
             val dir = DownloadManager.getInstance(context).downloadFolder
@@ -184,7 +184,7 @@ class ManageStorageFragment : PreferenceFragmentCompat(), Preference.OnPreferenc
             onPreferenceClickListener = this@ManageStorageFragment
         }
 
-        with(findPreference<Preference>("clear_history")) {
+        with (findPreference<Preference>("clear_history")) {
             this ?: return@with
 
             summary = context.getString(R.string.settings_clear_history_summary, histories.size)

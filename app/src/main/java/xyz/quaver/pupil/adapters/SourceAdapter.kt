@@ -20,18 +20,18 @@ package xyz.quaver.pupil.adapters
 
 import android.view.LayoutInflater
 import android.view.ViewGroup
-import androidx.core.graphics.drawable.DrawableCompat
 import androidx.recyclerview.widget.RecyclerView
+import xyz.quaver.floatingsearchview.suggestions.model.SearchSuggestion
 import xyz.quaver.pupil.databinding.SourceSelectDialogItemBinding
 import xyz.quaver.pupil.sources.Source
 import xyz.quaver.pupil.sources.sourceIcons
 
-class SourceAdapter(private val sources: List<Source<*>>) : RecyclerView.Adapter<SourceAdapter.ViewHolder>() {
+class SourceAdapter(private val sources: List<Source<*, SearchSuggestion>>) : RecyclerView.Adapter<SourceAdapter.ViewHolder>() {
 
-    var onSourceSelectedListener: ((Source<*>) -> Unit)? = null
+    var onSourceSelectedListener: ((Source<*, SearchSuggestion>) -> Unit)? = null
 
     inner class ViewHolder(private val binding: SourceSelectDialogItemBinding) : RecyclerView.ViewHolder(binding.root) {
-        lateinit var source: Source<*>
+        lateinit var source: Source<*, SearchSuggestion>
 
         init {
             binding.go.setOnClickListener {
@@ -39,7 +39,7 @@ class SourceAdapter(private val sources: List<Source<*>>) : RecyclerView.Adapter
             }
         }
 
-        fun bind(source: Source<*>) {
+        fun bind(source: Source<*, SearchSuggestion>) {
             this.source = source
 
             binding.icon.setImageDrawable(sourceIcons[source.name])
