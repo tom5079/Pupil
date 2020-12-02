@@ -155,7 +155,7 @@ class SettingsFragment :
     override fun onSharedPreferenceChanged(sharedPreferences: SharedPreferences?, key: String?) {
         key ?: return
 
-        with(findPreference<Preference>(key)) {
+        with (findPreference<Preference>(key)) {
             this ?: return
 
             when (key) {

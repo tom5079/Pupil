@@ -25,13 +25,14 @@ import android.view.Window
 import androidx.fragment.app.DialogFragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import xyz.quaver.floatingsearchview.suggestions.model.SearchSuggestion
 import xyz.quaver.pupil.adapters.SourceAdapter
 import xyz.quaver.pupil.sources.Source
 import xyz.quaver.pupil.sources.sources
 
 class SourceSelectDialog : DialogFragment() {
 
-    var onSourceSelectedListener: ((Source<*>) -> Unit)? = null
+    var onSourceSelectedListener: ((Source<*, SearchSuggestion>) -> Unit)? = null
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
         return Dialog(requireContext()).apply {

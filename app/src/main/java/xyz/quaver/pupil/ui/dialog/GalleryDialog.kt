@@ -42,7 +42,7 @@ import xyz.quaver.pupil.adapters.SearchResultsAdapter
 import xyz.quaver.pupil.adapters.ThumbnailPageAdapter
 import xyz.quaver.pupil.databinding.*
 import xyz.quaver.pupil.favoriteTags
-import xyz.quaver.pupil.sources.hitomi.Hitomi
+import xyz.quaver.pupil.sources.Hitomi
 import xyz.quaver.pupil.sources.SearchResult
 import xyz.quaver.pupil.types.Tag
 import xyz.quaver.pupil.ui.ReaderActivity
@@ -66,7 +66,7 @@ class GalleryDialog(context: Context, private val galleryID: String) : AlertDial
 
         window?.setLayout(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT)
 
-        with(binding.fab) {
+        with (binding.fab) {
             setImageDrawable(ContextCompat.getDrawable(context, R.drawable.arrow_right))
             setOnClickListener {
                 context.startActivity(Intent(context, ReaderActivity::class.java).apply {
@@ -84,7 +84,7 @@ class GalleryDialog(context: Context, private val galleryID: String) : AlertDial
                     binding.title.text = gallery.title
                     binding.artist.text = gallery.artists.joinToString(", ") { it.wordCapitalize() }
 
-                    with(binding.type) {
+                    with (binding.type) {
                         text = gallery.type.wordCapitalize()
                         setOnClickListener {
                             gallery.type.let {

@@ -44,8 +44,10 @@ android {
     }
     buildTypes {
         debug {
-            minifyEnabled true
-            shrinkResources true
+            minifyEnabled false
+            shrinkResources false
+
+            multiDexEnabled true
 
             debuggable true
             applicationIdSuffix ".debug"
@@ -128,7 +130,7 @@ dependencies {
 
     implementation "xyz.quaver:libpupil:1.9.7"
     implementation "xyz.quaver:documentfilex:0.4-alpha02"
-    implementation "xyz.quaver:floatingsearchview:1.0.9"
+    implementation "xyz.quaver:floatingsearchview:1.1.1"
 
     testImplementation "junit:junit:4.13.1"
     androidTestImplementation "androidx.test.ext:junit:1.1.2"

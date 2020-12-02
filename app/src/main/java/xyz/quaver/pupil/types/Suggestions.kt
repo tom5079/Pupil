@@ -18,26 +18,11 @@
 
 package xyz.quaver.pupil.types
 
-import kotlinx.parcelize.IgnoredOnParcel
 import kotlinx.parcelize.Parcelize
 import xyz.quaver.floatingsearchview.suggestions.model.SearchSuggestion
-import xyz.quaver.hitomi.Suggestion
-import xyz.quaver.pupil.util.translations
 
 @Parcelize
-data class TagSuggestion(val s: String, val t: Int, val u: String, val n: String) : SearchSuggestion {
-    constructor(s: Suggestion) : this(s.s, s.t, s.u, s.n)
-
-    @IgnoredOnParcel
-    override val body =
-        if (translations[s] != null)
-            "${translations[s]} ($s)"
-        else
-            s
-}
-
-@Parcelize
-class Suggestion(override val body: String) : SearchSuggestion
+class HistorySuggestion(override val body: String) : SearchSuggestion
 
 @Parcelize
 class NoResultSuggestion(override val body: String) : SearchSuggestion

@@ -132,7 +132,7 @@ class ReaderActivity : BaseActivity() {
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
         menuInflater.inflate(R.menu.reader, menu)
 
-        with(menu?.findItem(R.id.reader_menu_favorite)) {
+        with (menu?.findItem(R.id.reader_menu_favorite)) {
             this ?: return@with
 
             if (favorites.contains(galleryID))
@@ -149,7 +149,7 @@ class ReaderActivity : BaseActivity() {
                 // TODO: Switch to DialogFragment
                 val binding = NumberpickerDialogBinding.inflate(layoutInflater, binding.root, false)
 
-                with(binding.numberPicker) {
+                with (binding.numberPicker) {
                     minValue = 1
                     maxValue = cache.metadata.reader?.files?.size ?: 0
                     value = currentPage
@@ -265,7 +265,7 @@ class ReaderActivity : BaseActivity() {
                     val reader = cache.metadata.reader
 
                     if (reader != null) {
-                        with(binding.recyclerview.adapter as ReaderAdapter) {
+                        with (binding.recyclerview.adapter as ReaderAdapter) {
                             this.reader = reader
                             notifyDataSetChanged()
                         }
@@ -297,7 +297,7 @@ class ReaderActivity : BaseActivity() {
     }
 
     private fun initView() {
-        with(binding.recyclerview) {
+        with (binding.recyclerview) {
             adapter = ReaderAdapter(this@ReaderActivity, galleryID).apply {
                 onItemClickListener = {
                     if (isScroll) {
@@ -331,7 +331,7 @@ class ReaderActivity : BaseActivity() {
             })
         }
 
-        with(binding.downloadFab) {
+        with (binding.downloadFab) {
             animateDownloadFAB(DownloadManager.getInstance(this@ReaderActivity).getDownloadFolder(galleryID) != null) //If download in progress, animate button
 
             setOnClickListener {
@@ -348,14 +348,14 @@ class ReaderActivity : BaseActivity() {
             }
         }
 
-        with(binding.retryFab) {
+        with (binding.retryFab) {
             setImageResource(R.drawable.refresh)
             setOnClickListener {
                 DownloadService.download(context, galleryID)
             }
         }
 
-        with(binding.fullscreenFab) {
+        with (binding.fullscreenFab) {
             setImageResource(R.drawable.ic_fullscreen)
             setOnClickListener {
                 isFullscreen = true
@@ -367,7 +367,7 @@ class ReaderActivity : BaseActivity() {
     }
 
     private fun fullscreen(isFullscreen: Boolean) {
-        with(window.attributes) {
+        with (window.attributes) {
             if (isFullscreen) {
                 flags = flags or WindowManager.LayoutParams.FLAG_FULLSCREEN
                 supportActionBar?.hide()
@@ -413,7 +413,7 @@ class ReaderActivity : BaseActivity() {
     }
 
     private fun animateDownloadFAB(animate: Boolean) {
-        with(binding.downloadFab) {
+        with (binding.downloadFab) {
             if (animate) {
                 val icon = AnimatedVectorDrawableCompat.create(context, R.drawable.ic_downloading)
 

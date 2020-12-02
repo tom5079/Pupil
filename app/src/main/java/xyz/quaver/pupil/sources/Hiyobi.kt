@@ -16,27 +16,30 @@
  *     along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package xyz.quaver.pupil.sources.hitomi
+package xyz.quaver.pupil.sources
 
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
+import androidx.core.content.ContextCompat
+import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.launch
-import xyz.quaver.hitomi.galleryblockdir
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.json.Json
+import okhttp3.Request
+import xyz.quaver.floatingsearchview.databinding.SearchSuggestionItemBinding
+import xyz.quaver.floatingsearchview.suggestions.model.SearchSuggestion
 import xyz.quaver.hiyobi.*
 import xyz.quaver.pupil.R
-import xyz.quaver.pupil.sources.DefaultSortMode
-import xyz.quaver.pupil.sources.SearchResult
-import xyz.quaver.pupil.sources.Source
+import xyz.quaver.pupil.client
 import xyz.quaver.pupil.util.wordCapitalize
+import java.io.IOException
+import java.util.*
 
-class Hiyobi : Source<DefaultSortMode> {
+class Hiyobi : Source<DefaultSortMode, DefaultSearchSuggestion>() {
 
     override val name: String = "hiyobi.me"
     override val iconResID: Int = R.drawable.ic_hiyobi
     override val availableSortMode: Array<DefaultSortMode> = DefaultSortMode.values()
 
-    override suspend fun query(query: String, range: IntRange, sortMode: Enum<*>): Pair<Channel<SearchResult>, Int> {
+    override suspend fun search(query: String, range: IntRange, sortMode: Enum<*>): Pair<Channel<SearchResult>, Int> {
         val channel = Channel<SearchResult>()
 
         val (results, total) = if (query.isEmpty())
@@ -55,7 +58,58 @@ class Hiyobi : Source<DefaultSortMode> {
         return Pair(channel, total)
     }
 
+    override suspend fun suggestion(query: String): List<DefaultSearchSuggestion> {
+        val result = mutableSetOf<String>()
+
+        for (tag in allTags.await()) {
+            if (result.size >= 10)
+                break
+
+            val lowQuery = query.toLowerCase(Locale.ROOT)
+
+            if (tag.contains(lowQuery, true))
+                result.add(tag)
+        }
+
+        return result.map { DefaultSearchSuggestion(it) }
+    }
+
+    override fun onSuggestionBind(binding: SearchSuggestionItemBinding, item: DefaultSearchSuggestion) {
+        val split = item.body.split(':', limit = 2)
+
+        if (split.size != 2)
+            return
+
+        binding.leftIcon.setImageResource(
+            when(split.first()) {
+                "female" -> R.drawable.gender_female
+                "male" -> R.drawable.gender_male
+                "language" -> R.drawable.translate
+                "group" -> R.drawable.account_group
+                "character" -> R.drawable.account_star
+                "series" -> R.drawable.book_open
+                "artist" -> R.drawable.brush
+                else -> R.drawable.tag
+            }
+        )
+
+        binding.body.text = split.last()
+    }
+
     companion object {
+        private fun downloadAllTags(): Deferred<List<String>> = CoroutineScope(Dispatchers.IO).async {
+            Json.decodeFromString(kotlin.runCatching {
+                client.newCall(Request.Builder().url("https://api.hiyobi.me/auto.json").build()).execute().also { if (it.code() != 200) throw IOException() }.body()?.use { it.string() }
+            }.getOrNull() ?: "[]")
+        }
+
+        private var _allTags: Deferred<List<String>>? = null
+
+        val allTags: Deferred<List<String>>
+            get() = if (_allTags == null || (_allTags!!.isCompleted && runBlocking { _allTags!!.await() }.isEmpty())) downloadAllTags().also {
+                _allTags = it
+            } else _allTags!!
+
         fun transform(galleryBlock: GalleryBlock): SearchResult =
             SearchResult(
                 galleryBlock.id,

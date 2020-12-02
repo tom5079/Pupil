@@ -16,24 +16,43 @@
  *     along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package xyz.quaver.pupil.sources.hitomi
+package xyz.quaver.pupil.sources
 
+import android.view.LayoutInflater
+import android.widget.TextView
+import androidx.core.content.ContextCompat
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
+import kotlinx.parcelize.IgnoredOnParcel
+import kotlinx.parcelize.Parcelize
+import xyz.quaver.floatingsearchview.databinding.SearchSuggestionItemBinding
+import xyz.quaver.floatingsearchview.suggestions.model.SearchSuggestion
 import xyz.quaver.hitomi.*
 import xyz.quaver.pupil.R
-import xyz.quaver.pupil.sources.SearchResult
 import xyz.quaver.pupil.sources.SearchResult.ExtraType
-import xyz.quaver.pupil.sources.Source
+import xyz.quaver.pupil.util.translations
 import xyz.quaver.pupil.util.wordCapitalize
 import kotlin.math.max
 import kotlin.math.min
 
-class Hitomi : Source<Hitomi.SortMode> {
+class Hitomi : Source<Hitomi.SortMode, Hitomi.TagSuggestion>() {
 
     enum class SortMode {
         NEWEST,
         POPULAR
+    }
+
+    @Parcelize
+    data class TagSuggestion(val s: String, val t: Int, val u: String, val n: String) :
+        SearchSuggestion {
+        constructor(s: Suggestion) : this(s.s, s.t, s.u, s.n)
+
+        @IgnoredOnParcel
+        override val body =
+            if (translations[s] != null)
+                "${translations[s]} ($s)"
+            else
+                s
     }
 
     override val name: String = "hitomi.la"
@@ -44,7 +63,7 @@ class Hitomi : Source<Hitomi.SortMode> {
     var cachedSortMode: SortMode? = null
     val cache = mutableListOf<Int>()
 
-    override suspend fun query(query: String, range: IntRange, sortMode: Enum<*>): Pair<Channel<SearchResult>, Int> {
+    override suspend fun search(query: String, range: IntRange, sortMode: Enum<*>): Pair<Channel<SearchResult>, Int> {
         if (cachedQuery != query || cachedSortMode != sortMode || cache.isEmpty()) {
             cachedQuery = null
             cache.clear()
@@ -77,6 +96,44 @@ class Hitomi : Source<Hitomi.SortMode> {
         }
 
         return Pair(channel, cache.size)
+    }
+
+    override suspend fun suggestion(query: String) : List<TagSuggestion> {
+        return getSuggestionsForQuery(query.takeLastWhile { !it.isWhitespace() }).map {
+            TagSuggestion(it)
+        }
+    }
+
+    override fun onSuggestionBind(binding: SearchSuggestionItemBinding, item: TagSuggestion) {
+        binding.leftIcon.setImageResource(
+            when(item.n) {
+                "female" -> R.drawable.gender_female
+                "male" -> R.drawable.gender_male
+                "language" -> R.drawable.translate
+                "group" -> R.drawable.account_group
+                "character" -> R.drawable.account_star
+                "series" -> R.drawable.book_open
+                "artist" -> R.drawable.brush
+                else -> R.drawable.tag
+            }
+        )
+
+        if (item.t > 0) {
+            with (binding.root) {
+                val count = findViewById<TextView>(R.id.count)
+                if (count == null)
+                    addView(
+                        LayoutInflater.from(context).inflate(R.layout.suggestion_count, binding.root, false)
+                            .apply {
+                                this as TextView
+
+                                text = item.t.toString()
+                            }, 2
+                    )
+                else
+                    count.text = item.t.toString()
+            }
+        }
     }
 
     companion object {
