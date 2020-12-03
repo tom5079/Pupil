@@ -23,6 +23,7 @@ import android.graphics.drawable.Drawable
 import androidx.core.content.ContextCompat
 import kotlinx.coroutines.channels.Channel
 import kotlinx.parcelize.Parcelize
+import okhttp3.Request
 import xyz.quaver.floatingsearchview.databinding.SearchSuggestionItemBinding
 import xyz.quaver.floatingsearchview.suggestions.model.SearchSuggestion
 import xyz.quaver.pupil.R
@@ -68,7 +69,8 @@ abstract class Source<Query_SortMode: Enum<Query_SortMode>, Suggestion: SearchSu
 
     abstract suspend fun search(query: String, range: IntRange, sortMode: Enum<*>) : Pair<Channel<SearchResult>, Int>
     abstract suspend fun suggestion(query: String) : List<Suggestion>
-
+    abstract suspend fun images(id: String) : List<Request.Builder>
+    
     open fun onSuggestionBind(binding: SearchSuggestionItemBinding, item: Suggestion) {
         binding.leftIcon.setImageResource(R.drawable.tag)
     }
