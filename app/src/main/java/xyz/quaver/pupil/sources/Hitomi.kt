@@ -20,11 +20,11 @@ package xyz.quaver.pupil.sources
 
 import android.view.LayoutInflater
 import android.widget.TextView
-import androidx.core.content.ContextCompat
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.parcelize.IgnoredOnParcel
 import kotlinx.parcelize.Parcelize
+import okhttp3.Request
 import xyz.quaver.floatingsearchview.databinding.SearchSuggestionItemBinding
 import xyz.quaver.floatingsearchview.suggestions.model.SearchSuggestion
 import xyz.quaver.hitomi.*
@@ -96,6 +96,18 @@ class Hitomi : Source<Hitomi.SortMode, Hitomi.TagSuggestion>() {
         }
 
         return Pair(channel, cache.size)
+    }
+
+    override suspend fun images(id: String): List<Request.Builder> {
+        val galleryID = id.toInt()
+
+        val reader = getGalleryInfo(galleryID)
+
+        return reader.files.map {
+            Request.Builder()
+                .url(imageUrlFromImage(galleryID, it, true))
+                .header("Referer", getReferer(galleryID))
+        }
     }
 
     override suspend fun suggestion(query: String) : List<TagSuggestion> {

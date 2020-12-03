@@ -18,14 +18,12 @@
 
 package xyz.quaver.pupil.sources
 
-import androidx.core.content.ContextCompat
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import okhttp3.Request
 import xyz.quaver.floatingsearchview.databinding.SearchSuggestionItemBinding
-import xyz.quaver.floatingsearchview.suggestions.model.SearchSuggestion
 import xyz.quaver.hiyobi.*
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.client
@@ -72,6 +70,13 @@ class Hiyobi : Source<DefaultSortMode, DefaultSearchSuggestion>() {
         }
 
         return result.map { DefaultSearchSuggestion(it) }
+    }
+
+    override suspend fun images(id: String): List<Request.Builder> {
+        return createImgList(id, getGalleryInfo(id), true).map {
+            Request.Builder()
+                .url(it.path)
+        }
     }
 
     override fun onSuggestionBind(binding: SearchSuggestionItemBinding, item: DefaultSearchSuggestion) {
