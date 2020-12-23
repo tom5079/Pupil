@@ -50,6 +50,7 @@ import kotlin.math.ceil
 import kotlin.math.log10
 
 private typealias ProgressListener = (DownloadService.Tag, Long, Long, Boolean) -> Unit
+@Deprecated(message = "Use xyz.quaver.util.downloader.Downloader")
 class DownloadService : Service() {
     data class Tag(val galleryID: String, val index: Int, val startId: Int? = null)
 
@@ -119,11 +120,6 @@ class DownloadService : Service() {
             notification
                 .setProgress(max, progress, false)
                 .setContentText("$progress/$max")
-
-        if (DownloadManager.getInstance(this).getDownloadFolder(galleryID) != null || galleryID == priority)
-            notification.let { notificationManager.notify(galleryID.hashCode(), it.build()) }
-        else
-            notificationManager.cancel(galleryID.hashCode())
     }
     //endregion
 
@@ -184,16 +180,16 @@ class DownloadService : Service() {
 
     //region Downloader
     /**
-    * KEY
-    *  primary galleryID
-    *  secondary index
-    * PRIMARY VALUE
-    *  MutableList -> Download in progress
-    *  null -> Loading / Gallery doesn't exist
-    * SECONDARY VALUE
-    *  0 <= value < 100 -> Download in progress
-    *  Float.POSITIVE_INFINITY -> Download completed
-    */
+     * KEY
+     *  primary galleryID
+     *  secondary index
+     * PRIMARY VALUE
+     *  MutableList -> Download in progress
+     *  null -> Loading / Gallery doesn't exist
+     * SECONDARY VALUE
+     *  0 <= value < 100 -> Download in progress
+     *  Float.POSITIVE_INFINITY -> Download completed
+     */
     val progress = ConcurrentHashMap<String, MutableList<Float>>()
     var priority = ""
 
@@ -214,34 +210,6 @@ class DownloadService : Service() {
         }
 
         override fun onResponse(call: Call, response: Response) {
-            val (galleryID, index, startId) = call.request().tag() as Tag
-            val ext = call.request().url().encodedPath().split('.').last()
-
-            kotlin.runCatching {
-                val image = response.also { if (it.code() != 200) throw IOException() }.body()?.use { it.bytes() } ?: throw Exception()
-                val padding = ceil(progress[galleryID]?.size?.let { log10(it.toFloat()) } ?: 0F).toInt()
-
-                CoroutineScope(Dispatchers.IO).launch {
-                    kotlin.runCatching {
-                        Cache.getInstance(this@DownloadService, galleryID).putImage(index, "${index.toString().padStart(padding, '0')}.$ext", image)
-                    }.onSuccess {
-                        progress[galleryID]?.set(index, Float.POSITIVE_INFINITY)
-                        notify(galleryID)
-
-                        if (isCompleted(galleryID)) {
-                            if (DownloadManager.getInstance(this@DownloadService)
-                                    .getDownloadFolder(galleryID) != null)
-                                Cache.getInstance(this@DownloadService, galleryID).moveToDownload()
-
-                            startId?.let { stopSelf(it) }
-                        }
-                    }.onFailure {
-                        it.printStackTrace()
-                        cancel(galleryID)
-                        download(galleryID)
-                    }
-                }
-            }
         }
     }
 
@@ -288,74 +256,11 @@ class DownloadService : Service() {
     }
 
     fun delete(galleryID: String, startId: Int? = null) = CoroutineScope(Dispatchers.IO).launch {
-        cancel(galleryID)
-        DownloadManager.getInstance(this@DownloadService).deleteDownloadFolder(galleryID)
-        Cache.delete(this@DownloadService, galleryID)
 
-        startId?.let { stopSelf(it) }
     }
 
     fun download(galleryID: String, priority: Boolean = false, startId: Int? = null): Job = CoroutineScope(Dispatchers.IO).launch {
-        if (DownloadManager.getInstance(this@DownloadService).isDownloading(galleryID))
-            return@launch
 
-        cleanCache(this@DownloadService)
-
-        val cache = Cache.getInstance(this@DownloadService, galleryID)
-
-        initNotification(galleryID)
-
-        val reader = cache.getReader()
-
-        // Gallery doesn't exist
-        if (reader == null) {
-            delete(galleryID)
-            progress[galleryID] = mutableListOf()
-            return@launch
-        }
-
-        histories.add(galleryID)
-
-        progress[galleryID] = MutableList(reader.files.size) { 0F }
-
-        cache.metadata.imageList?.let {
-            it.forEachIndexed { index, image ->
-                progress[galleryID]?.set(index, if (image != null) Float.POSITIVE_INFINITY else 0F)
-            }
-        }
-
-        if (isCompleted(galleryID)) {
-            if (DownloadManager.getInstance(this@DownloadService)
-                    .getDownloadFolder(galleryID) != null )
-                Cache.getInstance(this@DownloadService, galleryID).moveToDownload()
-
-            notificationManager.cancel(galleryID.hashCode())
-            startId?.let { stopSelf(it) }
-            return@launch
-        }
-
-        notification[galleryID]?.setContentTitle(reader.title?.ellipsize(30))
-        notify(galleryID)
-
-        val queued = mutableSetOf<String>()
-
-        if (priority) {
-            client.dispatcher().queuedCalls().forEach {
-                val queuedID = (it.request().tag() as? Tag)?.galleryID ?: return@forEach
-
-                if (queued.add(queuedID))
-                    cancel(queuedID)
-            }
-        }
-
-        reader.requestBuilders.forEachIndexed { index, it ->
-            if (progress[galleryID]?.get(index)?.isInfinite() == false) {
-                val request = it.tag(Tag(galleryID, index, startId)).build()
-                client.newCall(request).enqueue(callback)
-            }
-        }
-
-        queued.forEach { download(it) }
     }
     //endregion
 

@@ -21,17 +21,11 @@ package xyz.quaver.pupil.ui.dialog
 import android.app.Dialog
 import android.os.Bundle
 import android.view.ViewGroup
-import androidx.core.widget.addTextChangedListener
 import androidx.fragment.app.DialogFragment
 import com.google.android.material.snackbar.Snackbar
-import kotlinx.coroutines.runBlocking
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.databinding.DownloadFolderNameDialogBinding
 import xyz.quaver.pupil.util.Preferences
-import xyz.quaver.pupil.util.downloader.Cache
-import xyz.quaver.pupil.util.formatDownloadFolder
-import xyz.quaver.pupil.util.formatDownloadFolderTest
-import xyz.quaver.pupil.util.formatMap
 
 class DownloadFolderNameDialogFragment : DialogFragment() {
 
@@ -55,16 +49,6 @@ class DownloadFolderNameDialogFragment : DialogFragment() {
     }
 
     private fun initView() {
-        val galleryID = Cache.instances.let { if (it.size == 0) "1199708" else it.keys.elementAt((0 until it.size).random()) }
-        val galleryBlock = runBlocking {
-            Cache.getInstance(requireContext(), galleryID).getGalleryBlock()
-        }
-
-        binding.message.text = getString(R.string.settings_download_folder_name_message, formatMap.keys.toString(), galleryBlock?.formatDownloadFolder() ?: "")
-        binding.edittext.setText(Preferences["download_folder_name", "[-id-] -title-"])
-        binding.edittext.addTextChangedListener {
-            binding.message.text = requireContext().getString(R.string.settings_download_folder_name_message, formatMap.keys.toString(), galleryBlock?.formatDownloadFolderTest(it.toString()) ?: "")
-        }
         binding.okButton.setOnClickListener {
             val newValue = binding.edittext.text.toString()
 

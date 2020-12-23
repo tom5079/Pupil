@@ -21,20 +21,27 @@ package xyz.quaver.pupil.sources
 import android.content.Context
 import android.graphics.drawable.Drawable
 import androidx.core.content.ContextCompat
+import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.parcelize.Parcelize
-import okhttp3.Request
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
 import xyz.quaver.floatingsearchview.databinding.SearchSuggestionItemBinding
 import xyz.quaver.floatingsearchview.suggestions.model.SearchSuggestion
 import xyz.quaver.pupil.R
 
-data class SearchResult(
+@Serializable(with = ItemInfo.SearchResultSerializer::class)
+data class ItemInfo(
+    val source: String,
     val id: String,
     val title: String,
     val thumbnail: String,
     val artists: String,
-    val extra: Map<ExtraType, suspend () -> String>,
-    val tags: List<String>
+    val tags: List<String>,
+    val extra: Map<ExtraType, Deferred<String?>> = emptyMap()
 ) {
     enum class ExtraType {
         GROUP,
@@ -43,6 +50,48 @@ data class SearchResult(
         TYPE,
         LANGUAGE,
         PAGECOUNT
+    }
+
+    @Serializable
+    @SerialName("SearchResult")
+    data class ItemInfoSurrogate(
+        val source: String,
+        val id: String,
+        val title: String,
+        val thumbnail: String,
+        val artists: String,
+        val tags: List<String>,
+        val extra: Map<ExtraType, String?> = emptyMap()
+    )
+
+    object SearchResultSerializer : KSerializer<ItemInfo> {
+        override val descriptor = ItemInfoSurrogate.serializer().descriptor
+
+        override fun serialize(encoder: Encoder, value: ItemInfo) {
+            val surrogate = ItemInfoSurrogate(
+                value.source,
+                value.id,
+                value.title,
+                value.thumbnail,
+                value.artists,
+                value.tags,
+                value.extra.mapValues { runBlocking { it.value.await() } }
+            )
+            encoder.encodeSerializableValue(ItemInfoSurrogate.serializer(), surrogate)
+        }
+
+        override fun deserialize(decoder: Decoder): ItemInfo {
+            val surrogate = decoder.decodeSerializableValue(ItemInfoSurrogate.serializer())
+            return ItemInfo(
+                surrogate.source,
+                surrogate.id,
+                surrogate.title,
+                surrogate.thumbnail,
+                surrogate.artists,
+                surrogate.tags,
+                surrogate.extra.mapValues { CoroutineScope(Dispatchers.Unconfined).async { it.value } }
+            )
+        }
     }
 
     companion object {
@@ -67,9 +116,14 @@ abstract class Source<Query_SortMode: Enum<Query_SortMode>, Suggestion: SearchSu
     abstract val iconResID: Int
     abstract val availableSortMode: Array<Query_SortMode>
 
-    abstract suspend fun search(query: String, range: IntRange, sortMode: Enum<*>) : Pair<Channel<SearchResult>, Int>
+    abstract suspend fun search(query: String, range: IntRange, sortMode: Enum<*>) : Pair<Channel<ItemInfo>, Int>
     abstract suspend fun suggestion(query: String) : List<Suggestion>
-    abstract suspend fun images(id: String) : List<Request.Builder>
+    abstract suspend fun images(id: String) : List<String>
+    /* abstract suspend */ fun info(id: String)/* : ItemInfo */{}
+
+    open fun getHeadersForImage(id: String, url: String): Map<String, String> {
+        return emptyMap()
+    }
     
     open fun onSuggestionBind(binding: SearchSuggestionItemBinding, item: Suggestion) {
         binding.leftIcon.setImageResource(R.drawable.tag)

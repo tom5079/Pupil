@@ -57,9 +57,9 @@ fun cleanCache(context: Context) = CoroutineScope(Dispatchers.IO).launch {
 
                 synchronized(histories) {
                     (histories.firstOrNull {
-                        caches.contains(it.toString()) && !downloadManager.isDownloading(it)
+                        TODO()
                     } ?: return@withLock).let {
-                        Cache.delete(context, it)
+                        TODO()
                     }
                 }
             }

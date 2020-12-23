@@ -38,6 +38,7 @@ import com.google.firebase.analytics.FirebaseAnalytics
 import com.google.firebase.analytics.ktx.analytics
 import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.google.firebase.ktx.Firebase
+import okhttp3.Dispatcher
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
 import okhttp3.Response
@@ -48,6 +49,7 @@ import xyz.quaver.pupil.util.*
 import xyz.quaver.setClient
 import java.io.File
 import java.util.*
+import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import kotlin.reflect.KClass
 
@@ -104,6 +106,7 @@ class Pupil : Application() {
 
                 interceptors[tag::class]?.invoke(chain) ?: chain.proceed(request)
             }
+            .dispatcher(Dispatcher(Executors.newFixedThreadPool(4)))
 
         try {
             Preferences.get<String>("download_folder").also {

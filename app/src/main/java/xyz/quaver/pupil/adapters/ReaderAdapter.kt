@@ -18,12 +18,11 @@
 
 package xyz.quaver.pupil.adapters
 
+import android.content.Context
+import android.net.Uri
 import android.view.LayoutInflater
-import android.view.View
 import android.view.ViewGroup
-import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.ContextCompat
-import androidx.core.view.updateLayoutParams
 import androidx.recyclerview.widget.RecyclerView
 import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView
 import com.facebook.drawee.view.SimpleDraweeView
@@ -31,21 +30,17 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import xyz.quaver.hitomi.GalleryInfo
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.databinding.ReaderItemBinding
-import xyz.quaver.pupil.ui.ReaderActivity
 import xyz.quaver.pupil.util.downloader.Cache
+import xyz.quaver.pupil.util.downloader.Downloader
 import kotlin.math.roundToInt
 
 class ReaderAdapter(
-    private val activity: ReaderActivity,
-    private val galleryID: String
+    private val context: Context,
+    private val source: String,
+    private val itemID: String
 ) : RecyclerView.Adapter<ReaderAdapter.ViewHolder>() {
-    var reader: GalleryInfo? = null
-
-    var isFullScreen = false
-
     var onItemClickListener : (() -> (Unit))? = null
 
     inner class ViewHolder(private val binding: ReaderItemBinding) : RecyclerView.ViewHolder(binding.root) {
@@ -60,49 +55,36 @@ class ReaderAdapter(
             binding.root.setOnClickListener {
                 onItemClickListener?.invoke()
             }
+
+            binding.readerItemProgressbar.max = 100
         }
 
         fun bind(position: Int) {
-            if (cache == null)
-                cache = Cache.getInstance(itemView.context, galleryID)
-
-            if (!isFullScreen) {
-                binding.root.setBackgroundResource(R.drawable.reader_item_boundary)
-                binding.image.updateLayoutParams<ConstraintLayout.LayoutParams> {
-                    height = 0
-                    dimensionRatio =
-                        "${reader!!.files[position].width}:${reader!!.files[position].height}"
-                }
-            } else {
-                binding.root.layoutParams.height = ViewGroup.LayoutParams.MATCH_PARENT
-                binding.image.updateLayoutParams<ConstraintLayout.LayoutParams> {
-                    height = ConstraintLayout.LayoutParams.MATCH_PARENT
-                    dimensionRatio = null
-                }
-                binding.root.background = null
-            }
-
             binding.readerIndex.text = (position+1).toString()
 
-            val image = cache!!.getImage(position)
-            val progress = activity.downloader?.progress?.get(galleryID)?.get(position)
+            val image = Cache.getInstance(context, source, itemID).getImage(position)?.uri
 
-            if (progress?.isInfinite() == true && image != null) {
-                binding.progressGroup.visibility = View.INVISIBLE
-                binding.image.showImage(image.uri)
-            } else {
-                binding.progressGroup.visibility = View.VISIBLE
-                binding.readerItemProgressbar.progress =
-                    if (progress?.isInfinite() == true)
-                        100
-                    else
-                        progress?.roundToInt() ?: 0
+            if (image != null)
+                binding.image.showImage(image)
+            else {
+                val progress = Downloader.getInstance(context).getProgress(source, itemID)?.get(position) ?: 0F
 
-                clear()
+                if (progress == Float.NEGATIVE_INFINITY)
+                    with (binding.image) {
+                        showImage(Uri.EMPTY)
 
-                CoroutineScope(Dispatchers.Main).launch {
-                    delay(1000)
-                    notifyItemChanged(position)
+                        setOnClickListener {
+                            if (Downloader.getInstance(context).getProgress(source, itemID)?.get(position) == Float.NEGATIVE_INFINITY)
+                                Downloader.getInstance(context).retry(source, itemID)
+                        }
+                    }
+                else {
+                    binding.readerItemProgressbar.progress = progress.roundToInt()
+
+                    CoroutineScope(Dispatchers.Main).launch {
+                        delay(1000)
+                        notifyItemChanged(position)
+                    }
                 }
             }
         }
@@ -123,12 +105,11 @@ class ReaderAdapter(
         return ViewHolder(ReaderItemBinding.inflate(LayoutInflater.from(parent.context), parent, false))
     }
 
-    private var cache: Cache? = null
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         holder.bind(position)
     }
 
-    override fun getItemCount() = reader?.files?.size ?: 0
+    override fun getItemCount() = Downloader.getInstance(context).getProgress(source, itemID)?.size ?: 0
 
     override fun onViewRecycled(holder: ViewHolder) {
         holder.clear()

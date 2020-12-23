@@ -51,7 +51,7 @@ import xyz.quaver.pupil.*
 import xyz.quaver.pupil.adapters.SearchResultsAdapter
 import xyz.quaver.pupil.databinding.MainActivityBinding
 import xyz.quaver.pupil.services.DownloadService
-import xyz.quaver.pupil.sources.SearchResult
+import xyz.quaver.pupil.sources.ItemInfo
 import xyz.quaver.pupil.sources.Source
 import xyz.quaver.pupil.sources.sourceIcons
 import xyz.quaver.pupil.sources.sources
@@ -62,7 +62,9 @@ import xyz.quaver.pupil.ui.dialog.SourceSelectDialog
 import xyz.quaver.pupil.ui.view.ProgressCardView
 import xyz.quaver.pupil.ui.view.SwipePageTurnView
 import xyz.quaver.pupil.util.*
+import xyz.quaver.pupil.util.downloader.Cache
 import xyz.quaver.pupil.util.downloader.DownloadManager
+import xyz.quaver.pupil.util.downloader.Downloader
 import java.util.regex.Pattern
 import kotlin.math.*
 import kotlin.random.Random
@@ -71,7 +73,7 @@ class MainActivity :
     BaseActivity(),
     NavigationView.OnNavigationItemSelectedListener
 {
-    private val searchResults = mutableListOf<SearchResult>()
+    private val searchResults = mutableListOf<ItemInfo>()
 
     private var query = ""
     set(value) {
@@ -86,7 +88,7 @@ class MainActivity :
     private lateinit var source: Source<*, SearchSuggestion>
     private lateinit var sortMode: Enum<*>
 
-    private var searchJob: Deferred<Pair<Channel<SearchResult>, Int>>? = null
+    private var searchJob: Deferred<Pair<Channel<ItemInfo>, Int>>? = null
     private var totalItems = 0
     private var currentPage = 1
 
@@ -221,7 +223,7 @@ class MainActivity :
         with (binding.contents.cancelFab) {
             setImageResource(R.drawable.cancel)
             setOnClickListener {
-                DownloadService.cancel(this@MainActivity)
+                Downloader.getInstance(context).cancel()
             }
         }
 
@@ -351,22 +353,23 @@ class MainActivity :
 
                     query()
                 }
-                onDownloadClickedHandler = { id ->
-                    if (DownloadManager.getInstance(context).isDownloading(id)) {     //download in progress
-                        DownloadService.cancel(this@MainActivity, id)
+                onDownloadClickedHandler = { source, itemID ->
+                    if (Downloader.getInstance(context).isDownloading(source, itemID)) {     //download in progress
+                        Downloader.getInstance(context).cancel(source, itemID)
                     }
                     else {
-                        DownloadManager.getInstance(context).addDownloadFolder(id)
-                        DownloadService.download(this@MainActivity, id)
+                        DownloadManager.getInstance(context).addDownloadFolder(source, itemID)
+                        Downloader.getInstance(context).download(source, itemID)
                     }
 
                     closeAllItems()
                 }
 
-                onDeleteClickedHandler = { id ->
-                    DownloadService.delete(this@MainActivity, id)
+                onDeleteClickedHandler = { source, itemID ->
+                    Downloader.getInstance(context).cancel(source, itemID)
+                    Cache.delete(source, itemID)
 
-                    histories.remove(id)
+                    histories.remove(itemID)
 
                     closeAllItems()
                 }
@@ -376,8 +379,10 @@ class MainActivity :
                     if (v !is ProgressCardView)
                         return@listener
 
-                    val intent = Intent(this@MainActivity, ReaderActivity::class.java)
-                    intent.putExtra("galleryID", searchResults[position].id)
+                    val intent = Intent(this@MainActivity, ReaderActivity::class.java).apply {
+                        putExtra("source", source.name)
+                        putExtra("id", searchResults[position].id)
+                    }
 
                     //TODO: Maybe sprinkling some transitions will be nice :D
                     startActivity(intent)

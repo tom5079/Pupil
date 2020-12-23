@@ -37,8 +37,8 @@ class Hiyobi : Source<DefaultSortMode, DefaultSearchSuggestion>() {
     override val iconResID: Int = R.drawable.ic_hiyobi
     override val availableSortMode: Array<DefaultSortMode> = DefaultSortMode.values()
 
-    override suspend fun search(query: String, range: IntRange, sortMode: Enum<*>): Pair<Channel<SearchResult>, Int> {
-        val channel = Channel<SearchResult>()
+    override suspend fun search(query: String, range: IntRange, sortMode: Enum<*>): Pair<Channel<ItemInfo>, Int> {
+        val channel = Channel<ItemInfo>()
 
         val (results, total) = if (query.isEmpty())
             list(range)
@@ -47,7 +47,7 @@ class Hiyobi : Source<DefaultSortMode, DefaultSearchSuggestion>() {
 
         CoroutineScope(Dispatchers.Unconfined).launch {
             results.forEach {
-                channel.send(transform(it))
+                channel.send(transform(name, it))
             }
 
             channel.close()
@@ -72,10 +72,9 @@ class Hiyobi : Source<DefaultSortMode, DefaultSearchSuggestion>() {
         return result.map { DefaultSearchSuggestion(it) }
     }
 
-    override suspend fun images(id: String): List<Request.Builder> {
+    override suspend fun images(id: String): List<String> {
         return createImgList(id, getGalleryInfo(id), true).map {
-            Request.Builder()
-                .url(it.path)
+            it.path
         }
     }
 
@@ -115,21 +114,23 @@ class Hiyobi : Source<DefaultSortMode, DefaultSearchSuggestion>() {
                 _allTags = it
             } else _allTags!!
 
-        fun transform(galleryBlock: GalleryBlock): SearchResult =
-            SearchResult(
+        suspend fun transform(name: String, galleryBlock: GalleryBlock): ItemInfo = withContext(Dispatchers.IO) {
+            ItemInfo(
+                name,
                 galleryBlock.id,
                 galleryBlock.title,
                 "https://cdn.$hiyobi/tn/${galleryBlock.id}.jpg",
                 galleryBlock.artists.joinToString { it.value.wordCapitalize() },
+                galleryBlock.tags.map { it.value },
                 mapOf(
-                    SearchResult.ExtraType.CHARACTER to { galleryBlock.characters.joinToString { it.value.wordCapitalize() } },
-                    SearchResult.ExtraType.SERIES to { galleryBlock.parodys.joinToString { it.value.wordCapitalize() } },
-                    SearchResult.ExtraType.TYPE to { galleryBlock.type.name.replace('_', ' ').wordCapitalize() },
-                    SearchResult.ExtraType.PAGECOUNT to { getGalleryInfo(galleryBlock.id).files.size.toString() },
-                    SearchResult.ExtraType.GROUP to { galleryBlock.groups.joinToString { it.value.wordCapitalize() } }
-                ),
-                galleryBlock.tags.map { it.value }
+                    ItemInfo.ExtraType.CHARACTER to async { galleryBlock.characters.joinToString { it.value.wordCapitalize() } },
+                    ItemInfo.ExtraType.SERIES to async { galleryBlock.parodys.joinToString { it.value.wordCapitalize() } },
+                    ItemInfo.ExtraType.TYPE to async { galleryBlock.type.name.replace('_', ' ').wordCapitalize() },
+                    ItemInfo.ExtraType.PAGECOUNT to async { getGalleryInfo(galleryBlock.id).files.size.toString() },
+                    ItemInfo.ExtraType.GROUP to async { galleryBlock.groups.joinToString { it.value.wordCapitalize() } }
+                )
             )
+        }
     }
 
 }
