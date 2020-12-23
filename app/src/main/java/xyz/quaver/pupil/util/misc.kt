@@ -19,19 +19,14 @@
 package xyz.quaver.pupil.util
 
 import android.annotation.SuppressLint
-import android.content.Context
-import android.content.Intent
-import android.os.Build
 import android.view.MenuItem
-import androidx.core.content.ContextCompat
 import kotlinx.serialization.json.*
 import okhttp3.OkHttpClient
 import okhttp3.Request
-import xyz.quaver.hitomi.GalleryBlock
 import xyz.quaver.hitomi.GalleryInfo
 import xyz.quaver.hitomi.getReferer
 import xyz.quaver.hitomi.imageUrlFromImage
-import xyz.quaver.hiyobi.createImgList
+import xyz.quaver.pupil.sources.ItemInfo
 import java.util.*
 import kotlin.collections.ArrayList
 
@@ -80,23 +75,23 @@ fun OkHttpClient.Builder.proxyInfo(proxyInfo: ProxyInfo) = this.apply {
     }
 }
 
-val formatMap = mapOf<String, GalleryBlock.() -> (String)>(
-    "-id-" to { id.toString() },
+val formatMap = mapOf<String, ItemInfo.() -> (String)>(
+    "-id-" to { id },
     "-title-" to { title },
-    "-artist-" to { artists.joinToString() }
+    "-artist-" to { artists }
     // TODO
 )
 /**
  * Formats download folder name with given Metadata
  */
-fun GalleryBlock.formatDownloadFolder(): String =
+fun ItemInfo.formatDownloadFolder(): String =
     Preferences["download_folder_name", "[-id-] -title-"].let {
         formatMap.entries.fold(it) { str, (k, v) ->
             str.replace(k, v.invoke(this), true)
         }
     }.replace(Regex("""[*\\|"?><:/]"""), "").ellipsize(127)
 
-fun GalleryBlock.formatDownloadFolderTest(format: String): String =
+fun ItemInfo.formatDownloadFolderTest(format: String): String =
     format.let {
         formatMap.entries.fold(it) { str, (k, v) ->
             str.replace(k, v.invoke(this), true)

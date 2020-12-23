@@ -20,16 +20,15 @@ package xyz.quaver.pupil.util.downloader
 
 import android.content.Context
 import android.content.ContextWrapper
-import android.util.Log
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import okhttp3.Call
 import xyz.quaver.io.FileX
 import xyz.quaver.io.util.*
-import xyz.quaver.pupil.client
-import xyz.quaver.pupil.services.DownloadService
+import xyz.quaver.pupil.sources.sources
 import xyz.quaver.pupil.util.Preferences
 import xyz.quaver.pupil.util.formatDownloadFolder
 
@@ -83,44 +82,33 @@ class DownloadManager private constructor(context: Context) : ContextWrapper(con
             return downloadFolderMapInstance ?: mutableMapOf()
         }
 
+    @Synchronized
+    fun getDownloadFolder(source: String, itemID: String): FileX? =
+        downloadFolderMap["$source-$itemID"]?.let { downloadFolder.getChild(it) }
 
     @Synchronized
-    fun isDownloading(galleryID: String): Boolean {
-        val isThisGallery: (Call) -> Boolean = { (it.request().tag() as? DownloadService.Tag)?.galleryID == galleryID }
+    fun addDownloadFolder(source: String, itemID: String) = CoroutineScope(Dispatchers.IO).launch {
+        val name = "A" // TODO
 
-        return downloadFolderMap.containsKey(galleryID)
-                && client.dispatcher().let { it.queuedCalls().any(isThisGallery) || it.runningCalls().any(isThisGallery) }
-    }
-
-    @Synchronized
-    fun getDownloadFolder(galleryID: String): FileX? =
-        downloadFolderMap[galleryID]?.let { downloadFolder.getChild(it) }
-
-    @Synchronized
-    fun addDownloadFolder(galleryID: String) {
-        val name = runBlocking {
-            Cache.getInstance(this@DownloadManager, galleryID).getGalleryBlock()
-        }?.formatDownloadFolder() ?: return
-
-        val folder = downloadFolder.getChild(name)
+        val folder = downloadFolder.getChild("$source/$name")
 
         if (folder.exists())
-            return
+            return@launch
 
         folder.mkdir()
 
-        downloadFolderMap[galleryID] = folder.name
+        downloadFolderMap["$source/$itemID"] = folder.name
 
         downloadFolder.getChild(".download").let { if (!it.exists()) it.createNewFile() }
         downloadFolder.getChild(".download").writeText(Json.encodeToString(downloadFolderMap))
     }
 
     @Synchronized
-    fun deleteDownloadFolder(galleryID: String) {
-        downloadFolderMap[galleryID]?.let {
+    fun deleteDownloadFolder(source: String, itemID: String) {
+        downloadFolderMap["$source/$itemID"]?.let {
             kotlin.runCatching {
                 downloadFolder.getChild(it).deleteRecursively()
-                downloadFolderMap.remove(galleryID)
+                downloadFolderMap.remove("$source/$itemID")
 
                 downloadFolder.getChild(".download").let { if (!it.exists()) it.createNewFile() }
                 downloadFolder.getChild(".download").writeText(Json.encodeToString(downloadFolderMap))

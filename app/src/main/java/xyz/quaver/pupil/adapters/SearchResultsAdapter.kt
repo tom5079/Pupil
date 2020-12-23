@@ -18,6 +18,7 @@
 
 package xyz.quaver.pupil.adapters
 
+import android.annotation.SuppressLint
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
@@ -36,41 +37,34 @@ import com.facebook.imagepipeline.image.ImageInfo
 import kotlinx.coroutines.*
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.databinding.SearchResultItemBinding
-import xyz.quaver.pupil.sources.SearchResult
+import xyz.quaver.pupil.sources.ItemInfo
 import xyz.quaver.pupil.types.Tag
 import xyz.quaver.pupil.ui.view.ProgressCardView
 import xyz.quaver.pupil.util.downloader.Cache
 import xyz.quaver.pupil.util.downloader.DownloadManager
+import xyz.quaver.pupil.util.downloader.Downloader
 import kotlin.time.ExperimentalTime
 
-class SearchResultsAdapter(private val results: List<SearchResult>) : RecyclerSwipeAdapter<SearchResultsAdapter.ViewHolder>(), SwipeAdapterInterface {
+class SearchResultsAdapter(private val results: List<ItemInfo>) : RecyclerSwipeAdapter<SearchResultsAdapter.ViewHolder>(), SwipeAdapterInterface {
 
     var onChipClickedHandler: ((Tag) -> Unit)? = null
-    var onDownloadClickedHandler: ((String) -> Unit)? = null
-    var onDeleteClickedHandler: ((String) -> Unit)? = null
+    var onDownloadClickedHandler: ((source: String, itemID: String) -> Unit)? = null
+    var onDeleteClickedHandler: ((source: String, itemID: String) -> Unit)? = null
 
     // TODO: migrate to viewBinding
     val progressUpdateScope = CoroutineScope(Dispatchers.Main + Job())
 
     inner class ViewHolder(private val binding: SearchResultItemBinding) : RecyclerView.ViewHolder(binding.root) {
+        var source: String = ""
         var itemID: String = ""
 
-        private var bindJob: Job? = null
-
         init {
-            progressUpdateScope.launch {
-                while (true) {
-                    updateProgress()
-                    delay(1000)
-                }
-            }
-
             binding.root.binding.download.setOnClickListener {
-                onDownloadClickedHandler?.invoke(itemID)
+                onDownloadClickedHandler?.invoke(source, itemID)
             }
 
             binding.root.binding.delete.setOnClickListener {
-                onDeleteClickedHandler?.invoke(itemID)
+                onDeleteClickedHandler?.invoke(source, itemID)
             }
 
             binding.idView.setOnClickListener {
@@ -85,7 +79,7 @@ class SearchResultsAdapter(private val results: List<SearchResult>) : RecyclerSw
                     mItemManger.closeAllExcept(layout)
 
                     binding.root.binding.download.text =
-                        if (DownloadManager.getInstance(itemView.context).isDownloading(itemID))
+                        if (Downloader.getInstance(itemView.context).isDownloading(source, itemID))
                             itemView.context.getString(android.R.string.cancel)
                         else
                             itemView.context.getString(R.string.main_download)
@@ -99,33 +93,16 @@ class SearchResultsAdapter(private val results: List<SearchResult>) : RecyclerSw
             })
 
             binding.tagGroup.onClickListener = onChipClickedHandler
-        }
 
-        private fun updateProgress() = CoroutineScope(Dispatchers.Main).launch {
-            with (itemView as ProgressCardView) {
-                val imageList = Cache.getInstance(context, itemID).metadata.imageList
-
-                if (imageList == null) {
-                    max = 0
-                    return@with
+            CoroutineScope(Dispatchers.Main).launch {
+                while (true) {
+                    updateProgress()
+                    delay(1000)
                 }
-
-                progress = imageList.count { it != null }
-                max = imageList.size
-
-                type = if (!imageList.contains(null)) {
-                    val downloadManager = DownloadManager.getInstance(context)
-
-                    if (downloadManager.getDownloadFolder(itemID) == null)
-                        ProgressCardView.Type.CACHE
-                    else
-                        ProgressCardView.Type.DOWNLOAD
-                } else
-                    ProgressCardView.Type.LOADING
             }
         }
 
-        val controllerListener = object: BaseControllerListener<ImageInfo>() {
+        private val controllerListener = object: BaseControllerListener<ImageInfo>() {
             override fun onIntermediateImageSet(id: String?, imageInfo: ImageInfo?) {
                 imageInfo?.let {
                     binding.thumbnail.aspectRatio = it.width / it.height.toFloat()
@@ -138,22 +115,40 @@ class SearchResultsAdapter(private val results: List<SearchResult>) : RecyclerSw
                 }
             }
         }
-        fun bind(result: SearchResult) {
-            bindJob?.cancel()
+
+        private fun updateProgress() {
+            val cache = Cache.getInstance(itemView.context, source, itemID)
+
+            binding.root.max = cache.metadata.imageList?.size ?: 0
+            binding.root.progress = cache.metadata.imageList?.count { it != null } ?: 0
+
+            binding.root.type = if (cache.metadata.imageList?.all { it != null } == true) { // Download completed
+                if (DownloadManager.getInstance(itemView.context).getDownloadFolder(source, itemID) != null)
+                    ProgressCardView.Type.DOWNLOAD
+                else
+                    ProgressCardView.Type.CACHE
+            } else
+                ProgressCardView.Type.LOADING
+        }
+
+        @SuppressLint("SetTextI18n")
+        fun bind(result: ItemInfo) {
+            source = result.source
             itemID = result.id
+
+            binding.root.progress = 0
 
             binding.thumbnail.controller = Fresco.newDraweeControllerBuilder()
                 .setUri(result.thumbnail)
                 .setOldController(binding.thumbnail.controller)
                 .setControllerListener(controllerListener)
                 .build()
-
-            updateProgress()
-
+            
             binding.title.text = result.title
             binding.idView.text = result.id
 
             binding.artist.visibility = if (result.artists.isEmpty()) View.GONE else View.VISIBLE
+
             binding.artist.text = result.artists
 
             with (binding.tagGroup) {
@@ -164,60 +159,44 @@ class SearchResultsAdapter(private val results: List<SearchResult>) : RecyclerSw
                 refresh()
             }
 
-            binding.pagecount.text = "-"
+            val extraType = listOf(
+                ItemInfo.ExtraType.SERIES,
+                ItemInfo.ExtraType.TYPE,
+                ItemInfo.ExtraType.LANGUAGE
+            )
 
-            bindJob = MainScope().launch {
-                val extra = result.extra.mapValues {
-                    async(Dispatchers.IO) {
-                        kotlin.runCatching { withTimeout(1000) {
-                            it.value.invoke()
-                        } }.getOrNull()
-                    }
+            CoroutineScope(Dispatchers.Main).launch {
+                result.extra[ItemInfo.ExtraType.GROUP]?.await()?.let {
+                    if (it.isNotEmpty())
+                        binding.artist.text = "${result.artists} ($it)"
                 }
+            }
 
-                launch {
-                    val extraType = listOf(
-                        SearchResult.ExtraType.SERIES,
-                        SearchResult.ExtraType.TYPE,
-                        SearchResult.ExtraType.LANGUAGE
-                    )
-
-                    binding.extra.text = extra.entries.filter { it.key in extraType }.fold(StringBuilder()) { res, entry ->
-                        entry.value.await().let {
-                            if (!it.isNullOrEmpty()) {
+            CoroutineScope(Dispatchers.Main).launch {
+                binding.extra.text =
+                    result.extra.entries.filter { it.key in extraType && it.value.await() != null }.fold(StringBuilder()) { res, entry ->
+                        entry.value.await()?.let {
+                            if (it.isNotEmpty()) {
                                 res.append(
                                     itemView.context.getString(
-                                        SearchResult.extraTypeMap[entry.key] ?: error(""),
-                                        it
+                                        ItemInfo.extraTypeMap[entry.key] ?: error(""),
+                                        entry.value.await()
                                     )
                                 )
                                 res.append('\n')
                             }
-                            res
                         }
+                        res
                     }
-                }
+            }
 
-                launch {
-                    extra[SearchResult.ExtraType.PAGECOUNT]?.await()?.let {
-                        binding.pagecount.text =
-                            itemView.context.getString(
-                                SearchResult.extraTypeMap[SearchResult.ExtraType.PAGECOUNT] ?: error(""),
-                                it
-                            )
-                    }
-                }
-
-                launch {
-                    extra[SearchResult.ExtraType.GROUP]?.await().let {
-                        if (!it.isNullOrEmpty())
-                            binding.artist.text = itemView.context.getString(
-                                R.string.galleryblock_artist_with_group,
-                                result.artists,
-                                it
-                            )
-                    }
-                }
+            CoroutineScope(Dispatchers.Main).launch {
+                binding.pagecount.text = result.extra[ItemInfo.ExtraType.PAGECOUNT]?.let {
+                    itemView.context.getString(
+                        ItemInfo.extraTypeMap[ItemInfo.ExtraType.PAGECOUNT] ?: error(""),
+                        it.await()
+                    )
+                } ?: "-"
             }
         }
     }

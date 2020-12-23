@@ -18,28 +18,18 @@
 
 package xyz.quaver.pupil.ui
 
-import android.content.ComponentName
 import android.content.Intent
-import android.content.ServiceConnection
 import android.graphics.drawable.Animatable
-import android.graphics.drawable.Drawable
 import android.os.Bundle
-import android.os.IBinder
 import android.view.*
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.PagerSnapHelper
 import androidx.recyclerview.widget.RecyclerView
-import androidx.vectordrawable.graphics.drawable.Animatable2Compat
 import androidx.vectordrawable.graphics.drawable.AnimatedVectorDrawableCompat
-import com.google.android.material.snackbar.Snackbar
 import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.qtalk.recyclerviewfastscroller.RecyclerViewFastScroller
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.adapters.ReaderAdapter
 import xyz.quaver.pupil.databinding.NumberpickerDialogBinding
@@ -47,12 +37,13 @@ import xyz.quaver.pupil.databinding.ReaderActivityBinding
 import xyz.quaver.pupil.favorites
 import xyz.quaver.pupil.services.DownloadService
 import xyz.quaver.pupil.util.Preferences
-import xyz.quaver.pupil.util.downloader.Cache
-import xyz.quaver.pupil.util.downloader.DownloadManager
+import xyz.quaver.pupil.util.downloader.Downloader
 
 class ReaderActivity : BaseActivity() {
 
-    private var galleryID = ""
+    private var source = ""
+    private var itemID = ""
+
     private var currentPage = 0
 
     private var isScroll = true
@@ -60,24 +51,7 @@ class ReaderActivity : BaseActivity() {
     set(value) {
         field = value
 
-        (binding.recyclerview.adapter as ReaderAdapter).isFullScreen = value
-    }
-
-    private lateinit var cache: Cache
-    var downloader: DownloadService? = null
-    private val conn = object: ServiceConnection {
-        override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
-            downloader = (service as DownloadService.Binder).service.also {
-                it.priority = ""
-
-                if (!it.progress.containsKey(galleryID))
-                    DownloadService.download(this@ReaderActivity, galleryID, true)
-            }
-        }
-
-        override fun onServiceDisconnected(name: ComponentName?) {
-            downloader = null
-        }
+        //(binding.recyclerview.adapter as ReaderAdapter).isFullScreen = value
     }
 
     private val snapHelper = PagerSnapHelper()
@@ -94,15 +68,36 @@ class ReaderActivity : BaseActivity() {
         supportActionBar?.setDisplayHomeAsUpEnabled(false)
 
         handleIntent(intent)
-        cache = Cache.getInstance(this, galleryID)
-        FirebaseCrashlytics.getInstance().setCustomKey("GalleryID", galleryID)
+        FirebaseCrashlytics.getInstance().setCustomKey("GalleryID", itemID)
 
-        if (galleryID.isEmpty()) {
+        if (itemID.isEmpty()) {
             onBackPressed()
             return
         }
 
-        initDownloadListener()
+        with (Downloader.getInstance(this)) {
+            onImageListLoadedCallback = {
+                runOnUiThread {
+                    binding.recyclerview.adapter?.notifyDataSetChanged()
+                }
+            }
+            download(source, itemID)
+        }
+
+        binding.recyclerview.adapter = ReaderAdapter(this, source, itemID).apply {
+            onItemClickListener = {
+                if (isScroll) {
+                    isScroll = false
+                    isFullscreen = true
+
+                    scrollMode(false)
+                    fullscreen(true)
+                } else {
+                    (binding.recyclerview.layoutManager as LinearLayoutManager).scrollToPositionWithOffset(currentPage, 0) //Moves to next page because currentPage is 1-based indexing
+                }
+            }
+        }
+
         initView()
     }
 
@@ -116,7 +111,8 @@ class ReaderActivity : BaseActivity() {
             val uri = intent.data
             val lastPathSegment = uri?.lastPathSegment
             if (uri != null && lastPathSegment != null) {
-                galleryID = when (uri.host) {
+                source = uri.host ?: ""
+                itemID = when (uri.host) {
                     "hitomi.la" ->
                         Regex("([0-9]+).html").find(lastPathSegment)?.groupValues?.get(1) ?: ""
                     "hiyobi.me" -> lastPathSegment
@@ -125,7 +121,8 @@ class ReaderActivity : BaseActivity() {
                 }
             }
         } else {
-            galleryID = intent.getStringExtra("galleryID") ?: ""
+            source = intent.getStringExtra("source") ?: ""
+            itemID = intent.getStringExtra("id") ?: ""
         }
     }
 
@@ -135,7 +132,7 @@ class ReaderActivity : BaseActivity() {
         with (menu?.findItem(R.id.reader_menu_favorite)) {
             this ?: return@with
 
-            if (favorites.contains(galleryID))
+            if (favorites.contains(itemID))
                 (icon as Animatable).start()
         }
 
@@ -151,7 +148,7 @@ class ReaderActivity : BaseActivity() {
 
                 with (binding.numberPicker) {
                     minValue = 1
-                    maxValue = cache.metadata.reader?.files?.size ?: 0
+                    maxValue = this@ReaderActivity.binding.recyclerview.adapter?.itemCount ?: 0
                     value = currentPage
                 }
                 val dialog = AlertDialog.Builder(this).apply {
@@ -165,7 +162,7 @@ class ReaderActivity : BaseActivity() {
                 dialog.show()
             }
             R.id.reader_menu_favorite -> {
-                val id = galleryID
+                val id = itemID
                 val favorite = menu?.findItem(R.id.reader_menu_favorite) ?: return true
 
                 if (favorites.contains(id)) {
@@ -179,30 +176,6 @@ class ReaderActivity : BaseActivity() {
         }
 
         return true
-    }
-
-    override fun onResume() {
-        super.onResume()
-
-        bindService(Intent(this, DownloadService::class.java), conn, BIND_AUTO_CREATE)
-    }
-
-    override fun onPause() {
-        super.onPause()
-
-        if (downloader != null)
-            unbindService(conn)
-
-        downloader?.priority = galleryID
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-
-        update = false
-
-        if (!DownloadManager.getInstance(this).isDownloading(galleryID))
-            DownloadService.cancel(this, galleryID)
     }
 
     override fun onBackPressed() {
@@ -237,81 +210,8 @@ class ReaderActivity : BaseActivity() {
         }
     }
 
-    private var update = true
-    private fun initDownloadListener() {
-        CoroutineScope(Dispatchers.Main).launch {
-            while (update) {
-                delay(1000)
-
-                val downloader = downloader ?: continue
-
-                if (!downloader.progress.containsKey(galleryID))  //loading
-                    continue
-
-                if (downloader.progress[galleryID]?.isEmpty() == true) {      //Gallery not found
-                    update = false
-                    Snackbar
-                        .make(binding.root, R.string.reader_failed_to_find_gallery, Snackbar.LENGTH_INDEFINITE)
-                        .show()
-
-                    return@launch
-                }
-
-                binding.downloadProgressbar.max = binding.recyclerview.adapter?.itemCount ?: 0
-                binding.downloadProgressbar.progress =
-                    downloader.progress[galleryID]?.count { it.isInfinite() } ?: 0
-
-                if (title == getString(R.string.reader_loading)) {
-                    val reader = cache.metadata.reader
-
-                    if (reader != null) {
-                        with (binding.recyclerview.adapter as ReaderAdapter) {
-                            this.reader = reader
-                            notifyDataSetChanged()
-                        }
-
-                        title = reader.title
-                        menu?.findItem(R.id.reader_menu_page_indicator)?.title =
-                            "$currentPage/${reader.files.size}"
-
-                        menu?.findItem(R.id.reader_type)?.icon = ContextCompat.getDrawable(
-                            this@ReaderActivity,
-                            R.drawable.hitomi
-                            /*
-                            when (reader.code) {
-                                Code.HITOMI -> R.drawable.hitomi
-                                Code.HIYOBI -> R.drawable.ic_hiyobi
-                                else -> android.R.color.transparent
-                            }*/
-                        )
-                    }
-                }
-
-                if (downloader.isCompleted(galleryID)) {   //Download finished
-                    binding.downloadProgressbar.visibility = View.GONE
-
-                    animateDownloadFAB(false)
-                }
-            }
-        }
-    }
-
     private fun initView() {
         with (binding.recyclerview) {
-            adapter = ReaderAdapter(this@ReaderActivity, galleryID).apply {
-                onItemClickListener = {
-                    if (isScroll) {
-                        isScroll = false
-                        isFullscreen = true
-
-                        scrollMode(false)
-                        fullscreen(true)
-                    } else {
-                        (binding.recyclerview.layoutManager as LinearLayoutManager).scrollToPositionWithOffset(currentPage, 0) //Moves to next page because currentPage is 1-based indexing
-                    }
-                }
-            }
-
             addOnScrollListener(object: RecyclerView.OnScrollListener() {
                 override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
                     super.onScrolled(recyclerView, dx, dy)
@@ -331,27 +231,10 @@ class ReaderActivity : BaseActivity() {
             })
         }
 
-        with (binding.downloadFab) {
-            animateDownloadFAB(DownloadManager.getInstance(this@ReaderActivity).getDownloadFolder(galleryID) != null) //If download in progress, animate button
-
-            setOnClickListener {
-                val downloadManager = DownloadManager.getInstance(this@ReaderActivity)
-
-                if (downloadManager.isDownloading(galleryID)) {
-                    downloadManager.deleteDownloadFolder(galleryID)
-                    animateDownloadFAB(false)
-                } else {
-                    downloadManager.addDownloadFolder(galleryID)
-                    DownloadService.download(context, galleryID, true)
-                    animateDownloadFAB(true)
-                }
-            }
-        }
-
         with (binding.retryFab) {
             setImageResource(R.drawable.refresh)
             setOnClickListener {
-                DownloadService.download(context, galleryID)
+                DownloadService.download(context, itemID)
             }
         }
 
@@ -399,7 +282,11 @@ class ReaderActivity : BaseActivity() {
     private fun scrollMode(isScroll: Boolean) {
         if (isScroll) {
             snapHelper.attachToRecyclerView(null)
-            binding.recyclerview.layoutManager = LinearLayoutManager(this)
+            binding.recyclerview.layoutManager = object: LinearLayoutManager(this) {
+                override fun calculateExtraLayoutSpace(state: RecyclerView.State, extraLayoutSpace: IntArray) {
+                    extraLayoutSpace.fill(600)
+                }
+            }
         } else {
             snapHelper.attachToRecyclerView(binding.recyclerview)
             binding.recyclerview.layoutManager = object: LinearLayoutManager(this, HORIZONTAL, Preferences["rtl", false]) {
@@ -410,34 +297,5 @@ class ReaderActivity : BaseActivity() {
         }
 
         (binding.recyclerview.layoutManager as LinearLayoutManager).scrollToPositionWithOffset(currentPage-1, 0)
-    }
-
-    private fun animateDownloadFAB(animate: Boolean) {
-        with (binding.downloadFab) {
-            if (animate) {
-                val icon = AnimatedVectorDrawableCompat.create(context, R.drawable.ic_downloading)
-
-                icon?.registerAnimationCallback(object : Animatable2Compat.AnimationCallback() {
-                    override fun onAnimationEnd(drawable: Drawable?) {
-                        if (downloader?.isCompleted(galleryID) == true) // If download is finished, stop animating
-                            post {
-                                setImageResource(R.drawable.ic_download)
-                                labelText = getString(R.string.reader_fab_download_cancel)
-                            }
-                        else                                                            // Or continue animate
-                            post {
-                                icon.start()
-                                labelText = getString(R.string.reader_fab_download_cancel)
-                            }
-                    }
-                })
-
-                setImageDrawable(icon)
-                icon?.start()
-            } else {
-                setImageResource(R.drawable.ic_download)
-                labelText = getString(R.string.reader_fab_download)
-            }
-        }
     }
 }

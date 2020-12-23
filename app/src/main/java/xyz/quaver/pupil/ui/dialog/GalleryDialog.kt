@@ -43,7 +43,7 @@ import xyz.quaver.pupil.adapters.ThumbnailPageAdapter
 import xyz.quaver.pupil.databinding.*
 import xyz.quaver.pupil.favoriteTags
 import xyz.quaver.pupil.sources.Hitomi
-import xyz.quaver.pupil.sources.SearchResult
+import xyz.quaver.pupil.sources.ItemInfo
 import xyz.quaver.pupil.types.Tag
 import xyz.quaver.pupil.ui.ReaderActivity
 import xyz.quaver.pupil.ui.view.TagChip
@@ -200,7 +200,7 @@ class GalleryDialog(context: Context, private val galleryID: String) : AlertDial
     }
 
     private fun addRelated(gallery: Gallery) {
-        val galleries = mutableListOf<SearchResult>()
+        val galleries = mutableListOf<ItemInfo>()
 
         val adapter = SearchResultsAdapter(galleries).apply {
             onChipClickedHandler = { tag ->
@@ -237,10 +237,6 @@ class GalleryDialog(context: Context, private val galleryID: String) : AlertDial
 
             CoroutineScope(Dispatchers.IO).launch {
                 gallery.related.forEach { galleryID ->
-                    Cache.getInstance(context, galleryID.toString()).getGalleryBlock()?.let {
-                        galleries.add(Hitomi.transform(it))
-                    }
-
                     withContext(Dispatchers.Main) {
                         adapter.notifyDataSetChanged()
                     }

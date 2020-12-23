@@ -18,18 +18,18 @@
 
 package xyz.quaver.pupil.sources
 
+import android.util.Log
 import android.view.LayoutInflater
 import android.widget.TextView
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.parcelize.IgnoredOnParcel
 import kotlinx.parcelize.Parcelize
-import okhttp3.Request
 import xyz.quaver.floatingsearchview.databinding.SearchSuggestionItemBinding
 import xyz.quaver.floatingsearchview.suggestions.model.SearchSuggestion
 import xyz.quaver.hitomi.*
 import xyz.quaver.pupil.R
-import xyz.quaver.pupil.sources.SearchResult.ExtraType
+import xyz.quaver.pupil.sources.ItemInfo.ExtraType
 import xyz.quaver.pupil.util.translations
 import xyz.quaver.pupil.util.wordCapitalize
 import kotlin.math.max
@@ -63,7 +63,7 @@ class Hitomi : Source<Hitomi.SortMode, Hitomi.TagSuggestion>() {
     var cachedSortMode: SortMode? = null
     val cache = mutableListOf<Int>()
 
-    override suspend fun search(query: String, range: IntRange, sortMode: Enum<*>): Pair<Channel<SearchResult>, Int> {
+    override suspend fun search(query: String, range: IntRange, sortMode: Enum<*>): Pair<Channel<ItemInfo>, Int> {
         if (cachedQuery != query || cachedSortMode != sortMode || cache.isEmpty()) {
             cachedQuery = null
             cache.clear()
@@ -75,7 +75,7 @@ class Hitomi : Source<Hitomi.SortMode, Hitomi.TagSuggestion>() {
             cachedQuery = query
         }
 
-        val channel = Channel<SearchResult>()
+        val channel = Channel<ItemInfo>()
         val sanitizedRange = max(0, range.first) .. min(range.last, cache.size-1)
 
         CoroutineScope(Dispatchers.IO).launch {
@@ -84,12 +84,7 @@ class Hitomi : Source<Hitomi.SortMode, Hitomi.TagSuggestion>() {
                     getGalleryBlock(it)
                 }
             }.forEach {
-                kotlin.runCatching {
-                    yield()
-                    channel.send(transform(it.await()))
-                }.onFailure {
-                    channel.close()
-                }
+                channel.send(transform(name, it.await()))
             }
 
             channel.close()
@@ -98,19 +93,23 @@ class Hitomi : Source<Hitomi.SortMode, Hitomi.TagSuggestion>() {
         return Pair(channel, cache.size)
     }
 
-    override suspend fun images(id: String): List<Request.Builder> {
+    override suspend fun images(id: String): List<String> {
         val galleryID = id.toInt()
 
         val reader = getGalleryInfo(galleryID)
 
         return reader.files.map {
-            Request.Builder()
-                .url(imageUrlFromImage(galleryID, it, true))
-                .header("Referer", getReferer(galleryID))
+            imageUrlFromImage(galleryID, it, true)
         }
     }
 
-    override suspend fun suggestion(query: String) : List<TagSuggestion> {
+    override fun getHeadersForImage(id: String, url: String): Map<String, String> {
+        return mapOf(
+            "Referer" to getReferer(id.toInt())
+        )
+    }
+
+    override suspend fun suggestion(query: String) : List<Hitomi.TagSuggestion> {
         return getSuggestionsForQuery(query.takeLastWhile { !it.isWhitespace() }).map {
             TagSuggestion(it)
         }
@@ -189,20 +188,25 @@ class Hitomi : Source<Hitomi.SortMode, Hitomi.TagSuggestion>() {
             "japanese" to "日本語"
         )
 
-        fun transform(galleryBlock: GalleryBlock): SearchResult =
-            SearchResult(
+        fun transform(name: String, galleryBlock: GalleryBlock) =
+            ItemInfo(
+                name,
                 galleryBlock.id.toString(),
                 galleryBlock.title,
                 galleryBlock.thumbnails.first(),
                 galleryBlock.artists.joinToString { it.wordCapitalize() },
+                galleryBlock.relatedTags,
                 mapOf(
-                    ExtraType.GROUP to { getGallery(galleryBlock.id).groups.joinToString { it.wordCapitalize() } },
-                    ExtraType.SERIES to { galleryBlock.series.joinToString { it.wordCapitalize() } },
-                    ExtraType.TYPE to { galleryBlock.type.wordCapitalize() },
-                    ExtraType.LANGUAGE to { languageMap[galleryBlock.language] ?: galleryBlock.language },
-                    ExtraType.PAGECOUNT to { getGalleryInfo(galleryBlock.id).files.size.toString() }
-                ),
-                galleryBlock.relatedTags
+                    ExtraType.GROUP to CoroutineScope(Dispatchers.IO).async { kotlin.runCatching {
+                        getGallery(galleryBlock.id).groups.joinToString { it.wordCapitalize() }
+                    }.getOrDefault("") },
+                    ExtraType.SERIES to CoroutineScope(Dispatchers.Unconfined).async { galleryBlock.series.joinToString { it.wordCapitalize() } },
+                    ExtraType.TYPE to CoroutineScope(Dispatchers.Unconfined).async { galleryBlock.type.wordCapitalize() },
+                    ExtraType.LANGUAGE to CoroutineScope(Dispatchers.Unconfined).async { languageMap[galleryBlock.language] ?: galleryBlock.language },
+                    ExtraType.PAGECOUNT to CoroutineScope(Dispatchers.IO).async { kotlin.runCatching {
+                        getGalleryInfo(galleryBlock.id).files.size.toString()
+                    }.getOrNull() }
+                )
             )
     }
 
