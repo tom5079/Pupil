@@ -50,14 +50,11 @@ class DownloadLocationDialogFragment : DialogFragment() {
 
     private val requestDownloadFolderLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
         if (it.resultCode == Activity.RESULT_OK) {
-            val activity = activity ?: return@registerForActivityResult
             val context = context ?: return@registerForActivityResult
             val dialog = dialog ?: return@registerForActivityResult
 
-            it.data?.data?.also { uri ->
-                val takeFlags: Int =
-                    activity.intent.flags and
-                            (Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+            it.data?.data?.let { uri ->
+                val takeFlags: Int = Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
 
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT)
                     context.contentResolver.takePersistableUriPermission(uri, takeFlags)
@@ -143,7 +140,11 @@ class DownloadLocationDialogFragment : DialogFragment() {
 
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                     val intent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).apply {
-                        flags = Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+                        addFlags(
+                        Intent.FLAG_GRANT_READ_URI_PERMISSION
+                            or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+                            or Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION
+                        )
                         putExtra("android.content.extra.SHOW_ADVANCED", true)
                     }
 
