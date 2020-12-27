@@ -18,7 +18,6 @@
 
 package xyz.quaver.pupil.sources
 
-import android.util.Log
 import android.view.LayoutInflater
 import android.widget.TextView
 import kotlinx.coroutines.*
@@ -93,6 +92,12 @@ class Hitomi : Source<Hitomi.SortMode, Hitomi.TagSuggestion>() {
         return Pair(channel, cache.size)
     }
 
+    override suspend fun suggestion(query: String) : List<TagSuggestion> {
+        return getSuggestionsForQuery(query.takeLastWhile { !it.isWhitespace() }).map {
+            TagSuggestion(it)
+        }
+    }
+
     override suspend fun images(id: String): List<String> {
         val galleryID = id.toInt()
 
@@ -103,16 +108,33 @@ class Hitomi : Source<Hitomi.SortMode, Hitomi.TagSuggestion>() {
         }
     }
 
+    override suspend fun info(id: String): ItemInfo = coroutineScope {
+        getGallery(id.toInt()).let {
+            ItemInfo(
+                name,
+                id,
+                it.title,
+                it.cover,
+                it.artists.joinToString { it.wordCapitalize() },
+                mapOf(
+                    ExtraType.TYPE to async { it.type.wordCapitalize() },
+                    ExtraType.GROUP to async { it.groups.joinToString { it.wordCapitalize() } },
+                    ExtraType.LANGUAGE to async { languageMap[it.language] ?: it.language },
+                    ExtraType.SERIES to async { it.series.joinToString { it.wordCapitalize() } },
+                    ExtraType.CHARACTER to async { it.characters.joinToString { it.wordCapitalize() } },
+                    ExtraType.TAGS to async { it.tags.joinToString() },
+                    ExtraType.PREVIEW to async { it.thumbnails.joinToString() },
+                    ExtraType.RELATED_ITEM to async { it.related.joinToString() },
+                    ExtraType.PAGECOUNT to async { it.thumbnails.size.toString() },
+                )
+            )
+        }
+    }
+
     override fun getHeadersForImage(id: String, url: String): Map<String, String> {
         return mapOf(
             "Referer" to getReferer(id.toInt())
         )
-    }
-
-    override suspend fun suggestion(query: String) : List<Hitomi.TagSuggestion> {
-        return getSuggestionsForQuery(query.takeLastWhile { !it.isWhitespace() }).map {
-            TagSuggestion(it)
-        }
     }
 
     override fun onSuggestionBind(binding: SearchSuggestionItemBinding, item: TagSuggestion) {
@@ -195,7 +217,6 @@ class Hitomi : Source<Hitomi.SortMode, Hitomi.TagSuggestion>() {
                 galleryBlock.title,
                 galleryBlock.thumbnails.first(),
                 galleryBlock.artists.joinToString { it.wordCapitalize() },
-                galleryBlock.relatedTags,
                 mapOf(
                     ExtraType.GROUP to CoroutineScope(Dispatchers.IO).async { kotlin.runCatching {
                         getGallery(galleryBlock.id).groups.joinToString { it.wordCapitalize() }
@@ -205,7 +226,8 @@ class Hitomi : Source<Hitomi.SortMode, Hitomi.TagSuggestion>() {
                     ExtraType.LANGUAGE to CoroutineScope(Dispatchers.Unconfined).async { languageMap[galleryBlock.language] ?: galleryBlock.language },
                     ExtraType.PAGECOUNT to CoroutineScope(Dispatchers.IO).async { kotlin.runCatching {
                         getGalleryInfo(galleryBlock.id).files.size.toString()
-                    }.getOrNull() }
+                    }.getOrNull() },
+                    ExtraType.TAGS to CoroutineScope(Dispatchers.Unconfined).async { galleryBlock.relatedTags.joinToString() }
                 )
             )
     }

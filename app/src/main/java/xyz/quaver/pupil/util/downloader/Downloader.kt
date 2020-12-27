@@ -18,7 +18,13 @@
 
 package xyz.quaver.pupil.util.downloader
 
+import android.annotation.SuppressLint
+import android.app.PendingIntent
 import android.content.Context
+import android.content.Intent
+import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
+import androidx.core.app.TaskStackBuilder
 import com.google.firebase.crashlytics.FirebaseCrashlytics
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -26,10 +32,14 @@ import kotlinx.coroutines.launch
 import okhttp3.*
 import okio.*
 import xyz.quaver.pupil.PupilInterceptor
+import xyz.quaver.pupil.R
 import xyz.quaver.pupil.client
 import xyz.quaver.pupil.interceptors
+import xyz.quaver.pupil.services.DownloadService
 import xyz.quaver.pupil.sources.sources
+import xyz.quaver.pupil.ui.ReaderActivity
 import xyz.quaver.pupil.util.cleanCache
+import xyz.quaver.pupil.util.normalizeID
 import java.io.IOException
 import java.util.concurrent.ConcurrentHashMap
 
@@ -50,6 +60,79 @@ class Downloader private constructor(private val context: Context) {
             }
         }
     }
+
+    //region Notification
+    private val notificationManager by lazy {
+        NotificationManagerCompat.from(context)
+    }
+
+    private val serviceNotification by lazy {
+        NotificationCompat.Builder(context, "downloader")
+            .setContentTitle(context.getString(R.string.downloader_running))
+            .setProgress(0, 0, false)
+            .setSmallIcon(R.drawable.ic_notification)
+            .setOngoing(true)
+    }
+
+    private val notification = ConcurrentHashMap<String, NotificationCompat.Builder?>()
+
+    private fun initNotification(source: String, itemID: String) {
+        val key = "$source-$itemID"
+
+        val intent = Intent(context, ReaderActivity::class.java)
+            .putExtra("source", source)
+            .putExtra("itemID", itemID)
+
+        val pendingIntent = TaskStackBuilder.create(context).run {
+            addNextIntentWithParentStack(intent)
+            getPendingIntent(itemID.hashCode(), PendingIntent.FLAG_UPDATE_CURRENT)
+        }
+        val action =
+            NotificationCompat.Action.Builder(0, context.getText(android.R.string.cancel),
+                PendingIntent.getService(
+                    context,
+                    R.id.notification_download_cancel_action.normalizeID(),
+                    Intent(context, DownloadService::class.java)
+                        .putExtra(DownloadService.KEY_COMMAND, DownloadService.COMMAND_CANCEL)
+                        .putExtra(DownloadService.KEY_ID, itemID),
+                    PendingIntent.FLAG_UPDATE_CURRENT),
+            ).build()
+
+        notification[key] = NotificationCompat.Builder(context, "download").apply {
+            setContentTitle(context.getString(R.string.reader_loading))
+            setContentText(context.getString(R.string.reader_notification_text))
+            setSmallIcon(R.drawable.ic_notification)
+            setContentIntent(pendingIntent)
+            addAction(action)
+            setProgress(0, 0, true)
+            setOngoing(true)
+        }
+
+        notify(source, itemID)
+    }
+
+    @SuppressLint("RestrictedApi")
+    private fun notify(source: String, itemID: String) {
+        val key = "$source-$itemID"
+        val max = progress[key]?.size ?: 0
+        val progress = progress[key]?.count { it == Float.POSITIVE_INFINITY } ?: 0
+
+        val notification = notification[key] ?: return
+
+        if (isCompleted(source, itemID)) {
+            notification
+                .setContentText(context.getString(R.string.reader_notification_complete))
+                .setProgress(0, 0, false)
+                .setOngoing(false)
+                .mActions.clear()
+
+            notificationManager.cancel(key.hashCode())
+        } else
+            notification
+                .setProgress(max, progress, false)
+                .setContentText("$progress/$max")
+    }
+    //endregion
 
     //region ProgressListener
     @Suppress("UNCHECKED_CAST")
@@ -134,6 +217,8 @@ class Downloader private constructor(private val context: Context) {
         return progress["$source-$itemID"]
     }
 
+    fun isCompleted(source: String, itemID: String) = progress["$source-$itemID"]?.all { it == Float.POSITIVE_INFINITY } == true
+
     fun cancel() {
         client.dispatcher().queuedCalls().filter {
             it.request().tag() is Tag
@@ -178,6 +263,7 @@ class Downloader private constructor(private val context: Context) {
         if (isDownloading(source, itemID))
             return@launch
 
+        initNotification(source, itemID)
         cleanCache(context)
 
         val source = sources[source] ?: return@launch
@@ -188,15 +274,8 @@ class Downloader private constructor(private val context: Context) {
                 if (cache.metadata.imageList?.get(i) == null) 0F else Float.POSITIVE_INFINITY
             }
 
-            with (Cache.getInstance(context, source.name, itemID).metadata) {
-                if (imageList == null)
-                    imageList = MutableList(it.size) { null }
-
-                imageList!!.forEachIndexed { index, s ->
-                    if (s != null)
-                        progress["${source.name}-$itemID"]?.set(index, Float.POSITIVE_INFINITY)
-                }
-            }
+            if (cache.metadata.imageList == null)
+                cache.metadata.imageList = MutableList(it.size) { null }
 
             onImageListLoadedCallback?.invoke(it)
         }.forEachIndexed { index, url ->
