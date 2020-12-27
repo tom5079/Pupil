@@ -40,7 +40,6 @@ data class ItemInfo(
     val title: String,
     val thumbnail: String,
     val artists: String,
-    val tags: List<String>,
     val extra: Map<ExtraType, Deferred<String?>> = emptyMap()
 ) {
     enum class ExtraType {
@@ -48,8 +47,11 @@ data class ItemInfo(
         CHARACTER,
         SERIES,
         TYPE,
+        TAGS,
         LANGUAGE,
-        PAGECOUNT
+        PAGECOUNT,
+        PREVIEW,
+        RELATED_ITEM,
     }
 
     @Serializable
@@ -60,7 +62,6 @@ data class ItemInfo(
         val title: String,
         val thumbnail: String,
         val artists: String,
-        val tags: List<String>,
         val extra: Map<ExtraType, String?> = emptyMap()
     )
 
@@ -74,7 +75,6 @@ data class ItemInfo(
                 value.title,
                 value.thumbnail,
                 value.artists,
-                value.tags,
                 value.extra.mapValues { runBlocking { it.value.await() } }
             )
             encoder.encodeSerializableValue(ItemInfoSurrogate.serializer(), surrogate)
@@ -88,7 +88,6 @@ data class ItemInfo(
                 surrogate.title,
                 surrogate.thumbnail,
                 surrogate.artists,
-                surrogate.tags,
                 surrogate.extra.mapValues { CoroutineScope(Dispatchers.Unconfined).async { it.value } }
             )
         }
@@ -119,7 +118,7 @@ abstract class Source<Query_SortMode: Enum<Query_SortMode>, Suggestion: SearchSu
     abstract suspend fun search(query: String, range: IntRange, sortMode: Enum<*>) : Pair<Channel<ItemInfo>, Int>
     abstract suspend fun suggestion(query: String) : List<Suggestion>
     abstract suspend fun images(id: String) : List<String>
-    /* abstract suspend */ fun info(id: String)/* : ItemInfo */{}
+    abstract suspend fun info(id: String) : ItemInfo
 
     open fun getHeadersForImage(id: String, url: String): Map<String, String> {
         return emptyMap()

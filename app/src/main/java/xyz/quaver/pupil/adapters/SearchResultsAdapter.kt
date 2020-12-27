@@ -151,12 +151,14 @@ class SearchResultsAdapter(private val results: List<ItemInfo>) : RecyclerSwipeA
 
             binding.artist.text = result.artists
 
-            with (binding.tagGroup) {
-                tags.clear()
-                tags.addAll(result.tags.map {
-                    Tag.parse(it)
-                })
-                refresh()
+            CoroutineScope(Dispatchers.Main).launch {
+                with (binding.tagGroup) {
+                    tags.clear()
+                    result.extra[ItemInfo.ExtraType.TAGS]?.await()?.split(", ")?.map {
+                        Tag.parse(it)
+                    }?.let { tags.addAll(it) }
+                    refresh()
+                }
             }
 
             val extraType = listOf(

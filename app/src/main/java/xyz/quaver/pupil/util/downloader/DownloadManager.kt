@@ -20,6 +20,7 @@ package xyz.quaver.pupil.util.downloader
 
 import android.content.Context
 import android.content.ContextWrapper
+import android.net.Uri
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch

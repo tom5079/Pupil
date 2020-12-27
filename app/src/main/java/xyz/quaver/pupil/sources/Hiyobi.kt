@@ -78,6 +78,10 @@ class Hiyobi : Source<DefaultSortMode, DefaultSearchSuggestion>() {
         }
     }
 
+    override suspend fun info(id: String): ItemInfo {
+        return transform(name, getGalleryBlock(id))
+    }
+
     override fun onSuggestionBind(binding: SearchSuggestionItemBinding, item: DefaultSearchSuggestion) {
         val split = item.body.split(':', limit = 2)
 
@@ -121,13 +125,13 @@ class Hiyobi : Source<DefaultSortMode, DefaultSearchSuggestion>() {
                 galleryBlock.title,
                 "https://cdn.$hiyobi/tn/${galleryBlock.id}.jpg",
                 galleryBlock.artists.joinToString { it.value.wordCapitalize() },
-                galleryBlock.tags.map { it.value },
                 mapOf(
                     ItemInfo.ExtraType.CHARACTER to async { galleryBlock.characters.joinToString { it.value.wordCapitalize() } },
                     ItemInfo.ExtraType.SERIES to async { galleryBlock.parodys.joinToString { it.value.wordCapitalize() } },
                     ItemInfo.ExtraType.TYPE to async { galleryBlock.type.name.replace('_', ' ').wordCapitalize() },
                     ItemInfo.ExtraType.PAGECOUNT to async { getGalleryInfo(galleryBlock.id).files.size.toString() },
-                    ItemInfo.ExtraType.GROUP to async { galleryBlock.groups.joinToString { it.value.wordCapitalize() } }
+                    ItemInfo.ExtraType.GROUP to async { galleryBlock.groups.joinToString { it.value.wordCapitalize() } },
+                    ItemInfo.ExtraType.TAGS to async { galleryBlock.tags.joinToString() { it.value } }
                 )
             )
         }
