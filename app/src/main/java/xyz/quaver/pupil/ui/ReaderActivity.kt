@@ -22,24 +22,30 @@ import android.content.Intent
 import android.graphics.drawable.Animatable
 import android.os.Bundle
 import android.view.*
-import androidx.appcompat.app.AlertDialog
+import androidx.activity.viewModels
 import androidx.core.content.ContextCompat
+import androidx.core.view.forEach
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.PagerSnapHelper
 import androidx.recyclerview.widget.RecyclerView
 import androidx.vectordrawable.graphics.drawable.AnimatedVectorDrawableCompat
 import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.qtalk.recyclerviewfastscroller.RecyclerViewFastScroller
+import org.kodein.di.DIAware
+import org.kodein.di.android.di
+import org.kodein.di.direct
+import org.kodein.di.instance
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.adapters.ReaderAdapter
-import xyz.quaver.pupil.databinding.NumberpickerDialogBinding
 import xyz.quaver.pupil.databinding.ReaderActivityBinding
 import xyz.quaver.pupil.favorites
-import xyz.quaver.pupil.services.DownloadService
+import xyz.quaver.pupil.sources.AnySource
+import xyz.quaver.pupil.ui.viewmodel.ReaderViewModel
 import xyz.quaver.pupil.util.Preferences
-import xyz.quaver.pupil.util.downloader.Downloader
 
-class ReaderActivity : BaseActivity() {
+class ReaderActivity : BaseActivity(), DIAware {
+
+    override val di by di()
 
     private var source = ""
     private var itemID = ""
@@ -50,14 +56,13 @@ class ReaderActivity : BaseActivity() {
     private var isFullscreen = false
     set(value) {
         field = value
-
-        //(binding.recyclerview.adapter as ReaderAdapter).isFullScreen = value
     }
 
     private val snapHelper = PagerSnapHelper()
     private var menu: Menu? = null
 
     private lateinit var binding: ReaderActivityBinding
+    private val model: ReaderViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -68,35 +73,33 @@ class ReaderActivity : BaseActivity() {
         supportActionBar?.setDisplayHomeAsUpEnabled(false)
 
         handleIntent(intent)
-        FirebaseCrashlytics.getInstance().setCustomKey("GalleryID", itemID)
-
         if (itemID.isEmpty()) {
             onBackPressed()
             return
         }
 
-        with (Downloader.getInstance(this)) {
-            onImageListLoadedCallback = {
-                runOnUiThread {
-                    binding.recyclerview.adapter?.notifyDataSetChanged()
-                }
-            }
-            download(source, itemID)
-        }
+        FirebaseCrashlytics.getInstance().setCustomKey("GalleryID", itemID)
 
-        binding.recyclerview.adapter = ReaderAdapter(this, source, itemID).apply {
-            onItemClickListener = {
-                if (isScroll) {
-                    isScroll = false
-                    isFullscreen = true
+        model.readerItems.observe(this) {
+            (binding.recyclerview.adapter as ReaderAdapter).submitList(it.toMutableList())
 
-                    scrollMode(false)
-                    fullscreen(true)
-                } else {
-                    (binding.recyclerview.layoutManager as LinearLayoutManager).scrollToPositionWithOffset(currentPage, 0) //Moves to next page because currentPage is 1-based indexing
-                }
+            binding.downloadProgressbar.apply {
+                max = it.size
+                progress = it.count { it.image != null }
+
+                visibility =
+                    if (progress == max)
+                        View.GONE
+                    else
+                        View.VISIBLE
             }
         }
+
+        model.title.observe(this) {
+            title = it
+        }
+
+        model.load(source, itemID)
 
         initView()
     }
@@ -129,11 +132,16 @@ class ReaderActivity : BaseActivity() {
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
         menuInflater.inflate(R.menu.reader, menu)
 
-        with (menu?.findItem(R.id.reader_menu_favorite)) {
-            this ?: return@with
-
-            if (favorites.contains(itemID))
-                (icon as Animatable).start()
+        menu?.forEach {
+            when (it.itemId) {
+                R.id.reader_menu_favorite -> {
+                    if (favorites.contains(itemID))
+                        (it.icon as Animatable).start()
+                }
+                R.id.source -> {
+                    it.setIcon(direct.instance<AnySource>(tag = source).iconResID)
+                }
+            }
         }
 
         this.menu = menu
@@ -142,25 +150,6 @@ class ReaderActivity : BaseActivity() {
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when(item.itemId) {
-            R.id.reader_menu_page_indicator -> {
-                // TODO: Switch to DialogFragment
-                val binding = NumberpickerDialogBinding.inflate(layoutInflater, binding.root, false)
-
-                with (binding.numberPicker) {
-                    minValue = 1
-                    maxValue = this@ReaderActivity.binding.recyclerview.adapter?.itemCount ?: 0
-                    value = currentPage
-                }
-                val dialog = AlertDialog.Builder(this).apply {
-                    setView(binding.root)
-                }.create()
-                binding.okButton.setOnClickListener {
-                    (this@ReaderActivity.binding.recyclerview.layoutManager as LinearLayoutManager).scrollToPositionWithOffset(binding.numberPicker.value-1, 0)
-                    dialog.dismiss()
-                }
-
-                dialog.show()
-            }
             R.id.reader_menu_favorite -> {
                 val id = itemID
                 val favorite = menu?.findItem(R.id.reader_menu_favorite) ?: return true
@@ -194,15 +183,14 @@ class ReaderActivity : BaseActivity() {
     }
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
-        //currentPage is 1-based
         return when(keyCode) {
             KeyEvent.KEYCODE_VOLUME_UP -> {
-                (binding.recyclerview.layoutManager as LinearLayoutManager).scrollToPositionWithOffset(currentPage-2, 0)
+                (binding.recyclerview.layoutManager as LinearLayoutManager).scrollToPositionWithOffset(currentPage-1, 0)
 
                 true
             }
             KeyEvent.KEYCODE_VOLUME_DOWN -> {
-                (binding.recyclerview.layoutManager as LinearLayoutManager?)?.scrollToPositionWithOffset(currentPage, 0)
+                (binding.recyclerview.layoutManager as LinearLayoutManager?)?.scrollToPositionWithOffset(currentPage+1, 0)
 
                 true
             }
@@ -212,6 +200,20 @@ class ReaderActivity : BaseActivity() {
 
     private fun initView() {
         with (binding.recyclerview) {
+            adapter = ReaderAdapter().apply {
+                onItemClickListener = {
+                    if (isScroll) {
+                        isScroll = false
+                        isFullscreen = true
+
+                        scrollMode(false)
+                        fullscreen(true)
+                    } else {
+                        binding.recyclerview.layoutManager?.scrollToPosition(currentPage+1) // Moves to next page because currentPage is 1-based indexing
+                    }
+                }
+            }
+
             addOnScrollListener(object: RecyclerView.OnScrollListener() {
                 override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
                     super.onScrolled(recyclerView, dx, dy)
@@ -225,16 +227,19 @@ class ReaderActivity : BaseActivity() {
 
                     if (layoutManager.findFirstVisibleItemPosition() == -1)
                         return
-                    currentPage = layoutManager.findFirstVisibleItemPosition()+1
-                    menu?.findItem(R.id.reader_menu_page_indicator)?.title = "$currentPage/${recyclerView.adapter!!.itemCount}"
+
+                    currentPage = layoutManager.findFirstVisibleItemPosition()
+                    menu?.findItem(R.id.reader_menu_page_indicator)?.title = "${currentPage+1}/${recyclerView.adapter!!.itemCount}"
                 }
             })
+
+            itemAnimator = null
         }
 
         with (binding.retryFab) {
             setImageResource(R.drawable.refresh)
             setOnClickListener {
-                DownloadService.download(context, itemID)
+
             }
         }
 
@@ -250,6 +255,8 @@ class ReaderActivity : BaseActivity() {
     }
 
     private fun fullscreen(isFullscreen: Boolean) {
+        (binding.recyclerview.adapter as ReaderAdapter).fullscreen = isFullscreen
+
         with (window.attributes) {
             if (isFullscreen) {
                 flags = flags or WindowManager.LayoutParams.FLAG_FULLSCREEN
@@ -282,20 +289,17 @@ class ReaderActivity : BaseActivity() {
     private fun scrollMode(isScroll: Boolean) {
         if (isScroll) {
             snapHelper.attachToRecyclerView(null)
-            binding.recyclerview.layoutManager = object: LinearLayoutManager(this) {
-                override fun calculateExtraLayoutSpace(state: RecyclerView.State, extraLayoutSpace: IntArray) {
-                    extraLayoutSpace.fill(600)
-                }
-            }
+            binding.recyclerview.layoutManager = LinearLayoutManager(this)
         } else {
             snapHelper.attachToRecyclerView(binding.recyclerview)
             binding.recyclerview.layoutManager = object: LinearLayoutManager(this, HORIZONTAL, Preferences["rtl", false]) {
                 override fun calculateExtraLayoutSpace(state: RecyclerView.State, extraLayoutSpace: IntArray) {
-                    extraLayoutSpace.fill(600)
+                    extraLayoutSpace[0] = 10
+                    extraLayoutSpace[1] = 10
                 }
             }
         }
 
-        (binding.recyclerview.layoutManager as LinearLayoutManager).scrollToPositionWithOffset(currentPage-1, 0)
+        (binding.recyclerview.layoutManager as LinearLayoutManager).scrollToPositionWithOffset(currentPage, 0)
     }
 }

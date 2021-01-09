@@ -54,12 +54,12 @@
     <remote-repository>
       <option name="id" value="MavenLocal" />
       <option name="name" value="MavenLocal" />
-      <option name="url" value="file:/$USER_HOME$/.m2/repository/" />
+      <option name="url" value="file:/$MAVEN_REPOSITORY$/" />
     </remote-repository>
     <remote-repository>
       <option name="id" value="MavenLocal" />
       <option name="name" value="MavenLocal" />
-      <option name="url" value="file:/$USER_HOME$/.m2/repository" />
+      <option name="url" value="file:/$MAVEN_REPOSITORY$" />
     </remote-repository>
     <remote-repository>
       <option name="id" value="maven3" />
@@ -70,6 +70,11 @@
       <option name="id" value="maven3" />
       <option name="name" value="maven3" />
       <option name="url" value="http://dl.bintray.com/piasy/maven" />
+    </remote-repository>
+    <remote-repository>
+      <option name="id" value="maven" />
+      <option name="name" value="maven" />
+      <option name="url" value="https://dl.bintray.com/piasy/maven" />
     </remote-repository>
   </component>
 </project>

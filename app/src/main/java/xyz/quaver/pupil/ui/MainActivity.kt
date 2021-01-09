@@ -50,7 +50,6 @@ import xyz.quaver.floatingsearchview.util.view.SearchInputView
 import xyz.quaver.pupil.*
 import xyz.quaver.pupil.adapters.SearchResultsAdapter
 import xyz.quaver.pupil.databinding.MainActivityBinding
-import xyz.quaver.pupil.services.DownloadService
 import xyz.quaver.pupil.sources.ItemInfo
 import xyz.quaver.pupil.sources.Source
 import xyz.quaver.pupil.sources.sourceIcons
@@ -62,9 +61,6 @@ import xyz.quaver.pupil.ui.dialog.SourceSelectDialog
 import xyz.quaver.pupil.ui.view.ProgressCardView
 import xyz.quaver.pupil.ui.view.SwipePageTurnView
 import xyz.quaver.pupil.util.*
-import xyz.quaver.pupil.util.downloader.Cache
-import xyz.quaver.pupil.util.downloader.DownloadManager
-import xyz.quaver.pupil.util.downloader.Downloader
 import java.util.regex.Pattern
 import kotlin.math.*
 import kotlin.random.Random
@@ -223,7 +219,7 @@ class MainActivity :
         with (binding.contents.cancelFab) {
             setImageResource(R.drawable.cancel)
             setOnClickListener {
-                Downloader.getInstance(context).cancel()
+
             }
         }
 
@@ -354,22 +350,12 @@ class MainActivity :
                     query()
                 }
                 onDownloadClickedHandler = { source, itemID ->
-                    if (Downloader.getInstance(context).isDownloading(source, itemID)) {     //download in progress
-                        Downloader.getInstance(context).cancel(source, itemID)
-                    }
-                    else {
-                        DownloadManager.getInstance(context).addDownloadFolder(source, itemID)
-                        Downloader.getInstance(context).download(source, itemID)
-                    }
+
 
                     closeAllItems()
                 }
 
                 onDeleteClickedHandler = { source, itemID ->
-                    Downloader.getInstance(context).cancel(source, itemID)
-                    Cache.delete(source, itemID)
-
-                    histories.remove(itemID)
 
                     closeAllItems()
                 }

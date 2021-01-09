@@ -31,6 +31,9 @@ import androidx.fragment.app.DialogFragment
 import com.google.android.material.snackbar.Snackbar
 import net.rdrei.android.dirchooser.DirectoryChooserActivity
 import net.rdrei.android.dirchooser.DirectoryChooserConfig
+import org.kodein.di.DIAware
+import org.kodein.di.android.x.di
+import org.kodein.di.instance
 import xyz.quaver.io.FileX
 import xyz.quaver.io.util.toFile
 import xyz.quaver.pupil.R
@@ -38,10 +41,14 @@ import xyz.quaver.pupil.databinding.DownloadLocationDialogBinding
 import xyz.quaver.pupil.databinding.DownloadLocationItemBinding
 import xyz.quaver.pupil.util.Preferences
 import xyz.quaver.pupil.util.byteToString
-import xyz.quaver.pupil.util.downloader.DownloadManager
+import xyz.quaver.pupil.util.DownloadManager
 import java.io.File
 
-class DownloadLocationDialogFragment : DialogFragment() {
+class DownloadLocationDialogFragment : DialogFragment(), DIAware {
+
+    override val di by di()
+
+    private val downloadManager: DownloadManager by instance()
 
     private var _binding: DownloadLocationDialogBinding? = null
     private val binding get() = _binding!!
@@ -69,7 +76,7 @@ class DownloadLocationDialogFragment : DialogFragment() {
                         Snackbar.LENGTH_LONG
                     ).show()
 
-                    val downloadFolder = DownloadManager.getInstance(context).downloadFolder.canonicalPath
+                    val downloadFolder = downloadManager.downloadFolder.canonicalPath
                     val key = entries.keys.firstOrNull { it?.canonicalPath == downloadFolder }
                     entries[key]!!.button.isChecked = true
                     if (key == null) entries[key]!!.locationAvailable.text = downloadFolder
@@ -92,7 +99,7 @@ class DownloadLocationDialogFragment : DialogFragment() {
                     Snackbar.LENGTH_LONG
                 ).show()
 
-                val downloadFolder = DownloadManager.getInstance(context).downloadFolder.canonicalPath
+                val downloadFolder = downloadManager.downloadFolder.canonicalPath
                 val key = entries.keys.firstOrNull { it?.canonicalPath == downloadFolder }
                 entries[key]!!.button.isChecked = true
                 if (key == null) entries[key]!!.locationAvailable.text = downloadFolder
@@ -165,7 +172,7 @@ class DownloadLocationDialogFragment : DialogFragment() {
             entries[null] = this
         }
 
-        val downloadFolder = DownloadManager.getInstance(requireContext()).downloadFolder.canonicalPath
+        val downloadFolder = downloadManager.downloadFolder.canonicalPath
         val key = entries.keys.firstOrNull { it?.canonicalPath == downloadFolder }
         entries[key]!!.button.isChecked = true
         if (key == null) entries[key]!!.locationAvailable.text = downloadFolder

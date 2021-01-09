@@ -18,50 +18,7 @@
 
 package xyz.quaver.pupil.util
 
-import android.content.Context
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
-import xyz.quaver.pupil.histories
-import xyz.quaver.pupil.util.downloader.Cache
-import xyz.quaver.pupil.util.downloader.DownloadManager
 import java.io.File
 
-val mutex = Mutex()
-fun cleanCache(context: Context) = CoroutineScope(Dispatchers.IO).launch {
-    if (mutex.isLocked) return@launch
-
-    mutex.withLock {
-        val cacheFolder = File(context.cacheDir, "imageCache")
-        val downloadManager = DownloadManager.getInstance(context)
-
-        val limit = (Preferences.get<String>("cache_limit").toLongOrNull() ?: 0L)*1024*1024*1024
-
-        if (limit == 0L) return@withLock
-
-        val cacheSize = {
-            var size = 0L
-
-            cacheFolder.walk().forEach {
-                size += it.length()
-            }
-
-            size
-        }
-
-        if (cacheSize.invoke() > limit)
-            while (cacheSize.invoke() > limit/2) {
-                val caches = cacheFolder.list() ?: return@withLock
-
-                synchronized(histories) {
-                    (histories.firstOrNull {
-                        TODO()
-                    } ?: return@withLock).let {
-                        TODO()
-                    }
-                }
-            }
-    }
-}
+fun File.size(): Long =
+    this.walk().fold(0L) { size, file -> size + file.length() }

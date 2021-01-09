@@ -20,6 +20,7 @@
 <androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@android:color/darker_gray"
@@ -42,7 +43,8 @@
             android:id="@+id/recyclerview"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"/>
+            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+            tools:listitem="@layout/reader_item"/>
 
     </com.qtalk.recyclerviewfastscroller.RecyclerViewFastScroller>
 
@@ -59,7 +61,7 @@
         style="@style/Widget.AppCompat.ProgressBar.Horizontal"
         android:layout_width="match_parent"
         android:layout_height="4dp"/>
-    
+
     <com.github.clans.fab.FloatingActionMenu
         android:id="@+id/fab"
         android:layout_width="wrap_content"
@@ -82,14 +84,6 @@
             android:layout_height="wrap_content"
             app:srcCompat="@drawable/refresh"
             app:fab_label="@string/reader_fab_retry"
-            app:fab_size="mini"/>
-
-        <com.github.clans.fab.FloatingActionButton
-            android:id="@+id/auto_fab"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:srcCompat="@drawable/eye_white"
-            app:fab_label="@string/reader_fab_auto"
             app:fab_size="mini"/>
 
         <com.github.clans.fab.FloatingActionButton

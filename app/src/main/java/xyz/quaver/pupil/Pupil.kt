@@ -26,7 +26,6 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
-import android.util.Log
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.content.ContextCompat
 import androidx.preference.PreferenceManager
@@ -39,22 +38,17 @@ import com.google.firebase.analytics.FirebaseAnalytics
 import com.google.firebase.analytics.ktx.analytics
 import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.google.firebase.ktx.Firebase
-import okhttp3.Dispatcher
-import okhttp3.Interceptor
-import okhttp3.OkHttpClient
-import okhttp3.Response
+import okhttp3.*
+import org.kodein.di.*
+import org.kodein.di.android.x.androidXModule
 import xyz.quaver.io.FileX
 import xyz.quaver.pupil.sources.initSources
+import xyz.quaver.pupil.sources.sourceModule
 import xyz.quaver.pupil.types.Tag
 import xyz.quaver.pupil.util.*
 import xyz.quaver.setClient
 import java.io.File
 import java.util.*
-import java.util.concurrent.Executors
-import java.util.concurrent.TimeUnit
-import kotlin.reflect.KClass
-
-typealias PupilInterceptor = (Interceptor.Chain) -> Response
 
 lateinit var histories: SavedSet<String>
     private set
@@ -65,8 +59,6 @@ lateinit var favoriteTags: SavedSet<Tag>
 lateinit var searchHistory: SavedSet<String>
     private set
 
-val interceptors = mutableMapOf<KClass<out Any>, PupilInterceptor>()
-
 lateinit var clientBuilder: OkHttpClient.Builder
 
 var clientHolder: OkHttpClient? = null
@@ -76,7 +68,16 @@ val client: OkHttpClient
         setClient(it)
     }
 
-class Pupil : Application() {
+class Pupil : Application(), DIAware {
+
+    override val di: DI by DI.lazy {
+        import(androidXModule(this@Pupil))
+        import(sourceModule)
+
+        bind<OkHttpClient>() with provider { client }
+        bind<ImageCache>() with singleton { ImageCache(this@Pupil) }
+        bind<DownloadManager>() with singleton { DownloadManager(this@Pupil) }
+    }
 
     private lateinit var firebaseAnalytics: FirebaseAnalytics
 
@@ -90,24 +91,15 @@ class Pupil : Application() {
             else userID
         }
 
+        initSources(this)
+
         firebaseAnalytics = Firebase.analytics
         FirebaseCrashlytics.getInstance().setUserId(userID)
-
-        initSources(this)
 
         val proxyInfo = getProxyInfo()
 
         clientBuilder = OkHttpClient.Builder()
-            .connectTimeout(0, TimeUnit.SECONDS)
-            .readTimeout(0, TimeUnit.SECONDS)
             .proxyInfo(proxyInfo)
-            .addInterceptor { chain ->
-                val request = chain.request()
-                val tag = request.tag() ?: return@addInterceptor chain.proceed(request)
-
-                interceptors[tag::class]?.invoke(chain) ?: chain.proceed(request)
-            }
-            .dispatcher(Dispatcher(Executors.newFixedThreadPool(4)))
 
         try {
             Preferences.get<String>("download_folder").also {

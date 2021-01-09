@@ -29,6 +29,10 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
+import org.kodein.di.DI
+import org.kodein.di.bind
+import org.kodein.di.contexted
+import org.kodein.di.instance
 import xyz.quaver.floatingsearchview.databinding.SearchSuggestionItemBinding
 import xyz.quaver.floatingsearchview.suggestions.model.SearchSuggestion
 import xyz.quaver.pupil.R
@@ -110,6 +114,7 @@ enum class DefaultSortMode {
 @Parcelize
 class DefaultSearchSuggestion(override val body: String) : SearchSuggestion
 
+typealias AnySource = Source<*, SearchSuggestion>
 abstract class Source<Query_SortMode: Enum<Query_SortMode>, Suggestion: SearchSuggestion> {
     abstract val name: String
     abstract val iconResID: Int
@@ -117,10 +122,10 @@ abstract class Source<Query_SortMode: Enum<Query_SortMode>, Suggestion: SearchSu
 
     abstract suspend fun search(query: String, range: IntRange, sortMode: Enum<*>) : Pair<Channel<ItemInfo>, Int>
     abstract suspend fun suggestion(query: String) : List<Suggestion>
-    abstract suspend fun images(id: String) : List<String>
-    abstract suspend fun info(id: String) : ItemInfo
+    abstract suspend fun images(itemID: String) : List<String>
+    abstract suspend fun info(itemID: String) : ItemInfo
 
-    open fun getHeadersForImage(id: String, url: String): Map<String, String> {
+    open fun getHeadersForImage(itemID: String, url: String): Map<String, String> {
         return emptyMap()
     }
     
@@ -129,9 +134,21 @@ abstract class Source<Query_SortMode: Enum<Query_SortMode>, Suggestion: SearchSu
     }
 }
 
-val sources = mutableMapOf<String, Source<*, SearchSuggestion>>()
+@Deprecated("")
+val sources = mutableMapOf<String, AnySource>()
 val sourceIcons = mutableMapOf<String, Drawable?>()
 
+@Suppress("UNCHECKED_CAST")
+val sourceModule = DI.Module(name = "source") {
+    listOf(
+        Hitomi(),
+        Hiyobi()
+    ).forEach {
+        bind<AnySource>(tag = it.name) with instance (it as AnySource)
+    }
+}
+
+@Deprecated("")
 @Suppress("UNCHECKED_CAST")
 fun initSources(context: Context) {
     // Add Default Sources
@@ -139,7 +156,7 @@ fun initSources(context: Context) {
         Hitomi(),
         Hiyobi()
     ).forEach {
-        sources[it.name] = it as Source<*, SearchSuggestion>
+        sources[it.name] = it as AnySource
         sourceIcons[it.name] = ContextCompat.getDrawable(context, it.iconResID)
     }
 }

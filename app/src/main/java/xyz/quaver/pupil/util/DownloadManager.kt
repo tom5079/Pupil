@@ -1,6 +1,6 @@
 /*
  *     Pupil, Hitomi.la viewer for Android
- *     Copyright (C) 2020  tom5079
+ *     Copyright (C) 2021  tom5079
  *
  *     This program is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
@@ -16,35 +16,29 @@
  *     along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package xyz.quaver.pupil.util.downloader
+package xyz.quaver.pupil.util
 
 import android.content.Context
 import android.content.ContextWrapper
-import android.net.Uri
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import org.kodein.di.DIAware
+import org.kodein.di.android.di
+import org.kodein.di.instance
 import xyz.quaver.io.FileX
 import xyz.quaver.io.util.*
-import xyz.quaver.pupil.sources.sources
-import xyz.quaver.pupil.util.Preferences
-import xyz.quaver.pupil.util.formatDownloadFolder
+import xyz.quaver.pupil.sources.AnySource
 
-class DownloadManager private constructor(context: Context) : ContextWrapper(context) {
+class DownloadManager constructor(context: Context) : ContextWrapper(context), DIAware {
 
-    companion object {
-        @Volatile private var instance: DownloadManager? = null
+    override val di by di(context)
 
-        fun getInstance(context: Context) =
-            instance ?: synchronized(this) {
-                instance ?: DownloadManager(context).also { instance = it }
-            }
-    }
-
-    val defaultDownloadFolder = FileX(this, getExternalFilesDir(null)!!)
+    private val defaultDownloadFolder = FileX(this, getExternalFilesDir(null)!!)
 
     val downloadFolder: FileX
         get() = {
@@ -58,7 +52,7 @@ class DownloadManager private constructor(context: Context) : ContextWrapper(con
 
     private var prevDownloadFolder: FileX? = null
     private var downloadFolderMapInstance: MutableMap<String, String>? = null
-    val downloadFolderMap: MutableMap<String, String>
+    private val downloadFolderMap: MutableMap<String, String>
         @Synchronized
         get() {
             if (prevDownloadFolder != downloadFolder) {
@@ -88,8 +82,12 @@ class DownloadManager private constructor(context: Context) : ContextWrapper(con
         downloadFolderMap["$source-$itemID"]?.let { downloadFolder.getChild(it) }
 
     @Synchronized
-    fun addDownloadFolder(source: String, itemID: String) = CoroutineScope(Dispatchers.IO).launch {
-        val name = "A" // TODO
+    fun download(source: String, itemID: String) = CoroutineScope(Dispatchers.IO).launch {
+        val source: AnySource by instance(tag = source)
+        val info = async { source.info(itemID) }
+        val images = async { source.images(itemID) }
+
+        val name = info.await().formatDownloadFolder()
 
         val folder = downloadFolder.getChild("$source/$name")
 
@@ -105,7 +103,7 @@ class DownloadManager private constructor(context: Context) : ContextWrapper(con
     }
 
     @Synchronized
-    fun deleteDownloadFolder(source: String, itemID: String) {
+    fun delete(source: String, itemID: String) {
         downloadFolderMap["$source/$itemID"]?.let {
             kotlin.runCatching {
                 downloadFolder.getChild(it).deleteRecursively()

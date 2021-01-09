@@ -39,16 +39,12 @@ import xyz.quaver.pupil.R
 import xyz.quaver.pupil.databinding.SearchResultItemBinding
 import xyz.quaver.pupil.sources.ItemInfo
 import xyz.quaver.pupil.types.Tag
-import xyz.quaver.pupil.ui.view.ProgressCardView
-import xyz.quaver.pupil.util.downloader.Cache
-import xyz.quaver.pupil.util.downloader.DownloadManager
-import xyz.quaver.pupil.util.downloader.Downloader
 import kotlin.time.ExperimentalTime
 
 class SearchResultsAdapter(private val results: List<ItemInfo>) : RecyclerSwipeAdapter<SearchResultsAdapter.ViewHolder>(), SwipeAdapterInterface {
 
     var onChipClickedHandler: ((Tag) -> Unit)? = null
-    var onDownloadClickedHandler: ((source: String, itemID: String) -> Unit)? = null
+    var onDownloadClickedHandler: ((source: String, itemI: String) -> Unit)? = null
     var onDeleteClickedHandler: ((source: String, itemID: String) -> Unit)? = null
 
     // TODO: migrate to viewBinding
@@ -78,11 +74,7 @@ class SearchResultsAdapter(private val results: List<ItemInfo>) : RecyclerSwipeA
                 override fun onStartOpen(layout: SwipeLayout?) {
                     mItemManger.closeAllExcept(layout)
 
-                    binding.root.binding.download.text =
-                        if (Downloader.getInstance(itemView.context).isDownloading(source, itemID))
-                            itemView.context.getString(android.R.string.cancel)
-                        else
-                            itemView.context.getString(R.string.main_download)
+                    binding.root.binding.download.text = itemView.context.getString(R.string.main_download)
                 }
 
                 override fun onOpen(layout: SwipeLayout?) {}
@@ -117,8 +109,7 @@ class SearchResultsAdapter(private val results: List<ItemInfo>) : RecyclerSwipeA
         }
 
         private fun updateProgress() {
-            val cache = Cache.getInstance(itemView.context, source, itemID)
-
+            /* TODO
             binding.root.max = cache.metadata.imageList?.size ?: 0
             binding.root.progress = cache.metadata.imageList?.count { it != null } ?: 0
 
@@ -129,6 +120,7 @@ class SearchResultsAdapter(private val results: List<ItemInfo>) : RecyclerSwipeA
                     ProgressCardView.Type.CACHE
             } else
                 ProgressCardView.Type.LOADING
+             */
         }
 
         @SuppressLint("SetTextI18n")
