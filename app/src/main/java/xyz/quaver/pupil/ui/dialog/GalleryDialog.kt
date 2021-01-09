@@ -42,13 +42,11 @@ import xyz.quaver.pupil.adapters.SearchResultsAdapter
 import xyz.quaver.pupil.adapters.ThumbnailPageAdapter
 import xyz.quaver.pupil.databinding.*
 import xyz.quaver.pupil.favoriteTags
-import xyz.quaver.pupil.sources.Hitomi
 import xyz.quaver.pupil.sources.ItemInfo
 import xyz.quaver.pupil.types.Tag
 import xyz.quaver.pupil.ui.ReaderActivity
 import xyz.quaver.pupil.ui.view.TagChip
 import xyz.quaver.pupil.util.ItemClickSupport
-import xyz.quaver.pupil.util.downloader.Cache
 import xyz.quaver.pupil.util.wordCapitalize
 import java.util.*
 import kotlin.collections.ArrayList

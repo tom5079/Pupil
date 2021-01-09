@@ -22,22 +22,26 @@ import android.os.Bundle
 import androidx.appcompat.app.AlertDialog
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
+import org.kodein.di.DIAware
+import org.kodein.di.android.x.di
+import org.kodein.di.instance
 import xyz.quaver.io.FileX
-import xyz.quaver.io.util.deleteRecursively
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.histories
+import xyz.quaver.pupil.util.DownloadManager
+import xyz.quaver.pupil.util.ImageCache
 import xyz.quaver.pupil.util.byteToString
-import xyz.quaver.pupil.util.downloader.Cache
-import xyz.quaver.pupil.util.downloader.DownloadManager
-import java.io.File
+import xyz.quaver.pupil.util.size
 
-class ManageStorageFragment : PreferenceFragmentCompat(), Preference.OnPreferenceClickListener {
+class ManageStorageFragment : PreferenceFragmentCompat(), DIAware, Preference.OnPreferenceClickListener {
+
+    override val di by di()
 
     private var job: Job? = null
+
+    private val downloadManager: DownloadManager by instance()
+    private val cache: ImageCache by instance()
 
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
         setPreferencesFromResource(R.xml.manage_storage_preferences, rootKey)
@@ -53,27 +57,19 @@ class ManageStorageFragment : PreferenceFragmentCompat(), Preference.OnPreferenc
 
             when (key) {
                 "delete_cache" -> {
-                    val dir = File(context.cacheDir, "imageCache")
+                    val cache: ImageCache by instance()
 
                     AlertDialog.Builder(context).apply {
                         setTitle(R.string.warning)
                         setMessage(R.string.settings_clear_cache_alert_message)
                         setPositiveButton(android.R.string.ok) { _, _ ->
-                            if (dir.exists())
-                                dir.deleteRecursively()
+                            summary = context.getString(R.string.settings_storage_usage_loading)
 
-                            Cache.instances.clear()
-
-                            summary = context.getString(R.string.settings_storage_usage, byteToString(0))
                             CoroutineScope(Dispatchers.IO).launch {
-                                var size = 0L
+                                cache.clear()
 
-                                dir.walk().forEach {
-                                    size += it.length()
-
-                                    launch(Dispatchers.Main) {
-                                        summary = context.getString(R.string.settings_storage_usage, byteToString(size))
-                                    }
+                                MainScope().launch {
+                                    summary = context.getString(R.string.settings_storage_usage, byteToString(cache.cacheFolder.size()))
                                 }
                             }
                         }
@@ -81,7 +77,7 @@ class ManageStorageFragment : PreferenceFragmentCompat(), Preference.OnPreferenc
                     }.show()
                 }
                 "delete_downloads" -> {
-                    val dir = DownloadManager.getInstance(context).downloadFolder
+                    val dir = downloadManager.downloadFolder
 
                     AlertDialog.Builder(context).apply {
                         setTitle(R.string.warning)
@@ -143,21 +139,7 @@ class ManageStorageFragment : PreferenceFragmentCompat(), Preference.OnPreferenc
 
         with (findPreference<Preference>("delete_cache")) {
             this ?: return@with
-
-            val dir = File(context.cacheDir, "imageCache")
-
-            summary = context.getString(R.string.settings_storage_usage, byteToString(0))
-            CoroutineScope(Dispatchers.IO).launch {
-                var size = 0L
-
-                dir.walk().forEach {
-                    size += it.length()
-
-                    launch(Dispatchers.Main) {
-                        summary = context.getString(R.string.settings_storage_usage, byteToString(size))
-                    }
-                }
-            }
+            summary = context.getString(R.string.settings_storage_usage, byteToString(cache.cacheFolder.size()))
 
             onPreferenceClickListener = this@ManageStorageFragment
         }
@@ -165,7 +147,7 @@ class ManageStorageFragment : PreferenceFragmentCompat(), Preference.OnPreferenc
         with (findPreference<Preference>("delete_downloads")) {
             this ?: return@with
 
-            val dir = DownloadManager.getInstance(context).downloadFolder
+            val dir = downloadManager.downloadFolder
 
             summary = context.getString(R.string.settings_storage_usage, byteToString(0))
             job?.cancel()

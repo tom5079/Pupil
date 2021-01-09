@@ -23,7 +23,7 @@
     android:layout_height="match_parent"
     android:layout_marginBottom="8dp"
     android:background="@drawable/reader_item_boundary">
-    
+
     <androidx.constraintlayout.widget.Guideline
         android:id="@+id/guideline_center_vertical"
         android:layout_width="wrap_content"
@@ -52,7 +52,7 @@
         app:layout_constraintLeft_toLeftOf="@id/reader_item_progressbar"
         app:layout_constraintRight_toRightOf="@id/reader_item_progressbar"
         style="@style/TextAppearance.AppCompat.Caption"/>
-    
+
     <androidx.constraintlayout.widget.Group
         android:id="@+id/progress_group"
         android:layout_width="wrap_content"

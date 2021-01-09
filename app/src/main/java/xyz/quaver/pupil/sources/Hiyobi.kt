@@ -72,14 +72,14 @@ class Hiyobi : Source<DefaultSortMode, DefaultSearchSuggestion>() {
         return result.map { DefaultSearchSuggestion(it) }
     }
 
-    override suspend fun images(id: String): List<String> {
-        return createImgList(id, getGalleryInfo(id), true).map {
+    override suspend fun images(itemID: String): List<String> {
+        return createImgList(itemID, getGalleryInfo(itemID), false).map {
             it.path
         }
     }
 
-    override suspend fun info(id: String): ItemInfo {
-        return transform(name, getGalleryBlock(id))
+    override suspend fun info(itemID: String): ItemInfo {
+        return transform(name, getGalleryBlock(itemID))
     }
 
     override fun onSuggestionBind(binding: SearchSuggestionItemBinding, item: DefaultSearchSuggestion) {
@@ -105,7 +105,7 @@ class Hiyobi : Source<DefaultSortMode, DefaultSearchSuggestion>() {
     }
 
     companion object {
-        private fun downloadAllTags(): Deferred<List<String>> = CoroutineScope(Dispatchers.IO).async {
+        private fun downloadAllTagsAsync(): Deferred<List<String>> = CoroutineScope(Dispatchers.IO).async {
             Json.decodeFromString(kotlin.runCatching {
                 client.newCall(Request.Builder().url("https://api.hiyobi.me/auto.json").build()).execute().also { if (it.code() != 200) throw IOException() }.body()?.use { it.string() }
             }.getOrNull() ?: "[]")
@@ -114,7 +114,7 @@ class Hiyobi : Source<DefaultSortMode, DefaultSearchSuggestion>() {
         private var _allTags: Deferred<List<String>>? = null
 
         val allTags: Deferred<List<String>>
-            get() = if (_allTags == null || (_allTags!!.isCompleted && runBlocking { _allTags!!.await() }.isEmpty())) downloadAllTags().also {
+            get() = if (_allTags == null || (_allTags!!.isCompleted && runBlocking { _allTags!!.await() }.isEmpty())) downloadAllTagsAsync().also {
                 _allTags = it
             } else _allTags!!
 

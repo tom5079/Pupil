@@ -29,6 +29,9 @@ import com.google.android.gms.oss.licenses.OssLicensesMenuActivity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import org.kodein.di.DIAware
+import org.kodein.di.android.x.di
+import org.kodein.di.instance
 import xyz.quaver.io.FileX
 import xyz.quaver.io.util.getChild
 import xyz.quaver.pupil.R
@@ -36,14 +39,19 @@ import xyz.quaver.pupil.ui.LockActivity
 import xyz.quaver.pupil.ui.SettingsActivity
 import xyz.quaver.pupil.ui.dialog.*
 import xyz.quaver.pupil.util.*
-import xyz.quaver.pupil.util.downloader.DownloadManager
+import xyz.quaver.pupil.util.DownloadManager
 import java.util.*
 
 class SettingsFragment :
     PreferenceFragmentCompat(),
     Preference.OnPreferenceClickListener,
     Preference.OnPreferenceChangeListener,
-    SharedPreferences.OnSharedPreferenceChangeListener {
+    SharedPreferences.OnSharedPreferenceChangeListener,
+    DIAware {
+
+    override val di by di()
+
+    private val downloadManager: DownloadManager by instance()
 
     private val lockLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
         if (it.resultCode == Activity.RESULT_OK) {
@@ -98,10 +106,6 @@ class SettingsFragment :
                     }
                     lockLauncher.launch(intent)
                 }
-                "mirrors" -> {
-                    MirrorDialog(requireContext())
-                        .show()
-                }
                 "proxy" -> {
                     ProxyDialog(requireContext())
                         .show()
@@ -131,7 +135,7 @@ class SettingsFragment :
                     val create = (newValue as? Boolean) ?: return false
 
                     return kotlin.runCatching {
-                        val nomedia = DownloadManager.getInstance(context).downloadFolder.getChild(".nomedia")
+                        val nomedia = downloadManager.downloadFolder.getChild(".nomedia")
 
                         if (create)
                             nomedia.createNewFile()
@@ -220,7 +224,7 @@ class SettingsFragment :
                         }
                         "nomedia" -> {
                             (this as SwitchPreferenceCompat).isChecked = kotlin.runCatching {
-                                DownloadManager.getInstance(context).downloadFolder.getChild(".nomedia").exists()
+                                downloadManager.downloadFolder.getChild(".nomedia").exists()
                             }.getOrDefault(false)
 
                             onPreferenceChangeListener = this@SettingsFragment
@@ -267,9 +271,6 @@ class SettingsFragment :
 
                             onPreferenceChangeListener = this@SettingsFragment
 
-                        }
-                        "mirrors" -> {
-                            onPreferenceClickListener = this@SettingsFragment
                         }
                         "proxy" -> {
                             summary = getProxyInfo().type.name

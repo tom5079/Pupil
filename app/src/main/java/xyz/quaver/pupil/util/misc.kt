@@ -20,6 +20,7 @@ package xyz.quaver.pupil.util
 
 import android.annotation.SuppressLint
 import android.view.MenuItem
+import androidx.lifecycle.MutableLiveData
 import kotlinx.serialization.json.*
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -27,6 +28,8 @@ import xyz.quaver.hitomi.GalleryInfo
 import xyz.quaver.hitomi.getReferer
 import xyz.quaver.hitomi.imageUrlFromImage
 import xyz.quaver.pupil.sources.ItemInfo
+import java.io.InputStream
+import java.io.OutputStream
 import java.util.*
 import kotlin.collections.ArrayList
 
@@ -84,47 +87,13 @@ val formatMap = mapOf<String, ItemInfo.() -> (String)>(
 /**
  * Formats download folder name with given Metadata
  */
-fun ItemInfo.formatDownloadFolder(): String =
-    Preferences["download_folder_name", "[-id-] -title-"].let {
-        formatMap.entries.fold(it) { str, (k, v) ->
-            str.replace(k, v.invoke(this), true)
-        }
-    }.replace(Regex("""[*\\|"?><:/]"""), "").ellipsize(127)
-
-fun ItemInfo.formatDownloadFolderTest(format: String): String =
+fun ItemInfo.formatDownloadFolder(format: String = Preferences["download_folder_name", "[-id-] -title-"]): String =
     format.let {
         formatMap.entries.fold(it) { str, (k, v) ->
             str.replace(k, v.invoke(this), true)
         }
     }.replace(Regex("""[*\\|"?><:/]"""), "").ellipsize(127)
 
-val GalleryInfo.requestBuilders: List<Request.Builder>
-    get() {
-        val galleryID = this.id ?: 0
-        val lowQuality = Preferences["low_quality", true]
-
-        return this.files.map {
-            Request.Builder()
-                .url(imageUrlFromImage(galleryID, it, !lowQuality))
-                .header("Referer", getReferer(galleryID))
-        }
-/*
-        return when(code) {
-            Code.HITOMI -> {
-                this.galleryInfo.files.map {
-                    Request.Builder()
-                        .url(imageUrlFromImage(galleryID, it, !lowQuality))
-                        .header("Referer", getReferer(galleryID))
-                }
-            }
-            Code.HIYOBI -> {
-                createImgList(galleryID, this, lowQuality).map {
-                    Request.Builder()
-                        .url(it.path)
-                }
-            }
-        }*/
-    }
 fun String.ellipsize(n: Int): String =
     if (this.length > n)
         this.slice(0 until n) + "…"
@@ -142,4 +111,21 @@ val JsonElement.content
 
 fun List<MenuItem>.findMenu(itemID: Int): MenuItem {
     return first { it.itemId == itemID }
+}
+
+fun <E> MutableLiveData<MutableList<E>>.notify() {
+    this.value = this.value
+}
+
+fun InputStream.copyTo(out: OutputStream, onCopy: (totalBytesCopied: Long, bytesJustCopied: Int) -> Any): Long {
+    var bytesCopied: Long = 0
+    val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+    var bytes = read(buffer)
+    while (bytes >= 0) {
+        out.write(buffer, 0, bytes)
+        bytesCopied += bytes
+        onCopy(bytesCopied, bytes)
+        bytes = read(buffer)
+    }
+    return bytesCopied
 }

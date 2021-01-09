@@ -25,7 +25,7 @@
         android:icon="@drawable/avd_star"
         app:showAsAction="always"/>
 
-    <item android:id="@+id/reader_type"
+    <item android:id="@+id/source"
         android:title=""
         app:showAsAction="ifRoom"/>
 

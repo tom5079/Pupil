@@ -43,23 +43,9 @@
             app:key="download_folder"
             app:title="@string/settings_download_folder"/>
 
-        <ListPreference
-            app:key="cache_limit"
-            app:title="@string/settings_cache_limit"
-            app:entries="@array/cache_size_text"
-            app:entryValues="@array/cache_size"
-            app:defaultValue="8"
-            app:useSimpleSummaryProvider="true"/>
-
         <SwitchPreferenceCompat
             app:key="nomedia"
             app:title="@string/settings_nomedia_title"/>
-
-        <SwitchPreferenceCompat
-            app:key="low_quality"
-            app:title="@string/settings_low_quality"
-            app:summary="@string/settings_low_quality_summary"
-            app:defaultValue="true"/>
 
     </PreferenceCategory>
 
@@ -79,11 +65,6 @@
             app:key="tag_translation"
             app:title="@string/settings_tag_translation"
             app:useSimpleSummaryProvider="true"/>
-
-        <Preference
-            app:key="mirrors"
-            app:title="@string/settings_mirror_title"
-            app:summary="@string/settings_mirror_summary"/>
 
         <Preference
             app:key="proxy"
