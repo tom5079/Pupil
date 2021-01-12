@@ -125,8 +125,9 @@ class Pupil : Application() {
         favoriteTags = SavedSet(File(ContextCompat.getDataDir(this), "favorites_tags.json"), Tag.parse(""))
         searchHistory = SavedSet(File(ContextCompat.getDataDir(this), "search_histories.json"), "")
 
+        /*
         if (BuildConfig.DEBUG)
-            FirebaseAnalytics.getInstance(this).setAnalyticsCollectionEnabled(false)
+            FirebaseAnalytics.getInstance(this).setAnalyticsCollectionEnabled(false)*/
 
         try {
             ProviderInstaller.installIfNeeded(this)
