@@ -137,5 +137,9 @@ operator fun JsonElement.get(index: Int) =
 operator fun JsonElement.get(tag: String) =
     this.jsonObject[tag]
 
+fun JsonElement.getOrNull(tag: String) = kotlin.runCatching {
+    this.jsonObject.getOrDefault(tag, null)
+}.getOrNull()
+
 val JsonElement.content
     get() = this.jsonPrimitive.contentOrNull
