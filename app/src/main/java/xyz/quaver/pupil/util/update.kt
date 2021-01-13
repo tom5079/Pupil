@@ -285,11 +285,11 @@ fun xyz.quaver.pupil.util.downloader.DownloadManager.migrate() {
                 folder.getChild(".metadata").readText()?.let { Json.parseToJsonElement(it) }
             }.getOrNull()
 
-            val galleryID = metadata?.get("reader")?.get("galleryInfo")?.get("id")?.content?.toIntOrNull()
+            val galleryID = metadata?.getOrNull("reader")?.getOrNull("galleryInfo")?.getOrNull("id")?.content?.toIntOrNull()
                 ?: folder.name.toIntOrNull() ?: return@forEachIndexed
 
             val galleryBlock: GalleryBlock? = kotlin.runCatching {
-                metadata?.get("galleryBlock")?.let { Json.decodeFromJsonElement<GalleryBlock>(it) }
+                metadata?.getOrNull("galleryBlock")?.let { Json.decodeFromJsonElement<GalleryBlock>(it) }
             }.getOrNull() ?: kotlin.runCatching {
                 getGalleryBlock(galleryID)
             }.getOrNull() ?: kotlin.runCatching {
@@ -297,14 +297,14 @@ fun xyz.quaver.pupil.util.downloader.DownloadManager.migrate() {
             }.getOrNull()
 
             val reader: Reader? = kotlin.runCatching {
-                metadata?.get("reader")?.let { Json.decodeFromJsonElement<Reader>(it) }
+                metadata?.getOrNull("reader")?.let { Json.decodeFromJsonElement<Reader>(it) }
             }.getOrNull() ?: kotlin.runCatching {
                 getReader(galleryID)
             }.getOrNull() ?: kotlin.runCatching {
                 xyz.quaver.hiyobi.getReader(galleryID)
             }.getOrNull()
 
-            metadata?.get("thumbnail")?.jsonPrimitive?.contentOrNull?.also { thumbnail ->
+            metadata?.getOrNull("thumbnail")?.jsonPrimitive?.contentOrNull?.also { thumbnail ->
                 val file = folder.getChild(".thumbnail").also {
                     if (it.exists())
                         it.delete()
