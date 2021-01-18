@@ -38,14 +38,12 @@ import com.facebook.drawee.drawable.ScalingUtils
 import com.facebook.drawee.interfaces.DraweeController
 import com.facebook.drawee.view.SimpleDraweeView
 import com.facebook.imagepipeline.image.ImageInfo
-import com.github.piasy.biv.loader.ImageLoader
 import com.github.piasy.biv.view.BigImageView
 import com.github.piasy.biv.view.ImageShownCallback
 import com.github.piasy.biv.view.ImageViewFactory
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.databinding.ReaderItemBinding
 import java.io.File
-import java.lang.Exception
 import kotlin.math.roundToInt
 
 data class ReaderItem(

@@ -25,14 +25,10 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.consumeAsFlow
 import okhttp3.Headers
-import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.kodein.di.DIAware
 import org.kodein.di.android.x.di
-import org.kodein.di.direct
 import org.kodein.di.instance
 import xyz.quaver.pupil.adapters.ReaderItem
 import xyz.quaver.pupil.sources.AnySource
