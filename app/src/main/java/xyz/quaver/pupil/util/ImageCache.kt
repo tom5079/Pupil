@@ -19,12 +19,12 @@
 package xyz.quaver.pupil.util
 
 import android.content.Context
-import android.util.Log
 import com.google.firebase.crashlytics.FirebaseCrashlytics
-import kotlinx.coroutines.*
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.sendBlocking
+import kotlinx.coroutines.coroutineScope
 import okhttp3.*
 import org.kodein.di.DIAware
 import org.kodein.di.android.di
@@ -50,7 +50,7 @@ class ImageCache(context: Context) : DIAware {
     suspend fun cleanup() = coroutineScope {
         val LIMIT = 100*1024*1024
 
-        cacheFolder.listFiles { it -> it.canonicalPath !in cache.values }?.forEach { it.delete() }
+        cacheFolder.listFiles { it -> it.canonicalPath !in cache.values || it.name == ".cache" }?.forEach { it.delete() }
 
         if (cacheFolder.size() > LIMIT)
             do {
