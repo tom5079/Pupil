@@ -146,7 +146,7 @@ class SearchResultsAdapter(private val results: List<ItemInfo>) : RecyclerSwipeA
             CoroutineScope(Dispatchers.Main).launch {
                 with (binding.tagGroup) {
                     tags.clear()
-                    result.extra[ItemInfo.ExtraType.TAGS]?.await()?.split(", ")?.map {
+                    result.extra[ItemInfo.ExtraType.TAGS]?.await()?.split(", ")?.let { if (it.size == 1 && it.first().isEmpty()) emptyList() else it }?.map {
                         Tag.parse(it)
                     }?.let { tags.addAll(it) }
                     refresh()
