@@ -19,6 +19,7 @@
 package xyz.quaver.pupil.util
 
 import android.content.Context
+import android.util.Log
 import com.google.firebase.crashlytics.FirebaseCrashlytics
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.BufferOverflow
@@ -49,7 +50,7 @@ class ImageCache(context: Context) : DIAware {
     suspend fun cleanup() = coroutineScope {
         val LIMIT = 100*1024*1024
 
-        cacheFolder.listFiles { it -> it.canonicalPath !in cache }?.forEach { it.delete() }
+        cacheFolder.listFiles { it -> it.canonicalPath !in cache.values }?.forEach { it.delete() }
 
         if (cacheFolder.size() > LIMIT)
             do {

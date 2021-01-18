@@ -35,7 +35,6 @@ class SavedSet <T: Any> (private val file: File, any: T, private val set: Mutabl
 
     init {
         if (!file.exists()) {
-            file.parentFile?.mkdirs()
             save()
         }
         load()
@@ -53,6 +52,7 @@ class SavedSet <T: Any> (private val file: File, any: T, private val set: Mutabl
 
     @Synchronized
     fun save() {
+        file.parentFile?.mkdirs()
         if (!file.exists())
             file.createNewFile()
 
@@ -102,7 +102,6 @@ class SavedMap <K: Any, V: Any> (private val file: File, anyKey: K, anyValue: V,
 
     init {
         if (!file.exists()) {
-            file.parentFile?.mkdirs()
             save()
         }
         load()
@@ -120,6 +119,7 @@ class SavedMap <K: Any, V: Any> (private val file: File, anyKey: K, anyValue: V,
 
     @Synchronized
     fun save() {
+        file.parentFile?.mkdirs()
         if (!file.exists())
             file.createNewFile()
 
