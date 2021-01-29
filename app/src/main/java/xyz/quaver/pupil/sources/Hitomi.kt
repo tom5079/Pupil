@@ -120,7 +120,7 @@ class Hitomi : Source<Hitomi.SortMode, Hitomi.TagSuggestion>() {
                     mapOf(
                         ExtraType.TYPE to async { it.type.wordCapitalize() },
                         ExtraType.GROUP to async { it.groups.joinToString { it.wordCapitalize() } },
-                        ExtraType.LANGUAGE to async { languageMap[it.language] ?: it.language },
+                        ExtraType.LANGUAGE to async { it.language },
                         ExtraType.SERIES to async { it.series.joinToString { it.wordCapitalize() } },
                         ExtraType.CHARACTER to async { it.characters.joinToString { it.wordCapitalize() } },
                         ExtraType.TAGS to async { it.tags.joinToString() },
@@ -227,7 +227,7 @@ class Hitomi : Source<Hitomi.SortMode, Hitomi.TagSuggestion>() {
                     }.getOrDefault("") },
                     ExtraType.SERIES to CoroutineScope(Dispatchers.Unconfined).async { galleryBlock.series.joinToString { it.wordCapitalize() } },
                     ExtraType.TYPE to CoroutineScope(Dispatchers.Unconfined).async { galleryBlock.type.wordCapitalize() },
-                    ExtraType.LANGUAGE to CoroutineScope(Dispatchers.Unconfined).async { languageMap[galleryBlock.language] ?: galleryBlock.language },
+                    ExtraType.LANGUAGE to CoroutineScope(Dispatchers.Unconfined).async { galleryBlock.language },
                     ExtraType.PAGECOUNT to CoroutineScope(Dispatchers.IO).async { kotlin.runCatching {
                         getGalleryInfo(galleryBlock.id).files.size.toString()
                     }.getOrNull() },

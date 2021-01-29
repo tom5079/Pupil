@@ -12,4 +12,6 @@
 	<dimen name="thumb_height">72dp</dimen>
 
 	<dimen name="thumbnail_page_height">300dp</dimen>
+
+	<dimen name="gallery_dialog_preview_height">150dp</dimen>
 </resources>

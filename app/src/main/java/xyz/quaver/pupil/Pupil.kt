@@ -38,6 +38,8 @@ import com.google.firebase.analytics.FirebaseAnalytics
 import com.google.firebase.analytics.ktx.analytics
 import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.google.firebase.ktx.Firebase
+import com.orhanobut.logger.AndroidLogAdapter
+import com.orhanobut.logger.Logger
 import okhttp3.*
 import org.kodein.di.*
 import org.kodein.di.android.x.androidXModule
@@ -95,6 +97,8 @@ class Pupil : Application(), DIAware {
 
         firebaseAnalytics = Firebase.analytics
         FirebaseCrashlytics.getInstance().setUserId(userID)
+
+        Logger.addLogAdapter(AndroidLogAdapter())
 
         val proxyInfo = getProxyInfo()
 
