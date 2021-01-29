@@ -18,29 +18,40 @@
 
 package xyz.quaver.pupil.adapters
 
-import android.net.Uri
 import android.view.ViewGroup
-import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
-import com.github.piasy.biv.view.BigImageView
+import com.facebook.drawee.drawable.ScalingUtils
+import com.facebook.drawee.view.SimpleDraweeView
 import xyz.quaver.pupil.R
 
 class ThumbnailAdapter(var thumbnails: List<String>) : RecyclerView.Adapter<ThumbnailAdapter.ViewHolder>() {
 
-    class ViewHolder(val view: BigImageView) : RecyclerView.ViewHolder(view) {
+    class ViewHolder(val view: SimpleDraweeView) : RecyclerView.ViewHolder(view) {
+
+        init {
+            view.hierarchy.actualImageScaleType = ScalingUtils.ScaleType.FIT_CENTER
+        }
+
+        fun bind(image: String) {
+            view.setImageURI(image)
+        }
+
         fun clear() {
-            view.ssiv?.recycle()
+            view.controller = null
         }
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
-        return ViewHolder(BigImageView(parent.context).apply {
-            setFailureImage(ContextCompat.getDrawable(context, R.drawable.image_broken_variant))
+        return ViewHolder(SimpleDraweeView(parent.context).apply {
+            layoutParams = ViewGroup.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                resources.getDimensionPixelSize(R.dimen.gallery_dialog_preview_height)
+            )
         })
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        holder.view.showImage(Uri.parse(thumbnails[position]))
+        holder.bind(thumbnails[position])
     }
 
     override fun getItemCount() = thumbnails.size

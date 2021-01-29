@@ -29,11 +29,8 @@ class ThumbnailPageAdapter(private val thumbnails: List<String>) : RecyclerView.
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         return ViewHolder(RecyclerView(parent.context).apply {
-            val layoutManager = GridLayoutManager(parent.context, 3)
-            val adapter = ThumbnailAdapter(listOf())
-
-            this.layoutManager = layoutManager
-            this.adapter = adapter
+            this.layoutManager = GridLayoutManager(parent.context, 3)
+            this.adapter = ThumbnailAdapter(listOf())
             layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
         })
     }
@@ -42,8 +39,6 @@ class ThumbnailPageAdapter(private val thumbnails: List<String>) : RecyclerView.
         (holder.view.adapter as ThumbnailAdapter).apply {
             thumbnails = this@ThumbnailPageAdapter.thumbnails.slice(9*position until min(9*position+9, this@ThumbnailPageAdapter.thumbnails.size))
             notifyDataSetChanged()
-
-            (holder.view.layoutManager as GridLayoutManager).scrollToPosition(8)
         }
     }
 

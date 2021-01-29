@@ -97,6 +97,11 @@ data class ItemInfo(
         }
     }
 
+    val isReady: Boolean
+        get() = extra.all { it.value.isCompleted }
+
+    suspend fun awaitAll() = extra.values.awaitAll()
+
     companion object {
         val extraTypeMap = mapOf(
             ExtraType.SERIES to R.string.galleryblock_series,

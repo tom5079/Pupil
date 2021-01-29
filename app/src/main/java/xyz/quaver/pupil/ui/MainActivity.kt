@@ -56,7 +56,7 @@ import xyz.quaver.pupil.sources.sourceIcons
 import xyz.quaver.pupil.sources.sources
 import xyz.quaver.pupil.types.*
 import xyz.quaver.pupil.ui.dialog.DownloadLocationDialogFragment
-import xyz.quaver.pupil.ui.dialog.GalleryDialog
+import xyz.quaver.pupil.ui.dialog.GalleryDialogFragment
 import xyz.quaver.pupil.ui.dialog.SourceSelectDialog
 import xyz.quaver.pupil.ui.view.ProgressCardView
 import xyz.quaver.pupil.ui.view.SwipePageTurnView
@@ -264,7 +264,7 @@ class MainActivity :
 
                         launch(Dispatchers.Main) {
                             setImageResource(R.drawable.shuffle_variant)
-                            GalleryDialog(this@MainActivity, randomResult.id).apply {
+                            GalleryDialogFragment(source.name, randomResult.id).apply {
                                 onChipClickedHandler.add {
                                     query = it.toQuery()
                                     currentPage = 1
@@ -272,7 +272,7 @@ class MainActivity :
                                     query()
                                     dismiss()
                                 }
-                            }.show()
+                            }.show(supportFragmentManager, "GalleryDialogFragment")
                         }
                     }
             }
@@ -292,7 +292,7 @@ class MainActivity :
                     setPositiveButton(android.R.string.ok) { _, _ ->
                         val galleryID = editText.text.toString()
 
-                        GalleryDialog(this@MainActivity, galleryID).apply {
+                        GalleryDialogFragment(source.name, galleryID).apply {
                             onChipClickedHandler.add {
                                 query = it.toQuery()
                                 currentPage = 1
@@ -300,7 +300,7 @@ class MainActivity :
                                 query()
                                 dismiss()
                             }
-                        }.show()
+                        }.show(supportFragmentManager, "GalleryDialogFragment")
                     }
                 }.show()
             }
@@ -380,7 +380,7 @@ class MainActivity :
 
                     val result = searchResults.getOrNull(position) ?: return@listener true
 
-                    GalleryDialog(this@MainActivity, result.id).apply {
+                    GalleryDialogFragment(source.name, result.id).apply {
                         onChipClickedHandler.add {
                             query = it.toQuery()
                             currentPage = 1
@@ -388,7 +388,7 @@ class MainActivity :
                             query()
                             dismiss()
                         }
-                    }.show()
+                    }.show(supportFragmentManager, "GalleryDialogFragment")
 
                     true
                 }
