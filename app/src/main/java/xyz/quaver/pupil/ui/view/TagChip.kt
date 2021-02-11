@@ -22,15 +22,22 @@ import android.annotation.SuppressLint
 import android.content.Context
 import androidx.core.content.ContextCompat
 import com.google.android.material.chip.Chip
+import org.kodein.di.DIAware
+import org.kodein.di.android.di
+import org.kodein.di.instance
 import xyz.quaver.pupil.R
-import xyz.quaver.pupil.favoriteTags
 import xyz.quaver.pupil.sources.Hitomi
 import xyz.quaver.pupil.types.Tag
+import xyz.quaver.pupil.util.SavedSourceSet
 import xyz.quaver.pupil.util.translations
 import xyz.quaver.pupil.util.wordCapitalize
 
 @SuppressLint("ViewConstructor")
-class TagChip(context: Context, _tag: Tag) : Chip(context) {
+class TagChip(context: Context, private val source: String, _tag: Tag) : Chip(context), DIAware {
+
+    override val di by di(context)
+
+    private val favoriteTags: SavedSourceSet by instance(tag = "favoriteTags")
 
     val tag: Tag =
         _tag.let {
@@ -56,20 +63,20 @@ class TagChip(context: Context, _tag: Tag) : Chip(context) {
             }
         }
 
-        if (favoriteTags.contains(tag))
+        if (favoriteTags.map[source]?.contains(tag.toString()) == true)
             setChipBackgroundColorResource(R.color.material_orange_500)
 
         isCloseIconVisible = true
         closeIcon = ContextCompat.getDrawable(context,
-            if (favoriteTags.contains(tag))
+            if (favoriteTags.map[source]?.contains(tag.toString()) == true)
                 R.drawable.ic_star_filled
             else
                 R.drawable.ic_star_empty
         )
 
         setOnCloseIconClickListener {
-            if (favoriteTags.contains(tag)) {
-                favoriteTags.remove(tag)
+            if (favoriteTags.map[source]?.contains(tag.toString()) == true) {
+                favoriteTags.remove(source, tag.toString())
                 closeIcon = ContextCompat.getDrawable(context, R.drawable.ic_star_empty)
 
                 when(tag.area) {
@@ -78,7 +85,7 @@ class TagChip(context: Context, _tag: Tag) : Chip(context) {
                     else -> chipBackgroundColor = null
                 }
             } else {
-                favoriteTags.add(tag)
+                favoriteTags.add(source, tag.toString())
                 closeIcon = ContextCompat.getDrawable(context, R.drawable.ic_star_filled)
                 setChipBackgroundColorResource(R.color.material_orange_500)
             }

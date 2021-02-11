@@ -23,26 +23,30 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import xyz.quaver.floatingsearchview.suggestions.model.SearchSuggestion
 import xyz.quaver.pupil.databinding.SourceSelectDialogItemBinding
+import xyz.quaver.pupil.sources.AnySource
 import xyz.quaver.pupil.sources.Source
-import xyz.quaver.pupil.sources.sourceIcons
+import xyz.quaver.pupil.sources.SourceEntries
 
-class SourceAdapter(private val sources: List<Source<*, SearchSuggestion>>) : RecyclerView.Adapter<SourceAdapter.ViewHolder>() {
+class SourceAdapter(sources: SourceEntries) : RecyclerView.Adapter<SourceAdapter.ViewHolder>() {
 
-    var onSourceSelectedListener: ((Source<*, SearchSuggestion>) -> Unit)? = null
+    var onSourceSelectedListener: ((String) -> Unit)? = null
+
+    private val sources = sources.toList()
 
     inner class ViewHolder(private val binding: SourceSelectDialogItemBinding) : RecyclerView.ViewHolder(binding.root) {
-        lateinit var source: Source<*, SearchSuggestion>
+        lateinit var source: AnySource
 
         init {
             binding.go.setOnClickListener {
-                onSourceSelectedListener?.invoke(source)
+                onSourceSelectedListener?.invoke(source.name)
             }
         }
 
-        fun bind(source: Source<*, SearchSuggestion>) {
+        fun bind(source: AnySource) {
             this.source = source
 
-            binding.icon.setImageDrawable(sourceIcons[source.name])
+            // TODO: save image somewhere else
+            binding.icon.setImageResource(source.iconResID)
             binding.name.text = source.name
         }
     }
@@ -52,7 +56,7 @@ class SourceAdapter(private val sources: List<Source<*, SearchSuggestion>>) : Re
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        holder.bind(sources[position])
+        holder.bind(sources[position].second)
     }
 
     override fun getItemCount(): Int = sources.size

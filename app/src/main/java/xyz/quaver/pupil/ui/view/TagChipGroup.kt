@@ -29,7 +29,7 @@ import xyz.quaver.pupil.R
 import xyz.quaver.pupil.types.Tag
 import xyz.quaver.pupil.types.Tags
 
-class TagChipGroup @JvmOverloads constructor(context: Context, attr: AttributeSet? = null, attrStyle: Int = R.attr.chipGroupStyle, val tags: Tags = Tags()) : ChipGroup(context, attr, attrStyle), MutableSet<Tag> by tags {
+class TagChipGroup @JvmOverloads constructor(context: Context, attr: AttributeSet? = null, attrStyle: Int = R.attr.chipGroupStyle, var source: String = "hitomi.la", val tags: Tags = Tags()) : ChipGroup(context, attr, attrStyle), MutableSet<Tag> by tags {
 
     object Defaults {
         const val maxChipSize = 10
@@ -53,7 +53,7 @@ class TagChipGroup @JvmOverloads constructor(context: Context, attr: AttributeSe
             for (i in maxChipSize until tags.size) {
                 val tag = tags.elementAt(i)
 
-                addView(TagChip(context, tag).apply {
+                addView(TagChip(context, source, tag).apply {
                     setOnClickListener {
                         onClickListener?.invoke(tag)
                     }
@@ -76,7 +76,7 @@ class TagChipGroup @JvmOverloads constructor(context: Context, attr: AttributeSe
         refreshJob = CoroutineScope(Dispatchers.Main).launch {
             tags.take(maxChipSize).map {
                 CoroutineScope(Dispatchers.Default).async {
-                    TagChip(context, it).apply {
+                    TagChip(context, source, it).apply {
                         setOnClickListener {
                             onClickListener?.invoke(this.tag)
                         }

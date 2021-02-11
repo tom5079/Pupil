@@ -23,7 +23,9 @@ import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.builtins.MapSerializer
 import kotlinx.serialization.builtins.SetSerializer
+import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.Json.Default.decodeFromString
 import kotlinx.serialization.serializer
 import java.io.File
 
@@ -44,7 +46,7 @@ class SavedSet <T: Any> (private val file: File, any: T, private val set: Mutabl
     fun load() {
         set.clear()
         kotlin.runCatching {
-            Json.decodeFromString(serializer, file.readText())
+            decodeFromString(serializer, file.readText())
         }.onSuccess {
             set.addAll(it)
         }
@@ -111,7 +113,7 @@ class SavedMap <K: Any, V: Any> (private val file: File, anyKey: K, anyValue: V,
     fun load() {
         map.clear()
         kotlin.runCatching {
-            Json.decodeFromString(serializer, file.readText())
+            decodeFromString(serializer, file.readText())
         }.onSuccess {
             map.putAll(it)
         }
@@ -164,6 +166,81 @@ class SavedMap <K: Any, V: Any> (private val file: File, anyKey: K, anyValue: V,
     @Synchronized
     override fun clear() {
         map.clear()
+        save()
+    }
+
+}
+
+class SavedSourceSet(private val file: File) {
+
+    private val _map = mutableMapOf<String, MutableSet<String>>()
+    val map: Map<String, Set<String>> = _map
+
+    private val serializer = MapSerializer(String.serializer(), SetSerializer(String.serializer()))
+
+    @Synchronized
+    fun load() {
+        _map.clear()
+        kotlin.runCatching {
+            decodeFromString(serializer, file.readText())
+        }.onSuccess {
+            it.forEach { (k, v) ->
+                _map[k] = v.toMutableSet()
+            }
+        }
+    }
+
+    @Synchronized
+    fun save() {
+        file.parentFile?.mkdirs()
+        if (!file.exists())
+            file.createNewFile()
+
+        file.writeText(Json.encodeToString(serializer, _map))
+    }
+
+    @Synchronized
+    fun add(source: String, value: String) {
+        load()
+
+        _map[source]?.remove(value)
+
+        if (!_map.containsKey(source))
+            _map[source] = mutableSetOf()
+        else
+            _map[source]!!.add(value)
+
+        save()
+    }
+
+    @Synchronized
+    fun addAll(from: Map<String, Set<String>>) {
+        load()
+
+        for (source in from.keys) {
+            if (_map.containsKey(source)) {
+                _map[source]!!.removeAll(from[source]!!)
+                _map[source]!!.addAll(from[source]!!)
+            } else {
+                _map[source] = from[source]!!.toMutableSet()
+            }
+        }
+
+        save()
+    }
+
+    @Synchronized
+    fun remove(source: String, value: String): Boolean {
+        load()
+
+        return (_map[source]?.remove(value) ?: false).also {
+            save()
+        }
+    }
+
+    @Synchronized
+    fun clear() {
+        _map.clear()
         save()
     }
 

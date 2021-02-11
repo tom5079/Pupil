@@ -50,10 +50,10 @@ class DefaultQueryDialogFragment() : DialogFragment() {
 
         initView()
 
-        return AlertDialog.Builder(requireContext()).apply {
-            setTitle(R.string.default_query_dialog_title)
-            setView(binding.root)
-            setPositiveButton(android.R.string.ok) { _, _ ->
+        return AlertDialog.Builder(requireContext())
+            .setTitle(R.string.default_query_dialog_title)
+            .setView(binding.root)
+            .setPositiveButton(android.R.string.ok) { _, _ ->
                 val newTags = Tags.parse(binding.edittext.text.toString())
 
                 with (binding.languageSelector) {
@@ -75,8 +75,7 @@ class DefaultQueryDialogFragment() : DialogFragment() {
                     }
 
                 onPositiveButtonClickListener?.invoke(newTags)
-            }
-        }.create()
+            }.create()
     }
 
     override fun onDestroy() {

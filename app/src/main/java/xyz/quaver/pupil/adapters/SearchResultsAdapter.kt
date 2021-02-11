@@ -27,6 +27,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
+import androidx.lifecycle.LiveData
 import androidx.recyclerview.widget.RecyclerView
 import com.daimajia.swipe.SwipeLayout
 import com.daimajia.swipe.adapters.RecyclerSwipeAdapter
@@ -35,13 +36,15 @@ import com.facebook.drawee.backends.pipeline.Fresco
 import com.facebook.drawee.controller.BaseControllerListener
 import com.facebook.imagepipeline.image.ImageInfo
 import kotlinx.coroutines.*
+import org.kodein.di.DIAware
+import org.kodein.di.android.di
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.databinding.SearchResultItemBinding
 import xyz.quaver.pupil.sources.ItemInfo
 import xyz.quaver.pupil.types.Tag
 import kotlin.time.ExperimentalTime
 
-class SearchResultsAdapter(private val results: List<ItemInfo>) : RecyclerSwipeAdapter<SearchResultsAdapter.ViewHolder>(), SwipeAdapterInterface {
+class SearchResultsAdapter(var results: LiveData<List<ItemInfo>>) : RecyclerSwipeAdapter<SearchResultsAdapter.ViewHolder>(), SwipeAdapterInterface {
 
     var onChipClickedHandler: ((Tag) -> Unit)? = null
     var onDownloadClickedHandler: ((source: String, itemI: String) -> Unit)? = null
@@ -64,6 +67,7 @@ class SearchResultsAdapter(private val results: List<ItemInfo>) : RecyclerSwipeA
             }
 
             binding.idView.setOnClickListener {
+                // TODO: MEMLEAK
                 (itemView.context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager).setPrimaryClip(
                     ClipData.newPlainText("item_id", itemID)
                 )
@@ -146,6 +150,7 @@ class SearchResultsAdapter(private val results: List<ItemInfo>) : RecyclerSwipeA
             CoroutineScope(Dispatchers.Main).launch {
                 with (binding.tagGroup) {
                     tags.clear()
+                    source = result.source
                     result.extra[ItemInfo.ExtraType.TAGS]?.await()?.split(", ")?.let { if (it.size == 1 && it.first().isEmpty()) emptyList() else it }?.map {
                         Tag.parse(it)
                     }?.let { tags.addAll(it) }
@@ -201,10 +206,10 @@ class SearchResultsAdapter(private val results: List<ItemInfo>) : RecyclerSwipeA
     @ExperimentalTime
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         mItemManger.bindView(holder.itemView, position)
-        holder.bind(results[position])
+        holder.bind(results.value!![position])
     }
 
-    override fun getItemCount(): Int = results.size
+    override fun getItemCount(): Int = results.value?.size ?: 0
 
     override fun getSwipeLayoutResourceId(position: Int): Int = R.id.swipe_layout
 

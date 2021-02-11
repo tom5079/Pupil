@@ -27,11 +27,11 @@ import android.text.util.Linkify
 import android.view.KeyEvent
 import android.view.Menu
 import android.view.MenuItem
-import android.view.View
 import android.view.animation.DecelerateInterpolator
 import android.widget.EditText
 import android.widget.ImageView
 import android.widget.TextView
+import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
 import androidx.core.view.GravityCompat
 import androidx.core.view.ViewCompat
@@ -42,53 +42,38 @@ import androidx.swiperefreshlayout.widget.CircularProgressDrawable
 import com.daimajia.swipe.adapters.RecyclerSwipeAdapter
 import com.google.android.material.navigation.NavigationView
 import com.google.android.material.snackbar.Snackbar
+import com.orhanobut.logger.Logger
 import kotlinx.coroutines.*
-import kotlinx.coroutines.channels.Channel
+import org.kodein.di.DIAware
+import org.kodein.di.android.di
 import xyz.quaver.floatingsearchview.FloatingSearchView
-import xyz.quaver.floatingsearchview.suggestions.model.SearchSuggestion
-import xyz.quaver.floatingsearchview.util.view.SearchInputView
 import xyz.quaver.pupil.*
 import xyz.quaver.pupil.adapters.SearchResultsAdapter
 import xyz.quaver.pupil.databinding.MainActivityBinding
 import xyz.quaver.pupil.sources.ItemInfo
-import xyz.quaver.pupil.sources.Source
-import xyz.quaver.pupil.sources.sourceIcons
-import xyz.quaver.pupil.sources.sources
 import xyz.quaver.pupil.types.*
 import xyz.quaver.pupil.ui.dialog.DownloadLocationDialogFragment
 import xyz.quaver.pupil.ui.dialog.GalleryDialogFragment
 import xyz.quaver.pupil.ui.dialog.SourceSelectDialog
 import xyz.quaver.pupil.ui.view.ProgressCardView
 import xyz.quaver.pupil.ui.view.SwipePageTurnView
+import xyz.quaver.pupil.ui.viewmodel.MainViewModel
 import xyz.quaver.pupil.util.*
 import java.util.regex.Pattern
 import kotlin.math.*
-import kotlin.random.Random
 
 class MainActivity :
     BaseActivity(),
-    NavigationView.OnNavigationItemSelectedListener
+    NavigationView.OnNavigationItemSelectedListener,
+    DIAware
 {
-    private val searchResults = mutableListOf<ItemInfo>()
+    override val di by di()
 
-    private var query = ""
-    set(value) {
-        field = value
-        with (findViewById<SearchInputView>(R.id.search_bar_text)) {
-            if (text.toString() != value)
-                setText(query, TextView.BufferType.EDITABLE)
-        }
-    }
+    private val searchResults = mutableListOf<ItemInfo>()
     private var queryStack = mutableListOf<String>()
 
-    private lateinit var source: Source<*, SearchSuggestion>
-    private lateinit var sortMode: Enum<*>
-
-    private var searchJob: Deferred<Pair<Channel<ItemInfo>, Int>>? = null
-    private var totalItems = 0
-    private var currentPage = 1
-
     private lateinit var binding: MainActivityBinding
+    private val model: MainViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -97,7 +82,7 @@ class MainActivity :
 
         if (intent.action == Intent.ACTION_VIEW) {
             intent.dataString?.let { url ->
-                restore(url,
+                restore(this, url,
                     onFailure = {
                         Snackbar.make(binding.contents.recyclerview, R.string.settings_backup_failed, Snackbar.LENGTH_LONG).show()
                     }, onSuccess = {
@@ -113,6 +98,74 @@ class MainActivity :
         checkUpdate(this)
 
         initView()
+
+        model.query.observe(this) {
+            binding.contents.searchview.binding.querySection.searchBarText.run {
+                if (text?.toString() != it) setText(it, TextView.BufferType.EDITABLE)
+            }
+        }
+
+        model.availableSortMode.observe(this) {
+            binding.contents.searchview.post {
+                binding.contents.searchview.binding.querySection.menuView.menuItems.findMenu(R.id.sort).subMenu.apply {
+                    clear()
+
+                    it.forEach {
+                        add(R.id.sort_mode_group_id, it.ordinal, Menu.NONE, it.name)
+                    }
+
+                    setGroupCheckable(R.id.sort_mode_group_id, true, true)
+
+                    children.first().isChecked = true
+                }
+            }
+        }
+
+        model.sourceIcon.observe(this) {
+            binding.contents.searchview.post {
+                (binding.contents.searchview.binding.querySection.menuView.getChildAt(1) as ImageView).apply {
+                    ImageViewCompat.setImageTintList(this, null)
+
+                    setImageResource(it)
+                }
+            }
+        }
+
+        model.searchResults.observe(this) {
+            binding.contents.recyclerview.post {
+                if (model.loading) {
+                    if (it.isEmpty()) {
+                        binding.contents.noresult.hide()
+                        binding.contents.progressbar.show()
+
+                        (binding.contents.recyclerview.adapter as RecyclerSwipeAdapter).run {
+                            mItemManger.closeAllItems()
+
+                            notifyDataSetChanged()
+                        }
+
+                        ViewCompat.animate(binding.contents.searchview)
+                            .setDuration(100)
+                            .setInterpolator(DecelerateInterpolator())
+                            .translationY(0F)
+                    }
+                } else {
+                    binding.contents.progressbar.hide()
+                    if (it.isEmpty()) {
+                        binding.contents.noresult.show()
+                    } else {
+                        binding.contents.recyclerview.adapter?.notifyItemInserted(it.size-1)
+                    }
+                }
+            }
+        }
+
+        model.suggestions.observe(this) { runOnUiThread {
+            Logger.d(it)
+            binding.contents.searchview.swapSuggestions(
+                if (it.isEmpty()) listOf(NoResultSuggestion(getString(R.string.main_no_result))) else it
+            )
+        } }
     }
 
     override fun onDestroy() {
@@ -126,70 +179,37 @@ class MainActivity :
         when {
             binding.drawer.isDrawerOpen(GravityCompat.START) -> binding.drawer.closeDrawer(GravityCompat.START)
             queryStack.removeLastOrNull() != null && queryStack.isNotEmpty() -> runOnUiThread {
-                query = queryStack.last()
+                model.query.value = queryStack.last()
 
-                query()
+                model.query()
             }
             else -> super.onBackPressed()
         }
     }
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
-        val perPage = Preferences["per_page", "25"].toInt()
-        val maxPage = ceil(totalItems / perPage.toDouble()).roundToInt()
-
         return when(keyCode) {
             KeyEvent.KEYCODE_VOLUME_UP -> {
-                if (currentPage > 1) {
+                if (model.currentPage.value!! > 1) {
                     runOnUiThread {
-                        currentPage--
-
-                        query()
+                        model.prevPage()
+                        model.query()
                     }
                 }
 
                 true
             }
             KeyEvent.KEYCODE_VOLUME_DOWN -> {
-                if (currentPage < maxPage) {
+                if (model.currentPage.value!! < model.totalPages.value!!) {
                     runOnUiThread {
-                        currentPage++
-
-                        query()
+                        model.nextPage()
+                        model.query()
                     }
                 }
 
                 true
             }
             else -> super.onKeyDown(keyCode, event)
-        }
-    }
-
-    private fun setSource(source: Source<*, SearchSuggestion>) {
-        this.source = source
-        sortMode = source.availableSortMode.first()
-
-        query = ""
-        currentPage = 1
-
-        with (binding.contents.searchview.binding.querySection.menuView) {
-            post {
-                menuItems.findMenu(R.id.sort).subMenu.apply {
-                    clear()
-
-                    source.availableSortMode.forEach {
-                        add(R.id.sort_mode_group_id, it.ordinal, Menu.NONE, it.name)
-                    }
-
-                    setGroupCheckable(R.id.sort_mode_group_id, true, true)
-
-                    children.first().isChecked = true
-                }
-                with (getChildAt(1) as ImageView) {
-                    ImageViewCompat.setImageTintList(this, null)
-                    setImageDrawable(sourceIcons[source.name])
-                }
-            }
         }
     }
 
@@ -234,14 +254,13 @@ class MainActivity :
                     setTitle(R.string.main_jump_title)
                     setMessage(getString(
                         R.string.main_jump_message,
-                        currentPage,
-                        ceil(totalItems / perPage.toDouble()).roundToInt()
+                        model.currentPage.value!!,
+                        ceil(model.totalPages.value!! / perPage.toDouble()).roundToInt()
                     ))
 
                     setPositiveButton(android.R.string.ok) { _, _ ->
-                        currentPage = (editText.text.toString().toIntOrNull() ?: return@setPositiveButton)
-
-                        query()
+                        model.setPage(editText.text.toString().toIntOrNull() ?: return@setPositiveButton)
+                        model.query()
                     }
                 }.show()
             }
@@ -251,30 +270,16 @@ class MainActivity :
             setImageResource(R.drawable.shuffle_variant)
             setOnClickListener {
                 setImageDrawable(CircularProgressDrawable(context))
-                if (totalItems > 0)
-                    CoroutineScope(Dispatchers.IO).launch {
-                        val random = Random.Default.nextInt(totalItems)
 
-                        val randomResult =
-                            source.search(
-                                query + Preferences["default_query", ""],
-                                random .. random,
-                                sortMode
-                            ).first.receive()
-
-                        launch(Dispatchers.Main) {
-                            setImageResource(R.drawable.shuffle_variant)
-                            GalleryDialogFragment(source.name, randomResult.id).apply {
-                                onChipClickedHandler.add {
-                                    query = it.toQuery()
-                                    currentPage = 1
-
-                                    query()
-                                    dismiss()
-                                }
-                            }.show(supportFragmentManager, "GalleryDialogFragment")
+                model.random { runOnUiThread {
+                    setImageResource(R.drawable.shuffle_variant)
+                    GalleryDialogFragment(model.sourceName.value!!, it.id).apply {
+                        onChipClickedHandler.add {
+                            model.setQueryAndSearch(it.toQuery())
+                            dismiss()
                         }
-                    }
+                    }.show(supportFragmentManager, "GalleryDialogFragment")
+                } }
             }
         }
 
@@ -292,12 +297,9 @@ class MainActivity :
                     setPositiveButton(android.R.string.ok) { _, _ ->
                         val galleryID = editText.text.toString()
 
-                        GalleryDialogFragment(source.name, galleryID).apply {
+                        GalleryDialogFragment(model.sourceName.value!!, galleryID).apply {
                             onChipClickedHandler.add {
-                                query = it.toQuery()
-                                currentPage = 1
-
-                                query()
+                                model.setQueryAndSearch(it.toQuery())
                                 dismiss()
                             }
                         }.show(supportFragmentManager, "GalleryDialogFragment")
@@ -309,16 +311,16 @@ class MainActivity :
         with (binding.contents.swipePageTurnView) {
             setOnPageTurnListener(object: SwipePageTurnView.OnPageTurnListener {
                 override fun onPrev(page: Int) {
-                    currentPage--
+                    model.prevPage()
 
                     // disable pageturn until the contents are loaded
                     setCurrentPage(1, false)
 
-                    query()
+                    model.query()
                 }
 
                 override fun onNext(page: Int) {
-                    currentPage++
+                    model.nextPage()
 
                     // disable pageturn until the contents are loaded
                     setCurrentPage(1, false)
@@ -328,29 +330,24 @@ class MainActivity :
                         .setInterpolator(DecelerateInterpolator())
                         .translationY(0F)
 
-                    query()
+                    model.query()
                 }
             })
         }
 
         setupSearchBar()
         setupRecyclerView()
-        setSource(sources.values.first())
-        query()
+        // TODO: Save recent source
     }
 
     @SuppressLint("ClickableViewAccessibility")
     private fun setupRecyclerView() {
         with (binding.contents.recyclerview) {
-            adapter = SearchResultsAdapter(searchResults).apply {
+            adapter = SearchResultsAdapter(model.searchResults).apply {
                 onChipClickedHandler = {
-                    query = it.toQuery()
-                    currentPage = 1
-
-                    query()
+                    model.setQueryAndSearch(it.toQuery())
                 }
                 onDownloadClickedHandler = { source, itemID ->
-
 
                     closeAllItems()
                 }
@@ -366,7 +363,7 @@ class MainActivity :
                         return@listener
 
                     val intent = Intent(this@MainActivity, ReaderActivity::class.java).apply {
-                        putExtra("source", source.name)
+                        putExtra("source", model.sourceName.value!!)
                         putExtra("id", searchResults[position].id)
                     }
 
@@ -380,12 +377,9 @@ class MainActivity :
 
                     val result = searchResults.getOrNull(position) ?: return@listener true
 
-                    GalleryDialogFragment(source.name, result.id).apply {
+                    GalleryDialogFragment(model.sourceName.value!!, result.id).apply {
                         onChipClickedHandler.add {
-                            query = it.toQuery()
-                            currentPage = 1
-
-                            query()
+                            model.setQueryAndSearch(it.toQuery())
                             dismiss()
                         }
                     }.show(supportFragmentManager, "GalleryDialogFragment")
@@ -396,7 +390,6 @@ class MainActivity :
         }
     }
 
-    private var suggestionJob : Job? = null
     private fun setupSearchBar() {
         with (binding.contents.searchview) {
             onMenuStatusChangeListener = object: FloatingSearchView.OnMenuStatusChangeListener {
@@ -414,29 +407,15 @@ class MainActivity :
             }
 
             onQueryChangeListener = lambda@{ _, query ->
-                this@MainActivity.query = query
+                model.query.value = query
 
-                suggestionJob?.cancel()
+                model.suggestion()
 
                 swapSuggestions(listOf(LoadingSuggestion(getText(R.string.reader_loading).toString())))
-
-                val currentQuery = query.split(" ").last()
-                    .replace(Regex("^-"), "")
-                    .replace('_', ' ')
-
-                suggestionJob = CoroutineScope(Dispatchers.IO).launch {
-                    val suggestions = kotlin.runCatching {
-                        source.suggestion(currentQuery)
-                    }.getOrElse { emptyList() }
-
-                    withContext(Dispatchers.Main) {
-                        swapSuggestions(if (suggestions.isNotEmpty()) suggestions else listOf(NoResultSuggestion(getText(R.string.main_no_result).toString())))
-                    }
-                }
             }
 
             onSuggestionBinding = { binding, item ->
-                source.onSuggestionBind(binding, item)
+                model.source.value!!.onSuggestionBind(binding, item)
             }
 
             onFocusChangeListener = object: FloatingSearchView.OnFocusChangeListener {
@@ -445,10 +424,8 @@ class MainActivity :
                 }
 
                 override fun onFocusCleared() {
-                    suggestionJob?.cancel()
-
-                    currentPage = 1
-                    query()
+                    model.setPage(1)
+                    model.query()
                 }
             }
 
@@ -458,21 +435,19 @@ class MainActivity :
 
     private fun onActionMenuItemSelected(item: MenuItem?) {
         if (item?.groupId == R.id.sort_mode_group_id) {
-            currentPage = 1
-            sortMode = source.availableSortMode.let { availableSortMode ->
+            model.setPage(1)
+            model.sortMode.value = model.availableSortMode.value?.let { availableSortMode ->
                 availableSortMode.getOrElse(item.itemId) { availableSortMode.first() }
             }
 
-            query()
+            model.query()
         }
         else
             when(item?.itemId) {
                 R.id.main_menu_settings -> startActivity(Intent(this@MainActivity, SettingsActivity::class.java))
                 R.id.source -> SourceSelectDialog().apply {
                     onSourceSelectedListener = {
-                        setSource(it)
-
-                        query()
+                        model.setSourceAndReset(it)
 
                         dismiss()
                     }
@@ -485,6 +460,9 @@ class MainActivity :
             binding.drawer.closeDrawers()
 
             when(item.itemId) {
+                R.id.main_drawer_history -> {
+                    //model.setSourceAndReset(direct.instance<String, History>(arg = source.name))
+                }
                 R.id.main_drawer_help -> {
                     startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(getString(R.string.help))))
                 }
@@ -504,56 +482,5 @@ class MainActivity :
         }
 
         return true
-    }
-
-    private fun cancelFetch() {
-        searchJob?.cancel()
-    }
-
-    private fun clearGalleries() = CoroutineScope(Dispatchers.Main).launch {
-        searchResults.clear()
-
-        (binding.contents.recyclerview.adapter as RecyclerSwipeAdapter).mItemManger.closeAllItems()
-        binding.contents.recyclerview.adapter?.notifyDataSetChanged()
-
-        binding.contents.noresult.visibility = View.INVISIBLE
-        binding.contents.progressbar.show()
-
-        ViewCompat.animate(binding.contents.searchview)
-            .setDuration(100)
-            .setInterpolator(DecelerateInterpolator())
-            .translationY(0F)
-    }
-    private fun query() {
-        val perPage = Preferences["per_page", "25"].toInt()
-
-        cancelFetch()
-        clearGalleries()
-
-        CoroutineScope(Dispatchers.Main).launch {
-            searchJob = async(Dispatchers.IO) {
-                source.search(
-                    query + Preferences["default_query", ""],
-                    (currentPage - 1) * perPage until currentPage * perPage,
-                    sortMode
-                )
-            }.also {
-                it.await().let { r ->
-                    totalItems = r.second
-                    r.first
-                }.let { channel ->
-                    binding.contents.progressbar.hide()
-                    binding.contents.swipePageTurnView.setCurrentPage(currentPage, totalItems > currentPage*perPage)
-
-                    for (result in channel) {
-                        searchResults.add(result)
-                        binding.contents.recyclerview.adapter?.notifyItemInserted(searchResults.size)
-                    }
-                }
-
-                if (searchResults.isEmpty())
-                    binding.contents.noresult.visibility = View.VISIBLE
-            }
-        }
     }
 }

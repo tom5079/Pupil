@@ -18,7 +18,6 @@
 
 package xyz.quaver.pupil.util
 
-import android.content.Context
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString

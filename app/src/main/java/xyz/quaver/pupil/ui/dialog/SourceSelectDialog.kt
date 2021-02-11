@@ -25,14 +25,20 @@ import android.view.Window
 import androidx.fragment.app.DialogFragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import org.kodein.di.*
+import org.kodein.di.android.x.di
+import org.kodein.type.jvmType
 import xyz.quaver.floatingsearchview.suggestions.model.SearchSuggestion
 import xyz.quaver.pupil.adapters.SourceAdapter
+import xyz.quaver.pupil.sources.AnySource
 import xyz.quaver.pupil.sources.Source
-import xyz.quaver.pupil.sources.sources
+import xyz.quaver.pupil.sources.SourceEntries
 
-class SourceSelectDialog : DialogFragment() {
+class SourceSelectDialog : DialogFragment(), DIAware {
 
-    var onSourceSelectedListener: ((Source<*, SearchSuggestion>) -> Unit)? = null
+    override val di by di()
+
+    var onSourceSelectedListener: ((String) -> Unit)? = null
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
         return Dialog(requireContext()).apply {
@@ -41,7 +47,7 @@ class SourceSelectDialog : DialogFragment() {
 
             setContentView(RecyclerView(context).apply {
                 layoutManager = LinearLayoutManager(context)
-                adapter = SourceAdapter(sources.values.toList()).apply {
+                adapter = SourceAdapter(direct.instance()).apply {
                     onSourceSelectedListener = this@SourceSelectDialog.onSourceSelectedListener
                 }
             })

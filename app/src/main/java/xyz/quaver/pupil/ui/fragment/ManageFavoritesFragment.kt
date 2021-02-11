@@ -28,14 +28,17 @@ import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
 import com.google.android.material.snackbar.Snackbar
 import okhttp3.*
+import org.kodein.di.DIAware
+import org.kodein.di.android.x.di
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.client
-import xyz.quaver.pupil.favorites
 import xyz.quaver.pupil.util.restore
 import java.io.File
 import java.io.IOException
 
-class ManageFavoritesFragment : PreferenceFragmentCompat() {
+class ManageFavoritesFragment : PreferenceFragmentCompat(), DIAware {
+
+    override val di by di()
 
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
         setPreferencesFromResource(R.xml.manage_favorites_preferences, rootKey)
@@ -87,7 +90,7 @@ class ManageFavoritesFragment : PreferenceFragmentCompat() {
                 .setTitle(R.string.settings_restore_title)
                 .setView(editText)
                 .setPositiveButton(android.R.string.ok) { _, _ ->
-                    restore(editText.text.toString(),
+                    restore(context, editText.text.toString(),
                         onFailure = onFailure@{
                             val view = view ?: return@onFailure
                             Snackbar.make(view, R.string.settings_restore_failed, Snackbar.LENGTH_LONG).show()

@@ -29,10 +29,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
-import org.kodein.di.DI
-import org.kodein.di.bind
-import org.kodein.di.contexted
-import org.kodein.di.instance
+import org.kodein.di.*
 import xyz.quaver.floatingsearchview.databinding.SearchSuggestionItemBinding
 import xyz.quaver.floatingsearchview.suggestions.model.SearchSuggestion
 import xyz.quaver.pupil.R
@@ -139,29 +136,18 @@ abstract class Source<Query_SortMode: Enum<Query_SortMode>, Suggestion: SearchSu
     }
 }
 
-@Deprecated("")
-val sources = mutableMapOf<String, AnySource>()
-val sourceIcons = mutableMapOf<String, Drawable?>()
-
+typealias SourceEntry = Pair<String, AnySource>
+typealias SourceEntries = Set<SourceEntry>
 @Suppress("UNCHECKED_CAST")
 val sourceModule = DI.Module(name = "source") {
-    listOf(
-        Hitomi(),
-        Hiyobi()
-    ).forEach {
-        bind<AnySource>(tag = it.name) with instance (it as AnySource)
-    }
-}
+    bind() from setBinding<SourceEntry>()
 
-@Deprecated("")
-@Suppress("UNCHECKED_CAST")
-fun initSources(context: Context) {
-    // Add Default Sources
     listOf(
         Hitomi(),
         Hiyobi()
-    ).forEach {
-        sources[it.name] = it as AnySource
-        sourceIcons[it.name] = ContextCompat.getDrawable(context, it.iconResID)
+    ).forEach { source ->
+        bind<SourceEntry>().inSet() with multiton { _: Unit -> source.name to (source as AnySource) }
     }
+
+    bind<History>() with factory { source: String -> History(di, source) }
 }

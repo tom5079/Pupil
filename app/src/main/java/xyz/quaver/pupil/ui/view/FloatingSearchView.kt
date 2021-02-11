@@ -21,28 +21,23 @@ package xyz.quaver.pupil.ui.view
 import android.content.Context
 import android.graphics.PorterDuff
 import android.graphics.PorterDuffColorFilter
-import android.graphics.drawable.Animatable
 import android.text.Editable
 import android.text.TextWatcher
 import android.util.AttributeSet
-import android.view.LayoutInflater
-import android.view.View
 import android.view.inputmethod.EditorInfo
-import android.widget.TextView
 import androidx.core.content.ContextCompat
 import androidx.core.content.res.ResourcesCompat
 import androidx.swiperefreshlayout.widget.CircularProgressDrawable
-import androidx.vectordrawable.graphics.drawable.AnimatedVectorDrawableCompat
 import xyz.quaver.floatingsearchview.FloatingSearchView
 import xyz.quaver.floatingsearchview.databinding.SearchSuggestionItemBinding
 import xyz.quaver.floatingsearchview.suggestions.model.SearchSuggestion
 import xyz.quaver.floatingsearchview.util.view.SearchInputView
 import xyz.quaver.pupil.R
-import xyz.quaver.pupil.databinding.SuggestionCountBinding
-import xyz.quaver.pupil.favoriteTags
-import xyz.quaver.pupil.sources.DefaultSearchSuggestion
 import xyz.quaver.pupil.sources.Hitomi
-import xyz.quaver.pupil.types.*
+import xyz.quaver.pupil.types.FavoriteHistorySwitch
+import xyz.quaver.pupil.types.HistorySuggestion
+import xyz.quaver.pupil.types.LoadingSuggestion
+import xyz.quaver.pupil.types.NoResultSuggestion
 import java.util.*
 
 class FloatingSearchView @JvmOverloads constructor(context: Context, attrs: AttributeSet? = null) :
