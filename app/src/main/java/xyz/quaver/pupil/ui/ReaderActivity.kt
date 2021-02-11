@@ -30,6 +30,7 @@ import androidx.recyclerview.widget.PagerSnapHelper
 import androidx.recyclerview.widget.RecyclerView
 import androidx.vectordrawable.graphics.drawable.AnimatedVectorDrawableCompat
 import com.google.firebase.crashlytics.FirebaseCrashlytics
+import com.orhanobut.logger.Logger
 import com.qtalk.recyclerviewfastscroller.RecyclerViewFastScroller
 import org.kodein.di.DIAware
 import org.kodein.di.android.di
@@ -38,10 +39,11 @@ import org.kodein.di.instance
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.adapters.ReaderAdapter
 import xyz.quaver.pupil.databinding.ReaderActivityBinding
-import xyz.quaver.pupil.favorites
 import xyz.quaver.pupil.sources.AnySource
 import xyz.quaver.pupil.ui.viewmodel.ReaderViewModel
 import xyz.quaver.pupil.util.Preferences
+import xyz.quaver.pupil.util.SavedSourceSet
+import xyz.quaver.pupil.util.source
 
 class ReaderActivity : BaseActivity(), DIAware {
 
@@ -64,6 +66,9 @@ class ReaderActivity : BaseActivity(), DIAware {
     private lateinit var binding: ReaderActivityBinding
     private val model: ReaderViewModel by viewModels()
 
+    private val favorites: SavedSourceSet by instance(tag = "favorites")
+    private val histories: SavedSourceSet by instance(tag = "histories")
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ReaderActivityBinding.inflate(layoutInflater)
@@ -78,7 +83,10 @@ class ReaderActivity : BaseActivity(), DIAware {
             return
         }
 
+        histories.add(source, itemID)
         FirebaseCrashlytics.getInstance().setCustomKey("GalleryID", itemID)
+
+        Logger.d(histories)
 
         model.readerItems.observe(this) {
             (binding.recyclerview.adapter as ReaderAdapter).submitList(it.toMutableList())
@@ -135,11 +143,11 @@ class ReaderActivity : BaseActivity(), DIAware {
         menu?.forEach {
             when (it.itemId) {
                 R.id.reader_menu_favorite -> {
-                    if (favorites.contains(itemID))
+                    if (favorites.map[source]?.contains(itemID) == true)
                         (it.icon as Animatable).start()
                 }
                 R.id.source -> {
-                    it.setIcon(direct.instance<AnySource>(tag = source).iconResID)
+                    it.setIcon(source(source).value.iconResID)
                 }
             }
         }
@@ -154,11 +162,11 @@ class ReaderActivity : BaseActivity(), DIAware {
                 val id = itemID
                 val favorite = menu?.findItem(R.id.reader_menu_favorite) ?: return true
 
-                if (favorites.contains(id)) {
-                    favorites.remove(id)
+                if (favorites.map[source]?.contains(id) == true) {
+                    favorites.remove(source, id)
                     favorite.icon = AnimatedVectorDrawableCompat.create(this, R.drawable.avd_star)
                 } else {
-                    favorites.add(id)
+                    favorites.add(source, id)
                     (favorite.icon as Animatable).start()
                 }
             }

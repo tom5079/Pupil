@@ -60,8 +60,12 @@ class ReaderAdapter : ListAdapter<ReaderItem, ReaderAdapter.ViewHolder>(ReaderIt
             with (binding.image) {
                 setImageViewFactory(FrescoImageViewFactory().apply {
                     updateView = { imageInfo ->
-                        layoutParams.height = imageInfo.height
-                        (mainView as? SimpleDraweeView)?.aspectRatio = imageInfo.width / imageInfo.height.toFloat()
+                        if (!fullscreen) {
+                            binding.root.layoutParams.height = imageInfo.height
+                            layoutParams.height = imageInfo.height
+
+                            (mainView as? SimpleDraweeView)?.aspectRatio = imageInfo.width / imageInfo.height.toFloat()
+                        }
                     }
                 })
                 setImageShownCallback(object: ImageShownCallback {

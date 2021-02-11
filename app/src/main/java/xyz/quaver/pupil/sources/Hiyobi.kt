@@ -73,7 +73,7 @@ class Hiyobi : Source<DefaultSortMode, DefaultSearchSuggestion>() {
     }
 
     override suspend fun images(itemID: String): List<String> {
-        return createImgList(itemID, getGalleryInfo(itemID), false).map {
+        return createImgList(itemID, getGalleryInfo(itemID), true).map {
             it.path
         }
     }

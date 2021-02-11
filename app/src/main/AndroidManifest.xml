@@ -42,9 +42,6 @@
 
         </provider>
 
-        <service android:name=".services.DownloadService"
-            android:exported="false"/>
-
         <receiver
             android:name=".receiver.UpdateBroadcastReceiver"
             android:exported="true">

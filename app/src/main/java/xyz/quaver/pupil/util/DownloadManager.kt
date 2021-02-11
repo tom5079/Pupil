@@ -83,7 +83,7 @@ class DownloadManager constructor(context: Context) : ContextWrapper(context), D
 
     @Synchronized
     fun download(source: String, itemID: String) = CoroutineScope(Dispatchers.IO).launch {
-        val source: AnySource by instance(tag = source)
+        val source: AnySource by source(source)
         val info = async { source.info(itemID) }
         val images = async { source.images(itemID) }
 

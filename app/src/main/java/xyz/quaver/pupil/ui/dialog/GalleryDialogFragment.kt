@@ -30,32 +30,39 @@ import androidx.core.content.ContextCompat
 import androidx.core.view.forEach
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.MutableLiveData
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.widget.ViewPager2
 import com.facebook.drawee.backends.pipeline.Fresco
 import com.facebook.drawee.controller.BaseControllerListener
 import com.facebook.imagepipeline.image.ImageInfo
-import com.orhanobut.logger.Logger
 import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import org.kodein.di.DIAware
+import org.kodein.di.android.x.di
+import org.kodein.di.instance
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.adapters.SearchResultsAdapter
 import xyz.quaver.pupil.adapters.ThumbnailPageAdapter
 import xyz.quaver.pupil.databinding.*
-import xyz.quaver.pupil.favoriteTags
 import xyz.quaver.pupil.sources.ItemInfo
 import xyz.quaver.pupil.types.Tag
 import xyz.quaver.pupil.ui.ReaderActivity
 import xyz.quaver.pupil.ui.view.TagChip
 import xyz.quaver.pupil.ui.viewmodel.GalleryDialogViewModel
 import xyz.quaver.pupil.util.ItemClickSupport
+import xyz.quaver.pupil.util.SavedSourceSet
 import xyz.quaver.pupil.util.wordCapitalize
 import java.util.*
 import kotlin.collections.ArrayList
 
-class GalleryDialogFragment(private val source: String, private val itemID: String) : DialogFragment() {
+class GalleryDialogFragment(private val source: String, private val itemID: String) : DialogFragment(), DIAware {
+
+    override val di by di()
+
+    private val favoriteTags: SavedSourceSet by instance(tag = "favoriteTags")
 
     val onChipClickedHandler = ArrayList<((Tag) -> (Unit))>()
 
@@ -150,7 +157,7 @@ class GalleryDialogFragment(private val source: String, private val itemID: Stri
                     info.extra[ItemInfo.ExtraType.TAGS]?.await()?.split(", ")?.filterNot { it.isEmpty() }?.sortedBy {
                         val tag = Tag.parse(it)
 
-                        if (favoriteTags.contains(tag))
+                        if (favoriteTags.map[source]?.contains(tag.toString()) == true)
                             -1
                         else
                             when(Tag.parse(it).area) {
@@ -175,7 +182,7 @@ class GalleryDialogFragment(private val source: String, private val itemID: Stri
 
                     content!!.forEach { tag ->
                         tags.addView(
-                            TagChip(requireContext(), tag).apply {
+                            TagChip(requireContext(), source, tag).apply {
                                 setOnClickListener {
                                     onChipClickedHandler.forEach { handler ->
                                         handler.invoke(tag)
@@ -210,7 +217,7 @@ class GalleryDialogFragment(private val source: String, private val itemID: Stri
     }
 
     private fun addRelated(relatedItems: List<ItemInfo>) {
-        val adapter = SearchResultsAdapter(relatedItems).apply {
+        val adapter = SearchResultsAdapter(MutableLiveData(relatedItems)).apply {
             onChipClickedHandler = { tag ->
                 this@GalleryDialogFragment.onChipClickedHandler.forEach { handler ->
                     handler.invoke(tag)

@@ -104,7 +104,7 @@ dependencies {
 
     implementation "com.daimajia.swipelayout:library:1.2.0@aar"
 
-    implementation "com.google.android.material:material:1.3.0-rc01"
+    implementation "com.google.android.material:material:1.3.0"
 
     implementation platform("com.google.firebase:firebase-bom:26.1.0")
     implementation "com.google.firebase:firebase-analytics-ktx"
@@ -134,7 +134,7 @@ dependencies {
 
     implementation "ru.noties.markwon:core:3.1.0"
 
-    implementation "xyz.quaver:libpupil:1.9.7"
+    implementation "xyz.quaver:libpupil:1.9.7-SNAPSHOT"
     implementation "xyz.quaver:documentfilex:0.4-alpha02"
     implementation "xyz.quaver:floatingsearchview:1.1.1"
 

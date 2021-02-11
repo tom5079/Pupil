@@ -29,6 +29,7 @@ import org.kodein.di.android.x.di
 import org.kodein.di.instance
 import xyz.quaver.pupil.sources.AnySource
 import xyz.quaver.pupil.sources.ItemInfo
+import xyz.quaver.pupil.util.source
 
 class GalleryDialogViewModel(app: Application) : AndroidViewModel(app), DIAware {
 
@@ -41,7 +42,7 @@ class GalleryDialogViewModel(app: Application) : AndroidViewModel(app), DIAware 
     val related: LiveData<List<ItemInfo>> = _related
 
     fun load(source: String, itemID: String) {
-        val source: AnySource by instance(tag = source)
+        val source: AnySource by source(source)
 
         viewModelScope.launch {
             _info.value = withContext(Dispatchers.IO) {

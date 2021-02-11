@@ -28,11 +28,7 @@ import org.kodein.di.android.x.di
 import org.kodein.di.instance
 import xyz.quaver.io.FileX
 import xyz.quaver.pupil.R
-import xyz.quaver.pupil.histories
-import xyz.quaver.pupil.util.DownloadManager
-import xyz.quaver.pupil.util.ImageCache
-import xyz.quaver.pupil.util.byteToString
-import xyz.quaver.pupil.util.size
+import xyz.quaver.pupil.util.*
 
 class ManageStorageFragment : PreferenceFragmentCompat(), DIAware, Preference.OnPreferenceClickListener {
 
@@ -42,6 +38,8 @@ class ManageStorageFragment : PreferenceFragmentCompat(), DIAware, Preference.On
 
     private val downloadManager: DownloadManager by instance()
     private val cache: ImageCache by instance()
+
+    private val histories: SavedSourceSet by instance(tag = "histories")
 
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
         setPreferencesFromResource(R.xml.manage_storage_preferences, rootKey)
@@ -122,7 +120,7 @@ class ManageStorageFragment : PreferenceFragmentCompat(), DIAware, Preference.On
                         setMessage(R.string.settings_clear_history_alert_message)
                         setPositiveButton(android.R.string.ok) { _, _ ->
                             histories.clear()
-                            summary = context.getString(R.string.settings_clear_history_summary, histories.size)
+                            summary = context.getString(R.string.settings_clear_history_summary, histories.map.values.sumOf { it.size })
                         }
                         setNegativeButton(android.R.string.cancel) { _, _ -> }
                     }.show()
@@ -169,7 +167,7 @@ class ManageStorageFragment : PreferenceFragmentCompat(), DIAware, Preference.On
         with (findPreference<Preference>("clear_history")) {
             this ?: return@with
 
-            summary = context.getString(R.string.settings_clear_history_summary, histories.size)
+            summary = context.getString(R.string.settings_clear_history_summary, histories.map.values.sumOf { it.size })
 
             onPreferenceClickListener = this@ManageStorageFragment
         }

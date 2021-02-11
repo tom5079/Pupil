@@ -18,37 +18,33 @@
 
 package xyz.quaver.pupil.util
 
-import android.annotation.SuppressLint
 import android.app.DownloadManager
-import android.app.PendingIntent
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import android.content.IntentFilter
 import android.net.Uri
-import android.util.Base64
 import android.webkit.URLUtil
 import androidx.appcompat.app.AlertDialog
-import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.preference.PreferenceManager
-import com.google.firebase.crashlytics.FirebaseCrashlytics
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.serialization.decodeFromString
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.*
 import okhttp3.Call
 import okhttp3.Callback
 import okhttp3.Request
 import okhttp3.Response
+import org.kodein.di.DI
+import org.kodein.di.DIAware
+import org.kodein.di.android.di
+import org.kodein.di.instance
 import ru.noties.markwon.Markwon
 import xyz.quaver.pupil.BuildConfig
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.client
-import xyz.quaver.pupil.favorites
 import java.io.File
 import java.io.IOException
 import java.net.URL
@@ -184,7 +180,7 @@ fun checkUpdate(context: Context, force: Boolean = false) {
     }
 }
 
-fun restore(url: String, onFailure: ((Throwable) -> Unit)? = null, onSuccess: ((List<String>) -> Unit)? = null) {
+fun restore(context: Context, url: String, onFailure: ((Throwable) -> Unit)? = null, onSuccess: ((Set<String>) -> Unit)? = null) {
     if (!URLUtil.isValidUrl(url)) {
         onFailure?.invoke(IllegalArgumentException())
         return
@@ -201,9 +197,10 @@ fun restore(url: String, onFailure: ((Throwable) -> Unit)? = null, onSuccess: ((
         }
 
         override fun onResponse(call: Call, response: Response) {
+            val favorites = object: DIAware { override val di by di(context); val favorites: SavedSourceSet by instance(tag = "favorites") }
             kotlin.runCatching {
-                Json.decodeFromString<List<String>>(response.also { if (it.code() != 200) throw IOException() }.body().use { it?.string() } ?: "[]").let {
-                    favorites.addAll(it)
+                Json.decodeFromString<Set<String>>(response.also { if (it.code() != 200) throw IOException() }.body().use { it?.string() } ?: "[]").let {
+                    favorites.favorites.addAll(mapOf("hitomi.la" to it))
                     onSuccess?.invoke(it)
                 }
             }.onFailure { onFailure?.invoke(it) }

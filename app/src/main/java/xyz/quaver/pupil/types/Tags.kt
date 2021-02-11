@@ -70,12 +70,12 @@ class Tags(val tags: MutableSet<Tag> = mutableSetOf()) : MutableSet<Tag> by tags
     companion object {
         fun parse(tags: String) : Tags {
             return Tags(
-                tags.split(' ').map {
+                tags.split(' ').mapNotNull {
                     if (it.isNotEmpty())
                         Tag.parse(it)
                     else
                         null
-                }.filterNotNull().toMutableSet()
+                }.toMutableSet()
             )
         }
     }

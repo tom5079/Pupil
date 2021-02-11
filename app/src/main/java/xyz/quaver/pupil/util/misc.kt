@@ -20,14 +20,17 @@ package xyz.quaver.pupil.util
 
 import android.annotation.SuppressLint
 import android.view.MenuItem
+import android.view.View
 import androidx.lifecycle.MutableLiveData
 import kotlinx.serialization.json.*
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import org.kodein.di.*
 import xyz.quaver.hitomi.GalleryInfo
 import xyz.quaver.hitomi.getReferer
 import xyz.quaver.hitomi.imageUrlFromImage
 import xyz.quaver.pupil.sources.ItemInfo
+import xyz.quaver.pupil.sources.SourceEntries
 import java.io.InputStream
 import java.io.OutputStream
 import java.util.*
@@ -128,4 +131,15 @@ fun InputStream.copyTo(out: OutputStream, onCopy: (totalBytesCopied: Long, bytes
         bytes = read(buffer)
     }
     return bytesCopied
+}
+
+fun DIAware.source(source: String) = lazy { direct.source(source) }
+fun DirectDIAware.source(source: String) = instance<SourceEntries>().toMap()[source]!!
+
+fun View.hide() {
+    visibility = View.INVISIBLE
+}
+
+fun View.show() {
+    visibility = View.VISIBLE
 }

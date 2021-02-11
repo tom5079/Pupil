@@ -44,22 +44,11 @@ import okhttp3.*
 import org.kodein.di.*
 import org.kodein.di.android.x.androidXModule
 import xyz.quaver.io.FileX
-import xyz.quaver.pupil.sources.initSources
 import xyz.quaver.pupil.sources.sourceModule
-import xyz.quaver.pupil.types.Tag
 import xyz.quaver.pupil.util.*
 import xyz.quaver.setClient
 import java.io.File
 import java.util.*
-
-lateinit var histories: SavedSet<String>
-    private set
-lateinit var favorites: SavedSet<String>
-    private set
-lateinit var favoriteTags: SavedSet<Tag>
-    private set
-lateinit var searchHistory: SavedSet<String>
-    private set
 
 lateinit var clientBuilder: OkHttpClient.Builder
 
@@ -79,6 +68,11 @@ class Pupil : Application(), DIAware {
         bind<OkHttpClient>() with provider { client }
         bind<ImageCache>() with singleton { ImageCache(this@Pupil) }
         bind<DownloadManager>() with singleton { DownloadManager(this@Pupil) }
+
+        bind<SavedSourceSet>(tag = "histories") with singleton { SavedSourceSet(File(ContextCompat.getDataDir(this@Pupil), "histories.json")) }
+        bind<SavedSourceSet>(tag = "favorites") with singleton { SavedSourceSet(File(ContextCompat.getDataDir(this@Pupil), "favorites.json")) }
+        bind<SavedSourceSet>(tag = "favoriteTags") with singleton { SavedSourceSet(File(ContextCompat.getDataDir(this@Pupil), "favoriteTags.json")) }
+        bind<SavedSourceSet>(tag = "searchHistory") with singleton { SavedSourceSet(File(ContextCompat.getDataDir(this@Pupil), "searchHistory.json")) }
     }
 
     private lateinit var firebaseAnalytics: FirebaseAnalytics
@@ -92,8 +86,6 @@ class Pupil : Application(), DIAware {
             if (userID.isEmpty()) UUID.randomUUID().toString().also { Preferences["user_id"] = it }
             else userID
         }
-
-        initSources(this)
 
         firebaseAnalytics = Firebase.analytics
         FirebaseCrashlytics.getInstance().setUserId(userID)
@@ -124,11 +116,6 @@ class Pupil : Application(), DIAware {
             Preferences["security_mode"] = false
             Preferences["reset_secure"] = true
         }
-
-        histories = SavedSet(File(ContextCompat.getDataDir(this), "histories.json"), "")
-        favorites = SavedSet(File(ContextCompat.getDataDir(this), "favorites.json"), "")
-        favoriteTags = SavedSet(File(ContextCompat.getDataDir(this), "favorites_tags.json"), Tag.parse(""))
-        searchHistory = SavedSet(File(ContextCompat.getDataDir(this), "search_histories.json"), "")
 
         if (BuildConfig.DEBUG)
             FirebaseAnalytics.getInstance(this).setAnalyticsCollectionEnabled(false)
