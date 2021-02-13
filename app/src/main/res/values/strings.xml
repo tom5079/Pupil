@@ -28,7 +28,7 @@
     <string name="warning">Warning</string>
     <string name="error">Error</string>
 
-    <string name="ignore_update">Ignore</string>
+    <string name="ignore">Ignore</string>
 
     <string name="copied_to_clipboard">Copied to clipboard</string>
 
@@ -46,6 +46,8 @@
     <string name="lock_corrupted">Lock file corrupted! Please re-install Pupil</string>
 
     <string name="main_no_result">No result</string>
+
+    <string name="unaccessible_download_folder">From Android 11 and above, current Download folder cannot be accessed by outside apps. Would you like to change the download folder?</string>
 
     <string name="main_drawer_home">Home</string>
     <string name="main_drawer_history">History</string>

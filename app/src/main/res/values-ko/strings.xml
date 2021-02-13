@@ -71,7 +71,7 @@
     <string name="main_menu_sort">정렬</string>
     <string name="main_menu_sort_popular">인기순</string>
     <string name="main_menu_sort_newest">시간순</string>
-    <string name="ignore_update">무시</string>
+    <string name="ignore">무시</string>
     <string name="lock_corrupted">잠금 파일이 손상되었습니다! 앱을 재설치 해 주시기 바랍니다.</string>
     <string name="settings_dark_mode_title">다크 모드</string>
     <string name="settings_dark_mode_summary">딥 다크한 모오드</string>
@@ -155,4 +155,5 @@
     <string name="settings_tag_translation">태그 언어</string>
     <string name="settings_tag_translation_message">Github에서 번역에 참여하세요</string>
     <string name="settings_concurrent_download">병렬 다운로드</string>
+    <string name="unaccessible_download_folder">안드로이드 11 이상에서는 외부에서 현재 다운로드 폴더에 접근할 수 없습니다. 변경하시겠습니까?</string>
 </resources>

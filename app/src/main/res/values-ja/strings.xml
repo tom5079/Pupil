@@ -73,7 +73,7 @@
     <string name="main_menu_sort">ソート</string>
     <string name="main_menu_sort_newest">投稿日時順</string>
     <string name="main_menu_sort_popular">人気順</string>
-    <string name="ignore_update">無視</string>
+    <string name="ignore">無視</string>
     <string name="lock_corrupted">ロックファイルが破損されています。Pupilを再再インストールしてください。</string>
     <string name="settings_dark_mode_title">ダークモード</string>
     <string name="settings_dark_mode_summary">夜にシコりたい方々へ</string>
@@ -155,4 +155,5 @@
     <string name="settings_tag_translation">タグ言語</string>
     <string name="settings_tag_translation_message">Githubにて翻訳に参加できます</string>
     <string name="settings_concurrent_download">並列ダウンロード</string>
+    <string name="unaccessible_download_folder">アンドロイド11以上では外部からのアプリ内部空間接近が不可能です。ダウンロードフォルダを変更しますか？</string>
 </resources>

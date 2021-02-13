@@ -21,6 +21,7 @@ package xyz.quaver.pupil.ui
 import android.annotation.SuppressLint
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.text.InputType
 import android.text.util.Linkify
@@ -31,8 +32,8 @@ import android.view.animation.DecelerateInterpolator
 import android.widget.EditText
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
-import androidx.appcompat.app.AppCompatDelegate
 import androidx.cardview.widget.CardView
+import androidx.core.content.ContextCompat
 import androidx.core.view.GravityCompat
 import androidx.core.view.ViewCompat
 import androidx.recyclerview.widget.RecyclerView
@@ -125,6 +126,21 @@ class MainActivity :
             DownloadLocationDialogFragment().show(supportFragmentManager, "Download Location Dialog")
 
         checkUpdate(this)
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R &&
+            !Preferences["download_folder_ignore_warning", false] &&
+            ContextCompat.getExternalFilesDirs(this, null).map { Uri.fromFile(it).toString() }
+                .contains(Preferences["download_folder", ""])
+        ) {
+            AlertDialog.Builder(this)
+                .setTitle(R.string.warning)
+                .setMessage(R.string.unaccessible_download_folder)
+                .setPositiveButton(android.R.string.ok) { _, _ ->
+                    DownloadLocationDialogFragment().show(supportFragmentManager, "Download Location Dialog")
+                }.setNegativeButton(R.string.ignore) { _, _ ->
+                    Preferences["download_folder_ignore_warning"] = true
+                }.show()
+        }
 
         initView()
     }

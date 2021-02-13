@@ -32,7 +32,6 @@ import androidx.appcompat.app.AlertDialog
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.preference.PreferenceManager
-import com.google.firebase.crashlytics.FirebaseCrashlytics
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -182,7 +181,7 @@ fun checkUpdate(context: Context, force: Boolean = false) {
                     Preferences["update_download_id"] = it
                 }
             }
-            setNegativeButton(if (force) android.R.string.cancel else R.string.ignore_update) { _, _ ->
+            setNegativeButton(if (force) android.R.string.cancel else R.string.ignore) { _, _ ->
                 if (!force)
                     preferences.edit()
                         .putLong("ignore_update_until", System.currentTimeMillis() + 604800000)
