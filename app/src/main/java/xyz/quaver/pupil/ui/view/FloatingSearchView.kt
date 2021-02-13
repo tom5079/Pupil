@@ -25,6 +25,7 @@ import android.graphics.drawable.Animatable
 import android.text.Editable
 import android.text.TextWatcher
 import android.util.AttributeSet
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.inputmethod.EditorInfo
@@ -110,7 +111,7 @@ class FloatingSearchView @JvmOverloads constructor(context: Context, attrs: Attr
     ) {
       when(item) {
             is TagSuggestion -> {
-                val tag = "${item.n}:${item.s.replace(Regex("\\s"), "_")}"
+                val tag = "${item.n}:${item.s}"
 
                 leftIcon?.setImageDrawable(
                     ResourcesCompat.getDrawable(
