@@ -34,12 +34,10 @@ import com.orhanobut.logger.Logger
 import com.qtalk.recyclerviewfastscroller.RecyclerViewFastScroller
 import org.kodein.di.DIAware
 import org.kodein.di.android.di
-import org.kodein.di.direct
 import org.kodein.di.instance
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.adapters.ReaderAdapter
 import xyz.quaver.pupil.databinding.ReaderActivityBinding
-import xyz.quaver.pupil.sources.AnySource
 import xyz.quaver.pupil.ui.viewmodel.ReaderViewModel
 import xyz.quaver.pupil.util.Preferences
 import xyz.quaver.pupil.util.SavedSourceSet
