@@ -99,7 +99,7 @@ class MainActivity :
 
         initView()
 
-        model.query.observe(this) {
+        model.query.observe(this)  {
             binding.contents.searchview.binding.querySection.searchBarText.run {
                 if (text?.toString() != it) setText(it, TextView.BufferType.EDITABLE)
             }
