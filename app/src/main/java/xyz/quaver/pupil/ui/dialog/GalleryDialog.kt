@@ -203,7 +203,7 @@ class GalleryDialog(context: Context, private val galleryID: Int) : AlertDialog(
     }
 
     private fun addRelated(gallery: Gallery) {
-        val galleries = ArrayList<Int>()
+        val galleries = mutableListOf<Int>()
 
         val adapter = GalleryBlockAdapter(galleries).apply {
             onChipClickedHandler.add { tag ->
@@ -216,7 +216,7 @@ class GalleryDialog(context: Context, private val galleryID: Int) : AlertDialog(
         GalleryDialogDetailsBinding.inflate(layoutInflater, binding.contents, true).apply {
             type.setText(R.string.gallery_related)
 
-            RecyclerView(context).apply {
+            contents.addView(RecyclerView(context).apply {
                 layoutManager = LinearLayoutManager(context)
                 this.adapter = adapter
 
@@ -236,7 +236,7 @@ class GalleryDialog(context: Context, private val galleryID: Int) : AlertDialog(
                         true
                     }
                 }
-            }
+            })
 
             CoroutineScope(Dispatchers.IO).launch {
                 gallery.related.forEach { galleryID ->
