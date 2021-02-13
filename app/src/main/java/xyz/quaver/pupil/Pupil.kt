@@ -125,6 +125,10 @@ class Pupil : Application() {
         favoriteTags = SavedSet(File(ContextCompat.getDataDir(this), "favorites_tags.json"), Tag.parse(""))
         searchHistory = SavedSet(File(ContextCompat.getDataDir(this), "search_histories.json"), "")
 
+        favoriteTags.filter { it.tag.contains('_') }.forEach {
+            favoriteTags.remove(it)
+        }
+
         /*
         if (BuildConfig.DEBUG)
             FirebaseAnalytics.getInstance(this).setAnalyticsCollectionEnabled(false)*/
