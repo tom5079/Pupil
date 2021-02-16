@@ -45,7 +45,7 @@ class ProxyDialog(context: Context) : AlertDialog(context) {
         super.onCreate(savedInstanceState)
 
         binding = ProxyDialogBinding.inflate(layoutInflater)
-        setView(binding.root)
+        setContentView(binding.root)
 
         initView()
     }
