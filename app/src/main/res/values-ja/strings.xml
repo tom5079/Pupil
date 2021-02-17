@@ -151,9 +151,10 @@
     <string name="no_camera">この機器には前面カメラが装着されていません</string>
     <string name="error">エラー</string>
     <string name="settings_cache_limit">キャッシュサイズ制限</string>
-    <string name="settings_cache_unlimited">制限なし</string>
+    <string name="unlimited">制限なし</string>
     <string name="settings_tag_translation">タグ言語</string>
     <string name="settings_tag_translation_message">Githubにて翻訳に参加できます</string>
-    <string name="settings_concurrent_download">並列ダウンロード</string>
+    <string name="settings_max_concurrent_download">並列ダウンロード</string>
     <string name="unaccessible_download_folder">アンドロイド11以上では外部からのアプリ内部空間接近が不可能です。ダウンロードフォルダを変更しますか？</string>
+    <string name="settings_networking">ネットワーク</string>
 </resources>
