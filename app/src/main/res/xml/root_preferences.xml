@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto">
+<PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:android="http://schemas.android.com/apk/res/android">
 
     <Preference
         app:key="app_version"
@@ -73,12 +74,7 @@
     </PreferenceCategory>
 
     <PreferenceCategory
-        app:title="@string/settings_miscellaneous_title">
-
-        <ListPreference
-            app:key="tag_translation"
-            app:title="@string/settings_tag_translation"
-            app:useSimpleSummaryProvider="true"/>
+        app:title="@string/settings_networking">
 
         <Preference
             app:key="mirrors"
@@ -88,6 +84,24 @@
         <Preference
             app:key="proxy"
             app:title="@string/settings_proxy_title"/>
+
+        <ListPreference
+            app:key="max_concurrent_download"
+            android:title="@string/settings_max_concurrent_download"
+            app:entries="@array/concurrent_download_text"
+            app:entryValues="@array/concurrent_download"
+            android:defaultValue="0"
+            app:useSimpleSummaryProvider="true"/>
+
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        app:title="@string/settings_miscellaneous_title">
+
+        <ListPreference
+            app:key="tag_translation"
+            app:title="@string/settings_tag_translation"
+            app:useSimpleSummaryProvider="true"/>
 
         <SwitchPreferenceCompat
             app:key="rtl"
