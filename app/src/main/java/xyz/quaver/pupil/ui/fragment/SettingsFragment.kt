@@ -29,15 +29,20 @@ import com.google.android.gms.oss.licenses.OssLicensesMenuActivity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import okhttp3.Dispatcher
 import xyz.quaver.io.FileX
 import xyz.quaver.io.util.getChild
 import xyz.quaver.pupil.R
+import xyz.quaver.pupil.client
+import xyz.quaver.pupil.clientBuilder
+import xyz.quaver.pupil.clientHolder
 import xyz.quaver.pupil.ui.LockActivity
 import xyz.quaver.pupil.ui.SettingsActivity
 import xyz.quaver.pupil.ui.dialog.*
 import xyz.quaver.pupil.util.*
 import xyz.quaver.pupil.util.downloader.DownloadManager
 import java.util.*
+import java.util.concurrent.Executors
 
 class SettingsFragment :
     PreferenceFragmentCompat(),
@@ -168,6 +173,18 @@ class SettingsFragment :
                 "download_folder_name" -> {
                     summary = Preferences["download_folder_name", "[-id-] -title-"]
                 }
+                "max_concurrent_download" -> {
+                    val newValue = Preferences.get<String>(key).toIntOrNull() ?: 0
+
+                    if (newValue == 0)
+                        clientBuilder.dispatcher(Dispatcher())
+                    else
+                        clientBuilder.dispatcher((Dispatcher(Executors.newFixedThreadPool(newValue))))
+
+                    clientHolder = null
+                    client
+                }
+                else -> return
             }
         }
     }
@@ -247,6 +264,14 @@ class SettingsFragment :
 
                             onPreferenceClickListener = this@SettingsFragment
                         }
+                        "mirrors" -> {
+                            onPreferenceClickListener = this@SettingsFragment
+                        }
+                        "proxy" -> {
+                            summary = getProxyInfo().type.name
+
+                            onPreferenceClickListener = this@SettingsFragment
+                        }
                         "tag_translation" -> {
                             this as ListPreference
 
@@ -267,14 +292,6 @@ class SettingsFragment :
 
                             onPreferenceChangeListener = this@SettingsFragment
 
-                        }
-                        "mirrors" -> {
-                            onPreferenceClickListener = this@SettingsFragment
-                        }
-                        "proxy" -> {
-                            summary = getProxyInfo().type.name
-
-                            onPreferenceClickListener = this@SettingsFragment
                         }
                         "dark_mode" -> {
                             onPreferenceChangeListener = this@SettingsFragment
