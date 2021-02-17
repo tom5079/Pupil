@@ -33,6 +33,7 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
+import androidx.core.view.GravityCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.children
 import androidx.core.widget.ImageViewCompat
@@ -171,19 +172,10 @@ class MainActivity :
 
     @OptIn(ExperimentalStdlibApi::class)
     override fun onBackPressed() {
-
-        // TODO model.onBackPressed()
-        /*
-        when {
-            binding.drawer.isDrawerOpen(GravityCompat.START) -> binding.drawer.closeDrawer(GravityCompat.START)
-            queryStack.removeLastOrNull() != null && queryStack.isNotEmpty() -> runOnUiThread {
-                model.query.value = queryStack.last()
-
-                model.query()
-            }
-            else -> super.onBackPressed()
-        }
-         */
+        if (binding.drawer.isDrawerOpen(GravityCompat.START))
+            binding.drawer.closeDrawer(GravityCompat.START)
+        else if (!model.onBackPressed())
+                super.onBackPressed()
     }
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
