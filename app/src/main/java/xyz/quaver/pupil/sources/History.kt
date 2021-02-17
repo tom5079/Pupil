@@ -47,7 +47,6 @@ class History(override val di: DI, source: String) : Source<DefaultSortMode, Sea
         val channel = Channel<ItemInfo>()
 
         CoroutineScope(Dispatchers.IO).launch {
-            Logger.d(histories.map)
             histories.map[source.name]?.forEach {
                 channel.send(source.info(it))
             }

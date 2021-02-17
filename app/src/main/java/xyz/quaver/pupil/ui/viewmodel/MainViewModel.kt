@@ -21,7 +21,6 @@ package xyz.quaver.pupil.ui.viewmodel
 import android.annotation.SuppressLint
 import android.app.Application
 import androidx.lifecycle.*
-import com.orhanobut.logger.Logger
 import kotlinx.coroutines.*
 import org.kodein.di.DIAware
 import org.kodein.di.android.x.di
@@ -87,13 +86,12 @@ class MainViewModel(app: Application) : AndroidViewModel(app), DIAware {
             sortMode.value = it.availableSortMode.first()
         }
 
-        Logger.i("SOURCE SET TO $sourceName")
-
         setQueryAndSearch()
     }
 
     fun setQueryAndSearch(query: String = "") {
         this.query.value = query
+        queryStack.add(query)
         setPage(1)
 
         query()
@@ -170,6 +168,17 @@ class MainViewModel(app: Application) : AndroidViewModel(app), DIAware {
                 }.getOrElse { emptyList() }
             }
         }
+    }
+
+    /**
+     * @return true if backpress is consumed, false otherwise
+     */
+    fun onBackPressed(): Boolean {
+        if (queryStack.removeLastOrNull() == null || queryStack.isEmpty())
+            return false
+
+        setQueryAndSearch(queryStack.removeLast())
+        return true
     }
 
 }
