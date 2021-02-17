@@ -212,7 +212,7 @@ class MainActivity :
                     min(
                         max(
                         binding.contents.searchview.translationY - dy,
-                        -binding.contents.searchview.findViewById<CardView>(R.id.search_query_section).height.toFloat()
+                        -binding.contents.searchview.binding.querySection.root.height.toFloat()
                     ), 0F)
 
                 if (dy > 0)
@@ -474,7 +474,7 @@ class MainActivity :
         with(binding.contents.searchview) {
             onMenuStatusChangeListener = object: FloatingSearchView.OnMenuStatusChangeListener {
                 override fun onMenuOpened() {
-                    (binding.contents.recyclerview.adapter as GalleryBlockAdapter).closeAllItems()
+                    (this@MainActivity.binding.contents.recyclerview.adapter as GalleryBlockAdapter).closeAllItems()
                 }
 
                 override fun onMenuClosed() {
@@ -558,7 +558,7 @@ class MainActivity :
                 }
             }
 
-            attachNavigationDrawerToMenuButton(binding.drawer)
+            attachNavigationDrawerToMenuButton(this@MainActivity.binding.drawer)
         }
     }
 
