@@ -30,6 +30,8 @@
 
     <string name="ignore">Ignore</string>
 
+    <string name="unlimited">Unlimited</string>
+
     <string name="copied_to_clipboard">Copied to clipboard</string>
 
     <string name="channel_download">Download</string>
@@ -166,7 +168,6 @@
     <string name="settings_download_folder_custom">Custom Location</string>
     <string name="settings_download_folder_not_writable">This folder is not writable. Please select another folder.</string>
     <string name="settings_cache_limit">Cache Limit</string>
-    <string name="settings_cache_unlimited">Unlimited</string>
     <string name="settings_nomedia_title">Hide image from gallery</string>
     <string name="settings_low_quality">Low quality images</string>
     <string name="settings_low_quality_summary">Load low quality images to improve load speed and data usage</string>
@@ -176,14 +177,17 @@
     <string name="settings_app_lock">App lock</string>
     <string name="settings_app_lock_type">App lock type</string>
 
+    <!-- SETTINGS/NETWORKING -->
+    <string name="settings_networking">Networking</string>
+    <string name="settings_mirror_summary">Load images from mirrors</string>
+    <string name="settings_proxy_title">Proxy</string>
+    <string name="settings_max_concurrent_download">Concurrent Download</string>
+
     <!-- SETTINGS/MISCELLANEOUS -->
 
     <string name="settings_miscellaneous_title">Miscellaneous</string>
     <string name="settings_tag_translation">Tag Language</string>
-    <string name="settings_concurrent_download">Concurrent Download</string>
     <string name="settings_tag_translation_message">Participate in translation on Github</string>
-    <string name="settings_mirror_summary">Load images from mirrors</string>
-    <string name="settings_proxy_title">Proxy</string>
     <string name="settings_rtl">Turn pages Right-to-Left</string>
     <string name="settings_security_mode_title">Enable security mode</string>
     <string name="settings_security_mode_summary">Enable security mode to make the screen invisible on recent app window</string>

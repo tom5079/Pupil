@@ -70,13 +70,33 @@
     </string-array>
 
     <string-array name="cache_size_text">
-        <item>@string/settings_cache_unlimited</item>
+        <item>@string/unlimited</item>
         <item>1G</item>
         <item>2G</item>
         <item>4G</item>
         <item>8G</item>
         <item>16G</item>
         <item>32G</item>
+    </string-array>
+
+    <string-array name="concurrent_download">
+        <item>0</item>
+        <item>1</item>
+        <item>2</item>
+        <item>4</item>
+        <item>8</item>
+        <item>16</item>
+        <item>32</item>
+    </string-array>
+
+    <string-array name="concurrent_download_text">
+        <item>@string/unlimited</item>
+        <item>1</item>
+        <item>2</item>
+        <item>4</item>
+        <item>8</item>
+        <item>16</item>
+        <item>32</item>
     </string-array>
 
 </resources>
