@@ -33,7 +33,6 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
-import androidx.core.view.GravityCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.children
 import androidx.core.widget.ImageViewCompat
@@ -50,7 +49,6 @@ import xyz.quaver.floatingsearchview.FloatingSearchView
 import xyz.quaver.pupil.*
 import xyz.quaver.pupil.adapters.SearchResultsAdapter
 import xyz.quaver.pupil.databinding.MainActivityBinding
-import xyz.quaver.pupil.sources.ItemInfo
 import xyz.quaver.pupil.types.*
 import xyz.quaver.pupil.ui.dialog.DownloadLocationDialogFragment
 import xyz.quaver.pupil.ui.dialog.GalleryDialogFragment
@@ -68,9 +66,6 @@ class MainActivity :
     DIAware
 {
     override val di by di()
-
-    private val searchResults = mutableListOf<ItemInfo>()
-    private var queryStack = mutableListOf<String>()
 
     private lateinit var binding: MainActivityBinding
     private val model: MainViewModel by viewModels()
@@ -176,6 +171,9 @@ class MainActivity :
 
     @OptIn(ExperimentalStdlibApi::class)
     override fun onBackPressed() {
+
+        // TODO model.onBackPressed()
+        /*
         when {
             binding.drawer.isDrawerOpen(GravityCompat.START) -> binding.drawer.closeDrawer(GravityCompat.START)
             queryStack.removeLastOrNull() != null && queryStack.isNotEmpty() -> runOnUiThread {
@@ -185,6 +183,7 @@ class MainActivity :
             }
             else -> super.onBackPressed()
         }
+         */
     }
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
@@ -273,7 +272,7 @@ class MainActivity :
 
                 model.random { runOnUiThread {
                     setImageResource(R.drawable.shuffle_variant)
-                    GalleryDialogFragment(model.sourceName.value!!, it.id).apply {
+                    GalleryDialogFragment(model.source.value!!.name, it.id).apply {
                         onChipClickedHandler.add {
                             model.setQueryAndSearch(it.toQuery())
                             dismiss()
@@ -297,7 +296,7 @@ class MainActivity :
                     setPositiveButton(android.R.string.ok) { _, _ ->
                         val galleryID = editText.text.toString()
 
-                        GalleryDialogFragment(model.sourceName.value!!, galleryID).apply {
+                        GalleryDialogFragment(model.source.value!!.name, galleryID).apply {
                             onChipClickedHandler.add {
                                 model.setQueryAndSearch(it.toQuery())
                                 dismiss()
@@ -363,8 +362,8 @@ class MainActivity :
                         return@listener
 
                     val intent = Intent(this@MainActivity, ReaderActivity::class.java).apply {
-                        putExtra("source", model.sourceName.value!!)
-                        putExtra("id", searchResults[position].id)
+                        putExtra("source", model.source.value!!.name)
+                        putExtra("id", model.searchResults.value!![position].id)
                     }
 
                     //TODO: Maybe sprinkling some transitions will be nice :D
@@ -375,9 +374,9 @@ class MainActivity :
                     if (v !is ProgressCardView)
                         return@listener false
 
-                    val result = searchResults.getOrNull(position) ?: return@listener true
+                    val result = model.searchResults.value!!.getOrNull(position) ?: return@listener true
 
-                    GalleryDialogFragment(model.sourceName.value!!, result.id).apply {
+                    GalleryDialogFragment(model.source.value!!.name, result.id).apply {
                         onChipClickedHandler.add {
                             model.setQueryAndSearch(it.toQuery())
                             dismiss()

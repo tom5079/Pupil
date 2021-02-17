@@ -18,8 +18,10 @@
 
 package xyz.quaver.pupil.ui.viewmodel
 
+import android.annotation.SuppressLint
 import android.app.Application
 import androidx.lifecycle.*
+import com.orhanobut.logger.Logger
 import kotlinx.coroutines.*
 import org.kodein.di.DIAware
 import org.kodein.di.android.x.di
@@ -62,10 +64,6 @@ class MainViewModel(app: Application) : AndroidViewModel(app), DIAware {
         it.iconResID
     }
 
-    val sourceName = Transformations.map(_source) {
-        it.name
-    }
-
     private val _currentPage = MutableLiveData<Int>()
     val currentPage: LiveData<Int> = _currentPage
 
@@ -88,6 +86,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app), DIAware {
         _source.value = direct.source(sourceName).also {
             sortMode.value = it.availableSortMode.first()
         }
+
+        Logger.i("SOURCE SET TO $sourceName")
 
         setQueryAndSearch()
     }
@@ -163,11 +163,12 @@ class MainViewModel(app: Application) : AndroidViewModel(app), DIAware {
         _suggestions.value = mutableListOf()
 
         suggestionJob = viewModelScope.launch {
+            @SuppressLint("NullSafeMutableLiveData")
             _suggestions.value = withContext(Dispatchers.IO) {
                 kotlin.runCatching {
                     _source.value!!.suggestion(query.value!!)
                 }.getOrElse { emptyList() }
-            }!!
+            }
         }
     }
 
