@@ -166,8 +166,7 @@ class MainActivity :
 
     override fun onDestroy() {
         super.onDestroy()
-
-        (binding.contents.recyclerview.adapter as SearchResultsAdapter).progressUpdateScope.cancel()
+        binding.contents.recyclerview.adapter = null
     }
 
     @OptIn(ExperimentalStdlibApi::class)

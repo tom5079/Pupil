@@ -21,7 +21,6 @@ package xyz.quaver.pupil.adapters
 import android.annotation.SuppressLint
 import android.content.ClipData
 import android.content.ClipboardManager
-import android.content.Context
 import android.graphics.drawable.Animatable
 import android.view.LayoutInflater
 import android.view.View
@@ -35,9 +34,14 @@ import com.daimajia.swipe.interfaces.SwipeAdapterInterface
 import com.facebook.drawee.backends.pipeline.Fresco
 import com.facebook.drawee.controller.BaseControllerListener
 import com.facebook.imagepipeline.image.ImageInfo
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import org.kodein.di.DIAware
 import org.kodein.di.android.di
+import org.kodein.di.instance
+import org.kodein.di.on
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.databinding.SearchResultItemBinding
 import xyz.quaver.pupil.sources.ItemInfo
@@ -50,10 +54,11 @@ class SearchResultsAdapter(var results: LiveData<List<ItemInfo>>) : RecyclerSwip
     var onDownloadClickedHandler: ((source: String, itemI: String) -> Unit)? = null
     var onDeleteClickedHandler: ((source: String, itemID: String) -> Unit)? = null
 
-    // TODO: migrate to viewBinding
-    val progressUpdateScope = CoroutineScope(Dispatchers.Main + Job())
+    inner class ViewHolder(private val binding: SearchResultItemBinding) : RecyclerView.ViewHolder(binding.root), DIAware {
+        override val di by di(binding.root.context)
+        
+        private val clipboardManager: ClipboardManager by di.on(itemView.context).instance()
 
-    inner class ViewHolder(private val binding: SearchResultItemBinding) : RecyclerView.ViewHolder(binding.root) {
         var source: String = ""
         var itemID: String = ""
 
@@ -67,8 +72,7 @@ class SearchResultsAdapter(var results: LiveData<List<ItemInfo>>) : RecyclerSwip
             }
 
             binding.idView.setOnClickListener {
-                // TODO: MEMLEAK
-                (itemView.context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager).setPrimaryClip(
+                clipboardManager.setPrimaryClip(
                     ClipData.newPlainText("item_id", itemID)
                 )
                 Toast.makeText(itemView.context, R.string.copied_to_clipboard, Toast.LENGTH_SHORT).show()
@@ -90,12 +94,15 @@ class SearchResultsAdapter(var results: LiveData<List<ItemInfo>>) : RecyclerSwip
 
             binding.tagGroup.onClickListener = onChipClickedHandler
 
+
+            /*
             CoroutineScope(Dispatchers.Main).launch {
                 while (true) {
                     updateProgress()
                     delay(1000)
                 }
             }
+             */
         }
 
         private val controllerListener = object: BaseControllerListener<ImageInfo>() {
