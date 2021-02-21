@@ -18,15 +18,12 @@
 
 package xyz.quaver.pupil.sources
 
-import android.util.Log
-import com.orhanobut.logger.Logger
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 import org.kodein.di.DI
 import org.kodein.di.DIAware
-import org.kodein.di.android.di
 import org.kodein.di.instance
 import xyz.quaver.floatingsearchview.suggestions.model.SearchSuggestion
 import xyz.quaver.pupil.util.SavedSourceSet
@@ -47,9 +44,11 @@ class History(override val di: DI, source: String) : Source<DefaultSortMode, Sea
         val channel = Channel<ItemInfo>()
 
         CoroutineScope(Dispatchers.IO).launch {
-            histories.map[source.name]?.forEach {
+            histories[source.name]?.asReversed()?.forEach {
                 channel.send(source.info(it))
             }
+
+            channel.close()
         }
 
         return Pair(channel, histories.map.size)

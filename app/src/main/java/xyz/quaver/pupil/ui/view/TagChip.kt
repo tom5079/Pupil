@@ -75,7 +75,7 @@ class TagChip(context: Context, private val source: String, _tag: Tag) : Chip(co
         )
 
         setOnCloseIconClickListener {
-            if (favoriteTags.map[source]?.contains(tag.toString()) == true) {
+            if (favoriteTags[source]?.contains(tag.toString()) == true) {
                 favoriteTags.remove(source, tag.toString())
                 closeIcon = ContextCompat.getDrawable(context, R.drawable.ic_star_empty)
 

@@ -141,7 +141,7 @@ class ReaderActivity : BaseActivity(), DIAware {
         menu?.forEach {
             when (it.itemId) {
                 R.id.reader_menu_favorite -> {
-                    if (favorites.map[source]?.contains(itemID) == true)
+                    if (favorites[source]?.contains(itemID) == true)
                         (it.icon as Animatable).start()
                 }
                 R.id.source -> {
@@ -160,7 +160,7 @@ class ReaderActivity : BaseActivity(), DIAware {
                 val id = itemID
                 val favorite = menu?.findItem(R.id.reader_menu_favorite) ?: return true
 
-                if (favorites.map[source]?.contains(id) == true) {
+                if (favorites[source]?.contains(id) == true) {
                     favorites.remove(source, id)
                     favorite.icon = AnimatedVectorDrawableCompat.create(this, R.drawable.avd_star)
                 } else {
