@@ -148,6 +148,7 @@ class MainActivity :
                 } else {
                     binding.contents.progressbar.hide()
                     if (it.isEmpty()) {
+                        binding.contents.recyclerview.adapter?.notifyDataSetChanged()
                         binding.contents.noresult.show()
                     } else {
                         binding.contents.recyclerview.adapter?.notifyItemInserted(it.size-1)
@@ -396,7 +397,7 @@ class MainActivity :
                 onActionMenuItemSelected(it)
             }
 
-            onQueryChangeListener = lambda@{ _, query ->
+            onQueryChangeListener = { _, query ->
                 model.query.value = query
 
                 model.suggestion()
@@ -404,9 +405,7 @@ class MainActivity :
                 swapSuggestions(listOf(LoadingSuggestion(getText(R.string.reader_loading).toString())))
             }
 
-            onSuggestionBinding = { binding, item ->
-                model.source.value!!.onSuggestionBind(binding, item)
-            }
+            onSuggestionBinding = model.source.value!!::onSuggestionBind
 
             onFocusChangeListener = object: FloatingSearchView.OnFocusChangeListener {
                 override fun onFocus() {
@@ -450,24 +449,13 @@ class MainActivity :
             binding.drawer.closeDrawers()
 
             when(item.itemId) {
-                R.id.main_drawer_history -> {
-                    //model.setSourceAndReset(direct.instance<String, History>(arg = source.name))
-                }
-                R.id.main_drawer_help -> {
-                    startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(getString(R.string.help))))
-                }
-                R.id.main_drawer_github -> {
-                    startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(getString(R.string.github))))
-                }
-                R.id.main_drawer_homepage -> {
-                    startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(getString(R.string.home_page))))
-                }
-                R.id.main_drawer_email -> {
-                    startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(getString(R.string.email))))
-                }
-                R.id.main_drawer_kakaotalk -> {
-                    startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(getString(R.string.discord))))
-                }
+                R.id.main_drawer_home -> model.setModeAndReset(MainViewModel.MainMode.SEARCH)
+                R.id.main_drawer_history -> model.setModeAndReset(MainViewModel.MainMode.HISTORY)
+                R.id.main_drawer_help -> startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(getString(R.string.help))))
+                R.id.main_drawer_github -> startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(getString(R.string.github))))
+                R.id.main_drawer_homepage -> startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(getString(R.string.home_page))))
+                R.id.main_drawer_email -> startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(getString(R.string.email))))
+                R.id.main_drawer_kakaotalk -> startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(getString(R.string.discord))))
             }
         }
 

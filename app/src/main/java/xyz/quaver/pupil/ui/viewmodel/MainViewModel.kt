@@ -25,8 +25,10 @@ import kotlinx.coroutines.*
 import org.kodein.di.DIAware
 import org.kodein.di.android.x.di
 import org.kodein.di.direct
+import org.kodein.di.instance
 import xyz.quaver.floatingsearchview.suggestions.model.SearchSuggestion
 import xyz.quaver.pupil.sources.AnySource
+import xyz.quaver.pupil.sources.History
 import xyz.quaver.pupil.sources.ItemInfo
 import xyz.quaver.pupil.util.Preferences
 import xyz.quaver.pupil.util.notify
@@ -37,7 +39,6 @@ import kotlin.random.Random
 
 @Suppress("UNCHECKED_CAST")
 class MainViewModel(app: Application) : AndroidViewModel(app), DIAware {
-
     override val di by di()
 
     private val _searchResults = MutableLiveData<MutableList<ItemInfo>>()
@@ -51,6 +52,10 @@ class MainViewModel(app: Application) : AndroidViewModel(app), DIAware {
     val query = MutableLiveData<String>()
     private val queryStack = mutableListOf<String>()
 
+    private val defaultSourceFactory: (String) -> AnySource = {
+        direct.source(it)
+    }
+    private var sourceFactory: (String) -> AnySource = defaultSourceFactory
     private val _source = MutableLiveData<AnySource>()
     val source: LiveData<AnySource> = _source
 
@@ -82,7 +87,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app), DIAware {
     }
 
     fun setSourceAndReset(sourceName: String) {
-        _source.value = direct.source(sourceName).also {
+        _source.value = sourceFactory(sourceName).also {
             sortMode.value = it.availableSortMode.first()
         }
 
@@ -95,6 +100,16 @@ class MainViewModel(app: Application) : AndroidViewModel(app), DIAware {
         setPage(1)
 
         query()
+    }
+
+    fun setModeAndReset(mode: MainMode) {
+        sourceFactory = when (mode) {
+            MainMode.SEARCH -> defaultSourceFactory
+            MainMode.HISTORY -> { { direct.instance<String, History>(arg = it) } }
+            else -> return
+        }
+
+        setSourceAndReset(source.value!!.name)
     }
 
     fun query() {
@@ -179,6 +194,13 @@ class MainViewModel(app: Application) : AndroidViewModel(app), DIAware {
 
         setQueryAndSearch(queryStack.removeLast())
         return true
+    }
+
+    enum class MainMode {
+        SEARCH,
+        HISTORY,
+        DOWNLOADS,
+        FAVORITES
     }
 
 }

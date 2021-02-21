@@ -21,80 +21,13 @@ package xyz.quaver.pupil.util
 import androidx.annotation.RequiresApi
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.KSerializer
+import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.builtins.MapSerializer
-import kotlinx.serialization.builtins.SetSerializer
 import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.Json.Default.decodeFromString
 import kotlinx.serialization.serializer
 import java.io.File
-
-class SavedSet <T: Any> (private val file: File, any: T, private val set: MutableSet<T> = mutableSetOf()) : MutableSet<T> by set {
-
-    @Suppress("UNCHECKED_CAST")
-    @OptIn(ExperimentalSerializationApi::class)
-    val serializer: KSerializer<Set<T>> = SetSerializer(serializer(any::class.java) as KSerializer<T>)
-
-    init {
-        if (!file.exists()) {
-            save()
-        }
-        load()
-    }
-
-    @Synchronized
-    fun load() {
-        set.clear()
-        kotlin.runCatching {
-            decodeFromString(serializer, file.readText())
-        }.onSuccess {
-            set.addAll(it)
-        }
-    }
-
-    @Synchronized
-    fun save() {
-        file.parentFile?.mkdirs()
-        if (!file.exists())
-            file.createNewFile()
-
-        file.writeText(Json.encodeToString(serializer, set))
-    }
-
-    @Synchronized
-    override fun add(element: T): Boolean {
-        set.remove(element)
-
-        return set.add(element).also {
-            save()
-        }
-    }
-
-    @Synchronized
-    override fun addAll(elements: Collection<T>): Boolean {
-        set.removeAll(elements)
-
-        return set.addAll(elements).also {
-            save()
-        }
-    }
-
-    @Synchronized
-    override fun remove(element: T): Boolean {
-        load()
-
-        return set.remove(element).also {
-            save()
-        }
-    }
-
-    @Synchronized
-    override fun clear() {
-        set.clear()
-        save()
-    }
-
-}
 
 class SavedMap <K: Any, V: Any> (private val file: File, anyKey: K, anyValue: V, private val map: MutableMap<K, V> = mutableMapOf()) : MutableMap<K, V> by map {
 
@@ -172,11 +105,10 @@ class SavedMap <K: Any, V: Any> (private val file: File, anyKey: K, anyValue: V,
 }
 
 class SavedSourceSet(private val file: File) {
+    private val _map = mutableMapOf<String, MutableList<String>>()
+    val map: Map<String, List<String>> = _map
 
-    private val _map = mutableMapOf<String, MutableSet<String>>()
-    val map: Map<String, Set<String>> = _map
-
-    private val serializer = MapSerializer(String.serializer(), SetSerializer(String.serializer()))
+    private val serializer = MapSerializer(String.serializer(), ListSerializer(String.serializer()))
 
     @Synchronized
     fun load() {
@@ -185,7 +117,7 @@ class SavedSourceSet(private val file: File) {
             decodeFromString(serializer, file.readText())
         }.onSuccess {
             it.forEach { (k, v) ->
-                _map[k] = v.toMutableSet()
+                _map[k] = v.toMutableList()
             }
         }
     }
@@ -199,6 +131,8 @@ class SavedSourceSet(private val file: File) {
         file.writeText(Json.encodeToString(serializer, _map))
     }
 
+    operator fun get(key: String) = _map[key]
+
     @Synchronized
     fun add(source: String, value: String) {
         load()
@@ -206,7 +140,7 @@ class SavedSourceSet(private val file: File) {
         _map[source]?.remove(value)
 
         if (!_map.containsKey(source))
-            _map[source] = mutableSetOf()
+            _map[source] = mutableListOf()
         else
             _map[source]!!.add(value)
 
@@ -222,7 +156,7 @@ class SavedSourceSet(private val file: File) {
                 _map[source]!!.removeAll(from[source]!!)
                 _map[source]!!.addAll(from[source]!!)
             } else {
-                _map[source] = from[source]!!.toMutableSet()
+                _map[source] = from[source]!!.toMutableList()
             }
         }
 

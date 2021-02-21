@@ -55,7 +55,7 @@ class MirrorAdapter(context: Context) : RecyclerView.Adapter<MirrorAdapter.ViewH
     val list = mirrors.keys.toMutableList().apply {
         Preferences.get<String>("mirrors")
             .split(">")
-            .reversed()
+            .asReversed()
             .forEach {
                 if (this.contains(it)) {
                     this.remove(it)
