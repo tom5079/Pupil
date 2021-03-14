@@ -25,6 +25,7 @@ allprojects {
         google()
         mavenCentral()
         jcenter()
+        mavenLocal()
         maven { url "https://oss.sonatype.org/content/repositories/snapshots" }
         maven { url "https://jitpack.io" }
         maven { url "https://guardian.github.com/maven/repo-releases" }
