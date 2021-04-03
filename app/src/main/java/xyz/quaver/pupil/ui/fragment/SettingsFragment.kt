@@ -108,8 +108,7 @@ class SettingsFragment :
                         .show()
                 }
                 "proxy" -> {
-                    ProxyDialog(requireContext())
-                        .show()
+                    ProxyDialogFragment().show(parentFragmentManager, "Proxy Dialog")
                 }
                 "user_id" -> {
                     (context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager).setPrimaryClip(
