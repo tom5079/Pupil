@@ -140,7 +140,7 @@ class SavedSourceSet(private val file: File) {
         _map[source]?.remove(value)
 
         if (!_map.containsKey(source))
-            _map[source] = mutableListOf()
+            _map[source] = mutableListOf(value)
         else
             _map[source]!!.add(value)
 
