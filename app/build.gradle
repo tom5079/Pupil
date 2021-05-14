@@ -14,23 +14,6 @@ if (file("google-services.json").exists()) {
     logger.lifecycle("Firebase Disabled")
 }
 
-ext {
-    okhttp_version = "3.12.12"
-}
-
-configurations {
-    all {
-        resolutionStrategy {
-            eachDependency { DependencyResolveDetails details ->
-                if (details.requested.group == "com.squareup.okhttp3" && details.requested.name == "okhttp") {
-                    // OkHttp drops support before 5.0 since 3.13.0
-                    details.useVersion okhttp_version
-                }
-            }
-        }
-    }
-}
-
 android {
     compileSdkVersion 30
     defaultConfig {
@@ -75,7 +58,6 @@ android {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
-    buildToolsVersion = "29.0.3"
 
     lintOptions {
         abortOnError false
@@ -84,27 +66,27 @@ android {
 
 dependencies {
     implementation fileTree(dir: "libs", include: ["*.jar", "*.aar"])
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
-    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.4.1"
-    implementation "org.jetbrains.kotlinx:kotlinx-serialization-json:1.0.1"
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.5.0"
+    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.5.0-RC"
+    implementation "org.jetbrains.kotlinx:kotlinx-serialization-json:1.2.0"
 
     implementation "androidx.appcompat:appcompat:1.2.0"
-    implementation "androidx.activity:activity-ktx:1.3.0-alpha05"
-    implementation "androidx.fragment:fragment-ktx:1.3.2"
+    implementation "androidx.activity:activity-ktx:1.3.0-alpha07"
+    implementation "androidx.fragment:fragment-ktx:1.3.3"
     implementation "androidx.preference:preference-ktx:1.1.1"
-    implementation "androidx.recyclerview:recyclerview:1.1.0"
+    implementation "androidx.recyclerview:recyclerview:1.2.0"
     implementation "androidx.constraintlayout:constraintlayout:2.0.4"
     implementation "androidx.gridlayout:gridlayout:1.0.0"
     implementation "androidx.biometric:biometric:1.1.0"
-    implementation "androidx.work:work-runtime-ktx:2.5.0"
+    implementation "androidx.work:work-runtime-ktx:2.6.0-alpha02"
 
-    implementation 'org.kodein.di:kodein-di-framework-android-x:7.4.0'
+    implementation 'org.kodein.di:kodein-di-framework-android-x:7.5.0'
 
     implementation "com.daimajia.swipelayout:library:1.2.0@aar"
 
     implementation "com.google.android.material:material:1.3.0"
 
-    implementation platform("com.google.firebase:firebase-bom:26.1.0")
+    implementation platform("com.google.firebase:firebase-bom:28.0.0")
     implementation "com.google.firebase:firebase-analytics-ktx"
     implementation "com.google.firebase:firebase-crashlytics"
     implementation "com.google.firebase:firebase-perf"
@@ -115,26 +97,23 @@ dependencies {
 
     //implementation "com.quiph.ui:recyclerviewfastscroller:0.2.1"
 
-    implementation 'com.github.piasy:BigImageViewer:1.7.0'
-    implementation 'com.github.piasy:FrescoImageLoader:1.7.0'
-    implementation 'com.github.piasy:FrescoImageViewFactory:1.7.0'
+    implementation 'com.github.piasy:BigImageViewer:1.8.0'
+    implementation 'com.github.piasy:FrescoImageLoader:1.8.0'
+    implementation 'com.github.piasy:FrescoImageViewFactory:1.8.0'
 
     //noinspection GradleDependency
-    implementation "com.squareup.okhttp3:okhttp:$okhttp_version"
+    implementation "com.squareup.okhttp3:okhttp:4.9.0"
 
-    implementation "com.tbuonomo.andrui:viewpagerdotsindicator:4.1.2"
+    implementation "com.tbuonomo:dotsindicator:4.2"
 
-    implementation "net.rdrei.android.dirchooser:library:3.2@aar"
-    implementation "com.gu:option:1.3"
-
-    implementation "com.andrognito.patternlockview:patternlockview:1.0.0"
+    //implementation "com.andrognito.patternlockview:patternlockview:1.0.0"
     //implementation "com.andrognito.pinlockview:pinlockview:2.1.0"
 
     implementation "ru.noties.markwon:core:3.1.0"
 
-    implementation "xyz.quaver:libpupil:1.9.7"
-    implementation "xyz.quaver:documentfilex:0.5-SNAPSHOT"
-    implementation "xyz.quaver:floatingsearchview:1.1.3-SNAPSHOT"
+    implementation "xyz.quaver:libpupil:2.0.0"
+    implementation "xyz.quaver:documentfilex:0.6.1"
+    implementation "xyz.quaver:floatingsearchview:1.1.7"
 
     implementation "com.orhanobut:logger:2.2.0"
 

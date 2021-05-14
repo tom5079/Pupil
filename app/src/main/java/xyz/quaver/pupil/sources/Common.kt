@@ -143,8 +143,7 @@ val sourceModule = DI.Module(name = "source") {
     bind() from setBinding<SourceEntry>()
 
     listOf(
-        Hitomi(),
-        Hiyobi()
+        Hitomi()
     ).forEach { source ->
         bind<SourceEntry>().inSet() with multiton { _: Unit -> source.name to (source as AnySource) }
     }

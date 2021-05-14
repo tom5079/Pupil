@@ -29,6 +29,7 @@ import androidx.preference.PreferenceFragmentCompat
 import com.google.android.material.snackbar.Snackbar
 import okhttp3.*
 import org.kodein.di.DIAware
+import org.kodein.di.android.x.closestDI
 import org.kodein.di.android.x.di
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.client
@@ -38,7 +39,7 @@ import java.io.IOException
 
 class ManageFavoritesFragment : PreferenceFragmentCompat(), DIAware {
 
-    override val di by di()
+    override val di by closestDI()
 
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
         setPreferencesFromResource(R.xml.manage_favorites_preferences, rootKey)
@@ -65,14 +66,14 @@ class ManageFavoritesFragment : PreferenceFragmentCompat(), DIAware {
                 }
 
                 override fun onResponse(call: Call, response: Response) {
-                    if (response.code() != 200) {
+                    if (response.code != 200) {
                         response.close()
                         return
                     }
 
                     Intent(Intent.ACTION_SEND).apply {
                         type = "text/plain"
-                        putExtra(Intent.EXTRA_TEXT, response.body()?.use { it.string() }?.replace("\n", ""))
+                        putExtra(Intent.EXTRA_TEXT, response.body?.use { it.string() }?.replace("\n", ""))
                     }.let {
                         getContext()?.startActivity(Intent.createChooser(it, getString(R.string.settings_backup_share)))
                     }

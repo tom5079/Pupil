@@ -26,6 +26,7 @@ import androidx.fragment.app.DialogFragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import org.kodein.di.*
+import org.kodein.di.android.x.closestDI
 import org.kodein.di.android.x.di
 import org.kodein.type.jvmType
 import xyz.quaver.floatingsearchview.suggestions.model.SearchSuggestion
@@ -36,7 +37,7 @@ import xyz.quaver.pupil.sources.SourceEntries
 
 class SourceSelectDialog : DialogFragment(), DIAware {
 
-    override val di by di()
+    override val di by closestDI()
 
     var onSourceSelectedListener: ((String) -> Unit)? = null
 
