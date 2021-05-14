@@ -26,6 +26,7 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.*
 import okhttp3.Headers
+import okhttp3.Headers.Companion.toHeaders
 import okhttp3.Request
 import org.kodein.di.DIAware
 import org.kodein.di.android.x.di
@@ -73,7 +74,7 @@ class ReaderViewModel(app: Application) : AndroidViewModel(app), DIAware {
                     val file = cache.load(
                         Request.Builder()
                             .url(image)
-                            .headers(Headers.of(source.getHeadersForImage(itemID, image)))
+                            .headers(source.getHeadersForImage(itemID, image).toHeaders())
                             .build()
                     )
 

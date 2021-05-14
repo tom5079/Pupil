@@ -199,7 +199,7 @@ fun restore(context: Context, url: String, onFailure: ((Throwable) -> Unit)? = n
         override fun onResponse(call: Call, response: Response) {
             val favorites = object: DIAware { override val di by di(context); val favorites: SavedSourceSet by instance(tag = "favorites") }
             kotlin.runCatching {
-                Json.decodeFromString<Set<String>>(response.also { if (it.code() != 200) throw IOException() }.body().use { it?.string() } ?: "[]").let {
+                Json.decodeFromString<Set<String>>(response.also { if (it.code != 200) throw IOException() }.body.use { it?.string() } ?: "[]").let {
                     favorites.favorites.addAll(mapOf("hitomi.la" to it))
                     onSuccess?.invoke(it)
                 }

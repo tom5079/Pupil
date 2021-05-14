@@ -41,7 +41,7 @@ import xyz.quaver.pupil.types.NoResultSuggestion
 import java.util.*
 
 class FloatingSearchView @JvmOverloads constructor(context: Context, attrs: AttributeSet? = null) :
-    FloatingSearchView(context, attrs),
+    xyz.quaver.floatingsearchview.FloatingSearchView(context, attrs),
     FloatingSearchView.OnSearchListener,
     TextWatcher
 {

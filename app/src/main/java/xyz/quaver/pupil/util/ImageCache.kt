@@ -62,8 +62,8 @@ class ImageCache(context: Context) : DIAware {
     }
 
     fun free(images: List<String>) {
-        client.dispatcher().let { it.queuedCalls() + it.runningCalls() }
-            .filter { it.request().url().toString() in images }
+        client.dispatcher.let { it.queuedCalls() + it.runningCalls() }
+            .filter { it.request().url.toString() in images }
             .forEach { it.cancel() }
 
         images.forEach { _channels.remove(it) }
@@ -71,7 +71,7 @@ class ImageCache(context: Context) : DIAware {
 
     @Synchronized
     suspend fun clear() = coroutineScope {
-        client.dispatcher().queuedCalls().forEach { it.cancel() }
+        client.dispatcher.queuedCalls().forEach { it.cancel() }
 
         cacheFolder.listFiles()?.forEach { it.delete() }
         cache.clear()
@@ -79,7 +79,7 @@ class ImageCache(context: Context) : DIAware {
 
     @OptIn(ExperimentalCoroutinesApi::class)
     fun load(request: Request): File {
-        val key = request.url().toString()
+        val key = request.url.toString()
 
         val channel = if (_channels[key]?.isClosedForSend == false)
             _channels[key]!!
@@ -93,16 +93,16 @@ class ImageCache(context: Context) : DIAware {
             client.newCall(request).enqueue(object: Callback {
                 override fun onFailure(call: Call, e: IOException) {
                     file.delete()
-                    cache.remove(call.request().url().toString())
+                    cache.remove(call.request().url.toString())
 
                     FirebaseCrashlytics.getInstance().recordException(e)
                     channel.close(e)
                 }
 
                 override fun onResponse(call: Call, response: Response) {
-                    if (response.code() != 200) {
+                    if (response.code != 200) {
                         file.delete()
-                        cache.remove(call.request().url().toString())
+                        cache.remove(call.request().url.toString())
 
                         channel.close(IOException("HTTP Response code is not 200"))
 
@@ -110,7 +110,7 @@ class ImageCache(context: Context) : DIAware {
                         return
                     }
 
-                    response.body()?.use { body ->
+                    response.body?.use { body ->
                         if (!file.exists())
                             file.createNewFile()
 

@@ -46,7 +46,7 @@ data class ProxyInfo(
             Authenticator { _, response ->
                 val credential = Credentials.basic(username, password)
 
-                response.request().newBuilder()
+                response.request.newBuilder()
                     .header("Proxy-Authorization", credential)
                     .build()
             }
