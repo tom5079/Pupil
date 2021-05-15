@@ -36,14 +36,14 @@ import com.facebook.drawee.controller.BaseControllerListener
 import com.facebook.imagepipeline.image.ImageInfo
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.kodein.di.DIAware
-import org.kodein.di.android.di
+import org.kodein.di.android.closestDI
 import org.kodein.di.instance
 import org.kodein.di.on
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.databinding.SearchResultItemBinding
+import xyz.quaver.pupil.sources.Hitomi
 import xyz.quaver.pupil.sources.ItemInfo
 import xyz.quaver.pupil.types.Tag
 import kotlin.time.ExperimentalTime
@@ -55,7 +55,7 @@ class SearchResultsAdapter(var results: LiveData<List<ItemInfo>>) : RecyclerSwip
     var onDeleteClickedHandler: ((source: String, itemID: String) -> Unit)? = null
 
     inner class ViewHolder(private val binding: SearchResultItemBinding) : RecyclerView.ViewHolder(binding.root), DIAware {
-        override val di by di(binding.root.context)
+        override val di by closestDI(binding.root.context)
         
         private val clipboardManager: ClipboardManager by di.on(itemView.context).instance()
 
@@ -186,7 +186,7 @@ class SearchResultsAdapter(var results: LiveData<List<ItemInfo>>) : RecyclerSwip
                                 res.append(
                                     itemView.context.getString(
                                         ItemInfo.extraTypeMap[entry.key] ?: error(""),
-                                        entry.value.await()
+                                        if (entry.key == ItemInfo.ExtraType.LANGUAGE) Hitomi.languageMap[entry.value.await()] else entry.value.await()
                                     )
                                 )
                                 res.append('\n')

@@ -227,7 +227,7 @@ class Hitomi : Source<Hitomi.SortMode, Hitomi.TagSuggestion>() {
                     }.getOrDefault("") },
                     ExtraType.SERIES to CoroutineScope(Dispatchers.Unconfined).async { galleryBlock.series.joinToString { it.wordCapitalize() } },
                     ExtraType.TYPE to CoroutineScope(Dispatchers.Unconfined).async { galleryBlock.type.wordCapitalize() },
-                    ExtraType.LANGUAGE to CoroutineScope(Dispatchers.Unconfined).async { languageMap[galleryBlock.language] },
+                    ExtraType.LANGUAGE to CoroutineScope(Dispatchers.Unconfined).async { galleryBlock.language },
                     ExtraType.PAGECOUNT to CoroutineScope(Dispatchers.IO).async { kotlin.runCatching {
                         getGalleryInfo(galleryBlock.id).files.size.toString()
                     }.getOrNull() },
