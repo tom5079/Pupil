@@ -25,15 +25,14 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.*
 import org.kodein.di.DIAware
-import org.kodein.di.android.x.di
-import org.kodein.di.instance
+import org.kodein.di.android.x.closestDI
 import xyz.quaver.pupil.sources.AnySource
 import xyz.quaver.pupil.sources.ItemInfo
 import xyz.quaver.pupil.util.source
 
 class GalleryDialogViewModel(app: Application) : AndroidViewModel(app), DIAware {
 
-    override val di by di()
+    override val di by closestDI()
 
     private val _info = MutableLiveData<ItemInfo>()
     val info: LiveData<ItemInfo> = _info

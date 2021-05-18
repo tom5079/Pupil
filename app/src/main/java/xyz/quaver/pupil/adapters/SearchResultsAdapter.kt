@@ -93,16 +93,6 @@ class SearchResultsAdapter(var results: LiveData<List<ItemInfo>>) : RecyclerSwip
             })
 
             binding.tagGroup.onClickListener = onChipClickedHandler
-
-
-            /*
-            CoroutineScope(Dispatchers.Main).launch {
-                while (true) {
-                    updateProgress()
-                    delay(1000)
-                }
-            }
-             */
         }
 
         private val controllerListener = object: BaseControllerListener<ImageInfo>() {
@@ -117,21 +107,6 @@ class SearchResultsAdapter(var results: LiveData<List<ItemInfo>>) : RecyclerSwip
                     binding.thumbnail.aspectRatio = it.width / it.height.toFloat()
                 }
             }
-        }
-
-        private fun updateProgress() {
-            /* TODO
-            binding.root.max = cache.metadata.imageList?.size ?: 0
-            binding.root.progress = cache.metadata.imageList?.count { it != null } ?: 0
-
-            binding.root.type = if (cache.metadata.imageList?.all { it != null } == true) { // Download completed
-                if (DownloadManager.getInstance(itemView.context).getDownloadFolder(source, itemID) != null)
-                    ProgressCardView.Type.DOWNLOAD
-                else
-                    ProgressCardView.Type.CACHE
-            } else
-                ProgressCardView.Type.LOADING
-             */
         }
 
         @SuppressLint("SetTextI18n")
@@ -210,7 +185,6 @@ class SearchResultsAdapter(var results: LiveData<List<ItemInfo>>) : RecyclerSwip
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder =
         ViewHolder(SearchResultItemBinding.inflate(LayoutInflater.from(parent.context), parent, false))
 
-    @ExperimentalTime
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         mItemManger.bindView(holder.itemView, position)
         holder.bind(results.value!![position])

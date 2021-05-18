@@ -30,6 +30,7 @@ import xyz.quaver.pupil.sources.SourceEntries
 class SourceAdapter(sources: SourceEntries) : RecyclerView.Adapter<SourceAdapter.ViewHolder>() {
 
     var onSourceSelectedListener: ((String) -> Unit)? = null
+    var onSourceSettingsSelectedListener: ((String) -> Unit)? = null
 
     private val sources = sources.toList()
 
@@ -39,6 +40,9 @@ class SourceAdapter(sources: SourceEntries) : RecyclerView.Adapter<SourceAdapter
         init {
             binding.go.setOnClickListener {
                 onSourceSelectedListener?.invoke(source.name)
+            }
+            binding.settings.setOnClickListener {
+                onSourceSettingsSelectedListener?.invoke(source.name)
             }
         }
 

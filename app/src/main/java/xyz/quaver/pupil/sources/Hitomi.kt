@@ -29,6 +29,7 @@ import xyz.quaver.floatingsearchview.suggestions.model.SearchSuggestion
 import xyz.quaver.hitomi.*
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.sources.ItemInfo.ExtraType
+import xyz.quaver.pupil.util.Preferences
 import xyz.quaver.pupil.util.translations
 import xyz.quaver.pupil.util.wordCapitalize
 import kotlin.math.max
@@ -56,6 +57,7 @@ class Hitomi : Source<Hitomi.SortMode, Hitomi.TagSuggestion>() {
 
     override val name: String = "hitomi.la"
     override val iconResID: Int = R.drawable.hitomi
+    override val preferenceID: Int = R.xml.hitomi_preferences
     override val availableSortMode: Array<SortMode> = SortMode.values()
 
     var cachedQuery: String? = null
@@ -67,7 +69,7 @@ class Hitomi : Source<Hitomi.SortMode, Hitomi.TagSuggestion>() {
             cachedQuery = null
             cache.clear()
             yield()
-            doSearch(query, sortMode == SortMode.POPULAR).let {
+            doSearch("$query ${Preferences["hitomi.default_query", ""]}", sortMode == SortMode.POPULAR).let {
                 yield()
                 cache.addAll(it)
             }

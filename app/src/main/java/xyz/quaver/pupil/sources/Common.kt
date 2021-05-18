@@ -18,9 +18,6 @@
 
 package xyz.quaver.pupil.sources
 
-import android.content.Context
-import android.graphics.drawable.Drawable
-import androidx.core.content.ContextCompat
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.parcelize.Parcelize
@@ -120,6 +117,7 @@ typealias AnySource = Source<*, SearchSuggestion>
 abstract class Source<Query_SortMode: Enum<Query_SortMode>, Suggestion: SearchSuggestion> {
     abstract val name: String
     abstract val iconResID: Int
+    abstract val preferenceID: Int
     abstract val availableSortMode: Array<Query_SortMode>
 
     abstract suspend fun search(query: String, range: IntRange, sortMode: Enum<*>) : Pair<Channel<ItemInfo>, Int>
@@ -138,15 +136,19 @@ abstract class Source<Query_SortMode: Enum<Query_SortMode>, Suggestion: SearchSu
 
 typealias SourceEntry = Pair<String, AnySource>
 typealias SourceEntries = Set<SourceEntry>
+typealias PreferenceID = Pair<String, Int>
+typealias PreferenceIDs = Set<PreferenceID>
 @Suppress("UNCHECKED_CAST")
 val sourceModule = DI.Module(name = "source") {
-    bind() from setBinding<SourceEntry>()
+    bindSet<SourceEntry>()
+    bindSet<PreferenceID>()
 
     listOf(
         Hitomi()
     ).forEach { source ->
-        bind<SourceEntry>().inSet() with multiton { _: Unit -> source.name to (source as AnySource) }
+        inSet { multiton { _: Unit -> source.name to (source as AnySource) } }
+        inSet { singleton { source.name to source.preferenceID } }
     }
 
-    bind<History>() with factory { source: String -> History(di, source) }
+    bind { factory { source: String -> History(di, source) } }
 }

@@ -31,7 +31,7 @@ import xyz.quaver.pupil.sources.Hitomi
 import xyz.quaver.pupil.types.Tags
 import xyz.quaver.pupil.util.Preferences
 
-class DefaultQueryDialogFragment() : DialogFragment() {
+class DefaultQueryDialogFragment : DialogFragment() {
     // TODO languageMap
     private val languages = Hitomi.languageMap
     private val reverseLanguages = languages.entries.associate { (k, v) -> v to k }
@@ -85,7 +85,7 @@ class DefaultQueryDialogFragment() : DialogFragment() {
 
     private fun initView() {
         val tags = Tags.parse(
-            Preferences["default_query"]
+            Preferences["hitomi.default_query"]
         )
 
         with (binding.languageSelector) {
@@ -153,7 +153,7 @@ class DefaultQueryDialogFragment() : DialogFragment() {
                         s.replace(
                             0,
                             s.length,
-                            s.toString().toLowerCase(java.util.Locale.getDefault())
+                            s.toString().lowercase()
                         )
                 }
             })

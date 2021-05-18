@@ -34,12 +34,14 @@ import xyz.quaver.pupil.adapters.SourceAdapter
 import xyz.quaver.pupil.sources.AnySource
 import xyz.quaver.pupil.sources.Source
 import xyz.quaver.pupil.sources.SourceEntries
+import xyz.quaver.pupil.util.ItemClickSupport
 
 class SourceSelectDialog : DialogFragment(), DIAware {
 
     override val di by closestDI()
 
     var onSourceSelectedListener: ((String) -> Unit)? = null
+    var onSourceSettingsSelectedListener: ((String) -> Unit)? = null
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
         return Dialog(requireContext()).apply {
@@ -50,6 +52,7 @@ class SourceSelectDialog : DialogFragment(), DIAware {
                 layoutManager = LinearLayoutManager(context)
                 adapter = SourceAdapter(direct.instance()).apply {
                     onSourceSelectedListener = this@SourceSelectDialog.onSourceSelectedListener
+                    onSourceSettingsSelectedListener = this@SourceSelectDialog.onSourceSettingsSelectedListener
                 }
             })
         }
