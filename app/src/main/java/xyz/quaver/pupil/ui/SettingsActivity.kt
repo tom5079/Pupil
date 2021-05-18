@@ -22,16 +22,27 @@ import android.os.Bundle
 import android.view.MenuItem
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.ui.fragment.SettingsFragment
+import xyz.quaver.pupil.ui.fragment.SourceSettingsFragment
 
 class SettingsActivity : BaseActivity() {
+
+    companion object {
+        const val SETTINGS_EXTRA = "xyz.quaver.pupil.ui.SettingsActivity.SETTINGS_EXTRA"
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.settings_activity)
+
+        val fragment = intent.getStringExtra(SETTINGS_EXTRA)?.run {
+            SourceSettingsFragment(this)
+        } ?: SettingsFragment()
+
         supportFragmentManager
             .beginTransaction()
-            .replace(R.id.settings, SettingsFragment())
+            .replace(R.id.settings, fragment)
             .commit()
+
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
     }
 

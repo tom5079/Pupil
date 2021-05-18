@@ -128,7 +128,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app), DIAware {
         queryJob = viewModelScope.launch {
             val channel = withContext(Dispatchers.IO) {
                 val (channel, count) = source.search(
-                    (query.value ?: "") + Preferences["default_query", ""],
+                    query.value ?: "",
                     (currentPage - 1) * perPage until currentPage * perPage,
                     sortMode
                 )

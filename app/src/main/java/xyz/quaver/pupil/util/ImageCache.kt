@@ -23,11 +23,11 @@ import com.google.firebase.crashlytics.FirebaseCrashlytics
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.channels.sendBlocking
+import kotlinx.coroutines.channels.trySendBlocking
 import kotlinx.coroutines.coroutineScope
 import okhttp3.*
 import org.kodein.di.DIAware
-import org.kodein.di.android.di
+import org.kodein.di.android.closestDI
 import org.kodein.di.instance
 import java.io.File
 import java.io.IOException
@@ -35,7 +35,7 @@ import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 
 class ImageCache(context: Context) : DIAware {
-    override val di by di(context)
+    override val di by closestDI(context)
 
     private val client: OkHttpClient by instance()
 
@@ -115,7 +115,7 @@ class ImageCache(context: Context) : DIAware {
                             file.createNewFile()
 
                         body.byteStream().copyTo(file.outputStream()) { bytes, _ ->
-                            channel.sendBlocking(bytes / body.contentLength().toFloat() * 100)
+                            channel.trySendBlocking(bytes / body.contentLength().toFloat() * 100)
                         }
                     }
 

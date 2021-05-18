@@ -41,7 +41,7 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import org.kodein.di.DIAware
-import org.kodein.di.android.x.di
+import org.kodein.di.android.x.closestDI
 import org.kodein.di.instance
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.adapters.SearchResultsAdapter
@@ -60,7 +60,7 @@ import kotlin.collections.ArrayList
 
 class GalleryDialogFragment(private val source: String, private val itemID: String) : DialogFragment(), DIAware {
 
-    override val di by di()
+    override val di by closestDI()
 
     private val favoriteTags: SavedSourceSet by instance(tag = "favoriteTags")
 

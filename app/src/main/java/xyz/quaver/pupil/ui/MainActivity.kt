@@ -45,7 +45,7 @@ import com.google.android.material.snackbar.Snackbar
 import com.orhanobut.logger.Logger
 import kotlinx.coroutines.*
 import org.kodein.di.DIAware
-import org.kodein.di.android.di
+import org.kodein.di.android.closestDI
 import xyz.quaver.floatingsearchview.FloatingSearchView
 import xyz.quaver.pupil.*
 import xyz.quaver.pupil.adapters.SearchResultsAdapter
@@ -66,10 +66,12 @@ class MainActivity :
     NavigationView.OnNavigationItemSelectedListener,
     DIAware
 {
-    override val di by di()
+    override val di by closestDI()
 
     private lateinit var binding: MainActivityBinding
     private val model: MainViewModel by viewModels()
+
+    private var refreshOnResume = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -163,6 +165,15 @@ class MainActivity :
                 if (it.isEmpty()) listOf(NoResultSuggestion(getString(R.string.main_no_result))) else it
             )
         } }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (refreshOnResume) {
+            model.query()
+
+            refreshOnResume = false
+        }
     }
 
     override fun onDestroy() {
@@ -438,6 +449,13 @@ class MainActivity :
                     onSourceSelectedListener = {
                         model.setSourceAndReset(it)
 
+                        dismiss()
+                    }
+
+                    onSourceSettingsSelectedListener = {
+                        startActivity(Intent(this@MainActivity, SettingsActivity::class.java).putExtra(SettingsActivity.SETTINGS_EXTRA, it))
+
+                        refreshOnResume = true
                         dismiss()
                     }
                 }.show(supportFragmentManager, null)

@@ -26,11 +26,8 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.preference.*
 import com.google.android.gms.oss.licenses.OssLicensesMenuActivity
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import org.kodein.di.DIAware
-import org.kodein.di.android.x.di
+import org.kodein.di.android.x.closestDI
 import org.kodein.di.instance
 import xyz.quaver.io.FileX
 import xyz.quaver.io.util.getChild
@@ -39,7 +36,6 @@ import xyz.quaver.pupil.ui.LockActivity
 import xyz.quaver.pupil.ui.SettingsActivity
 import xyz.quaver.pupil.ui.dialog.*
 import xyz.quaver.pupil.util.*
-import xyz.quaver.pupil.util.DownloadManager
 import java.util.*
 
 class SettingsFragment :
@@ -49,7 +45,7 @@ class SettingsFragment :
     SharedPreferences.OnSharedPreferenceChangeListener,
     DIAware {
 
-    override val di by di()
+    override val di by closestDI()
 
     private val downloadManager: DownloadManager by instance()
 
@@ -92,14 +88,6 @@ class SettingsFragment :
                 "download_folder" -> {
                     DownloadLocationDialogFragment().show(parentFragmentManager, "Download Location Dialog")
                 }
-                "default_query" -> {
-                    DefaultQueryDialogFragment().apply {
-                        onPositiveButtonClickListener = { newTags ->
-                            Preferences["default_query"] = newTags.toString()
-                            summary = newTags.toString()
-                        }
-                    }.show(parentFragmentManager, "Default Query Dialog")
-                }
                 "app_lock" -> {
                     val intent = Intent(requireContext(), LockActivity::class.java).apply {
                         putExtra("force", true)
@@ -127,9 +115,6 @@ class SettingsFragment :
             this ?: return false
 
             when (key) {
-                "tag_translation" -> {
-                    updateTranslations()
-                }
                 "nomedia" -> {
                     val create = (newValue as? Boolean) ?: return false
 
@@ -228,11 +213,6 @@ class SettingsFragment :
 
                             onPreferenceChangeListener = this@SettingsFragment
                         }
-                        "default_query" -> {
-                            summary = Preferences.get<String>("default_query")
-
-                            onPreferenceClickListener = this@SettingsFragment
-                        }
                         "app_lock" -> {
                             val lockManager = LockManager(requireContext())
                             summary =
@@ -249,27 +229,6 @@ class SettingsFragment :
                                 }
 
                             onPreferenceClickListener = this@SettingsFragment
-                        }
-                        "tag_translation" -> {
-                            this as ListPreference
-
-                            isEnabled = false
-
-                            CoroutineScope(Dispatchers.IO).launch {
-                                kotlin.runCatching {
-                                    val languages = getAvailableLanguages().distinct().toTypedArray()
-
-                                    entries = languages.map { Locale(it).let { loc -> loc.getDisplayLanguage(loc) } }.toTypedArray()
-                                    entryValues = languages
-
-                                    launch(Dispatchers.Main) {
-                                        isEnabled = true
-                                    }
-                                }
-                            }
-
-                            onPreferenceChangeListener = this@SettingsFragment
-
                         }
                         "proxy" -> {
                             summary = getProxyInfo().type.name

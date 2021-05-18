@@ -28,27 +28,24 @@ import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.kodein.di.DIAware
-import org.kodein.di.android.di
-import org.kodein.di.instance
+import org.kodein.di.android.closestDI
 import xyz.quaver.io.FileX
 import xyz.quaver.io.util.*
 import xyz.quaver.pupil.sources.AnySource
 
 class DownloadManager constructor(context: Context) : ContextWrapper(context), DIAware {
 
-    override val di by di(context)
+    override val di by closestDI(context)
 
     private val defaultDownloadFolder = FileX(this, getExternalFilesDir(null)!!)
 
     val downloadFolder: FileX
-        get() = {
-            kotlin.runCatching {
-                FileX(this, Preferences.get<String>("download_folder"))
-            }.getOrElse {
-                Preferences["download_folder"] = defaultDownloadFolder.uri.toString()
-                defaultDownloadFolder
-            }
-        }.invoke()
+        get() = kotlin.runCatching {
+            FileX(this, Preferences.get<String>("download_folder"))
+        }.getOrElse {
+            Preferences["download_folder"] = defaultDownloadFolder.uri.toString()
+            defaultDownloadFolder
+        }
 
     private var prevDownloadFolder: FileX? = null
     private var downloadFolderMapInstance: MutableMap<String, String>? = null
@@ -57,21 +54,19 @@ class DownloadManager constructor(context: Context) : ContextWrapper(context), D
         get() {
             if (prevDownloadFolder != downloadFolder) {
                 prevDownloadFolder = downloadFolder
-                downloadFolderMapInstance = {
+                downloadFolderMapInstance = run {
                     val file = downloadFolder.getChild(".download")
-
                     val data = if (file.exists())
                         kotlin.runCatching {
-                            file.readText()?.let { Json.decodeFromString<MutableMap<String, String>>(it) }
+                            file.readText()?.let<String, MutableMap<String, String>> { Json.decodeFromString(it) }
                         }.onFailure { file.delete() }.getOrNull()
                     else
                         null
-
-                    data ?: {
+                    data ?: run {
                         file.createNewFile()
-                        mutableMapOf<String, String>()
-                    }.invoke()
-                }.invoke()
+                        mutableMapOf()
+                    }
+                }
             }
 
             return downloadFolderMapInstance ?: mutableMapOf()

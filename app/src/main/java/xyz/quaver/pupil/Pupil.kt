@@ -65,9 +65,9 @@ class Pupil : Application(), DIAware {
         import(androidXModule(this@Pupil))
         import(sourceModule)
 
-        bind<OkHttpClient>() with provider { client }
-        bind<ImageCache>() with singleton { ImageCache(this@Pupil) }
-        bind<DownloadManager>() with singleton { DownloadManager(this@Pupil) }
+        bind { provider { client } }
+        bind { singleton { ImageCache(this@Pupil) } }
+        bind { singleton { DownloadManager(this@Pupil) } }
 
         bind<SavedSourceSet>(tag = "histories") with singleton { SavedSourceSet(File(ContextCompat.getDataDir(this@Pupil), "histories.json")) }
         bind<SavedSourceSet>(tag = "favorites") with singleton { SavedSourceSet(File(ContextCompat.getDataDir(this@Pupil), "favorites.json")) }
@@ -99,7 +99,7 @@ class Pupil : Application(), DIAware {
 
         try {
             Preferences.get<String>("download_folder").also {
-                if (it.startsWith("content") && Build.VERSION.SDK_INT > 19)
+                if (it.startsWith("content"))
                     contentResolver.takePersistableUriPermission(
                         Uri.parse(it),
                         Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION

@@ -21,7 +21,6 @@ package xyz.quaver.pupil.ui.dialog
 import android.app.Activity
 import android.app.Dialog
 import android.content.Intent
-import android.os.Build
 import android.os.Bundle
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
@@ -30,21 +29,21 @@ import androidx.core.net.toUri
 import androidx.fragment.app.DialogFragment
 import com.google.android.material.snackbar.Snackbar
 import org.kodein.di.DIAware
-import org.kodein.di.android.x.di
+import org.kodein.di.android.x.closestDI
 import org.kodein.di.instance
 import xyz.quaver.io.FileX
 import xyz.quaver.io.util.toFile
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.databinding.DownloadLocationDialogBinding
 import xyz.quaver.pupil.databinding.DownloadLocationItemBinding
+import xyz.quaver.pupil.util.DownloadManager
 import xyz.quaver.pupil.util.Preferences
 import xyz.quaver.pupil.util.byteToString
-import xyz.quaver.pupil.util.DownloadManager
 import java.io.File
 
 class DownloadLocationDialogFragment : DialogFragment(), DIAware {
 
-    override val di by di()
+    override val di by closestDI()
 
     private val downloadManager: DownloadManager by instance()
 
