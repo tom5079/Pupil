@@ -115,8 +115,6 @@ class Pupil : Application() {
 
                 if (!FileX(this, it).canWrite())
                     throw Exception()
-
-                DownloadManager.getInstance(this).migrate()
             }
         } catch (e: Exception) {
             Preferences.remove("download_folder")

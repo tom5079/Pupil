@@ -19,19 +19,13 @@
 package xyz.quaver.pupil.util
 
 import android.annotation.SuppressLint
-import android.content.Context
-import android.content.Intent
-import android.os.Build
-import androidx.core.content.ContextCompat
 import kotlinx.serialization.json.*
 import okhttp3.OkHttpClient
 import okhttp3.Request
-import xyz.quaver.Code
 import xyz.quaver.hitomi.GalleryBlock
-import xyz.quaver.hitomi.Reader
+import xyz.quaver.hitomi.GalleryInfo
 import xyz.quaver.hitomi.getReferer
 import xyz.quaver.hitomi.imageUrlFromImage
-import xyz.quaver.hiyobi.createImgList
 import java.util.*
 import kotlin.collections.ArrayList
 
@@ -41,7 +35,7 @@ fun String.wordCapitalize() : String {
 
     @SuppressLint("DefaultLocale")
     for (word in this.split(" "))
-        result.add(word.capitalize(Locale.US))
+        result.add(word.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.US) else it.toString() })
 
     return result.joinToString(" ")
 }
@@ -103,25 +97,15 @@ fun GalleryBlock.formatDownloadFolderTest(format: String): String =
         }
     }.replace(Regex("""[*\\|"?><:/]"""), "").ellipsize(127)
 
-val Reader.requestBuilders: List<Request.Builder>
+val GalleryInfo.requestBuilders: List<Request.Builder>
     get() {
-        val galleryID = this.galleryInfo.id ?: 0
+        val galleryID = this.id ?: 0
         val lowQuality = Preferences["low_quality", true]
 
-        return when(code) {
-            Code.HITOMI -> {
-                this.galleryInfo.files.map {
-                    Request.Builder()
-                        .url(imageUrlFromImage(galleryID, it, !lowQuality))
-                        .header("Referer", getReferer(galleryID))
-                }
-            }
-            Code.HIYOBI -> {
-                createImgList(galleryID, this, lowQuality).map {
-                    Request.Builder()
-                        .url(it.path)
-                }
-            }
+        return this.files.map {
+            Request.Builder()
+                .url(imageUrlFromImage(galleryID, it, !lowQuality))
+                .header("Referer", getReferer(galleryID))
         }
     }
 

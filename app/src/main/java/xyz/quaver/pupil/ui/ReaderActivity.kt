@@ -49,7 +49,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import xyz.quaver.Code
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.adapters.ReaderAdapter
 import xyz.quaver.pupil.databinding.NumberpickerDialogBinding
@@ -184,7 +183,7 @@ class ReaderActivity : BaseActivity() {
 
                 with(binding.numberPicker) {
                     minValue = 1
-                    maxValue = cache.metadata.reader?.galleryInfo?.files?.size ?: 0
+                    maxValue = cache.metadata.reader?.files?.size ?: 0
                     value = currentPage
                 }
                 val dialog = AlertDialog.Builder(this).apply {
@@ -307,18 +306,11 @@ class ReaderActivity : BaseActivity() {
                             notifyDataSetChanged()
                         }
 
-                        title = reader.galleryInfo.title
+                        title = reader.title
                         menu?.findItem(R.id.reader_menu_page_indicator)?.title =
-                            "$currentPage/${reader.galleryInfo.files.size}"
+                            "$currentPage/${reader.files.size}"
 
-                        menu?.findItem(R.id.reader_type)?.icon = ContextCompat.getDrawable(
-                            this@ReaderActivity,
-                            when (reader.code) {
-                                Code.HITOMI -> R.drawable.hitomi
-                                Code.HIYOBI -> R.drawable.ic_hiyobi
-                                else -> android.R.color.transparent
-                            }
-                        )
+                        menu?.findItem(R.id.reader_type)?.icon = ContextCompat.getDrawable(this@ReaderActivity, R.drawable.hitomi)
                     }
                 }
 
