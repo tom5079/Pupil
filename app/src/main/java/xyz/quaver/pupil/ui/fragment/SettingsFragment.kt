@@ -103,10 +103,6 @@ class SettingsFragment :
                     }
                     lockLauncher.launch(intent)
                 }
-                "mirrors" -> {
-                    MirrorDialog(requireContext())
-                        .show()
-                }
                 "proxy" -> {
                     ProxyDialogFragment().show(parentFragmentManager, "Proxy Dialog")
                 }
@@ -261,9 +257,6 @@ class SettingsFragment :
                                     }
                                 }
 
-                            onPreferenceClickListener = this@SettingsFragment
-                        }
-                        "mirrors" -> {
                             onPreferenceClickListener = this@SettingsFragment
                         }
                         "proxy" -> {

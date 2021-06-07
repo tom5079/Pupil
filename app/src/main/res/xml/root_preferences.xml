@@ -77,11 +77,6 @@
         app:title="@string/settings_networking">
 
         <Preference
-            app:key="mirrors"
-            app:title="@string/settings_mirror_title"
-            app:summary="@string/settings_mirror_summary"/>
-
-        <Preference
             app:key="proxy"
             app:title="@string/settings_proxy_title"/>
 

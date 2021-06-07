@@ -32,9 +32,8 @@ import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import okhttp3.Request
-import xyz.quaver.Code
 import xyz.quaver.hitomi.GalleryBlock
-import xyz.quaver.hitomi.Reader
+import xyz.quaver.hitomi.GalleryInfo
 import xyz.quaver.io.FileX
 import xyz.quaver.io.util.*
 import xyz.quaver.pupil.client
@@ -46,7 +45,7 @@ import java.util.concurrent.ConcurrentHashMap
 @Serializable
 data class Metadata(
     var galleryBlock: GalleryBlock? = null,
-    var reader: Reader? = null,
+    var reader: GalleryInfo? = null,
     var imageList: MutableList<String?>? = null
 ) {
     fun copy(): Metadata = Metadata(galleryBlock, reader, imageList?.let { MutableList(it.size) { i -> it[i] } })
@@ -110,27 +109,13 @@ class Cache private constructor(context: Context, val galleryID: Int) : ContextW
     }
 
     suspend fun getGalleryBlock(): GalleryBlock? {
-        val sources = listOf(
-            { xyz.quaver.hitomi.getGalleryBlock(galleryID) },
-            { xyz.quaver.hiyobi.getGalleryBlock(galleryID) }
-        )
-
         return metadata.galleryBlock
             ?: withContext(Dispatchers.IO) {
-                var galleryBlock: GalleryBlock? = null
-
-                for (source in sources) {
-                    galleryBlock = try {
-                        source.invoke()
-                    } catch (e: Exception) { null }
-
-                    if (galleryBlock != null)
-                        break
-                }
-
-                galleryBlock?.also {
-                    setMetadata { metadata -> metadata.galleryBlock = it }
-                }
+                try {
+                    xyz.quaver.hitomi.getGalleryBlock(galleryID).also {
+                        setMetadata { metadata -> metadata.galleryBlock = it }
+                    }
+                } catch (e: Exception) { return@withContext null }
             }
     }
 
@@ -154,41 +139,21 @@ class Cache private constructor(context: Context, val galleryID: Int) : ContextW
                 }.getOrNull()?.uri }
             } } ?: Uri.EMPTY
 
-    suspend fun getReader(): Reader? {
-        val mirrors = Preferences.get<String>("mirrors").let { if (it.isEmpty()) emptyList() else it.split('>') }
-
-        val sources = mapOf(
-            Code.HITOMI to { xyz.quaver.hitomi.getReader(galleryID) },
-            Code.HIYOBI to { xyz.quaver.hiyobi.getReader(galleryID) }
-        ).let {
-            if (mirrors.isNotEmpty())
-                it.toSortedMap{ o1, o2 -> mirrors.indexOf(o1.name) - mirrors.indexOf(o2.name) }
-            else
-                it
-        }
+    suspend fun getReader(): GalleryInfo? {
 
         return metadata.reader
             ?: withContext(Dispatchers.IO) {
-                var reader: Reader? = null
+                try {
+                    xyz.quaver.hitomi.getGalleryInfo(galleryID).also {
+                        setMetadata { metadata ->
+                            metadata.reader = it
 
-                for (source in sources) {
-                    reader = try {
-                        source.value.invoke()
-                    } catch (e: Exception) {
-                        null
+                            if (metadata.imageList == null)
+                                metadata.imageList = MutableList(it.files.size) { null }
+                        }
                     }
-
-                   if (reader != null)
-                       break
-                }
-
-                reader?.also {
-                    setMetadata { metadata ->
-                        metadata.reader = it
-
-                        if (metadata.imageList == null)
-                            metadata.imageList = MutableList(reader.galleryInfo.files.size) { null }
-                    }
+                } catch (e: Exception) {
+                    null
                 }
             }
     }

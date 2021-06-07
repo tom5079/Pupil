@@ -316,7 +316,7 @@ class DownloadService : Service() {
 
         histories.add(galleryID)
 
-        progress[galleryID] = MutableList(reader.galleryInfo.files.size) { 0F }
+        progress[galleryID] = MutableList(reader.files.size) { 0F }
 
         cache.metadata.imageList?.let {
             it.forEachIndexed { index, image ->
@@ -334,7 +334,7 @@ class DownloadService : Service() {
             return@launch
         }
 
-        notification[galleryID]?.setContentTitle(reader.galleryInfo.title?.ellipsize(30))
+        notification[galleryID]?.setContentTitle(reader.title?.ellipsize(30))
         notify(galleryID)
 
         val queued = mutableSetOf<Int>()
