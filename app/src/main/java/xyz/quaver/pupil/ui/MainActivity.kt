@@ -239,14 +239,12 @@ class MainActivity :
         binding.navView.setNavigationItemSelectedListener(this)
 
         with (binding.contents.cancelFab) {
-            setImageResource(R.drawable.cancel)
             setOnClickListener {
 
             }
         }
 
         with (binding.contents.jumpFab) {
-            setImageResource(R.drawable.ic_jump)
             setOnClickListener {
                 val perPage = Preferences["per_page", "25"].toInt()
                 val editText = EditText(context)
@@ -269,12 +267,10 @@ class MainActivity :
         }
 
         with (binding.contents.randomFab) {
-            setImageResource(R.drawable.shuffle_variant)
             setOnClickListener {
                 setImageDrawable(CircularProgressDrawable(context))
 
                 model.random { runOnUiThread {
-                    setImageResource(R.drawable.shuffle_variant)
                     GalleryDialogFragment(model.source.value!!.name, it.id).apply {
                         onChipClickedHandler.add {
                             model.setQueryAndSearch(it.toQuery())
@@ -286,7 +282,6 @@ class MainActivity :
         }
 
         with (binding.contents.idFab) {
-            setImageResource(R.drawable.numeric)
             setOnClickListener {
                 val editText = EditText(context).apply {
                     inputType = InputType.TYPE_CLASS_NUMBER
@@ -469,6 +464,7 @@ class MainActivity :
             when(item.itemId) {
                 R.id.main_drawer_home -> model.setModeAndReset(MainViewModel.MainMode.SEARCH)
                 R.id.main_drawer_history -> model.setModeAndReset(MainViewModel.MainMode.HISTORY)
+                R.id.main_drawer_downloads -> model.setModeAndReset(MainViewModel.MainMode.DOWNLOADS)
                 R.id.main_drawer_help -> startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(getString(R.string.help))))
                 R.id.main_drawer_github -> startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(getString(R.string.github))))
                 R.id.main_drawer_homepage -> startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(getString(R.string.home_page))))

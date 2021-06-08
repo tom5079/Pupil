@@ -27,6 +27,7 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import okhttp3.internal.toImmutableMap
 import org.kodein.di.DIAware
 import org.kodein.di.android.closestDI
 import xyz.quaver.io.FileX
@@ -71,6 +72,9 @@ class DownloadManager constructor(context: Context) : ContextWrapper(context), D
 
             return downloadFolderMapInstance ?: mutableMapOf()
         }
+
+    val downloads: Map<String, String>
+        get() = downloadFolderMap.toImmutableMap()
 
     @Synchronized
     fun getDownloadFolder(source: String, itemID: String): FileX? =
