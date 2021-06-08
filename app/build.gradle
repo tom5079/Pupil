@@ -38,20 +38,20 @@ android {
         minSdkVersion 16
         targetSdkVersion 30
         versionCode 64
-        versionName "5.1.9-hotfix1"
+        versionName "5.1.9-hotfix3"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
     }
     buildTypes {
         debug {
-            minifyEnabled true
-            shrinkResources true
+            defaultConfig.minSdkVersion 21
+
+            minifyEnabled false
+            shrinkResources false
 
             debuggable true
             applicationIdSuffix ".debug"
             versionNameSuffix "-DEBUG"
-
-            proguardFiles getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
 
             ext.enableCrashlytics = false
             ext.alwaysUpdateBuildId = false
@@ -125,7 +125,7 @@ dependencies {
 
     implementation "ru.noties.markwon:core:3.1.0"
 
-    implementation "xyz.quaver:libpupil:2.1.0"
+    implementation "xyz.quaver:libpupil:2.1.1"
     implementation "xyz.quaver:documentfilex:0.6.1"
     implementation "xyz.quaver:floatingsearchview:1.1.7"
 
