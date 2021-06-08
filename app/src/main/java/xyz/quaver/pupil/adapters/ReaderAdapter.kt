@@ -52,7 +52,7 @@ class ReaderAdapter(
     private val activity: ReaderActivity,
     private val galleryID: Int
 ) : RecyclerView.Adapter<ReaderAdapter.ViewHolder>() {
-    var reader: GalleryInfo? = null
+    var galleryInfo: GalleryInfo? = null
 
     var isFullScreen = false
 
@@ -101,7 +101,7 @@ class ReaderAdapter(
                 binding.image.updateLayoutParams<ConstraintLayout.LayoutParams> {
                     height = 0
                     dimensionRatio =
-                        "${reader!!.files[position].width}:${reader!!.files[position].height}"
+                        "${galleryInfo!!.files[position].width}:${galleryInfo!!.files[position].height}"
                 }
             } else {
                 binding.root.layoutParams.height = ViewGroup.LayoutParams.MATCH_PARENT
@@ -158,7 +158,7 @@ class ReaderAdapter(
         holder.bind(position)
     }
 
-    override fun getItemCount() = reader?.files?.size ?: 0
+    override fun getItemCount() = galleryInfo?.files?.size ?: 0
 
     override fun onViewRecycled(holder: ViewHolder) {
         holder.clear()

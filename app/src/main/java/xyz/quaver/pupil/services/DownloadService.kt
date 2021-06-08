@@ -305,10 +305,10 @@ class DownloadService : Service() {
 
         initNotification(galleryID)
 
-        val reader = cache.getReader()
+        val galleryInfo = cache.getGalleryInfo()
 
         // Gallery doesn't exist
-        if (reader == null) {
+        if (galleryInfo == null) {
             delete(galleryID)
             progress[galleryID] = mutableListOf()
             return@launch
@@ -316,7 +316,7 @@ class DownloadService : Service() {
 
         histories.add(galleryID)
 
-        progress[galleryID] = MutableList(reader.files.size) { 0F }
+        progress[galleryID] = MutableList(galleryInfo.files.size) { 0F }
 
         cache.metadata.imageList?.let {
             it.forEachIndexed { index, image ->
@@ -334,7 +334,7 @@ class DownloadService : Service() {
             return@launch
         }
 
-        notification[galleryID]?.setContentTitle(reader.title?.ellipsize(30))
+        notification[galleryID]?.setContentTitle(galleryInfo.title?.ellipsize(30))
         notify(galleryID)
 
         val queued = mutableSetOf<Int>()
@@ -348,7 +348,7 @@ class DownloadService : Service() {
             }
         }
 
-        reader.requestBuilders.forEachIndexed { index, it ->
+        galleryInfo.requestBuilders.forEachIndexed { index, it ->
             if (progress[galleryID]?.get(index)?.isInfinite() == false) {
                 val request = it.tag(Tag(galleryID, index, startId)).build()
                 client.newCall(request).enqueue(callback)

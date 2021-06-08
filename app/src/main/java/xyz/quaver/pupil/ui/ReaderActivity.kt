@@ -183,7 +183,7 @@ class ReaderActivity : BaseActivity() {
 
                 with(binding.numberPicker) {
                     minValue = 1
-                    maxValue = cache.metadata.reader?.files?.size ?: 0
+                    maxValue = cache.metadata.galleryInfo?.files?.size ?: 0
                     value = currentPage
                 }
                 val dialog = AlertDialog.Builder(this).apply {
@@ -298,17 +298,17 @@ class ReaderActivity : BaseActivity() {
                     downloader.progress[galleryID]?.count { it.isInfinite() } ?: 0
 
                 if (title == getString(R.string.reader_loading)) {
-                    val reader = cache.metadata.reader
+                    val galleryInfo = cache.metadata.galleryInfo
 
-                    if (reader != null) {
+                    if (galleryInfo != null) {
                         with(binding.recyclerview.adapter as ReaderAdapter) {
-                            this.reader = reader
+                            this.galleryInfo = galleryInfo
                             notifyDataSetChanged()
                         }
 
-                        title = reader.title
+                        title = galleryInfo.title
                         menu?.findItem(R.id.reader_menu_page_indicator)?.title =
-                            "$currentPage/${reader.files.size}"
+                            "$currentPage/${galleryInfo.files.size}"
 
                         menu?.findItem(R.id.reader_type)?.icon = ContextCompat.getDrawable(this@ReaderActivity, R.drawable.hitomi)
                     }
