@@ -79,7 +79,7 @@ class DownloadLocationDialogFragment : DialogFragment(), DIAware {
                 }
             }
         } else {
-            val downloadFolder = DownloadManager.getInstance(context ?: return@registerForActivityResult).downloadFolder.canonicalPath
+            val downloadFolder = downloadManager.downloadFolder.canonicalPath
             val key = entries.keys.firstOrNull { it?.canonicalPath == downloadFolder }
             if (key == null)
                 entries[key]!!.locationAvailable.text = downloadFolder

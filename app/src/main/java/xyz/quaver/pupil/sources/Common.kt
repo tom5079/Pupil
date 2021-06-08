@@ -151,4 +151,5 @@ val sourceModule = DI.Module(name = "source") {
     }
 
     bind { factory { source: String -> History(di, source) } }
+    bind { singleton { Downloads(di) } }
 }

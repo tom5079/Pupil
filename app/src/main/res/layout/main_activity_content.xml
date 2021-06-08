@@ -83,6 +83,7 @@
             android:id="@+id/cancel_fab"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:src="@drawable/cancel"
             app:fab_label="@string/main_fab_cancel"
             app:fab_size="mini"/>
 
@@ -90,6 +91,7 @@
             android:id="@+id/jump_fab"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:src="@drawable/ic_jump"
             app:fab_label="@string/main_jump_title"
             app:fab_size="mini"/>
 
@@ -97,6 +99,7 @@
             android:id="@+id/random_fab"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:src="@drawable/shuffle_variant"
             app:fab_label="@string/main_fab_random"
             app:fab_size="mini"/>
 
@@ -104,6 +107,7 @@
             android:id="@+id/id_fab"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:src="@drawable/numeric"
             app:fab_label="@string/main_open_gallery_by_id"
             app:fab_size="mini"/>
 
