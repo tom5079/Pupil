@@ -54,7 +54,7 @@ class UpdateBroadcastReceiver : BroadcastReceiver() {
 
                 val uri = downloadManager.query(query).use { cursor ->
                     if (cursor.moveToFirst()) {
-                        cursor.getString(cursor.getColumnIndex(DownloadManager.COLUMN_LOCAL_URI)).let {
+                        cursor.getString(cursor.getColumnIndex(DownloadManager.COLUMN_LOCAL_URI))?.let {
                             val uri = Uri.parse(it)
 
                             when (uri.scheme) {
