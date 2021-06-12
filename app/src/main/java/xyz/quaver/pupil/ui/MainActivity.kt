@@ -129,7 +129,7 @@ class MainActivity :
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R &&
             !Preferences["download_folder_ignore_warning", false] &&
-            ContextCompat.getExternalFilesDirs(this, null).map { Uri.fromFile(it).toString() }
+            ContextCompat.getExternalFilesDirs(this, null).filterNotNull().map { Uri.fromFile(it).toString() }
                 .contains(Preferences["download_folder", ""])
         ) {
             AlertDialog.Builder(this)
