@@ -26,7 +26,10 @@ import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
+import androidx.swiperefreshlayout.widget.CircularProgressDrawable
 import com.google.android.material.snackbar.Snackbar
+import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.launch
 import okhttp3.*
 import org.kodein.di.DIAware
 import org.kodein.di.android.x.closestDI
@@ -59,6 +62,10 @@ class ManageFavoritesFragment : PreferenceFragmentCompat(), DIAware {
                         .build()
                 ).build()
 
+            MainScope().launch {
+                it.icon = CircularProgressDrawable(context)
+            }
+
             client.newCall(request).enqueue(object: Callback {
                 override fun onFailure(call: Call, e: IOException) {
                     val view = view ?: return
@@ -69,6 +76,10 @@ class ManageFavoritesFragment : PreferenceFragmentCompat(), DIAware {
                     if (response.code != 200) {
                         response.close()
                         return
+                    }
+
+                    MainScope().launch {
+                        it.icon = null
                     }
 
                     Intent(Intent.ACTION_SEND).apply {
