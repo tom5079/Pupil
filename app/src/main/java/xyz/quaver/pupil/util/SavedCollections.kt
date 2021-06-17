@@ -135,8 +135,6 @@ class SavedSourceSet(private val file: File) {
 
     @Synchronized
     fun add(source: String, value: String) {
-        load()
-
         _map[source]?.remove(value)
 
         if (!_map.containsKey(source))
@@ -149,8 +147,6 @@ class SavedSourceSet(private val file: File) {
 
     @Synchronized
     fun addAll(from: Map<String, Set<String>>) {
-        load()
-
         for (source in from.keys) {
             if (_map.containsKey(source)) {
                 _map[source]!!.removeAll(from[source]!!)
@@ -165,8 +161,6 @@ class SavedSourceSet(private val file: File) {
 
     @Synchronized
     fun remove(source: String, value: String): Boolean {
-        load()
-
         return (_map[source]?.remove(value) ?: false).also {
             save()
         }
