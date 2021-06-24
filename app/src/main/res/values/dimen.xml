@@ -14,4 +14,6 @@
 	<dimen name="thumbnail_page_height">300dp</dimen>
 
 	<dimen name="gallery_dialog_preview_height">150dp</dimen>
+
+	<dimen name="settings_progressbar_icon_size">24dp</dimen>
 </resources>
