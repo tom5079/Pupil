@@ -19,11 +19,16 @@
 package xyz.quaver.pupil.ui.fragment
 
 import android.content.Intent
+import android.graphics.drawable.Drawable
 import android.os.Bundle
+import android.view.ViewGroup
 import android.widget.EditText
+import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
+import androidx.core.content.res.ResourcesCompat
+import androidx.core.view.updateLayoutParams
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
 import androidx.swiperefreshlayout.widget.CircularProgressDrawable
@@ -42,10 +47,23 @@ import java.io.IOException
 
 class ManageFavoritesFragment : PreferenceFragmentCompat(), DIAware {
 
+    private lateinit var progressDrawable: CircularProgressDrawable
+
     override val di by closestDI()
 
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
         setPreferencesFromResource(R.xml.manage_favorites_preferences, rootKey)
+
+        val context = requireContext()
+
+        val iconSize = context.resources.getDimensionPixelSize(R.dimen.settings_progressbar_icon_size)
+        progressDrawable  = object: CircularProgressDrawable(context) {
+            override fun getIntrinsicHeight() = iconSize
+            override fun getIntrinsicWidth() = iconSize
+        }.apply {
+            setStyle(CircularProgressDrawable.DEFAULT)
+            setColorSchemeColors(ContextCompat.getColor(context, R.color.colorAccent))
+        }
 
         initPreferences()
     }
@@ -54,6 +72,11 @@ class ManageFavoritesFragment : PreferenceFragmentCompat(), DIAware {
         val context = context ?: return
 
         findPreference<Preference>("backup")?.setOnPreferenceClickListener {
+            MainScope().launch {
+                it.icon = progressDrawable
+                progressDrawable.start()
+            }
+
             val request = Request.Builder()
                 .url(context.getString(R.string.backup_url))
                 .post(
@@ -61,10 +84,6 @@ class ManageFavoritesFragment : PreferenceFragmentCompat(), DIAware {
                         .add("f:1", File(ContextCompat.getDataDir(context), "favorites.json").readText())
                         .build()
                 ).build()
-
-            MainScope().launch {
-                it.icon = CircularProgressDrawable(context)
-            }
 
             client.newCall(request).enqueue(object: Callback {
                 override fun onFailure(call: Call, e: IOException) {
@@ -79,6 +98,7 @@ class ManageFavoritesFragment : PreferenceFragmentCompat(), DIAware {
                     }
 
                     MainScope().launch {
+                        progressDrawable.stop()
                         it.icon = null
                     }
 
