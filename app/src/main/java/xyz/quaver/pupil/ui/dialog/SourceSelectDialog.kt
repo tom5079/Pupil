@@ -27,14 +27,8 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import org.kodein.di.*
 import org.kodein.di.android.x.closestDI
-import org.kodein.di.android.x.di
-import org.kodein.type.jvmType
-import xyz.quaver.floatingsearchview.suggestions.model.SearchSuggestion
 import xyz.quaver.pupil.adapters.SourceAdapter
-import xyz.quaver.pupil.sources.AnySource
-import xyz.quaver.pupil.sources.Source
-import xyz.quaver.pupil.sources.SourceEntries
-import xyz.quaver.pupil.util.ItemClickSupport
+import xyz.quaver.pupil.sources.*
 
 class SourceSelectDialog : DialogFragment(), DIAware {
 
@@ -48,9 +42,14 @@ class SourceSelectDialog : DialogFragment(), DIAware {
             window?.requestFeature(Window.FEATURE_NO_TITLE)
             window?.setLayout(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT)
 
+            val sourcesWithPreferenceID = direct.instance<SourcePreferenceIDs>().map { it.first }
+            val preferences = direct.instance<SourceEntries>().filter {
+                it.first in sourcesWithPreferenceID
+            }.toSet()
+
             setContentView(RecyclerView(context).apply {
                 layoutManager = LinearLayoutManager(context)
-                adapter = SourceAdapter(direct.instance()).apply {
+                adapter = SourceAdapter(preferences).apply {
                     onSourceSelectedListener = this@SourceSelectDialog.onSourceSelectedListener
                     onSourceSettingsSelectedListener = this@SourceSelectDialog.onSourceSettingsSelectedListener
                 }

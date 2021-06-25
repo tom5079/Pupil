@@ -18,11 +18,8 @@
 
 package xyz.quaver.pupil.sources
 
-import android.app.Application
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.launch
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import org.kodein.di.DI
@@ -39,16 +36,14 @@ import kotlin.math.min
 class Downloads(override val di: DI) : Source<DefaultSortMode, SearchSuggestion>(), DIAware {
 
     override val name: String
-        get() = "Downloads"
+        get() = "downloads"
     override val iconResID: Int
         get() = R.drawable.ic_download
     override val preferenceID: Int
-        get() = -1
+        get() = R.xml.download_preferences
     override val availableSortMode: Array<DefaultSortMode> = DefaultSortMode.values()
 
     private val downloadManager: DownloadManager by instance()
-
-    private val applicationContext: Application by instance()
 
     override suspend fun search(query: String, range: IntRange, sortMode: Enum<*>): Pair<Channel<ItemInfo>, Int> {
         val downloads = downloadManager.downloads.toList()
@@ -74,30 +69,38 @@ class Downloads(override val di: DI) : Source<DefaultSortMode, SearchSuggestion>
     }
 
     override suspend fun images(itemID: String): List<String> {
-        TODO("Not yet implemented")
+        return downloadManager.downloadFolder.getChild(itemID).let {
+            if (!it.exists()) null else images(it)
+        }!!
     }
 
     override suspend fun info(itemID: String): ItemInfo {
-        TODO("Not yet implemented")
+        return transform(downloadManager.downloadFolder.getChild(itemID))
     }
 
     companion object {
-        private fun firstImage(folder: FileX): String? =
+        private fun images(folder: FileX): List<String>? =
             folder.list { _, name ->
-                name.takeLastWhile { it != '.' } !in listOf("jpg", "png", "gif", "webp")
-            }?.firstOrNull()
+                name.takeLastWhile { it != '.' } in listOf("jpg", "png", "gif", "webp")
+            }?.toList()
 
-        fun transform(folder: FileX): ItemInfo =
+        suspend fun transform(folder: FileX): ItemInfo = withContext(Dispatchers.Unconfined) {
             kotlin.runCatching {
                 Json.decodeFromString<ItemInfo>(folder.getChild(".metadata").readText())
-            }.getOrNull() ?:
-            ItemInfo(
-                "Downloads",
-                "",
-                folder.name,
-                firstImage(folder) ?: "",
-                ""
-            )
+            }.getOrNull() ?: run {
+                val images = images(folder)
+                ItemInfo(
+                    "Downloads",
+                    folder.name,
+                    folder.name,
+                    images?.firstOrNull() ?: "",
+                    "",
+                    mapOf(
+                        ItemInfo.ExtraType.PAGECOUNT to async { images?.size?.toString() }
+                    )
+                )
+            }
+        }
     }
 
 }

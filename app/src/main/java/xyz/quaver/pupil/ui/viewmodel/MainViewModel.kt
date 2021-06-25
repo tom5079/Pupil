@@ -105,13 +105,18 @@ class MainViewModel(app: Application) : AndroidViewModel(app), DIAware {
 
     fun setModeAndReset(mode: MainMode) {
         sourceFactory = when (mode) {
-            MainMode.SEARCH -> defaultSourceFactory
+            MainMode.SEARCH, MainMode.DOWNLOADS -> defaultSourceFactory
             MainMode.HISTORY -> { { direct.instance<String, History>(arg = it) } }
-            MainMode.DOWNLOADS -> { { direct.instance<Downloads>() } }
             else -> return
         }
 
-        setSourceAndReset(source.value!!.name)
+        setSourceAndReset(
+            when {
+                mode == MainMode.DOWNLOADS -> "downloads"
+                source.value is Downloads -> "hitomi.la"
+                else -> source.value!!.name
+            }
+        )
     }
 
     fun query() {

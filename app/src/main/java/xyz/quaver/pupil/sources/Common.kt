@@ -136,12 +136,12 @@ abstract class Source<Query_SortMode: Enum<Query_SortMode>, Suggestion: SearchSu
 
 typealias SourceEntry = Pair<String, AnySource>
 typealias SourceEntries = Set<SourceEntry>
-typealias PreferenceID = Pair<String, Int>
-typealias PreferenceIDs = Set<PreferenceID>
+typealias SourcePreferenceID = Pair<String, Int>
+typealias SourcePreferenceIDs = Set<SourcePreferenceID>
 @Suppress("UNCHECKED_CAST")
 val sourceModule = DI.Module(name = "source") {
     bindSet<SourceEntry>()
-    bindSet<PreferenceID>()
+    bindSet<SourcePreferenceID>()
 
     listOf(
         Hitomi()
@@ -151,5 +151,5 @@ val sourceModule = DI.Module(name = "source") {
     }
 
     bind { factory { source: String -> History(di, source) } }
-    bind { singleton { Downloads(di) } }
+    inSet { singleton { Downloads(di).let { it.name to (it as AnySource) } } }
 }
