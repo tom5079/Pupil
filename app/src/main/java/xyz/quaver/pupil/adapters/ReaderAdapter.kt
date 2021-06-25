@@ -48,7 +48,7 @@ import kotlin.math.roundToInt
 
 data class ReaderItem(
     val progress: Float,
-    val image: File?
+    val image: Uri?
 )
 
 class ReaderAdapter : ListAdapter<ReaderItem, ReaderAdapter.ViewHolder>(ReaderItemDiffCallback()) {
@@ -107,7 +107,7 @@ class ReaderAdapter : ListAdapter<ReaderItem, ReaderAdapter.ViewHolder>(ReaderIt
 
             if (image != null) {
                 binding.root.background = null
-                binding.image.showImage(Uri.fromFile(image))
+                binding.image.showImage(image)
             } else {
                 binding.root.setBackgroundResource(R.drawable.reader_item_boundary)
 

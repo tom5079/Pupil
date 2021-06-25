@@ -20,6 +20,7 @@
 package xyz.quaver.pupil.ui.viewmodel
 
 import android.app.Application
+import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
@@ -29,8 +30,10 @@ import okhttp3.Headers
 import okhttp3.Headers.Companion.toHeaders
 import okhttp3.Request
 import org.kodein.di.DIAware
+import org.kodein.di.android.x.closestDI
 import org.kodein.di.android.x.di
 import org.kodein.di.instance
+import xyz.quaver.io.FileX
 import xyz.quaver.pupil.adapters.ReaderItem
 import xyz.quaver.pupil.sources.AnySource
 import xyz.quaver.pupil.util.ImageCache
@@ -40,7 +43,7 @@ import xyz.quaver.pupil.util.source
 @Suppress("UNCHECKED_CAST")
 class ReaderViewModel(app: Application) : AndroidViewModel(app), DIAware {
 
-    override val di by di()
+    override val di by closestDI()
 
     private val cache: ImageCache by instance()
 
@@ -71,29 +74,38 @@ class ReaderViewModel(app: Application) : AndroidViewModel(app), DIAware {
                 _images.value = images
 
                 images.forEachIndexed { index, image ->
-                    val file = cache.load(
-                        Request.Builder()
-                            .url(image)
-                            .headers(source.getHeadersForImage(itemID, image).toHeaders())
-                            .build()
-                    )
+                    when (val scheme = image.takeWhile { it != ':' }) {
+                        "http", "https" -> {
+                            val file = cache.load(
+                                Request.Builder()
+                                    .url(image)
+                                    .headers(source.getHeadersForImage(itemID, image).toHeaders())
+                                    .build()
+                            )
 
-                    val channel = cache.channels[image] ?: error("Channel is null")
+                            val channel = cache.channels[image] ?: error("Channel is null")
 
-                    channel.invokeOnClose { e ->
-                        viewModelScope.launch {
-                            if (e == null) {
-                                _readerItems.value!![index] = ReaderItem(_readerItems.value!![index].progress, file)
-                                _readerItems.notify()
+                            channel.invokeOnClose { e ->
+                                viewModelScope.launch {
+                                    if (e == null) {
+                                        _readerItems.value!![index] = ReaderItem(_readerItems.value!![index].progress, Uri.fromFile(file))
+                                        _readerItems.notify()
+                                    }
+                                }
+                            }
+
+                            launch {
+                                for (progress in channel) {
+                                    _readerItems.value!![index] = ReaderItem(progress, _readerItems.value!![index].image)
+                                    _readerItems.notify()
+                                }
                             }
                         }
-                    }
-
-                    launch {
-                        for (progress in channel) {
-                            _readerItems.value!![index] = ReaderItem(progress, _readerItems.value!![index].image)
+                        "content" -> {
+                            _readerItems.value!![index] = ReaderItem(100f, Uri.parse(image))
                             _readerItems.notify()
                         }
+                        else -> throw IllegalArgumentException("Expected URL scheme 'http(s)' or 'content' but was '$scheme'")
                     }
                 }
             }
