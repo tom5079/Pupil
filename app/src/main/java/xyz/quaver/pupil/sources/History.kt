@@ -26,13 +26,12 @@ import org.kodein.di.DI
 import org.kodein.di.DIAware
 import org.kodein.di.instance
 import xyz.quaver.floatingsearchview.suggestions.model.SearchSuggestion
-import xyz.quaver.pupil.R
 import xyz.quaver.pupil.util.SavedSourceSet
 import xyz.quaver.pupil.util.source
 
-class History(override val di: DI, source: String) : Source<DefaultSortMode, SearchSuggestion>(), DIAware {
+class History(override val di: DI, source: String) : Source(), DIAware {
 
-    private val source: AnySource by source(source)
+    private val source: Source by source(source)
     private val histories: SavedSourceSet by instance(tag = "histories")
 
     override val name: String
@@ -41,9 +40,9 @@ class History(override val di: DI, source: String) : Source<DefaultSortMode, Sea
         get() = source.iconResID
     override val preferenceID: Int
         get() = source.preferenceID
-    override val availableSortMode: Array<DefaultSortMode> = DefaultSortMode.values()
+    override val availableSortMode: List<DefaultSortMode> = DefaultSortMode.values().toList()
 
-    override suspend fun search(query: String, range: IntRange, sortMode: Enum<*>): Pair<Channel<ItemInfo>, Int> {
+    override suspend fun search(query: String, range: IntRange, sortMode: SortModeInterface): Pair<Channel<ItemInfo>, Int> {
         val channel = Channel<ItemInfo>()
 
         CoroutineScope(Dispatchers.IO).launch {

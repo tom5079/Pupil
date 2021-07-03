@@ -33,7 +33,7 @@ import xyz.quaver.pupil.util.DownloadManager
 import kotlin.math.max
 import kotlin.math.min
 
-class Downloads(override val di: DI) : Source<DefaultSortMode, SearchSuggestion>(), DIAware {
+class Downloads(override val di: DI) : Source(), DIAware {
 
     override val name: String
         get() = "downloads"
@@ -41,11 +41,11 @@ class Downloads(override val di: DI) : Source<DefaultSortMode, SearchSuggestion>
         get() = R.drawable.ic_download
     override val preferenceID: Int
         get() = R.xml.download_preferences
-    override val availableSortMode: Array<DefaultSortMode> = DefaultSortMode.values()
+    override val availableSortMode: List<DefaultSortMode> = DefaultSortMode.values().toList()
 
     private val downloadManager: DownloadManager by instance()
 
-    override suspend fun search(query: String, range: IntRange, sortMode: Enum<*>): Pair<Channel<ItemInfo>, Int> {
+    override suspend fun search(query: String, range: IntRange, sortMode: SortModeInterface): Pair<Channel<ItemInfo>, Int> {
         val downloads = downloadManager.downloads.toList()
 
         val channel = Channel<ItemInfo>()

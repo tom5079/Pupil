@@ -33,7 +33,7 @@ import org.kodein.di.DIAware
 import org.kodein.di.android.x.closestDI
 import org.kodein.di.instance
 import xyz.quaver.pupil.adapters.ReaderItem
-import xyz.quaver.pupil.sources.AnySource
+import xyz.quaver.pupil.sources.Source
 import xyz.quaver.pupil.util.ImageCache
 import xyz.quaver.pupil.util.notify
 import xyz.quaver.pupil.util.source
@@ -56,7 +56,7 @@ class ReaderViewModel(app: Application) : AndroidViewModel(app), DIAware {
 
     @OptIn(ExperimentalCoroutinesApi::class)
     fun load(sourceName: String, itemID: String) {
-        val source: AnySource by source(sourceName)
+        val source: Source by source(sourceName)
 
         viewModelScope.launch {
             _title.value = withContext(Dispatchers.IO) {

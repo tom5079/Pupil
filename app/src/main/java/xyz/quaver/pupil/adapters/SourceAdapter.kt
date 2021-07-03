@@ -23,7 +23,6 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import xyz.quaver.floatingsearchview.suggestions.model.SearchSuggestion
 import xyz.quaver.pupil.databinding.SourceSelectDialogItemBinding
-import xyz.quaver.pupil.sources.AnySource
 import xyz.quaver.pupil.sources.Source
 import xyz.quaver.pupil.sources.SourceEntries
 
@@ -35,7 +34,7 @@ class SourceAdapter(sources: SourceEntries) : RecyclerView.Adapter<SourceAdapter
     private val sources = sources.toList()
 
     inner class ViewHolder(private val binding: SourceSelectDialogItemBinding) : RecyclerView.ViewHolder(binding.root) {
-        lateinit var source: AnySource
+        lateinit var source: Source
 
         init {
             binding.go.setOnClickListener {
@@ -46,7 +45,7 @@ class SourceAdapter(sources: SourceEntries) : RecyclerView.Adapter<SourceAdapter
             }
         }
 
-        fun bind(source: AnySource) {
+        fun bind(source: Source) {
             this.source = source
 
             // TODO: save image somewhere else
