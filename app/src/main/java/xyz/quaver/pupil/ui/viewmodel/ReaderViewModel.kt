@@ -25,15 +25,13 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
+import com.orhanobut.logger.Logger
 import kotlinx.coroutines.*
-import okhttp3.Headers
 import okhttp3.Headers.Companion.toHeaders
 import okhttp3.Request
 import org.kodein.di.DIAware
 import org.kodein.di.android.x.closestDI
-import org.kodein.di.android.x.di
 import org.kodein.di.instance
-import xyz.quaver.io.FileX
 import xyz.quaver.pupil.adapters.ReaderItem
 import xyz.quaver.pupil.sources.AnySource
 import xyz.quaver.pupil.util.ImageCache
@@ -85,19 +83,32 @@ class ReaderViewModel(app: Application) : AndroidViewModel(app), DIAware {
 
                             val channel = cache.channels[image] ?: error("Channel is null")
 
-                            channel.invokeOnClose { e ->
-                                viewModelScope.launch {
-                                    if (e == null) {
-                                        _readerItems.value!![index] = ReaderItem(_readerItems.value!![index].progress, Uri.fromFile(file))
-                                        _readerItems.notify()
+                            if (channel.isClosedForReceive) {
+                                _readerItems.value!![index] =
+                                    ReaderItem(_readerItems.value!![index].progress, Uri.fromFile(file))
+                                _readerItems.notify()
+                            } else {
+                                channel.invokeOnClose { e ->
+                                    viewModelScope.launch {
+                                        if (e == null) {
+                                            _readerItems.value!![index] =
+                                                ReaderItem(_readerItems.value!![index].progress, Uri.fromFile(file))
+                                            _readerItems.notify()
+                                        } else {
+                                            Logger.e(index.toString())
+                                            Logger.e(e, e.message ?: "")
+                                        }
                                     }
                                 }
-                            }
 
-                            launch {
-                                for (progress in channel) {
-                                    _readerItems.value!![index] = ReaderItem(progress, _readerItems.value!![index].image)
-                                    _readerItems.notify()
+                                launch {
+                                    kotlin.runCatching {
+                                        for (progress in channel) {
+                                            _readerItems.value!![index] =
+                                                ReaderItem(progress, _readerItems.value!![index].image)
+                                            _readerItems.notify()
+                                        }
+                                    }
                                 }
                             }
                         }
