@@ -32,7 +32,6 @@ import android.view.animation.DecelerateInterpolator
 import android.widget.EditText
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
-import androidx.cardview.widget.CardView
 import androidx.core.content.ContextCompat
 import androidx.core.view.GravityCompat
 import androidx.core.view.ViewCompat
@@ -797,7 +796,7 @@ class MainActivity :
                 }
             } catch (e: Exception) {
 
-                if (e.message != "No result")
+                if (e !is CancellationException)
                     FirebaseCrashlytics.getInstance().recordException(e)
 
                 withContext(Dispatchers.Main) {
