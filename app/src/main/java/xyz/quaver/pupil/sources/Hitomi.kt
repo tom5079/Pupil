@@ -35,9 +35,9 @@ import xyz.quaver.pupil.util.wordCapitalize
 import kotlin.math.max
 import kotlin.math.min
 
-class Hitomi : Source<Hitomi.SortMode, Hitomi.TagSuggestion>() {
+class Hitomi : Source() {
 
-    enum class SortMode {
+    enum class SortMode : SortModeInterface {
         NEWEST,
         POPULAR
     }
@@ -58,13 +58,13 @@ class Hitomi : Source<Hitomi.SortMode, Hitomi.TagSuggestion>() {
     override val name: String = "hitomi.la"
     override val iconResID: Int = R.drawable.hitomi
     override val preferenceID: Int = R.xml.hitomi_preferences
-    override val availableSortMode: Array<SortMode> = SortMode.values()
+    override val availableSortMode: List<SortModeInterface> = SortMode.values().toList()
 
     var cachedQuery: String? = null
     var cachedSortMode: SortMode? = null
     val cache = mutableListOf<Int>()
 
-    override suspend fun search(query: String, range: IntRange, sortMode: Enum<*>): Pair<Channel<ItemInfo>, Int> {
+    override suspend fun search(query: String, range: IntRange, sortMode: SortModeInterface): Pair<Channel<ItemInfo>, Int> {
         if (cachedQuery != query || cachedSortMode != sortMode || cache.isEmpty()) {
             cachedQuery = null
             cache.clear()
@@ -143,7 +143,9 @@ class Hitomi : Source<Hitomi.SortMode, Hitomi.TagSuggestion>() {
         )
     }
 
-    override fun onSuggestionBind(binding: SearchSuggestionItemBinding, item: TagSuggestion) {
+    override fun onSuggestionBind(binding: SearchSuggestionItemBinding, item: SearchSuggestion) {
+        item as TagSuggestion
+
         binding.leftIcon.setImageResource(
             when(item.n) {
                 "female" -> R.drawable.gender_female

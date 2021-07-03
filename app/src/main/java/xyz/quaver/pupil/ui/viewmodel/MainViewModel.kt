@@ -23,14 +23,11 @@ import android.app.Application
 import androidx.lifecycle.*
 import kotlinx.coroutines.*
 import org.kodein.di.DIAware
-import org.kodein.di.android.x.di
+import org.kodein.di.android.x.closestDI
 import org.kodein.di.direct
 import org.kodein.di.instance
 import xyz.quaver.floatingsearchview.suggestions.model.SearchSuggestion
-import xyz.quaver.pupil.sources.AnySource
-import xyz.quaver.pupil.sources.Downloads
-import xyz.quaver.pupil.sources.History
-import xyz.quaver.pupil.sources.ItemInfo
+import xyz.quaver.pupil.sources.*
 import xyz.quaver.pupil.util.Preferences
 import xyz.quaver.pupil.util.notify
 import xyz.quaver.pupil.util.source
@@ -40,7 +37,7 @@ import kotlin.random.Random
 
 @Suppress("UNCHECKED_CAST")
 class MainViewModel(app: Application) : AndroidViewModel(app), DIAware {
-    override val di by di()
+    override val di by closestDI()
 
     private val _searchResults = MutableLiveData<MutableList<ItemInfo>>()
     val searchResults = _searchResults as LiveData<List<ItemInfo>>
@@ -53,17 +50,17 @@ class MainViewModel(app: Application) : AndroidViewModel(app), DIAware {
     val query = MutableLiveData<String>()
     private val queryStack = mutableListOf<String>()
 
-    private val defaultSourceFactory: (String) -> AnySource = {
+    private val defaultSourceFactory: (String) -> Source = {
         direct.source(it)
     }
-    private var sourceFactory: (String) -> AnySource = defaultSourceFactory
-    private val _source = MutableLiveData<AnySource>()
-    val source: LiveData<AnySource> = _source
+    private var sourceFactory: (String) -> Source = defaultSourceFactory
+    private val _source = MutableLiveData<Source>()
+    val source: LiveData<Source> = _source
 
     val availableSortMode = Transformations.map(_source) {
         it.availableSortMode
     }
-    val sortMode = MutableLiveData<Enum<*>>()
+    val sortMode = MutableLiveData<SortModeInterface>()
 
     val sourceIcon = Transformations.map(_source) {
         it.iconResID

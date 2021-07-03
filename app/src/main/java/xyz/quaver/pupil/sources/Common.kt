@@ -106,22 +106,26 @@ data class ItemInfo(
     }
 }
 
-enum class DefaultSortMode {
+enum class DefaultSortMode : SortModeInterface {
     DEFAULT
 }
 
 @Parcelize
 class DefaultSearchSuggestion(override val body: String) : SearchSuggestion
 
-typealias AnySource = Source<*, SearchSuggestion>
-abstract class Source<Query_SortMode: Enum<Query_SortMode>, Suggestion: SearchSuggestion> {
+interface SortModeInterface {
+    val ordinal: Int
+    val name: String
+}
+
+abstract class Source {
     abstract val name: String
     abstract val iconResID: Int
     abstract val preferenceID: Int
-    abstract val availableSortMode: Array<Query_SortMode>
+    abstract val availableSortMode: List<SortModeInterface>
 
-    abstract suspend fun search(query: String, range: IntRange, sortMode: Enum<*>) : Pair<Channel<ItemInfo>, Int>
-    abstract suspend fun suggestion(query: String) : List<Suggestion>
+    abstract suspend fun search(query: String, range: IntRange, sortMode: SortModeInterface) : Pair<Channel<ItemInfo>, Int>
+    abstract suspend fun suggestion(query: String) : List<SearchSuggestion>
     abstract suspend fun images(itemID: String) : List<String>
     abstract suspend fun info(itemID: String) : ItemInfo
 
@@ -129,12 +133,12 @@ abstract class Source<Query_SortMode: Enum<Query_SortMode>, Suggestion: SearchSu
         return emptyMap()
     }
     
-    open fun onSuggestionBind(binding: SearchSuggestionItemBinding, item: Suggestion) {
+    open fun onSuggestionBind(binding: SearchSuggestionItemBinding, item: SearchSuggestion) {
         binding.leftIcon.setImageResource(R.drawable.tag)
     }
 }
 
-typealias SourceEntry = Pair<String, AnySource>
+typealias SourceEntry = Pair<String, Source>
 typealias SourceEntries = Set<SourceEntry>
 typealias SourcePreferenceID = Pair<String, Int>
 typealias SourcePreferenceIDs = Set<SourcePreferenceID>
@@ -143,13 +147,13 @@ val sourceModule = DI.Module(name = "source") {
     bindSet<SourceEntry>()
     bindSet<SourcePreferenceID>()
 
-    listOf(
+    listOf<Source>(
         Hitomi()
     ).forEach { source ->
-        inSet { multiton { _: Unit -> source.name to (source as AnySource) } }
+        inSet { multiton { _: Unit -> source.name to source } }
         inSet { singleton { source.name to source.preferenceID } }
     }
 
     bind { factory { source: String -> History(di, source) } }
-    inSet { singleton { Downloads(di).let { it.name to (it as AnySource) } } }
+    inSet { singleton { Downloads(di).let { it.name to it as Source } } }
 }

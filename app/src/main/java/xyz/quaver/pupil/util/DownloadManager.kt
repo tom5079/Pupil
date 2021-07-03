@@ -32,7 +32,7 @@ import org.kodein.di.DIAware
 import org.kodein.di.android.closestDI
 import xyz.quaver.io.FileX
 import xyz.quaver.io.util.*
-import xyz.quaver.pupil.sources.AnySource
+import xyz.quaver.pupil.sources.Source
 
 class DownloadManager constructor(context: Context) : ContextWrapper(context), DIAware {
 
@@ -82,7 +82,7 @@ class DownloadManager constructor(context: Context) : ContextWrapper(context), D
 
     @Synchronized
     fun download(source: String, itemID: String) = CoroutineScope(Dispatchers.IO).launch {
-        val source: AnySource by source(source)
+        val source: Source by source(source)
         val info = async { source.info(itemID) }
         val images = async { source.images(itemID) }
 
