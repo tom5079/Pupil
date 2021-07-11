@@ -18,6 +18,7 @@
 
 package xyz.quaver.pupil.sources
 
+import io.ktor.http.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.parcelize.Parcelize
@@ -129,10 +130,8 @@ abstract class Source {
     abstract suspend fun images(itemID: String) : List<String>
     abstract suspend fun info(itemID: String) : ItemInfo
 
-    open fun getHeadersForImage(itemID: String, url: String): Map<String, String> {
-        return emptyMap()
-    }
-    
+    open fun getHeadersBuilderForImage(itemID: String, url: String): HeadersBuilder.() -> Unit = { }
+
     open fun onSuggestionBind(binding: SearchSuggestionItemBinding, item: SearchSuggestion) {
         binding.leftIcon.setImageResource(R.drawable.tag)
     }

@@ -26,9 +26,10 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import com.orhanobut.logger.Logger
+import io.ktor.client.request.*
+import io.ktor.http.*
+import io.ktor.util.*
 import kotlinx.coroutines.*
-import okhttp3.Headers.Companion.toHeaders
-import okhttp3.Request
 import org.kodein.di.DIAware
 import org.kodein.di.android.x.closestDI
 import org.kodein.di.instance
@@ -74,12 +75,10 @@ class ReaderViewModel(app: Application) : AndroidViewModel(app), DIAware {
                 images.forEachIndexed { index, image ->
                     when (val scheme = image.takeWhile { it != ':' }) {
                         "http", "https" -> {
-                            val file = cache.load(
-                                Request.Builder()
-                                    .url(image)
-                                    .headers(source.getHeadersForImage(itemID, image).toHeaders())
-                                    .build()
-                            )
+                            val file = cache.load {
+                                url(image)
+                                headers(source.getHeadersBuilderForImage(itemID, image))
+                            }
 
                             val channel = cache.channels[image] ?: error("Channel is null")
 

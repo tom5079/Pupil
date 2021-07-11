@@ -19,34 +19,18 @@
 package xyz.quaver.pupil.util
 
 import android.app.DownloadManager
-import android.content.BroadcastReceiver
 import android.content.Context
-import android.content.Intent
 import android.net.Uri
-import android.webkit.URLUtil
 import androidx.appcompat.app.AlertDialog
-import androidx.core.app.NotificationManagerCompat
 import androidx.preference.PreferenceManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
-import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.*
-import okhttp3.Call
-import okhttp3.Callback
-import okhttp3.Request
-import okhttp3.Response
-import org.kodein.di.DI
-import org.kodein.di.DIAware
-import org.kodein.di.android.di
-import org.kodein.di.instance
 import ru.noties.markwon.Markwon
 import xyz.quaver.pupil.BuildConfig
 import xyz.quaver.pupil.R
-import xyz.quaver.pupil.client
 import java.io.File
-import java.io.IOException
 import java.net.URL
 import java.util.*
 
@@ -176,50 +160,6 @@ fun checkUpdate(context: Context, force: Boolean = false) {
 
         launch(Dispatchers.Main) {
             dialog.show()
-        }
-    }
-}
-
-fun restore(context: Context, url: String, onFailure: ((Throwable) -> Unit)? = null, onSuccess: ((Set<String>) -> Unit)? = null) {
-    if (!URLUtil.isValidUrl(url)) {
-        onFailure?.invoke(IllegalArgumentException())
-        return
-    }
-
-    val request = Request.Builder()
-        .url(url)
-        .get()
-        .build()
-
-    client.newCall(request).enqueue(object: Callback {
-        override fun onFailure(call: Call, e: IOException) {
-            onFailure?.invoke(e)
-        }
-
-        override fun onResponse(call: Call, response: Response) {
-            val favorites = object: DIAware { override val di by di(context); val favorites: SavedSourceSet by instance(tag = "favorites") }
-            kotlin.runCatching {
-                Json.decodeFromString<Set<String>>(response.also { if (it.code != 200) throw IOException() }.body.use { it?.string() } ?: "[]").let {
-                    favorites.favorites.addAll(mapOf("hitomi.la" to it))
-                    onSuccess?.invoke(it)
-                }
-            }.onFailure { onFailure?.invoke(it) }
-        }
-    })
-}
-
-private var job: Job? = null
-private val receiver = object: BroadcastReceiver() {
-    val ACTION_CANCEL = "ACTION_IMPORT_CANCEL"
-    override fun onReceive(context: Context?, intent: Intent?) {
-        context ?: return
-
-        when (intent?.action) {
-            ACTION_CANCEL -> {
-                job?.cancel()
-                NotificationManagerCompat.from(context).cancel(R.id.notification_id_import)
-                context.unregisterReceiver(this)
-            }
         }
     }
 }

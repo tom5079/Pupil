@@ -23,21 +23,21 @@ import android.content.Context
 import androidx.core.content.ContextCompat
 import com.google.android.material.chip.Chip
 import org.kodein.di.DIAware
-import org.kodein.di.android.di
+import org.kodein.di.android.closestDI
 import org.kodein.di.instance
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.sources.Hitomi
 import xyz.quaver.pupil.types.Tag
 import xyz.quaver.pupil.util.SavedSourceSet
-import xyz.quaver.pupil.util.translations
 import xyz.quaver.pupil.util.wordCapitalize
 
 @SuppressLint("ViewConstructor")
 class TagChip(context: Context, private val source: String, _tag: Tag) : Chip(context), DIAware {
 
-    override val di by di(context)
+    override val di by closestDI(context)
 
     private val favoriteTags: SavedSourceSet by instance(tag = "favoriteTags")
+    // TODO private val translations: Map<String, String> by instance()
 
     val tag: Tag =
         _tag.let {
@@ -94,7 +94,7 @@ class TagChip(context: Context, private val source: String, _tag: Tag) : Chip(co
         text = when (tag.area) {
             // TODO languageMap
             "language" -> Hitomi.languageMap[tag.tag]
-            else -> (translations[tag.tag] ?: tag.tag).wordCapitalize()
+            else -> /*(translations[tag.tag] ?: */tag.tag.wordCapitalize()
         }
 
         setEnsureMinTouchTargetSize(false)

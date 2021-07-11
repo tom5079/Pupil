@@ -78,18 +78,6 @@ class MainActivity :
         binding = MainActivityBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        if (intent.action == Intent.ACTION_VIEW) {
-            intent.dataString?.let { url ->
-                restore(this, url,
-                    onFailure = {
-                        Snackbar.make(binding.contents.recyclerview, R.string.settings_backup_failed, Snackbar.LENGTH_LONG).show()
-                    }, onSuccess = {
-                        Snackbar.make(binding.contents.recyclerview, getString(R.string.settings_restore_success, it.size), Snackbar.LENGTH_LONG).show()
-                    }
-                )
-            }
-        }
-
         if (Preferences["download_folder", ""].isEmpty())
             DownloadLocationDialogFragment().show(supportFragmentManager, "Download Location Dialog")
 

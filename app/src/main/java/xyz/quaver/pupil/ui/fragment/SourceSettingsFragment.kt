@@ -23,6 +23,7 @@ import androidx.preference.ListPreference
 import androidx.preference.Preference
 import androidx.preference.PreferenceCategory
 import androidx.preference.PreferenceFragmentCompat
+import io.ktor.client.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -42,7 +43,10 @@ class SourceSettingsFragment(private val source: String) :
     Preference.OnPreferenceClickListener,
     Preference.OnPreferenceChangeListener,
     DIAware {
+
     override val di by closestDI()
+
+    private val client: HttpClient by instance()
 
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
         setPreferencesFromResource(direct.instance<SourcePreferenceIDs>().toMap()[source]!!, rootKey)
@@ -75,7 +79,7 @@ class SourceSettingsFragment(private val source: String) :
 
             when (key) {
                 "hitomi.tag_translation" -> {
-                    updateTranslations()
+                    updateTranslations(client)
                 }
                 else -> return false
             }
@@ -108,7 +112,7 @@ class SourceSettingsFragment(private val source: String) :
 
                             CoroutineScope(Dispatchers.IO).launch {
                                 kotlin.runCatching {
-                                    val languages = getAvailableLanguages().distinct().toTypedArray()
+                                    val languages = getAvailableLanguages(client).distinct().toTypedArray()
 
                                     entries = languages.map { Locale(it).let { loc -> loc.getDisplayLanguage(loc) } }.toTypedArray()
                                     entryValues = languages

@@ -40,24 +40,17 @@ import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.google.firebase.ktx.Firebase
 import com.orhanobut.logger.AndroidLogAdapter
 import com.orhanobut.logger.Logger
-import okhttp3.*
+import io.ktor.client.*
+import io.ktor.client.engine.okhttp.*
+import io.ktor.client.features.json.*
+import io.ktor.client.features.json.serializer.*
 import org.kodein.di.*
 import org.kodein.di.android.x.androidXModule
 import xyz.quaver.io.FileX
 import xyz.quaver.pupil.sources.sourceModule
 import xyz.quaver.pupil.util.*
-import xyz.quaver.setClient
 import java.io.File
 import java.util.*
-
-lateinit var clientBuilder: OkHttpClient.Builder
-
-var clientHolder: OkHttpClient? = null
-val client: OkHttpClient
-    get() = clientHolder ?: clientBuilder.build().also {
-        clientHolder = it
-        setClient(it)
-    }
 
 class Pupil : Application(), DIAware {
 
@@ -65,14 +58,21 @@ class Pupil : Application(), DIAware {
         import(androidXModule(this@Pupil))
         import(sourceModule)
 
-        bind { provider { client } }
-        bind { singleton { ImageCache(this@Pupil) } }
-        bind { singleton { DownloadManager(this@Pupil) } }
+        bind { singleton { ImageCache(applicationContext) } }
+        bind { singleton { DownloadManager(applicationContext) } }
 
-        bind<SavedSourceSet>(tag = "histories") with singleton { SavedSourceSet(File(ContextCompat.getDataDir(this@Pupil), "histories.json")) }
-        bind<SavedSourceSet>(tag = "favorites") with singleton { SavedSourceSet(File(ContextCompat.getDataDir(this@Pupil), "favorites.json")) }
-        bind<SavedSourceSet>(tag = "favoriteTags") with singleton { SavedSourceSet(File(ContextCompat.getDataDir(this@Pupil), "favoriteTags.json")) }
-        bind<SavedSourceSet>(tag = "searchHistory") with singleton { SavedSourceSet(File(ContextCompat.getDataDir(this@Pupil), "searchHistory.json")) }
+        bind<SavedSourceSet>(tag = "histories") with singleton { SavedSourceSet(File(ContextCompat.getDataDir(applicationContext), "histories.json")) }
+        bind<SavedSourceSet>(tag = "favorites") with singleton { SavedSourceSet(File(ContextCompat.getDataDir(applicationContext), "favorites.json")) }
+        bind<SavedSourceSet>(tag = "favoriteTags") with singleton { SavedSourceSet(File(ContextCompat.getDataDir(applicationContext), "favoriteTags.json")) }
+        bind<SavedSourceSet>(tag = "searchHistory") with singleton { SavedSourceSet(File(ContextCompat.getDataDir(applicationContext), "searchHistory.json")) }
+
+        bind { singleton {
+            HttpClient(OkHttp) {
+                install(JsonFeature) {
+                    serializer = KotlinxSerializer()
+                }
+            }
+        } }
     }
 
     private lateinit var firebaseAnalytics: FirebaseAnalytics
@@ -91,11 +91,6 @@ class Pupil : Application(), DIAware {
         FirebaseCrashlytics.getInstance().setUserId(userID)
 
         Logger.addLogAdapter(AndroidLogAdapter())
-
-        val proxyInfo = getProxyInfo()
-
-        clientBuilder = OkHttpClient.Builder()
-            .proxyInfo(proxyInfo)
 
         try {
             Preferences.get<String>("download_folder").also {

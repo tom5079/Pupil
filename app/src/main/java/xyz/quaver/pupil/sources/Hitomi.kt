@@ -20,6 +20,7 @@ package xyz.quaver.pupil.sources
 
 import android.view.LayoutInflater
 import android.widget.TextView
+import io.ktor.http.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.parcelize.IgnoredOnParcel
@@ -30,7 +31,6 @@ import xyz.quaver.hitomi.*
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.sources.ItemInfo.ExtraType
 import xyz.quaver.pupil.util.Preferences
-import xyz.quaver.pupil.util.translations
 import xyz.quaver.pupil.util.wordCapitalize
 import kotlin.math.max
 import kotlin.math.min
@@ -43,16 +43,18 @@ class Hitomi : Source() {
     }
 
     @Parcelize
-    data class TagSuggestion(val s: String, val t: Int, val u: String, val n: String) :
-        SearchSuggestion {
+    data class TagSuggestion(val s: String, val t: Int, val u: String, val n: String) : SearchSuggestion {
         constructor(s: Suggestion) : this(s.s, s.t, s.u, s.n)
 
         @IgnoredOnParcel
-        override val body =
+        override val body = s
+        /*
+            TODO
             if (translations[s] != null)
                 "${translations[s]} ($s)"
             else
                 s
+         */
     }
 
     override val name: String = "hitomi.la"
@@ -137,10 +139,8 @@ class Hitomi : Source() {
         }
     }
 
-    override fun getHeadersForImage(itemID: String, url: String): Map<String, String> {
-        return mapOf(
-            "Referer" to getReferer(itemID.toInt())
-        )
+    override fun getHeadersBuilderForImage(itemID: String, url: String): HeadersBuilder.() -> Unit = {
+        append("Referer", getReferer(itemID.toInt()))
     }
 
     override fun onSuggestionBind(binding: SearchSuggestionItemBinding, item: SearchSuggestion) {
