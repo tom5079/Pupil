@@ -19,30 +19,33 @@
 package xyz.quaver.pupil.ui.fragment
 
 import android.content.Intent
-import android.graphics.drawable.Drawable
 import android.os.Bundle
-import android.view.ViewGroup
+import android.webkit.URLUtil
 import android.widget.EditText
-import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
-import androidx.core.content.res.ResourcesCompat
-import androidx.core.view.updateLayoutParams
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
 import androidx.swiperefreshlayout.widget.CircularProgressDrawable
 import com.google.android.material.snackbar.Snackbar
+import io.ktor.client.*
+import io.ktor.client.call.*
+import io.ktor.client.request.*
+import io.ktor.client.request.forms.*
+import io.ktor.client.statement.*
+import io.ktor.http.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.launch
-import okhttp3.*
 import org.kodein.di.DIAware
 import org.kodein.di.android.x.closestDI
-import org.kodein.di.android.x.di
+import org.kodein.di.direct
+import org.kodein.di.instance
+import xyz.quaver.pupil.Pupil
 import xyz.quaver.pupil.R
-import xyz.quaver.pupil.client
-import xyz.quaver.pupil.util.restore
-import java.io.File
+import xyz.quaver.pupil.util.SavedSourceSet
 import java.io.IOException
 
 class ManageFavoritesFragment : PreferenceFragmentCompat(), DIAware {
@@ -50,6 +53,9 @@ class ManageFavoritesFragment : PreferenceFragmentCompat(), DIAware {
     private lateinit var progressDrawable: CircularProgressDrawable
 
     override val di by closestDI()
+
+    private val applicationContext: Pupil by instance()
+    private val client: HttpClient by instance()
 
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
         setPreferencesFromResource(R.xml.manage_favorites_preferences, rootKey)
@@ -69,47 +75,43 @@ class ManageFavoritesFragment : PreferenceFragmentCompat(), DIAware {
     }
 
     private fun initPreferences() {
-        val context = context ?: return
+        findPreference<Preference>("backup")?.setOnPreferenceClickListener { preference ->
 
-        findPreference<Preference>("backup")?.setOnPreferenceClickListener {
             MainScope().launch {
-                it.icon = progressDrawable
+                preference.icon = progressDrawable
                 progressDrawable.start()
             }
 
-            val request = Request.Builder()
-                .url(context.getString(R.string.backup_url))
-                .post(
-                    FormBody.Builder()
-                        .add("f:1", File(ContextCompat.getDataDir(context), "favorites.json").readText())
-                        .build()
-                ).build()
+            CoroutineScope(Dispatchers.IO).launch {
+                kotlin.runCatching {
+                    requireContext().openFileInput("favorites.json").use { favorites ->
+                        val httpResponse: HttpResponse = client.submitForm(
+                            url = "http://ix.io/",
+                            formParameters = Parameters.build {
+                                append("F:1", favorites.bufferedReader().readText())
+                            }
+                        )
 
-            client.newCall(request).enqueue(object: Callback {
-                override fun onFailure(call: Call, e: IOException) {
-                    val view = view ?: return
-                    Snackbar.make(view, R.string.settings_backup_failed, Snackbar.LENGTH_LONG).show()
-                }
+                        if (httpResponse.status.value != 200) throw IOException("Response code ${httpResponse.status.value}")
 
-                override fun onResponse(call: Call, response: Response) {
-                    if (response.code != 200) {
-                        response.close()
-                        return
+                        Intent(Intent.ACTION_SEND).apply {
+                            type = "text/plain"
+                            putExtra(Intent.EXTRA_TEXT, httpResponse.receive<String>().replace("\n", ""))
+                        }.let {
+                            applicationContext.startActivity(Intent.createChooser(it, getString(R.string.settings_backup_share)))
+                        }
                     }
-
+                }.onSuccess {
                     MainScope().launch {
                         progressDrawable.stop()
-                        it.icon = null
+                        preference.icon = null
                     }
-
-                    Intent(Intent.ACTION_SEND).apply {
-                        type = "text/plain"
-                        putExtra(Intent.EXTRA_TEXT, response.body?.use { it.string() }?.replace("\n", ""))
-                    }.let {
-                        getContext()?.startActivity(Intent.createChooser(it, getString(R.string.settings_backup_share)))
+                }.onFailure {
+                    view?.let {
+                        Snackbar.make(it, R.string.settings_backup_failed, Snackbar.LENGTH_LONG).show()
                     }
                 }
-            })
+            }
 
             true
         }
@@ -118,18 +120,33 @@ class ManageFavoritesFragment : PreferenceFragmentCompat(), DIAware {
                 setText(context.getString(R.string.backup_url), TextView.BufferType.EDITABLE)
             }
 
-            AlertDialog.Builder(context)
+            AlertDialog.Builder(requireContext())
                 .setTitle(R.string.settings_restore_title)
                 .setView(editText)
                 .setPositiveButton(android.R.string.ok) { _, _ ->
-                    restore(context, editText.text.toString(),
-                        onFailure = onFailure@{
-                            val view = view ?: return@onFailure
-                            Snackbar.make(view, R.string.settings_restore_failed, Snackbar.LENGTH_LONG).show()
-                        }, onSuccess = onSuccess@{
-                            val view = view ?: return@onSuccess
-                            Snackbar.make(view, context.getString(R.string.settings_restore_success, it.size), Snackbar.LENGTH_LONG).show()
-                        })
+                    CoroutineScope(Dispatchers.IO).launch {
+                        kotlin.runCatching {
+                            val url = editText.text.toString()
+
+                            if (!URLUtil.isValidUrl(url)) throw IllegalArgumentException()
+
+                            client.get<Set<String>>(url).also {
+                                direct.instance<SavedSourceSet>(tag = "favorites.json").addAll(mapOf("hitomi.la" to it))
+                            }
+                        }.onSuccess {
+                            MainScope().launch {
+                                view?.run {
+                                    Snackbar.make(this, context.getString(R.string.settings_restore_success, it.size), Snackbar.LENGTH_LONG).show()
+                                }
+                            }
+                        }.onFailure {
+                            MainScope().launch {
+                                view?.run {
+                                    Snackbar.make(this, R.string.settings_restore_failed, Snackbar.LENGTH_LONG).show()
+                                }
+                            }
+                        }
+                    }
                 }.setNegativeButton(android.R.string.cancel) { _, _ ->
                     // Do Nothing
                 }.show()

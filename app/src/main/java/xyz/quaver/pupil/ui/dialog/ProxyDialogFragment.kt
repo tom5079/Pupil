@@ -19,7 +19,6 @@
 package xyz.quaver.pupil.ui.dialog
 
 import android.app.Dialog
-import android.content.Context
 import android.os.Bundle
 import android.view.View
 import android.widget.AdapterView
@@ -28,18 +27,20 @@ import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.DialogFragment
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import org.kodein.di.DI
+import org.kodein.di.DIAware
+import org.kodein.di.android.x.closestDI
+import org.kodein.di.instance
 import xyz.quaver.pupil.R
-import xyz.quaver.pupil.client
-import xyz.quaver.pupil.clientBuilder
-import xyz.quaver.pupil.clientHolder
 import xyz.quaver.pupil.databinding.ProxyDialogBinding
 import xyz.quaver.pupil.util.Preferences
 import xyz.quaver.pupil.util.ProxyInfo
 import xyz.quaver.pupil.util.getProxyInfo
-import xyz.quaver.pupil.util.proxyInfo
 import java.net.Proxy
 
-class ProxyDialogFragment : DialogFragment() {
+class ProxyDialogFragment : DialogFragment(), DIAware {
+
+    override val di: DI by closestDI()
 
     private var _binding: ProxyDialogBinding? = null
     private val binding get() = _binding!!
@@ -119,11 +120,7 @@ class ProxyDialogFragment : DialogFragment() {
 
             ProxyInfo(type, addr, port, username, password).let {
                 Preferences["proxy"] = Json.encodeToString(it)
-
-                clientBuilder
-                    .proxyInfo(it)
-                clientHolder = null
-                client
+                // TODO
             }
 
             dismiss()

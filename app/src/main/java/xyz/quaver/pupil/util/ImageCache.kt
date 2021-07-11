@@ -20,30 +20,40 @@ package xyz.quaver.pupil.util
 
 import android.content.Context
 import com.google.firebase.crashlytics.FirebaseCrashlytics
-import kotlinx.coroutines.ExperimentalCoroutinesApi
+import io.ktor.client.*
+import io.ktor.client.call.*
+import io.ktor.client.features.*
+import io.ktor.client.request.*
+import io.ktor.client.statement.*
+import io.ktor.http.*
+import io.ktor.utils.io.*
+import io.ktor.utils.io.core.*
+import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.trySendBlocking
-import kotlinx.coroutines.coroutineScope
-import okhttp3.*
 import org.kodein.di.DIAware
 import org.kodein.di.android.closestDI
 import org.kodein.di.instance
+import xyz.quaver.io.FileX
+import xyz.quaver.pupil.Pupil
 import java.io.File
-import java.io.IOException
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 
 class ImageCache(context: Context) : DIAware {
     override val di by closestDI(context)
 
-    private val client: OkHttpClient by instance()
+    private val applicationContext: Pupil by instance()
+    private val client: HttpClient by instance()
 
     val cacheFolder = File(context.cacheDir, "imageCache")
     val cache = SavedMap(File(cacheFolder, ".cache"), "", "")
 
     private val _channels = ConcurrentHashMap<String, Channel<Float>>()
     val channels = _channels as Map<String, Channel<Float>>
+
+    private val requests = mutableMapOf<String, Job>()
 
     @Synchronized
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -62,66 +72,65 @@ class ImageCache(context: Context) : DIAware {
     }
 
     fun free(images: List<String>) {
-        client.dispatcher.let { it.queuedCalls() + it.runningCalls() }
-            .filter { it.request().url.toString() in images }
-            .forEach { it.cancel() }
+        images.forEach {
+            requests[it]?.cancel()
+        }
 
         images.forEach { _channels.remove(it) }
     }
 
     @Synchronized
     suspend fun clear() = coroutineScope {
-        client.dispatcher.queuedCalls().forEach { it.cancel() }
-
+        requests.values.forEach { it.cancel() }
         cacheFolder.listFiles()?.forEach { it.delete() }
         cache.clear()
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    fun load(request: Request): File {
-        val key = request.url.toString()
+    fun load(requestBuilder: HttpRequestBuilder.() -> Unit): File {
+        val request = HttpRequestBuilder().apply(requestBuilder)
 
-        val channel = if (_channels[key]?.isClosedForSend == false)
+        val key = request.url.buildString()
+
+        val progressChannel = if (_channels[key]?.isClosedForSend == false)
             _channels[key]!!
         else
             Channel<Float>(1, BufferOverflow.DROP_OLDEST).also { _channels[key] = it }
 
         return cache[key]?.let {
-            channel.close()
+            progressChannel.close()
             File(it)
         } ?: File(cacheFolder, "${UUID.randomUUID()}.${key.takeLastWhile { it != '.' }}").also { file ->
-            client.newCall(request).enqueue(object: Callback {
-                override fun onFailure(call: Call, e: IOException) {
-                    file.delete()
-                    cache.remove(call.request().url.toString())
+            if (!file.exists())
+                file.createNewFile()
 
-                    FirebaseCrashlytics.getInstance().recordException(e)
-                    channel.close(e)
-                }
+            cache[key] = file.canonicalPath
 
-                override fun onResponse(call: Call, response: Response) {
-                    if (response.code != 200) {
-                        file.delete()
-                        cache.remove(call.request().url.toString())
+            requests[key] = CoroutineScope(Dispatchers.IO).launch {
+                kotlin.runCatching {
+                    client.get<HttpStatement>(request).execute { httpResponse ->
+                        val responseChannel: ByteReadChannel = httpResponse.receive()
+                        val contentLength = httpResponse.contentLength() ?: -1
+                        var readBytes = 0F
 
-                        channel.close(IOException("HTTP Response code is not 200"))
-
-                        response.close()
-                        return
-                    }
-
-                    response.body?.use { body ->
-                        if (!file.exists())
-                            file.createNewFile()
-
-                        body.byteStream().copyTo(file.outputStream()) { bytes, _ ->
-                            channel.trySendBlocking(bytes / body.contentLength().toFloat() * 100)
+                        while (!responseChannel.isClosedForRead) {
+                            val packet = responseChannel.readRemaining(DEFAULT_BUFFER_SIZE.toLong())
+                            while (!packet.isEmpty) {
+                                val bytes = packet.readBytes()
+                                file.appendBytes(bytes)
+                                readBytes += bytes.size
+                                progressChannel.trySend(readBytes / contentLength)
+                            }
                         }
+                        progressChannel.close()
                     }
-
-                    channel.close()
+                }.onFailure {
+                    file.delete()
+                    cache.remove(key)
+                    FirebaseCrashlytics.getInstance().recordException(it)
+                    progressChannel.close(it)
                 }
-            })
-        }.also { cache[key] = it.canonicalPath }
+            }
+        }
     }
 }

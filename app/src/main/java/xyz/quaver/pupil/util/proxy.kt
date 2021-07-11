@@ -22,8 +22,6 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import okhttp3.Authenticator
-import okhttp3.Credentials
 import java.net.InetSocketAddress
 import java.net.Proxy
 
@@ -42,15 +40,7 @@ data class ProxyInfo(
             Proxy(type, InetSocketAddress.createUnresolved(host, port))
     }
 
-    fun authenticator(): Authenticator? = if (username.isNullOrBlank() || password.isNullOrBlank()) null else
-            Authenticator { _, response ->
-                val credential = Credentials.basic(username, password)
-
-                response.request.newBuilder()
-                    .header("Proxy-Authorization", credential)
-                    .build()
-            }
-
+    // TODO: Migrate to ktor-client and implement proxy authentication
 }
 
 fun getProxyInfo(): ProxyInfo =

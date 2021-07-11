@@ -23,12 +23,10 @@ import android.view.MenuItem
 import android.view.View
 import androidx.lifecycle.MutableLiveData
 import kotlinx.serialization.json.*
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import org.kodein.di.*
-import xyz.quaver.hitomi.GalleryInfo
-import xyz.quaver.hitomi.getReferer
-import xyz.quaver.hitomi.imageUrlFromImage
+import org.kodein.di.DIAware
+import org.kodein.di.DirectDIAware
+import org.kodein.di.direct
+import org.kodein.di.instance
 import xyz.quaver.pupil.sources.ItemInfo
 import xyz.quaver.pupil.sources.SourceEntries
 import java.io.InputStream
@@ -74,13 +72,6 @@ fun byteToString(byte: Long, precision : Int = 1) : String {
  */
 fun Int.normalizeID() = this.and(0xFFFF)
 
-fun OkHttpClient.Builder.proxyInfo(proxyInfo: ProxyInfo) = this.apply {
-    proxy(proxyInfo.proxy())
-    proxyInfo.authenticator()?.let {
-        proxyAuthenticator(it)
-    }
-}
-
 val formatMap = mapOf<String, ItemInfo.() -> (String)>(
     "-id-" to { id },
     "-title-" to { title },
@@ -120,7 +111,7 @@ fun <E> MutableLiveData<MutableList<E>>.notify() {
     this.value = this.value
 }
 
-fun InputStream.copyTo(out: OutputStream, onCopy: (totalBytesCopied: Long, bytesJustCopied: Int) -> Any): Long {
+fun InputStream.copyTo(out: OutputStream, onCopy: (totalBytesCopied: Long, bytesJustCopied: Int) -> Unit): Long {
     var bytesCopied: Long = 0
     val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
     var bytes = read(buffer)
