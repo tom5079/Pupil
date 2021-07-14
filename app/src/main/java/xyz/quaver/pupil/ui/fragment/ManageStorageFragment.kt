@@ -24,7 +24,7 @@ import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
 import kotlinx.coroutines.*
 import org.kodein.di.DIAware
-import org.kodein.di.android.x.di
+import org.kodein.di.android.x.closestDI
 import org.kodein.di.instance
 import xyz.quaver.io.FileX
 import xyz.quaver.pupil.R
@@ -32,7 +32,7 @@ import xyz.quaver.pupil.util.*
 
 class ManageStorageFragment : PreferenceFragmentCompat(), DIAware, Preference.OnPreferenceClickListener {
 
-    override val di by di()
+    override val di by closestDI()
 
     private var job: Job? = null
 

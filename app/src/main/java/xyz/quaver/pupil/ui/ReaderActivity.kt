@@ -33,6 +33,7 @@ import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.orhanobut.logger.Logger
 import com.qtalk.recyclerviewfastscroller.RecyclerViewFastScroller
 import org.kodein.di.DIAware
+import org.kodein.di.android.closestDI
 import org.kodein.di.android.di
 import org.kodein.di.instance
 import xyz.quaver.pupil.R
@@ -45,7 +46,7 @@ import xyz.quaver.pupil.util.source
 
 class ReaderActivity : BaseActivity(), DIAware {
 
-    override val di by di()
+    override val di by closestDI()
 
     private var source = ""
     private var itemID = ""
