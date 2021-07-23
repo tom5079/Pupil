@@ -32,7 +32,6 @@ import android.view.animation.DecelerateInterpolator
 import android.widget.EditText
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
-import androidx.cardview.widget.CardView
 import androidx.core.content.ContextCompat
 import androidx.core.view.GravityCompat
 import androidx.core.view.ViewCompat
@@ -125,11 +124,10 @@ class MainActivity :
         if (Preferences["download_folder", ""].isEmpty())
             DownloadLocationDialogFragment().show(supportFragmentManager, "Download Location Dialog")
 
-        checkUpdate(this)
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R &&
             !Preferences["download_folder_ignore_warning", false] &&
-            ContextCompat.getExternalFilesDirs(this, null).map { Uri.fromFile(it).toString() }
+            ContextCompat.getExternalFilesDirs(this, null).filterNotNull().map { Uri.fromFile(it).toString() }
                 .contains(Preferences["download_folder", ""])
         ) {
             AlertDialog.Builder(this)
@@ -143,6 +141,12 @@ class MainActivity :
         }
 
         initView()
+    }
+
+    override fun onResume() {
+        super.onResume()
+
+        checkUpdate(this)
     }
 
     @OptIn(ExperimentalStdlibApi::class)
@@ -212,7 +216,7 @@ class MainActivity :
                     min(
                         max(
                         binding.contents.searchview.translationY - dy,
-                        -binding.contents.searchview.findViewById<CardView>(R.id.search_query_section).height.toFloat()
+                        -binding.contents.searchview.binding.querySection.root.height.toFloat()
                     ), 0F)
 
                 if (dy > 0)
@@ -474,7 +478,7 @@ class MainActivity :
         with(binding.contents.searchview) {
             onMenuStatusChangeListener = object: FloatingSearchView.OnMenuStatusChangeListener {
                 override fun onMenuOpened() {
-                    (binding.contents.recyclerview.adapter as GalleryBlockAdapter).closeAllItems()
+                    (this@MainActivity.binding.contents.recyclerview.adapter as GalleryBlockAdapter).closeAllItems()
                 }
 
                 override fun onMenuClosed() {
@@ -558,7 +562,7 @@ class MainActivity :
                 }
             }
 
-            attachNavigationDrawerToMenuButton(binding.drawer)
+            attachNavigationDrawerToMenuButton(this@MainActivity.binding.drawer)
         }
     }
 
@@ -797,7 +801,7 @@ class MainActivity :
                 }
             } catch (e: Exception) {
 
-                if (e.message != "No result")
+                if (e !is CancellationException)
                     FirebaseCrashlytics.getInstance().recordException(e)
 
                 withContext(Dispatchers.Main) {

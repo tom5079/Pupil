@@ -39,7 +39,6 @@ import xyz.quaver.pupil.databinding.DownloadLocationItemBinding
 import xyz.quaver.pupil.util.Preferences
 import xyz.quaver.pupil.util.byteToString
 import xyz.quaver.pupil.util.downloader.DownloadManager
-import xyz.quaver.pupil.util.migrate
 import java.io.File
 
 class DownloadLocationDialogFragment : DialogFragment() {
@@ -75,6 +74,15 @@ class DownloadLocationDialogFragment : DialogFragment() {
                     entries[key]!!.button.isChecked = true
                     if (key == null) entries[key]!!.locationAvailable.text = downloadFolder
                 }
+            }
+        } else {
+            val downloadFolder = DownloadManager.getInstance(context ?: return@registerForActivityResult).downloadFolder.canonicalPath
+            val key = entries.keys.firstOrNull { it?.canonicalPath == downloadFolder }
+            if (key == null)
+                entries[key]!!.locationAvailable.text = downloadFolder
+            else {
+                entries[null]!!.button.isChecked = false
+                entries[key]!!.button.isChecked = true
             }
         }
     }
@@ -121,8 +129,8 @@ class DownloadLocationDialogFragment : DialogFragment() {
                     byteToString(dir.freeSpace)
                 )
                 root.setOnClickListener {
-                    entries.values.forEach { _ ->
-                        button.isChecked = false
+                    entries.values.forEach { entry ->
+                        entry.button.isChecked = false
                     }
                     button.performClick()
                     Preferences["download_folder"] = dir.toUri().toString()
@@ -134,8 +142,8 @@ class DownloadLocationDialogFragment : DialogFragment() {
         DownloadLocationItemBinding.inflate(layoutInflater, binding.root, true).apply {
             locationType.text = requireContext().getString(R.string.settings_download_folder_custom)
             root.setOnClickListener {
-                entries.values.forEach {
-                    it.button.isChecked = false
+                entries.values.forEach { entry ->
+                    entry.button.isChecked = false
                 }
                 button.performClick()
 
@@ -178,8 +186,6 @@ class DownloadLocationDialogFragment : DialogFragment() {
             setPositiveButton(requireContext().getText(android.R.string.ok)) { _, _ ->
                 if (Preferences["download_folder", ""].isEmpty())
                     Preferences["download_folder"] = context.getExternalFilesDir(null)?.toUri()?.toString() ?: ""
-
-                DownloadManager.getInstance(requireContext()).migrate()
             }
 
             isCancelable = false

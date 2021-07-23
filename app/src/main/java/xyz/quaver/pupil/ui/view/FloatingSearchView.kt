@@ -59,8 +59,8 @@ class FloatingSearchView @JvmOverloads constructor(context: Context, attrs: Attr
 
         searchInputView.addTextChangedListener(this)
         onSearchListener = this
-        onBindSuggestionCallback = { a, b, c, d, e ->
-            onBindSuggestion(a, b, c, d, e)
+        onBindSuggestionCallback = { binding, item, itemPosition ->
+            onBindSuggestion(binding.root, binding.leftIcon, binding.body, item, itemPosition)
         }
     }
 

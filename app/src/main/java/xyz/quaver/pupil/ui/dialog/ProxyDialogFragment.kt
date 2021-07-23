@@ -18,12 +18,14 @@
 
 package xyz.quaver.pupil.ui.dialog
 
+import android.app.Dialog
 import android.content.Context
 import android.os.Bundle
 import android.view.View
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
 import androidx.appcompat.app.AlertDialog
+import androidx.fragment.app.DialogFragment
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import xyz.quaver.pupil.R
@@ -37,17 +39,19 @@ import xyz.quaver.pupil.util.getProxyInfo
 import xyz.quaver.pupil.util.proxyInfo
 import java.net.Proxy
 
-class ProxyDialog(context: Context) : AlertDialog(context) {
+class ProxyDialogFragment : DialogFragment() {
 
-    private lateinit var binding: ProxyDialogBinding
+    private var _binding: ProxyDialogBinding? = null
+    private val binding get() = _binding!!
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-
-        binding = ProxyDialogBinding.inflate(layoutInflater)
-        setView(binding.root)
+    override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
+        _binding = ProxyDialogBinding.inflate(layoutInflater)
 
         initView()
+
+        return AlertDialog.Builder(requireContext()).apply {
+            setView(binding.root)
+        }.create()
     }
 
     private fun initView() {
@@ -105,9 +109,9 @@ class ProxyDialog(context: Context) : AlertDialog(context) {
 
             if (type != Proxy.Type.DIRECT) {
                 if (addr == null || addr.isEmpty())
-                    binding.addr.error = context.getText(R.string.proxy_dialog_error)
+                    binding.addr.error = requireContext().getText(R.string.proxy_dialog_error)
                 if (port == null)
-                    binding.port.error = context.getText(R.string.proxy_dialog_error)
+                    binding.port.error = requireContext().getText(R.string.proxy_dialog_error)
 
                 if (addr == null || addr.isEmpty() || port == null)
                     return@setOnClickListener

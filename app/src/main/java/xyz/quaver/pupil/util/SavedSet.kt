@@ -18,11 +18,13 @@
 
 package xyz.quaver.pupil.util
 
-import kotlinx.serialization.*
+import com.google.firebase.crashlytics.FirebaseCrashlytics
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.KSerializer
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.serializer
 import java.io.File
-import java.util.*
 
 class SavedSet <T: Any> (private val file: File, private val any: T, private val set: MutableSet<T> = mutableSetOf()) : MutableSet<T> by set {
 
@@ -46,6 +48,8 @@ class SavedSet <T: Any> (private val file: File, private val any: T, private val
             Json.decodeFromString(serializer, file.readText())
         }.onSuccess {
             set.addAll(it)
+        }.onFailure {
+            FirebaseCrashlytics.getInstance().recordException(it)
         }
     }
 
@@ -57,8 +61,6 @@ class SavedSet <T: Any> (private val file: File, private val any: T, private val
 
     @Synchronized
     override fun add(element: T): Boolean {
-        load()
-
         set.remove(element)
 
         return set.add(element).also {
@@ -68,8 +70,6 @@ class SavedSet <T: Any> (private val file: File, private val any: T, private val
 
     @Synchronized
     override fun addAll(elements: Collection<T>): Boolean {
-        load()
-
         set.removeAll(elements)
 
         return set.addAll(elements).also {
@@ -79,8 +79,6 @@ class SavedSet <T: Any> (private val file: File, private val any: T, private val
 
     @Synchronized
     override fun remove(element: T): Boolean {
-        load()
-
         return set.remove(element).also {
             save()
         }
