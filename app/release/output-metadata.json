@@ -5,13 +5,13 @@
     "kind": "Directory"
   },
   "applicationId": "xyz.quaver.pupil",
-  "variantName": "processReleaseResources",
+  "variantName": "release",
   "elements": [
     {
       "type": "SINGLE",
       "filters": [],
-      "versionCode": 64,
-      "versionName": "5.1.7-hotfix1",
+      "versionCode": 66,
+      "versionName": "5.1.11",
       "outputFile": "app-release.apk"
     }
   ]

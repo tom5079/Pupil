@@ -36,6 +36,7 @@ import com.daimajia.swipe.interfaces.SwipeAdapterInterface
 import com.github.piasy.biv.loader.ImageLoader
 import kotlinx.coroutines.*
 import xyz.quaver.hitomi.getGallery
+import xyz.quaver.hitomi.getGalleryInfo
 import xyz.quaver.hitomi.getReader
 import xyz.quaver.io.util.getChild
 import xyz.quaver.pupil.R
@@ -231,7 +232,7 @@ class GalleryBlockAdapter(private val galleries: List<Int>) : RecyclerSwipeAdapt
             binding.galleryblockPagecount.text = "-"
             CoroutineScope(Dispatchers.IO).launch {
                 val pageCount = kotlin.runCatching {
-                    getReader(galleryBlock.id).galleryInfo.files.size
+                    getGalleryInfo(galleryBlock.id).files.size
                 }.getOrNull() ?: return@launch
                 withContext(Dispatchers.Main) {
                     binding.galleryblockPagecount.text = itemView.context.getString(R.string.galleryblock_pagecount, pageCount)

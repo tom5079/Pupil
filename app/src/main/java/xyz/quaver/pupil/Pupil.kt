@@ -26,6 +26,7 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
+import android.util.Log
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.content.ContextCompat
 import androidx.preference.PreferenceManager
@@ -34,8 +35,8 @@ import com.github.piasy.biv.loader.fresco.FrescoImageLoader
 import com.google.android.gms.common.GooglePlayServicesNotAvailableException
 import com.google.android.gms.common.GooglePlayServicesRepairableException
 import com.google.android.gms.security.ProviderInstaller
-import com.google.firebase.analytics.FirebaseAnalytics
 import com.google.firebase.crashlytics.FirebaseCrashlytics
+import okhttp3.Dispatcher
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
 import okhttp3.Response
@@ -46,6 +47,7 @@ import xyz.quaver.pupil.util.downloader.DownloadManager
 import xyz.quaver.setClient
 import java.io.File
 import java.util.*
+import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import kotlin.reflect.KClass
 
@@ -96,6 +98,11 @@ class Pupil : Application() {
                 val tag = request.tag() ?: return@addInterceptor chain.proceed(request)
 
                 interceptors[tag::class]?.invoke(chain) ?: chain.proceed(request)
+            }.apply {
+                (Preferences.get<String>("max_concurrent_download").toIntOrNull() ?: 0).let {
+                    if (it != 0)
+                        dispatcher(Dispatcher(Executors.newFixedThreadPool(it)))
+                }
             }
 
         try {
@@ -108,8 +115,6 @@ class Pupil : Application() {
 
                 if (!FileX(this, it).canWrite())
                     throw Exception()
-
-                DownloadManager.getInstance(this).migrate()
             }
         } catch (e: Exception) {
             Preferences.remove("download_folder")

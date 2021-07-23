@@ -40,7 +40,7 @@ import com.github.piasy.biv.view.BigImageView
 import com.github.piasy.biv.view.ImageShownCallback
 import com.github.piasy.biv.view.ImageViewFactory
 import kotlinx.coroutines.*
-import xyz.quaver.hitomi.Reader
+import xyz.quaver.hitomi.GalleryInfo
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.databinding.ReaderItemBinding
 import xyz.quaver.pupil.ui.ReaderActivity
@@ -52,7 +52,7 @@ class ReaderAdapter(
     private val activity: ReaderActivity,
     private val galleryID: Int
 ) : RecyclerView.Adapter<ReaderAdapter.ViewHolder>() {
-    var reader: Reader? = null
+    var galleryInfo: GalleryInfo? = null
 
     var isFullScreen = false
 
@@ -101,7 +101,7 @@ class ReaderAdapter(
                 binding.image.updateLayoutParams<ConstraintLayout.LayoutParams> {
                     height = 0
                     dimensionRatio =
-                        "${reader!!.galleryInfo.files[position].width}:${reader!!.galleryInfo.files[position].height}"
+                        "${galleryInfo!!.files[position].width}:${galleryInfo!!.files[position].height}"
                 }
             } else {
                 binding.root.layoutParams.height = ViewGroup.LayoutParams.MATCH_PARENT
@@ -158,7 +158,7 @@ class ReaderAdapter(
         holder.bind(position)
     }
 
-    override fun getItemCount() = reader?.galleryInfo?.files?.size ?: 0
+    override fun getItemCount() = galleryInfo?.files?.size ?: 0
 
     override fun onViewRecycled(holder: ViewHolder) {
         holder.clear()
