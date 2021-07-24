@@ -40,9 +40,9 @@ class History(override val di: DI, source: String) : Source(), DIAware {
         get() = source.iconResID
     override val preferenceID: Int
         get() = source.preferenceID
-    override val availableSortMode: List<DefaultSortMode> = DefaultSortMode.values().toList()
+    override val availableSortMode: List<String> = emptyList()
 
-    override suspend fun search(query: String, range: IntRange, sortMode: SortModeInterface): Pair<Channel<ItemInfo>, Int> {
+    override suspend fun search(query: String, range: IntRange, sortMode: Int): Pair<Channel<ItemInfo>, Int> {
         val channel = Channel<ItemInfo>()
 
         CoroutineScope(Dispatchers.IO).launch {

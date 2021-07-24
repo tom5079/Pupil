@@ -107,25 +107,21 @@ data class ItemInfo(
     }
 }
 
-enum class DefaultSortMode : SortModeInterface {
-    DEFAULT
-}
-
 @Parcelize
 class DefaultSearchSuggestion(override val body: String) : SearchSuggestion
 
 interface SortModeInterface {
     val ordinal: Int
-    val name: String
+    val name: Int
 }
 
 abstract class Source {
     abstract val name: String
     abstract val iconResID: Int
     abstract val preferenceID: Int
-    abstract val availableSortMode: List<SortModeInterface>
+    abstract val availableSortMode: List<String>
 
-    abstract suspend fun search(query: String, range: IntRange, sortMode: SortModeInterface) : Pair<Channel<ItemInfo>, Int>
+    abstract suspend fun search(query: String, range: IntRange, sortMode: Int) : Pair<Channel<ItemInfo>, Int>
     abstract suspend fun suggestion(query: String) : List<SearchSuggestion>
     abstract suspend fun images(itemID: String) : List<String>
     abstract suspend fun info(itemID: String) : ItemInfo
@@ -146,11 +142,13 @@ val sourceModule = DI.Module(name = "source") {
     bindSet<SourceEntry>()
     bindSet<SourcePreferenceID>()
 
-    listOf<Source>(
-        Hitomi()
-    ).forEach { source ->
-        inSet { multiton { _: Unit -> source.name to source } }
-        inSet { singleton { source.name to source.preferenceID } }
+    onReady {
+        listOf<Source>(
+            Hitomi(instance())
+        ).forEach { source ->
+            inSet { multiton { _: Unit -> source.name to source } }
+            inSet { singleton { source.name to source.preferenceID } }
+        }
     }
 
     bind { factory { source: String -> History(di, source) } }
