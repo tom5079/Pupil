@@ -17,11 +17,11 @@ plugins {
 }
 
 android {
-    compileSdkVersion(30)
+    compileSdk = 30
     defaultConfig {
         applicationId = "xyz.quaver.pupil"
-        minSdkVersion(21)
-        targetSdkVersion(30)
+        minSdk = 21
+        targetSdk = 30
         versionCode = 600
         versionName = "6.0.0-alpha2"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -47,10 +47,11 @@ android {
     buildFeatures {
         viewBinding = true
         dataBinding = true
+        compose = true
     }
     kotlinOptions {
         jvmTarget = JavaVersion.VERSION_1_8.toString()
-        freeCompilerArgs += "-Xuse-experimental=kotlin.Experimental"
+        freeCompilerArgs = listOf("-Xuse-experimental=kotlin.Experimental")
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_1_8
@@ -64,11 +65,19 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.5.0")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.2.1")
 
+    implementation("androidx.compose.ui:ui:1.0.0-rc02")
+    implementation("androidx.compose.ui:ui-tooling:1.0.0-rc02")
+    implementation("androidx.compose.foundation:foundation:1.0.0-rc02")
+    implementation("androidx.compose.material:material:1.0.0-rc02")
+    implementation("androidx.compose.material:material-icons-core:1.0.0-rc02")
+    implementation("androidx.compose.material:material-icons-extended:1.0.0-rc02")
+    implementation("androidx.compose.runtime:runtime-livedata:1.0.0-rc02")
+
     implementation("io.ktor:ktor-client-core:1.6.1")
     implementation("io.ktor:ktor-client-okhttp:1.6.1")
     implementation("io.ktor:ktor-client-serialization:1.6.1")
 
-    implementation("androidx.appcompat:appcompat:1.3.0")
+    implementation("androidx.appcompat:appcompat:1.3.1")
     implementation("androidx.activity:activity-ktx:1.3.0-rc02")
     implementation("androidx.fragment:fragment-ktx:1.3.6")
     implementation("androidx.preference:preference-ktx:1.1.1")
@@ -122,4 +131,6 @@ dependencies {
     androidTestImplementation("androidx.test:rules:1.4.0")
     androidTestImplementation("androidx.test:runner:1.4.0")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.4.0")
+
+    androidTestImplementation("androidx.compose.ui:ui-test-junit4:1.0.0-rc02")
 }
