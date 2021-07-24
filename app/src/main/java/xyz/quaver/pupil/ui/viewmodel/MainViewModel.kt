@@ -60,7 +60,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app), DIAware {
     val availableSortMode = Transformations.map(_source) {
         it.availableSortMode
     }
-    val sortMode = MutableLiveData<SortModeInterface>()
+
+    val sortModeIndex = MutableLiveData<Int>()
 
     val sourceIcon = Transformations.map(_source) {
         it.iconResID
@@ -86,7 +87,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app), DIAware {
 
     fun setSourceAndReset(sourceName: String) {
         _source.value = sourceFactory(sourceName).also {
-            sortMode.value = it.availableSortMode.first()
+            sortModeIndex.value = 0
         }
 
         setQueryAndSearch()
@@ -119,7 +120,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app), DIAware {
     fun query() {
         val perPage = Preferences["per_page", "25"].toInt()
         val source = _source.value ?: error("Source is null")
-        val sortMode = sortMode.value ?: source.availableSortMode.first()
+        val sortModeIndex = sortModeIndex.value ?: 0
         val currentPage = currentPage.value ?: 1
 
         suggestionJob?.cancel()
@@ -134,7 +135,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app), DIAware {
                 val (channel, count) = source.search(
                     query.value ?: "",
                     (currentPage - 1) * perPage until currentPage * perPage,
-                    sortMode
+                    sortModeIndex
                 )
 
                 totalItems.postValue(count)
@@ -168,7 +169,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app), DIAware {
                 _source.value?.search(
                     query.value + Preferences["default_query", ""],
                     random .. random,
-                    sortMode.value!!
+                    sortModeIndex.value!!
                 )?.first?.receive()
             }?.let(callback)
         }

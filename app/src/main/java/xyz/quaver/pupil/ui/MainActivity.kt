@@ -41,7 +41,6 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.CircularProgressDrawable
 import com.daimajia.swipe.adapters.RecyclerSwipeAdapter
 import com.google.android.material.navigation.NavigationView
-import com.google.android.material.snackbar.Snackbar
 import com.orhanobut.logger.Logger
 import kotlinx.coroutines.*
 import org.kodein.di.DIAware
@@ -96,8 +95,18 @@ class MainActivity :
                 binding.contents.searchview.binding.querySection.menuView.menuItems.findMenu(R.id.sort).subMenu.apply {
                     clear()
 
-                    it.forEach {
-                        add(R.id.sort_mode_group_id, it.ordinal, Menu.NONE, it.name)
+                    it.forEachIndexed { index, sortMode ->
+                        add(R.id.sort_mode_group_id, index, Menu.NONE, sortMode).setOnMenuItemClickListener {
+                            model.setPage(1)
+                            model.sortModeIndex.value = it.itemId
+
+                            children.forEachIndexed { menuIndex, menuItem ->
+                                menuItem.isChecked = menuIndex == index
+                            }
+
+                            model.query()
+                            true
+                        }
                     }
 
                     setGroupCheckable(R.id.sort_mode_group_id, true, true)
@@ -417,32 +426,23 @@ class MainActivity :
     }
 
     private fun onActionMenuItemSelected(item: MenuItem?) {
-        if (item?.groupId == R.id.sort_mode_group_id) {
-            model.setPage(1)
-            model.sortMode.value = model.availableSortMode.value?.let { availableSortMode ->
-                availableSortMode.getOrElse(item.itemId) { availableSortMode.first() }
-            }
+        when(item?.itemId) {
+            R.id.main_menu_settings -> startActivity(Intent(this@MainActivity, SettingsActivity::class.java))
+            R.id.source -> SourceSelectDialog().apply {
+                onSourceSelectedListener = {
+                    model.setSourceAndReset(it)
 
-            model.query()
+                    dismiss()
+                }
+
+                onSourceSettingsSelectedListener = {
+                    startActivity(Intent(this@MainActivity, SettingsActivity::class.java).putExtra(SettingsActivity.SETTINGS_EXTRA, it))
+
+                    refreshOnResume = true
+                    dismiss()
+                }
+            }.show(supportFragmentManager, null)
         }
-        else
-            when(item?.itemId) {
-                R.id.main_menu_settings -> startActivity(Intent(this@MainActivity, SettingsActivity::class.java))
-                R.id.source -> SourceSelectDialog().apply {
-                    onSourceSelectedListener = {
-                        model.setSourceAndReset(it)
-
-                        dismiss()
-                    }
-
-                    onSourceSettingsSelectedListener = {
-                        startActivity(Intent(this@MainActivity, SettingsActivity::class.java).putExtra(SettingsActivity.SETTINGS_EXTRA, it))
-
-                        refreshOnResume = true
-                        dismiss()
-                    }
-                }.show(supportFragmentManager, null)
-            }
     }
 
     override fun onNavigationItemSelected(item: MenuItem): Boolean {

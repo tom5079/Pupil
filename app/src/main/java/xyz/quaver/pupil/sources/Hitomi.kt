@@ -18,6 +18,7 @@
 
 package xyz.quaver.pupil.sources
 
+import android.app.Application
 import android.view.LayoutInflater
 import android.widget.TextView
 import io.ktor.http.*
@@ -35,12 +36,7 @@ import xyz.quaver.pupil.util.wordCapitalize
 import kotlin.math.max
 import kotlin.math.min
 
-class Hitomi : Source() {
-
-    enum class SortMode : SortModeInterface {
-        NEWEST,
-        POPULAR
-    }
+class Hitomi(app: Application) : Source() {
 
     @Parcelize
     data class TagSuggestion(val s: String, val t: Int, val u: String, val n: String) : SearchSuggestion {
@@ -60,18 +56,18 @@ class Hitomi : Source() {
     override val name: String = "hitomi.la"
     override val iconResID: Int = R.drawable.hitomi
     override val preferenceID: Int = R.xml.hitomi_preferences
-    override val availableSortMode: List<SortModeInterface> = SortMode.values().toList()
+    override val availableSortMode: List<String> = app.resources.getStringArray(R.array.hitomi_sort_mode).toList()
 
     var cachedQuery: String? = null
-    var cachedSortMode: SortMode? = null
+    var cachedSortMode: Int = -1
     val cache = mutableListOf<Int>()
 
-    override suspend fun search(query: String, range: IntRange, sortMode: SortModeInterface): Pair<Channel<ItemInfo>, Int> {
+    override suspend fun search(query: String, range: IntRange, sortMode: Int): Pair<Channel<ItemInfo>, Int> {
         if (cachedQuery != query || cachedSortMode != sortMode || cache.isEmpty()) {
             cachedQuery = null
             cache.clear()
             yield()
-            doSearch("$query ${Preferences["hitomi.default_query", ""]}", sortMode == SortMode.POPULAR).let {
+            doSearch("$query ${Preferences["hitomi.default_query", ""]}", sortMode == 1).let {
                 yield()
                 cache.addAll(it)
             }

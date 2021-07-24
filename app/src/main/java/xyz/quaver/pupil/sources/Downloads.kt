@@ -41,11 +41,11 @@ class Downloads(override val di: DI) : Source(), DIAware {
         get() = R.drawable.ic_download
     override val preferenceID: Int
         get() = R.xml.download_preferences
-    override val availableSortMode: List<DefaultSortMode> = DefaultSortMode.values().toList()
+    override val availableSortMode: List<String> = emptyList()
 
     private val downloadManager: DownloadManager by instance()
 
-    override suspend fun search(query: String, range: IntRange, sortMode: SortModeInterface): Pair<Channel<ItemInfo>, Int> {
+    override suspend fun search(query: String, range: IntRange, sortMode: Int): Pair<Channel<ItemInfo>, Int> {
         val downloads = downloadManager.downloads.toList()
 
         val channel = Channel<ItemInfo>()
