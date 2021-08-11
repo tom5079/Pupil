@@ -38,7 +38,7 @@ android {
         minSdkVersion 16
         targetSdkVersion 30
         versionCode 66
-        versionName "5.1.12"
+        versionName "5.1.13"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
     }
@@ -108,9 +108,9 @@ dependencies {
 
     //implementation "com.quiph.ui:recyclerviewfastscroller:0.2.1"
 
-    implementation 'com.github.piasy:BigImageViewer:1.8.0'
-    implementation 'com.github.piasy:FrescoImageLoader:1.8.0'
-    implementation 'com.github.piasy:FrescoImageViewFactory:1.8.0'
+    implementation 'com.github.piasy:BigImageViewer:1.8.1'
+    implementation 'com.github.piasy:FrescoImageLoader:1.8.1'
+    implementation 'com.github.piasy:FrescoImageViewFactory:1.8.1'
 
     //noinspection GradleDependency
     implementation "com.squareup.okhttp3:okhttp:$okhttp_version"
@@ -125,7 +125,7 @@ dependencies {
 
     implementation "ru.noties.markwon:core:3.1.0"
 
-    implementation "xyz.quaver:libpupil:2.1.5"
+    implementation "xyz.quaver:libpupil:2.1.6"
     implementation "xyz.quaver:documentfilex:0.6.1"
     implementation "xyz.quaver:floatingsearchview:1.1.7"
 
