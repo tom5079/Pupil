@@ -18,50 +18,14 @@
 
 package xyz.quaver.pupil.ui.dialog
 
-import android.app.Dialog
-import android.content.Intent
-import android.graphics.drawable.Animatable
-import android.os.Bundle
-import android.view.View
-import android.view.ViewGroup
-import android.widget.LinearLayout.LayoutParams
-import androidx.appcompat.app.AlertDialog
-import androidx.core.content.ContextCompat
-import androidx.core.view.forEach
 import androidx.fragment.app.DialogFragment
-import androidx.fragment.app.viewModels
-import androidx.lifecycle.MutableLiveData
-import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
-import androidx.viewpager2.widget.ViewPager2
-import com.facebook.drawee.backends.pipeline.Fresco
-import com.facebook.drawee.controller.BaseControllerListener
-import com.facebook.imagepipeline.image.ImageInfo
-import kotlinx.coroutines.*
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import org.kodein.di.DIAware
 import org.kodein.di.android.x.closestDI
-import org.kodein.di.instance
-import xyz.quaver.pupil.R
-import xyz.quaver.pupil.adapters.SearchResultsAdapter
-import xyz.quaver.pupil.adapters.ThumbnailPageAdapter
-import xyz.quaver.pupil.databinding.*
-import xyz.quaver.pupil.sources.ItemInfo
-import xyz.quaver.pupil.types.Tag
-import xyz.quaver.pupil.ui.ReaderActivity
-import xyz.quaver.pupil.ui.view.TagChip
-import xyz.quaver.pupil.ui.viewmodel.GalleryDialogViewModel
-import xyz.quaver.pupil.util.ItemClickSupport
-import xyz.quaver.pupil.util.SavedSourceSet
-import xyz.quaver.pupil.util.wordCapitalize
-import java.util.*
-import kotlin.collections.ArrayList
 
 class GalleryDialogFragment(private val source: String, private val itemID: String) : DialogFragment(), DIAware {
 
     override val di by closestDI()
-
+/*
     private val favoriteTags: SavedSourceSet by instance(tag = "favoriteTags")
 
     val onChipClickedHandler = ArrayList<((Tag) -> (Unit))>()
@@ -111,7 +75,7 @@ class GalleryDialogFragment(private val source: String, private val itemID: Stri
                 .build()
 
             MainScope().launch {
-                binding.type.text = it.extra[ItemInfo.ExtraType.TYPE]?.await()?.wordCapitalize()
+                binding.type.text = it.extra[ItemInfo.ExtraType.TYPE]?.wordCapitalize()
                 addDetails(it)
                 addPreviews(it)
 
@@ -150,11 +114,11 @@ class GalleryDialogFragment(private val source: String, private val itemID: Stri
             ).zip(
                 listOf(
                     info.artists.split(", ").map { Tag("artist", it) },
-                    info.extra[ItemInfo.ExtraType.GROUP]?.await()?.split(", ")?.filterNot { it.isEmpty() }?.map { Tag("group", it) },
-                    info.extra[ItemInfo.ExtraType.LANGUAGE]?.await()?.split(", ")?.filterNot { it.isEmpty() }?.map { Tag("language", it) },
-                    info.extra[ItemInfo.ExtraType.SERIES]?.await()?.split(", ")?.filterNot { it.isEmpty() }?.map { Tag("series", it) },
-                    info.extra[ItemInfo.ExtraType.CHARACTER]?.await()?.split(", ")?.filterNot { it.isEmpty() }?.map { Tag("character", it) },
-                    info.extra[ItemInfo.ExtraType.TAGS]?.await()?.split(", ")?.filterNot { it.isEmpty() }?.sortedBy {
+                    info.extra[ItemInfo.ExtraType.GROUP]?.split(", ")?.filterNot { it.isEmpty() }?.map { Tag("group", it) },
+                    info.extra[ItemInfo.ExtraType.LANGUAGE]?.split(", ")?.filterNot { it.isEmpty() }?.map { Tag("language", it) },
+                    info.extra[ItemInfo.ExtraType.SERIES]?.split(", ")?.filterNot { it.isEmpty() }?.map { Tag("series", it) },
+                    info.extra[ItemInfo.ExtraType.CHARACTER]?.split(", ")?.filterNot { it.isEmpty() }?.map { Tag("character", it) },
+                    info.extra[ItemInfo.ExtraType.TAGS]?.split(", ")?.filterNot { it.isEmpty() }?.sortedBy {
                         val tag = Tag.parse(it)
 
                         if (favoriteTags.map[source]?.contains(tag.toString()) == true)
@@ -197,7 +161,7 @@ class GalleryDialogFragment(private val source: String, private val itemID: Stri
     }
 
     private suspend fun addPreviews(info: ItemInfo) {
-        val previews = info.extra[ItemInfo.ExtraType.PREVIEW]?.await()?.split(", ") ?: return
+        val previews = info.extra[ItemInfo.ExtraType.PREVIEW]?.split(", ") ?: return
 
         GalleryDialogDetailsBinding.inflate(layoutInflater, binding.contents, true).apply {
             type.setText(R.string.gallery_thumbnails)
@@ -257,5 +221,5 @@ class GalleryDialogFragment(private val source: String, private val itemID: Stri
         binding.contents.forEach { if (it is RecyclerView) ItemClickSupport.removeFrom(it) }
         super.onDestroyView()
     }
-
+*/
 }

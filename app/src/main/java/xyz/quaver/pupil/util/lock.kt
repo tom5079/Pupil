@@ -43,7 +43,7 @@ fun hashWithSalt(password: String): Pair<String, String> {
     return Pair(hash(password+salt), salt)
 }
 
-const val source = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
+private const val source = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
 
 @Serializable
 data class Lock(val type: Type, val hash: String, val salt: String) {

@@ -37,9 +37,6 @@ class ManageStorageFragment : PreferenceFragmentCompat(), DIAware, Preference.On
     private var job: Job? = null
 
     private val downloadManager: DownloadManager by instance()
-    private val cache: ImageCache by instance()
-
-    private val histories: SavedSourceSet by instance(tag = "histories")
 
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
         setPreferencesFromResource(R.xml.manage_storage_preferences, rootKey)
@@ -54,9 +51,7 @@ class ManageStorageFragment : PreferenceFragmentCompat(), DIAware, Preference.On
             this ?: return false
 
             when (key) {
-                "delete_cache" -> {
-                    val cache: ImageCache by instance()
-
+                "delete_cache" -> {/*
                     AlertDialog.Builder(context).apply {
                         setTitle(R.string.warning)
                         setMessage(R.string.settings_clear_cache_alert_message)
@@ -72,7 +67,7 @@ class ManageStorageFragment : PreferenceFragmentCompat(), DIAware, Preference.On
                             }
                         }
                         setNegativeButton(android.R.string.cancel) { _, _ -> }
-                    }.show()
+                    }.show()*/
                 }
                 "delete_downloads" -> {
                     val dir = downloadManager.downloadFolder
@@ -114,6 +109,7 @@ class ManageStorageFragment : PreferenceFragmentCompat(), DIAware, Preference.On
                         setNegativeButton(android.R.string.cancel) { _, _ -> }
                     }.show()
                 }
+                /*
                 "clear_history" -> {
                     AlertDialog.Builder(context).apply {
                         setTitle(R.string.warning)
@@ -124,7 +120,7 @@ class ManageStorageFragment : PreferenceFragmentCompat(), DIAware, Preference.On
                         }
                         setNegativeButton(android.R.string.cancel) { _, _ -> }
                     }.show()
-                }
+                }*/
                 else -> return false
             }
         }
@@ -135,12 +131,12 @@ class ManageStorageFragment : PreferenceFragmentCompat(), DIAware, Preference.On
     private fun initPreferences() {
         val context = context ?: return
 
-        with (findPreference<Preference>("delete_cache")) {
+        with (findPreference<Preference>("delete_cache")) {/*
             this ?: return@with
             summary = context.getString(R.string.settings_storage_usage, byteToString(cache.cacheFolder.size()))
 
             onPreferenceClickListener = this@ManageStorageFragment
-        }
+        */}
 
         with (findPreference<Preference>("delete_downloads")) {
             this ?: return@with
@@ -163,14 +159,14 @@ class ManageStorageFragment : PreferenceFragmentCompat(), DIAware, Preference.On
 
             onPreferenceClickListener = this@ManageStorageFragment
         }
-
+/*
         with (findPreference<Preference>("clear_history")) {
             this ?: return@with
 
             summary = context.getString(R.string.settings_clear_history_summary, histories.map.values.sumOf { it.size })
 
             onPreferenceClickListener = this@ManageStorageFragment
-        }
+        }*/
     }
 
     override fun onDestroy() {

@@ -31,7 +31,6 @@ import org.kodein.di.DIAware
 import org.kodein.di.android.x.closestDI
 import org.kodein.di.direct
 import org.kodein.di.instance
-import xyz.quaver.pupil.sources.SourcePreferenceIDs
 import xyz.quaver.pupil.ui.dialog.DefaultQueryDialogFragment
 import xyz.quaver.pupil.util.Preferences
 import xyz.quaver.pupil.util.getAvailableLanguages
@@ -49,7 +48,7 @@ class SourceSettingsFragment(private val source: String) :
     private val client: HttpClient by instance()
 
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
-        setPreferencesFromResource(direct.instance<SourcePreferenceIDs>().toMap()[source]!!, rootKey)
+        /*setPreferencesFromResource(direct.instance<SourcePreferenceIDs>().toMap()[source]!!, rootKey)*/
 
         initPreferences()
     }

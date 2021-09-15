@@ -29,7 +29,6 @@ import org.kodein.di.instance
 import xyz.quaver.floatingsearchview.suggestions.model.SearchSuggestion
 import xyz.quaver.pupil.sources.*
 import xyz.quaver.pupil.util.Preferences
-import xyz.quaver.pupil.util.notify
 import xyz.quaver.pupil.util.source
 import kotlin.math.ceil
 import kotlin.math.roundToInt
@@ -39,10 +38,11 @@ import kotlin.random.Random
 class MainViewModel(app: Application) : AndroidViewModel(app), DIAware {
     override val di by closestDI()
 
-    private val _searchResults = MutableLiveData<MutableList<ItemInfo>>()
+    private val _searchResults = MutableLiveData<List<ItemInfo>>()
     val searchResults = _searchResults as LiveData<List<ItemInfo>>
-    var loading = false
-        private set
+
+    private val _loading = MutableLiveData(false)
+    val loading = _loading as LiveData<Boolean>
 
     private var queryJob: Job? = null
     private var suggestionJob: Job? = null
@@ -111,7 +111,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app), DIAware {
         setSourceAndReset(
             when {
                 mode == MainMode.DOWNLOADS -> "downloads"
-                source.value is Downloads -> "hitomi.la"
+                //source.value is Downloads -> "hitomi.la"
                 else -> source.value!!.name
             }
         )
@@ -126,7 +126,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app), DIAware {
         suggestionJob?.cancel()
         queryJob?.cancel()
 
-        loading = true
+        _loading.value = true
         val results = mutableListOf<ItemInfo>()
         _searchResults.value = results
 
@@ -146,11 +146,10 @@ class MainViewModel(app: Application) : AndroidViewModel(app), DIAware {
             for (result in channel) {
                 yield()
                 results.add(result)
-                _searchResults.notify()
+                _searchResults.value = results.toList()
             }
-            _searchResults.notify()
 
-            loading = false
+            _loading.value = false
         }
     }
 

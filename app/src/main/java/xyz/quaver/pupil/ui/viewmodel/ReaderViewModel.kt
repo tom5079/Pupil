@@ -20,22 +20,20 @@
 package xyz.quaver.pupil.ui.viewmodel
 
 import android.app.Application
+import android.content.Intent
 import android.net.Uri
-import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.viewModelScope
-import com.orhanobut.logger.Logger
+import androidx.constraintlayout.widget.ConstraintSet
+import androidx.lifecycle.*
 import io.ktor.client.request.*
-import io.ktor.http.*
-import io.ktor.util.*
 import kotlinx.coroutines.*
 import org.kodein.di.DIAware
 import org.kodein.di.android.x.closestDI
 import org.kodein.di.instance
 import xyz.quaver.pupil.adapters.ReaderItem
+import xyz.quaver.pupil.db.AppDatabase
+import xyz.quaver.pupil.db.Bookmark
+import xyz.quaver.pupil.db.History
 import xyz.quaver.pupil.sources.Source
-import xyz.quaver.pupil.util.ImageCache
 import xyz.quaver.pupil.util.notify
 import xyz.quaver.pupil.util.source
 
@@ -44,7 +42,16 @@ class ReaderViewModel(app: Application) : AndroidViewModel(app), DIAware {
 
     override val di by closestDI()
 
-    private val cache: ImageCache by instance()
+    private val database: AppDatabase by instance()
+
+    private val historyDao = database.historyDao()
+    private val bookmarkDao = database.bookmarkDao()
+
+    private val _source = MutableLiveData<String>()
+    val source = _source as LiveData<String>
+
+    private val _itemID = MutableLiveData<String>()
+    val itemID = _itemID as LiveData<String>
 
     private val _title = MutableLiveData<String>()
     val title = _title as LiveData<String>
@@ -55,9 +62,56 @@ class ReaderViewModel(app: Application) : AndroidViewModel(app), DIAware {
     private var _readerItems = MutableLiveData<MutableList<ReaderItem>>()
     val readerItems = _readerItems as LiveData<List<ReaderItem>>
 
+    val isBookmarked = Transformations.switchMap(MediatorLiveData<Pair<Source, String>>().apply {
+        addSource(source) { source -> itemID.value?.let { itemID -> source to itemID } }
+        addSource(itemID) { itemID -> source.value?.let { source -> source to itemID } }
+    }) { (source, itemID) ->
+        bookmarkDao.contains(source.name, itemID)
+    }
+
+    val sourceInstance = Transformations.map(source) {
+        source(it)
+    }
+
+    val sourceIcon = Transformations.map(sourceInstance) {
+        it.value.iconResID
+    }
+
+    /**
+     * Parses source and itemID from the intent
+     *
+     * @throws IllegalStateException when the intent has no recognizable source and/or itemID
+     */
+    fun handleIntent(intent: Intent) {
+        if (intent.action == Intent.ACTION_VIEW) {
+            val uri = intent.data
+            val lastPathSegment = uri?.lastPathSegment
+            if (uri != null && lastPathSegment != null) {
+                _source.postValue(uri.host ?: error("Source cannot be null"))
+                _itemID.postValue(when (uri.host) {
+                    "hitomi.la" ->
+                        Regex("([0-9]+).html").find(lastPathSegment)?.groupValues?.get(1) ?: error("Invalid itemID")
+                    "hiyobi.me" -> lastPathSegment
+                    "e-hentai.org" -> uri.pathSegments[1]
+                    else -> error("Invalid host")
+                })
+            }
+        } else {
+            _source.postValue(intent.getStringExtra("source") ?: error("Invalid source"))
+            _itemID.postValue(intent.getStringExtra("id") ?: error("Invalid itemID"))
+        }
+    }
+
     @OptIn(ExperimentalCoroutinesApi::class)
-    fun load(sourceName: String, itemID: String) {
-        val source: Source by source(sourceName)
+    fun load() {
+        val source: Source by source(source.value ?: return)
+        val itemID = itemID.value ?: return
+
+        viewModelScope.launch {
+            launch(Dispatchers.IO) {
+                historyDao.insert(History(source.name, itemID))
+            }
+        }
 
         viewModelScope.launch {
             _title.value = withContext(Dispatchers.IO) {
@@ -66,66 +120,20 @@ class ReaderViewModel(app: Application) : AndroidViewModel(app), DIAware {
         }
 
         viewModelScope.launch {
-            withContext(Dispatchers.IO) {
+            _images.postValue(withContext(Dispatchers.IO) {
                 source.images(itemID)
-            }.let { images ->
-                _readerItems.value = MutableList(images.size) { ReaderItem(0F, null) }
-                _images.value = images
-
-                images.forEachIndexed { index, image ->
-                    when (val scheme = image.takeWhile { it != ':' }) {
-                        "http", "https" -> {
-                            val file = cache.load {
-                                url(image)
-                                headers(source.getHeadersBuilderForImage(itemID, image))
-                            }
-
-                            val channel = cache.channels[image] ?: error("Channel is null")
-
-                            if (channel.isClosedForReceive) {
-                                _readerItems.value!![index] =
-                                    ReaderItem(_readerItems.value!![index].progress, Uri.fromFile(file))
-                                _readerItems.notify()
-                            } else {
-                                channel.invokeOnClose { e ->
-                                    viewModelScope.launch {
-                                        if (e == null) {
-                                            _readerItems.value!![index] =
-                                                ReaderItem(_readerItems.value!![index].progress, Uri.fromFile(file))
-                                            _readerItems.notify()
-                                        } else {
-                                            Logger.e(index.toString())
-                                            Logger.e(e, e.message ?: "")
-                                        }
-                                    }
-                                }
-
-                                launch {
-                                    kotlin.runCatching {
-                                        for (progress in channel) {
-                                            _readerItems.value!![index] =
-                                                ReaderItem(progress, _readerItems.value!![index].image)
-                                            _readerItems.notify()
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        "content" -> {
-                            _readerItems.value!![index] = ReaderItem(100f, Uri.parse(image))
-                            _readerItems.notify()
-                        }
-                        else -> throw IllegalArgumentException("Expected URL scheme 'http(s)' or 'content' but was '$scheme'")
-                    }
-                }
-            }
+            })
         }
     }
 
-    override fun onCleared() {
+    fun toggleBookmark() {
+        val bookmark = source.value?.let { source -> itemID.value?.let { itemID -> Bookmark(source, itemID) } } ?: return
+
         CoroutineScope(Dispatchers.IO).launch {
-            cache.cleanup()
-            images.value?.let { cache.free(it) }
+            if (bookmarkDao.contains(bookmark).value ?: return@launch)
+                bookmarkDao.delete(bookmark)
+            else
+                bookmarkDao.insert(bookmark)
         }
     }
 

@@ -18,101 +18,36 @@
 
 package xyz.quaver.pupil.sources
 
+import android.app.Application
+import android.os.Parcelable
+import androidx.compose.runtime.Composable
+import androidx.lifecycle.*
 import io.ktor.http.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.parcelize.Parcelize
-import kotlinx.serialization.KSerializer
-import kotlinx.serialization.SerialName
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.encoding.Decoder
-import kotlinx.serialization.encoding.Encoder
 import org.kodein.di.*
 import xyz.quaver.floatingsearchview.databinding.SearchSuggestionItemBinding
 import xyz.quaver.floatingsearchview.suggestions.model.SearchSuggestion
 import xyz.quaver.pupil.R
+import xyz.quaver.pupil.sources.hitomi.Hitomi
 
-@Serializable(with = ItemInfo.SearchResultSerializer::class)
-data class ItemInfo(
-    val source: String,
-    val id: String,
-    val title: String,
-    val thumbnail: String,
-    val artists: String,
-    val extra: Map<ExtraType, Deferred<String?>> = emptyMap()
-) {
-    enum class ExtraType {
-        GROUP,
-        CHARACTER,
-        SERIES,
-        TYPE,
-        TAGS,
-        LANGUAGE,
-        PAGECOUNT,
-        PREVIEW,
-        RELATED_ITEM,
-    }
-
-    @Serializable
-    @SerialName("SearchResult")
-    data class ItemInfoSurrogate(
-        val source: String,
-        val id: String,
-        val title: String,
-        val thumbnail: String,
-        val artists: String,
-        val extra: Map<ExtraType, String?> = emptyMap()
-    )
-
-    object SearchResultSerializer : KSerializer<ItemInfo> {
-        override val descriptor = ItemInfoSurrogate.serializer().descriptor
-
-        override fun serialize(encoder: Encoder, value: ItemInfo) {
-            val surrogate = ItemInfoSurrogate(
-                value.source,
-                value.id,
-                value.title,
-                value.thumbnail,
-                value.artists,
-                value.extra.mapValues { runBlocking { it.value.await() } }
-            )
-            encoder.encodeSerializableValue(ItemInfoSurrogate.serializer(), surrogate)
-        }
-
-        override fun deserialize(decoder: Decoder): ItemInfo {
-            val surrogate = decoder.decodeSerializableValue(ItemInfoSurrogate.serializer())
-            return ItemInfo(
-                surrogate.source,
-                surrogate.id,
-                surrogate.title,
-                surrogate.thumbnail,
-                surrogate.artists,
-                surrogate.extra.mapValues { CoroutineScope(Dispatchers.Unconfined).async { it.value } }
-            )
-        }
-    }
-
-    val isReady: Boolean
-        get() = extra.all { it.value.isCompleted }
-
-    suspend fun awaitAll() = extra.values.awaitAll()
-
-    companion object {
-        val extraTypeMap = mapOf(
-            ExtraType.SERIES to R.string.galleryblock_series,
-            ExtraType.TYPE to R.string.galleryblock_type,
-            ExtraType.LANGUAGE to R.string.galleryblock_language,
-            ExtraType.PAGECOUNT to R.string.galleryblock_pagecount
-        )
-    }
+interface ItemInfo : Parcelable {
+    val source: String
+    val itemID: String
+    val title: String
 }
 
 @Parcelize
 class DefaultSearchSuggestion(override val body: String) : SearchSuggestion
 
-interface SortModeInterface {
-    val ordinal: Int
-    val name: Int
+data class SearchResultEvent(val type: Type, val payload: String) {
+    enum class Type {
+        OPEN_READER,
+        OPEN_DETAILS,
+        NEW_QUERY,
+        TOGGLE_FAVORITES
+    }
 }
 
 abstract class Source {
@@ -121,10 +56,13 @@ abstract class Source {
     abstract val preferenceID: Int
     abstract val availableSortMode: List<String>
 
-    abstract suspend fun search(query: String, range: IntRange, sortMode: Int) : Pair<Channel<ItemInfo>, Int>
-    abstract suspend fun suggestion(query: String) : List<SearchSuggestion>
-    abstract suspend fun images(itemID: String) : List<String>
-    abstract suspend fun info(itemID: String) : ItemInfo
+    abstract suspend fun search(query: String, range: IntRange, sortMode: Int): Pair<Channel<ItemInfo>, Int>
+    abstract suspend fun suggestion(query: String): List<SearchSuggestion>
+    abstract suspend fun images(itemID: String): List<String>
+    abstract suspend fun info(itemID: String): ItemInfo
+
+    @Composable
+    open fun SearchResult(itemInfo: ItemInfo, onEvent: ((SearchResultEvent) -> Unit)? = null) { }
 
     open fun getHeadersBuilderForImage(itemID: String, url: String): HeadersBuilder.() -> Unit = { }
 
@@ -135,22 +73,15 @@ abstract class Source {
 
 typealias SourceEntry = Pair<String, Source>
 typealias SourceEntries = Set<SourceEntry>
-typealias SourcePreferenceID = Pair<String, Int>
-typealias SourcePreferenceIDs = Set<SourcePreferenceID>
-@Suppress("UNCHECKED_CAST")
 val sourceModule = DI.Module(name = "source") {
     bindSet<SourceEntry>()
-    bindSet<SourcePreferenceID>()
 
-    onReady {
-        listOf<Source>(
-            Hitomi(instance())
-        ).forEach { source ->
-            inSet { multiton { _: Unit -> source.name to source } }
-            inSet { singleton { source.name to source.preferenceID } }
-        }
+    listOf<(Application) -> (Source)>(
+        { Hitomi(it) }
+    ).forEach { source ->
+        inSet { singleton { source.invoke(instance()).let { it.name to it } } }
     }
 
-    bind { factory { source: String -> History(di, source) } }
-    inSet { singleton { Downloads(di).let { it.name to it as Source } } }
+    bind { singleton { History(di) } }
+   // inSet { singleton { Downloads(di).let { it.name to it as Source } } }
 }

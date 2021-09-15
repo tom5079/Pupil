@@ -37,7 +37,7 @@ class SourceSelectDialog : DialogFragment(), DIAware {
     var onSourceSelectedListener: ((String) -> Unit)? = null
     var onSourceSettingsSelectedListener: ((String) -> Unit)? = null
 
-    override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
+    override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {/*
         return Dialog(requireContext()).apply {
             window?.requestFeature(Window.FEATURE_NO_TITLE)
             window?.setLayout(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT)
@@ -55,6 +55,6 @@ class SourceSelectDialog : DialogFragment(), DIAware {
                 }
             })
         }
-    }
+    */return super.onCreateDialog(savedInstanceState)}
 
 }

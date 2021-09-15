@@ -45,9 +45,8 @@ import org.kodein.di.direct
 import org.kodein.di.instance
 import xyz.quaver.pupil.Pupil
 import xyz.quaver.pupil.R
-import xyz.quaver.pupil.util.SavedSourceSet
 import java.io.IOException
-
+/*
 class ManageFavoritesFragment : PreferenceFragmentCompat(), DIAware {
 
     private lateinit var progressDrawable: CircularProgressDrawable
@@ -155,4 +154,4 @@ class ManageFavoritesFragment : PreferenceFragmentCompat(), DIAware {
         }
     }
 
-}
+}*/
