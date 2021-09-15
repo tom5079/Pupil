@@ -18,46 +18,51 @@
 
 package xyz.quaver.pupil.ui
 
-import android.annotation.SuppressLint
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.text.InputType
-import android.text.util.Linkify
 import android.view.KeyEvent
 import android.view.Menu
 import android.view.MenuItem
-import android.view.animation.DecelerateInterpolator
 import android.widget.EditText
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material.CircularProgressIndicator
+import androidx.compose.runtime.*
+import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.core.view.GravityCompat
-import androidx.core.view.ViewCompat
 import androidx.core.view.children
 import androidx.core.widget.ImageViewCompat
-import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.CircularProgressDrawable
-import com.daimajia.swipe.adapters.RecyclerSwipeAdapter
 import com.google.android.material.navigation.NavigationView
-import com.orhanobut.logger.Logger
 import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.distinctUntilChanged
 import org.kodein.di.DIAware
 import org.kodein.di.android.closestDI
 import xyz.quaver.floatingsearchview.FloatingSearchView
 import xyz.quaver.pupil.*
-import xyz.quaver.pupil.adapters.SearchResultsAdapter
+import xyz.quaver.pupil.R
 import xyz.quaver.pupil.databinding.MainActivityBinding
+import xyz.quaver.pupil.sources.ItemInfo
+import xyz.quaver.pupil.sources.Source
 import xyz.quaver.pupil.types.*
 import xyz.quaver.pupil.ui.dialog.DownloadLocationDialogFragment
-import xyz.quaver.pupil.ui.dialog.GalleryDialogFragment
 import xyz.quaver.pupil.ui.dialog.SourceSelectDialog
 import xyz.quaver.pupil.ui.view.ProgressCardView
-import xyz.quaver.pupil.ui.view.SwipePageTurnView
 import xyz.quaver.pupil.ui.viewmodel.MainViewModel
 import xyz.quaver.pupil.util.*
-import java.util.regex.Pattern
 import kotlin.math.*
 
 class MainActivity :
@@ -70,11 +75,63 @@ class MainActivity :
     private lateinit var binding: MainActivityBinding
     private val model: MainViewModel by viewModels()
 
-    private var refreshOnResume = false
+    private var refreshOnResume = true
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = MainActivityBinding.inflate(layoutInflater)
+
+        binding.contents.composeView.setContent {
+            val searchResults: List<ItemInfo> by model.searchResults.observeAsState(emptyList())
+            val source: Source? by model.source.observeAsState(null)
+            val loading: Boolean by model.loading.observeAsState(false)
+
+            val listState = rememberLazyListState()
+
+            LaunchedEffect(listState) {
+                var lastOffset = 0
+                val querySectionHeight = binding.contents.searchview.binding.querySection.root.height.toFloat()
+
+                snapshotFlow { listState.firstVisibleItemScrollOffset }
+                    .distinctUntilChanged()
+                    .collect { newOffset ->
+                        val dy = newOffset - lastOffset
+                        lastOffset = newOffset
+
+                        binding.contents.searchview.apply {
+                            translationY = (translationY - dy).coerceIn(-querySectionHeight .. 0f)
+                        }
+                    }
+            }
+
+            Box(Modifier.fillMaxSize()) {
+                LazyColumn(Modifier.fillMaxSize(), state = listState, contentPadding = PaddingValues(0.dp, 64.dp, 0.dp, 0.dp)) {
+                    item(searchResults) {
+                        searchResults.forEach { itemInfo ->
+                            ProgressCardView(
+                                progress = 0.5f,
+                                onClick = {
+                                    startActivity(
+                                        Intent(
+                                            this@MainActivity,
+                                            ReaderActivity::class.java
+                                        ).apply {
+                                            putExtra("source", model.source.value!!.name)
+                                            putExtra("id", itemInfo.itemID)
+                                        })
+                                }
+                            ) {
+                                source?.SearchResult(itemInfo = itemInfo)
+                            }
+                        }
+                    }
+                }
+
+                if (loading)
+                    CircularProgressIndicator(Modifier.align(Alignment.Center))
+            }
+        }
+
         setContentView(binding.root)
 
         if (Preferences["download_folder", ""].isEmpty())
@@ -92,7 +149,7 @@ class MainActivity :
 
         model.availableSortMode.observe(this) {
             binding.contents.searchview.post {
-                binding.contents.searchview.binding.querySection.menuView.menuItems.findMenu(R.id.sort).subMenu.apply {
+                binding.contents.searchview.binding.querySection.menuView.menuItems.findMenu(R.id.sort)?.subMenu?.apply {
                     clear()
 
                     it.forEachIndexed { index, sortMode ->
@@ -126,38 +183,7 @@ class MainActivity :
             }
         }
 
-        model.searchResults.observe(this) {
-            binding.contents.recyclerview.post {
-                if (model.loading) {
-                    if (it.isEmpty()) {
-                        binding.contents.noresult.hide()
-                        binding.contents.progressbar.show()
-
-                        (binding.contents.recyclerview.adapter as RecyclerSwipeAdapter).run {
-                            mItemManger.closeAllItems()
-
-                            notifyDataSetChanged()
-                        }
-
-                        ViewCompat.animate(binding.contents.searchview)
-                            .setDuration(100)
-                            .setInterpolator(DecelerateInterpolator())
-                            .translationY(0F)
-                    }
-                } else {
-                    binding.contents.progressbar.hide()
-                    if (it.isEmpty()) {
-                        binding.contents.recyclerview.adapter?.notifyDataSetChanged()
-                        binding.contents.noresult.show()
-                    } else {
-                        binding.contents.recyclerview.adapter?.notifyItemInserted(it.size-1)
-                    }
-                }
-            }
-        }
-
         model.suggestions.observe(this) { runOnUiThread {
-            Logger.d(it)
             binding.contents.searchview.swapSuggestions(
                 if (it.isEmpty()) listOf(NoResultSuggestion(getString(R.string.main_no_result))) else it
             )
@@ -173,12 +199,6 @@ class MainActivity :
         }
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-        binding.contents.recyclerview.adapter = null
-    }
-
-    @OptIn(ExperimentalStdlibApi::class)
     override fun onBackPressed() {
         if (binding.drawer.isDrawerOpen(GravityCompat.START))
             binding.drawer.closeDrawer(GravityCompat.START)
@@ -213,25 +233,6 @@ class MainActivity :
     }
 
     private fun initView() {
-        binding.contents.recyclerview.addOnScrollListener(object: RecyclerView.OnScrollListener() {
-            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
-                // -height of the search view < translationY < 0
-                binding.contents.searchview.translationY =
-                    min(
-                        max(
-                        binding.contents.searchview.translationY - dy,
-                        -binding.contents.searchview.binding.querySection.root.height.toFloat()
-                    ), 0F)
-
-                if (dy > 0)
-                    binding.contents.fab.hideMenuButton(true)
-                else if (dy < 0)
-                    binding.contents.fab.showMenuButton(true)
-            }
-        })
-
-        Linkify.addLinks(binding.contents.noresult, Pattern.compile(getString(R.string.https_text)), null, null, { _, _ -> getString(R.string.https) })
-
         //NavigationView
         binding.navView.setNavigationItemSelectedListener(this)
 
@@ -266,15 +267,15 @@ class MainActivity :
         with (binding.contents.randomFab) {
             setOnClickListener {
                 setImageDrawable(CircularProgressDrawable(context))
-
+/*
                 model.random { runOnUiThread {
-                    GalleryDialogFragment(model.source.value!!.name, it.id).apply {
+                    GalleryDialogFragment(model.source.value!!.name, it.itemID).apply {
                         onChipClickedHandler.add {
                             model.setQueryAndSearch(it.toQuery())
                             dismiss()
                         }
                     }.show(supportFragmentManager, "GalleryDialogFragment")
-                } }
+                } } */
             }
         }
 
@@ -290,112 +291,24 @@ class MainActivity :
 
                     setPositiveButton(android.R.string.ok) { _, _ ->
                         val galleryID = editText.text.toString()
-
+/*
                         GalleryDialogFragment(model.source.value!!.name, galleryID).apply {
                             onChipClickedHandler.add {
                                 model.setQueryAndSearch(it.toQuery())
                                 dismiss()
                             }
-                        }.show(supportFragmentManager, "GalleryDialogFragment")
+                        }.show(supportFragmentManager, "GalleryDialogFragment")*/
                     }
                 }.show()
             }
         }
 
-        with (binding.contents.swipePageTurnView) {
-            setOnPageTurnListener(object: SwipePageTurnView.OnPageTurnListener {
-                override fun onPrev(page: Int) {
-                    model.prevPage()
-
-                    // disable pageturn until the contents are loaded
-                    setCurrentPage(1, false)
-
-                    model.query()
-                }
-
-                override fun onNext(page: Int) {
-                    model.nextPage()
-
-                    // disable pageturn until the contents are loaded
-                    setCurrentPage(1, false)
-
-                    ViewCompat.animate(binding.contents.searchview)
-                        .setDuration(100)
-                        .setInterpolator(DecelerateInterpolator())
-                        .translationY(0F)
-
-                    model.query()
-                }
-            })
-        }
-
         setupSearchBar()
-        setupRecyclerView()
         // TODO: Save recent source
-    }
-
-    @SuppressLint("ClickableViewAccessibility")
-    private fun setupRecyclerView() {
-        with (binding.contents.recyclerview) {
-            adapter = SearchResultsAdapter(model.searchResults).apply {
-                onChipClickedHandler = {
-                    model.setQueryAndSearch(it.toQuery())
-                }
-                onDownloadClickedHandler = { source, itemID ->
-
-                    closeAllItems()
-                }
-
-                onDeleteClickedHandler = { source, itemID ->
-
-                    closeAllItems()
-                }
-            }
-            ItemClickSupport.addTo(this).apply {
-                onItemClickListener = listener@{ _, position, v ->
-                    if (v !is ProgressCardView)
-                        return@listener
-
-                    val intent = Intent(this@MainActivity, ReaderActivity::class.java).apply {
-                        putExtra("source", model.source.value!!.name)
-                        putExtra("id", model.searchResults.value!![position].id)
-                    }
-
-                    //TODO: Maybe sprinkling some transitions will be nice :D
-                    startActivity(intent)
-                }
-
-                onItemLongClickListener = listener@{ _, position, v ->
-                    if (v !is ProgressCardView)
-                        return@listener false
-
-                    val result = model.searchResults.value!!.getOrNull(position) ?: return@listener true
-
-                    GalleryDialogFragment(model.source.value!!.name, result.id).apply {
-                        onChipClickedHandler.add {
-                            model.setQueryAndSearch(it.toQuery())
-                            dismiss()
-                        }
-                    }.show(supportFragmentManager, "GalleryDialogFragment")
-
-                    true
-                }
-            }
-        }
     }
 
     private fun setupSearchBar() {
         with (binding.contents.searchview) {
-            onMenuStatusChangeListener = object: FloatingSearchView.OnMenuStatusChangeListener {
-                override fun onMenuOpened() {
-                    (this@MainActivity.binding.contents.recyclerview.adapter as SearchResultsAdapter).closeAllItems()
-                }
-
-                override fun onMenuClosed() {
-                    //Do Nothing
-                }
-            }
-
             onMenuItemClickListener = {
                 onActionMenuItemSelected(it)
             }

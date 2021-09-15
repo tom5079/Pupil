@@ -40,12 +40,12 @@ class GalleryDialogViewModel(app: Application) : AndroidViewModel(app), DIAware 
     private val _related = MutableLiveData<List<ItemInfo>>()
     val related: LiveData<List<ItemInfo>> = _related
 
-    fun load(source: String, itemID: String) {
+    fun load(source: String, itemID: String) {/*
         val source: Source by source(source)
 
         viewModelScope.launch {
             _info.value = withContext(Dispatchers.IO) {
-                source.info(itemID).also { it.awaitAll() }
+                source.info(itemID)
             }.also {
                 _related.value = it.extra[ItemInfo.ExtraType.RELATED_ITEM]?.await()?.split(", ")?.map { related ->
                     async(Dispatchers.IO) {
@@ -53,7 +53,7 @@ class GalleryDialogViewModel(app: Application) : AndroidViewModel(app), DIAware 
                     }
                 }?.awaitAll()
             }
-        }
+        }*/
     }
 
 }

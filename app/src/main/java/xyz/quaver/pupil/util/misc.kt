@@ -27,6 +27,7 @@ import org.kodein.di.DIAware
 import org.kodein.di.DirectDIAware
 import org.kodein.di.direct
 import org.kodein.di.instance
+import xyz.quaver.pupil.db.AppDatabase
 import xyz.quaver.pupil.sources.ItemInfo
 import xyz.quaver.pupil.sources.SourceEntries
 import java.io.InputStream
@@ -40,7 +41,7 @@ fun String.wordCapitalize() : String {
 
     @SuppressLint("DefaultLocale")
     for (word in this.split(" "))
-        result.add(word.capitalize(Locale.US))
+        result.add(word.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() })
 
     return result.joinToString(" ")
 }
@@ -73,9 +74,8 @@ fun byteToString(byte: Long, precision : Int = 1) : String {
 fun Int.normalizeID() = this.and(0xFFFF)
 
 val formatMap = mapOf<String, ItemInfo.() -> (String)>(
-    "-id-" to { id },
+    "-id-" to { itemID },
     "-title-" to { title },
-    "-artist-" to { artists }
     // TODO
 )
 /**
@@ -103,8 +103,8 @@ operator fun JsonElement.get(tag: String) =
 val JsonElement.content
     get() = this.jsonPrimitive.contentOrNull
 
-fun List<MenuItem>.findMenu(itemID: Int): MenuItem {
-    return first { it.itemId == itemID }
+fun List<MenuItem>.findMenu(itemID: Int): MenuItem? {
+    return firstOrNull { it.itemId == itemID }
 }
 
 fun <E> MutableLiveData<MutableList<E>>.notify() {
@@ -126,6 +126,9 @@ fun InputStream.copyTo(out: OutputStream, onCopy: (totalBytesCopied: Long, bytes
 
 fun DIAware.source(source: String) = lazy { direct.source(source) }
 fun DirectDIAware.source(source: String) = instance<SourceEntries>().toMap()[source]!!
+
+fun DIAware.database() = lazy { direct.database() }
+fun DirectDIAware.database() = instance<AppDatabase>()
 
 fun View.hide() {
     visibility = View.INVISIBLE

@@ -31,6 +31,7 @@ import org.kodein.di.DIAware
 import org.kodein.di.android.closestDI
 import xyz.quaver.io.FileX
 import xyz.quaver.io.util.*
+import xyz.quaver.pupil.sources.ItemInfo
 import xyz.quaver.pupil.sources.Source
 
 class DownloadManager constructor(context: Context) : ContextWrapper(context), DIAware {

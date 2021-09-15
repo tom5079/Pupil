@@ -24,52 +24,10 @@
     android:layout_height="match_parent"
     tools:context=".ui.MainActivity">
 
-    <xyz.quaver.pupil.ui.view.SwipePageTurnView
-        android:id="@+id/swipe_page_turn_view"
+    <androidx.compose.ui.platform.ComposeView
+        android:id="@+id/compose_view"
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
-
-        <com.qtalk.recyclerviewfastscroller.RecyclerViewFastScroller
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            app:handleDrawable="@drawable/thumb"
-            app:handleHasFixedSize="true"
-            app:handleHeight="72dp"
-            app:handleWidth="24dp"
-            app:disableTrack="true"
-            app:hideHandleAfter="1000"
-            app:trackMarginStart="64dp"
-            app:addLastItemPadding="true"
-            app:popupDrawable="@android:color/transparent">
-
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/recyclerview"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:paddingTop="64dp"
-                android:clipToPadding="false"
-                app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"/>
-
-        </com.qtalk.recyclerviewfastscroller.RecyclerViewFastScroller>
-
-    </xyz.quaver.pupil.ui.view.SwipePageTurnView>
-
-    <androidx.core.widget.ContentLoadingProgressBar
-        style="?android:attr/progressBarStyle"
-        android:id="@+id/progressbar"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center"
-        android:indeterminate="true"/>
-
-    <TextView
-        android:id="@+id/noresult"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center"
-        android:text="@string/main_no_result"
-        android:linksClickable="true"
-        android:visibility="invisible"/>
+        android:layout_height="match_parent"/>
 
     <com.github.clans.fab.FloatingActionMenu
         android:id="@+id/fab"

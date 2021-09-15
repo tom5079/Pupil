@@ -18,6 +18,7 @@
 
 package xyz.quaver.pupil.sources
 
+import androidx.compose.runtime.Composable
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.serialization.decodeFromString
@@ -32,7 +33,7 @@ import xyz.quaver.pupil.R
 import xyz.quaver.pupil.util.DownloadManager
 import kotlin.math.max
 import kotlin.math.min
-
+/*
 class Downloads(override val di: DI) : Source(), DIAware {
 
     override val name: String
@@ -46,6 +47,8 @@ class Downloads(override val di: DI) : Source(), DIAware {
     private val downloadManager: DownloadManager by instance()
 
     override suspend fun search(query: String, range: IntRange, sortMode: Int): Pair<Channel<ItemInfo>, Int> {
+        TODO()
+        /*
         val downloads = downloadManager.downloads.toList()
 
         val channel = Channel<ItemInfo>()
@@ -61,7 +64,7 @@ class Downloads(override val di: DI) : Source(), DIAware {
             channel.close()
         }
 
-        return Pair(channel, downloads.size)
+        return Pair(channel, downloads.size)*/
     }
 
     override suspend fun suggestion(query: String): List<SearchSuggestion> {
@@ -75,7 +78,8 @@ class Downloads(override val di: DI) : Source(), DIAware {
     }
 
     override suspend fun info(itemID: String): ItemInfo {
-        return transform(downloadManager.downloadFolder.getChild(itemID))
+        TODO("Not yet implemented")
+/*        return transform(downloadManager.downloadFolder.getChild(itemID))*/
     }
 
     companion object {
@@ -83,7 +87,7 @@ class Downloads(override val di: DI) : Source(), DIAware {
             folder.list { _, name ->
                 name.takeLastWhile { it != '.' } in listOf("jpg", "png", "gif", "webp")
             }?.toList()
-
+/*
         suspend fun transform(folder: FileX): ItemInfo = withContext(Dispatchers.Unconfined) {
             kotlin.runCatching {
                 Json.decodeFromString<ItemInfo>(folder.getChild(".metadata").readText())
@@ -100,7 +104,12 @@ class Downloads(override val di: DI) : Source(), DIAware {
                     )
                 )
             }
-        }
+        }*/
     }
 
-}
+    @Composable
+    override fun compose(itemInfo: ItemInfo) {
+        TODO("Not yet implemented")
+    }
+
+}*/

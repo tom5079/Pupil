@@ -33,12 +33,11 @@ import xyz.quaver.floatingsearchview.databinding.SearchSuggestionItemBinding
 import xyz.quaver.floatingsearchview.suggestions.model.SearchSuggestion
 import xyz.quaver.floatingsearchview.util.view.SearchInputView
 import xyz.quaver.pupil.R
-import xyz.quaver.pupil.sources.Hitomi
+import xyz.quaver.pupil.sources.hitomi.Hitomi
 import xyz.quaver.pupil.types.FavoriteHistorySwitch
 import xyz.quaver.pupil.types.HistorySuggestion
 import xyz.quaver.pupil.types.LoadingSuggestion
 import xyz.quaver.pupil.types.NoResultSuggestion
-import java.util.*
 
 class FloatingSearchView @JvmOverloads constructor(context: Context, attrs: AttributeSet? = null) :
     xyz.quaver.floatingsearchview.FloatingSearchView(context, attrs),

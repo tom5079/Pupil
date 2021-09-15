@@ -26,6 +26,8 @@ package xyz.quaver.pupil
  * See [testing documentation](http://d.android.com/tools/testing).
  */
 
+import kotlinx.coroutines.async
+import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.*
 import kotlinx.serialization.json.Json
 import org.junit.Test
@@ -38,9 +40,9 @@ class ExampleUnitTest {
 
     @Test
     fun test() {
-        val a = mutableSetOf<Int>()
+        runBlocking {
 
-        print(a::class.java.methods.firstOrNull { it.name == "add" }?.genericParameterTypes?.firstOrNull() as? ParameterizedType)
+        }
     }
 
 }

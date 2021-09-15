@@ -18,55 +18,63 @@
 
 package xyz.quaver.pupil.sources
 
+import androidx.compose.runtime.Composable
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 import org.kodein.di.DI
 import org.kodein.di.DIAware
+import org.kodein.di.direct
 import org.kodein.di.instance
 import xyz.quaver.floatingsearchview.suggestions.model.SearchSuggestion
-import xyz.quaver.pupil.util.SavedSourceSet
+import xyz.quaver.pupil.db.AppDatabase
+import xyz.quaver.pupil.util.database
 import xyz.quaver.pupil.util.source
 
-class History(override val di: DI, source: String) : Source(), DIAware {
+class History(override val di: DI) : Source(), DIAware {
 
-    private val source: Source by source(source)
-    private val histories: SavedSourceSet by instance(tag = "histories")
+    private val historyDao = direct.database().historyDao()
 
     override val name: String
-        get() = source.name
+        get() = "history"
     override val iconResID: Int
-        get() = source.iconResID
+        get() = 0 //TODO
     override val preferenceID: Int
-        get() = source.preferenceID
+        get() = 0 //TODO
     override val availableSortMode: List<String> = emptyList()
+
+    private val history = direct.database().historyDao()
 
     override suspend fun search(query: String, range: IntRange, sortMode: Int): Pair<Channel<ItemInfo>, Int> {
         val channel = Channel<ItemInfo>()
 
         CoroutineScope(Dispatchers.IO).launch {
-            histories[source.name]?.asReversed()?.forEach {
-                channel.send(source.info(it))
-            }
+
 
             channel.close()
         }
 
-        return Pair(channel, histories.map.size)
+        throw NotImplementedError("")
+        //return Pair(channel, histories.map.size)
     }
 
     override suspend fun suggestion(query: String): List<SearchSuggestion> {
-        return source.suggestion(query)
+        throw NotImplementedError("")
     }
 
     override suspend fun images(itemID: String): List<String> {
-        return source.images(itemID)
+        throw NotImplementedError("")
     }
 
     override suspend fun info(itemID: String): ItemInfo {
-        return source.info(itemID)
+        throw NotImplementedError("")
     }
 
+
+    @Composable
+    override fun SearchResult(itemInfo: ItemInfo, onEvent: ((SearchResultEvent) -> Unit)?) {
+
+    }
 
 }

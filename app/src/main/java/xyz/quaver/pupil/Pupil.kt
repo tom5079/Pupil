@@ -38,8 +38,6 @@ import com.google.firebase.analytics.FirebaseAnalytics
 import com.google.firebase.analytics.ktx.analytics
 import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.google.firebase.ktx.Firebase
-import com.orhanobut.logger.AndroidLogAdapter
-import com.orhanobut.logger.Logger
 import io.ktor.client.*
 import io.ktor.client.engine.okhttp.*
 import io.ktor.client.features.json.*
@@ -47,6 +45,7 @@ import io.ktor.client.features.json.serializer.*
 import org.kodein.di.*
 import org.kodein.di.android.x.androidXModule
 import xyz.quaver.io.FileX
+import xyz.quaver.pupil.db.databaseModule
 import xyz.quaver.pupil.sources.sourceModule
 import xyz.quaver.pupil.util.*
 import java.io.File
@@ -56,15 +55,10 @@ class Pupil : Application(), DIAware {
 
     override val di: DI by DI.lazy {
         import(androidXModule(this@Pupil))
+        import(databaseModule)
         import(sourceModule)
 
-        bind { singleton { ImageCache(applicationContext) } }
         bind { singleton { DownloadManager(applicationContext) } }
-
-        bind<SavedSourceSet>(tag = "histories") with singleton { SavedSourceSet(File(ContextCompat.getDataDir(applicationContext), "histories.json")) }
-        bind<SavedSourceSet>(tag = "favorites") with singleton { SavedSourceSet(File(ContextCompat.getDataDir(applicationContext), "favorites.json")) }
-        bind<SavedSourceSet>(tag = "favoriteTags") with singleton { SavedSourceSet(File(ContextCompat.getDataDir(applicationContext), "favoriteTags.json")) }
-        bind<SavedSourceSet>(tag = "searchHistory") with singleton { SavedSourceSet(File(ContextCompat.getDataDir(applicationContext), "searchHistory.json")) }
 
         bind { singleton {
             HttpClient(OkHttp) {
@@ -89,8 +83,6 @@ class Pupil : Application(), DIAware {
 
         firebaseAnalytics = Firebase.analytics
         FirebaseCrashlytics.getInstance().setUserId(userID)
-
-        Logger.addLogAdapter(AndroidLogAdapter())
 
         try {
             Preferences.get<String>("download_folder").also {
