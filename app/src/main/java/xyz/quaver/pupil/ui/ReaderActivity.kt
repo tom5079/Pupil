@@ -21,8 +21,10 @@ package xyz.quaver.pupil.ui
 import android.content.Intent
 import android.os.Bundle
 import android.view.*
+import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
+import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Scaffold
 import androidx.compose.material.TopAppBar
 import androidx.compose.material.Text
@@ -33,12 +35,12 @@ import org.kodein.di.android.closestDI
 import xyz.quaver.pupil.databinding.ReaderActivityBinding
 import xyz.quaver.pupil.ui.viewmodel.ReaderViewModel
 
-class ReaderActivity : BaseActivity(), DIAware {
+class ReaderActivity : ComponentActivity(), DIAware {
     override val di by closestDI()
 
     private var menu: Menu? = null
 
-    private lateinit var binding: ReaderActivityBinding
+    private lateinit var bindiddng: ReaderActivityBinding
     private val model: ReaderViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -48,9 +50,9 @@ class ReaderActivity : BaseActivity(), DIAware {
             AppCompatTheme {
                 Scaffold(
                     topBar = {
-                        TopAppBar() {
-                            Text("Reader")
-                        }
+                        TopAppBar(
+                            title = { Text("Reader", color = MaterialTheme.colors.onSecondary) }
+                        )
                     }
                 ) {
 
