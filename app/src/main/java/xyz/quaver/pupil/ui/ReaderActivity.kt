@@ -28,11 +28,16 @@ import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Scaffold
 import androidx.compose.material.TopAppBar
 import androidx.compose.material.Text
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Science
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.accompanist.appcompattheme.AppCompatTheme
 import org.kodein.di.DIAware
 import org.kodein.di.android.closestDI
 import xyz.quaver.pupil.databinding.ReaderActivityBinding
+import xyz.quaver.pupil.ui.composable.MultipleFloatingActionButton
+import xyz.quaver.pupil.ui.composable.SubFabItem
 import xyz.quaver.pupil.ui.viewmodel.ReaderViewModel
 
 class ReaderActivity : ComponentActivity(), DIAware {
@@ -53,6 +58,12 @@ class ReaderActivity : ComponentActivity(), DIAware {
                         TopAppBar(
                             title = { Text("Reader", color = MaterialTheme.colors.onSecondary) }
                         )
+                    },
+                    floatingActionButton = {
+                        MultipleFloatingActionButton(items = listOf(
+                            SubFabItem(Icons.Default.Science, "Testing"),
+                            SubFabItem(Icons.Default.DateRange, "EY")
+                        ))
                     }
                 ) {
 
