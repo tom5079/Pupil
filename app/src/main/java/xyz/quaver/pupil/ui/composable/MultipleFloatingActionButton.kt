@@ -24,7 +24,7 @@ import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
-enum class FloatingActionButtonState(val isExpanded: Boolean) {
+enum class FloatingActionButtonState(private val isExpanded: Boolean) {
     COLLAPSED(false), EXPANDED(true);
 
     operator fun not() = lookupTable[!this.isExpanded]!!
@@ -39,7 +39,8 @@ enum class FloatingActionButtonState(val isExpanded: Boolean) {
 
 data class SubFabItem(
     val icon: ImageVector,
-    val label: String? = null
+    val label: String? = null,
+    val onClick: ((SubFabItem) -> Unit)? = null
 )
 
 @Composable
@@ -97,7 +98,6 @@ private class FloatingActionButtonItemProvider : PreviewParameterProvider<SubFab
 fun MultipleFloatingActionButton(
     @PreviewParameter(provider = FloatingActionButtonItemProvider::class) items: List<SubFabItem>,
     fabIcon: ImageVector = Icons.Default.Add,
-    onItemClick: ((SubFabItem) -> Unit)? = null,
     targetState: FloatingActionButtonState = FloatingActionButtonState.COLLAPSED,
     onStateChanged: ((FloatingActionButtonState) -> Unit)? = null
 ) {
@@ -191,7 +191,7 @@ fun MultipleFloatingActionButton(
                 labelAlpha = labelAlpha,
                 labelOffset = labelOffset
             ) {
-                onItemClick?.invoke(it)
+                item.onClick?.invoke(it)
             }
         }
 

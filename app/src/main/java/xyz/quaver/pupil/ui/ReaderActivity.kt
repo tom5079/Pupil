@@ -20,27 +20,28 @@ package xyz.quaver.pupil.ui
 
 import android.content.Intent
 import android.os.Bundle
-import android.view.*
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Scaffold
-import androidx.compose.material.TopAppBar
 import androidx.compose.material.Text
+import androidx.compose.material.TopAppBar
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.DateRange
-import androidx.compose.material.icons.filled.Science
+import androidx.compose.material.icons.filled.Fullscreen
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.res.stringResource
-import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import com.google.accompanist.appcompattheme.AppCompatTheme
 import org.kodein.di.DIAware
 import org.kodein.di.android.closestDI
-import xyz.quaver.pupil.databinding.ReaderActivityBinding
+import xyz.quaver.pupil.R
 import xyz.quaver.pupil.ui.composable.FloatingActionButtonState
 import xyz.quaver.pupil.ui.composable.MultipleFloatingActionButton
 import xyz.quaver.pupil.ui.composable.SubFabItem
@@ -56,18 +57,38 @@ class ReaderActivity : ComponentActivity(), DIAware {
 
         setContent {
             var isFABExpanded by remember { mutableStateOf(FloatingActionButtonState.COLLAPSED) }
+            val isFullscreen by model.isFullscreen.observeAsState(false)
+
+            WindowInsetsControllerCompat(window, window.decorView).run {
+                if (isFullscreen) {
+                    hide(WindowInsetsCompat.Type.systemBars())
+                    systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+                } else
+                    show(WindowInsetsCompat.Type.systemBars())
+            }
 
             AppCompatTheme {
                 Scaffold(
                     topBar = {
-                        TopAppBar(
-                            title = { Text("Reader", color = MaterialTheme.colors.onSecondary) }
-                        )
+                        if (!isFullscreen)
+                            TopAppBar(
+                                title = {
+                                    Text(
+                                        "Reader",
+                                        color = MaterialTheme.colors.onSecondary
+                                    )
+                                }
+                            )
                     },
                     floatingActionButton = {
                         MultipleFloatingActionButton(
                             items = listOf(
-                                // TODO
+                                SubFabItem(
+                                    icon = Icons.Default.Fullscreen,
+                                    label = stringResource(id = R.string.reader_fab_fullscreen)
+                                ) {
+                                    model.isFullscreen.postValue(!isFullscreen)
+                                }
                             ),
                             targetState = isFABExpanded,
                             onStateChanged = {
