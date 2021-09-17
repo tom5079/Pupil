@@ -78,6 +78,8 @@ dependencies {
 
     implementation("com.google.accompanist:accompanist-flowlayout:0.16.1")
     implementation("com.google.accompanist:accompanist-appcompat-theme:0.16.0")
+    implementation("com.google.accompanist:accompanist-insets:0.18.0")
+    implementation("com.google.accompanist:accompanist-insets-ui:0.18.0")
 
     implementation("io.coil-kt:coil-compose:1.3.2")
 

@@ -42,6 +42,8 @@ class ReaderViewModel(app: Application) : AndroidViewModel(app), DIAware {
 
     override val di by closestDI()
 
+    val isFullscreen = MutableLiveData(false)
+
     private val database: AppDatabase by instance()
 
     private val historyDao = database.historyDao()
