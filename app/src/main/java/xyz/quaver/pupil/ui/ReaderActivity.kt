@@ -31,11 +31,17 @@ import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Science
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.res.stringResource
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.accompanist.appcompattheme.AppCompatTheme
 import org.kodein.di.DIAware
 import org.kodein.di.android.closestDI
 import xyz.quaver.pupil.databinding.ReaderActivityBinding
+import xyz.quaver.pupil.ui.composable.FloatingActionButtonState
 import xyz.quaver.pupil.ui.composable.MultipleFloatingActionButton
 import xyz.quaver.pupil.ui.composable.SubFabItem
 import xyz.quaver.pupil.ui.viewmodel.ReaderViewModel
@@ -43,15 +49,14 @@ import xyz.quaver.pupil.ui.viewmodel.ReaderViewModel
 class ReaderActivity : ComponentActivity(), DIAware {
     override val di by closestDI()
 
-    private var menu: Menu? = null
-
-    private lateinit var bindiddng: ReaderActivityBinding
     private val model: ReaderViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         setContent {
+            var isFABExpanded by remember { mutableStateOf(FloatingActionButtonState.COLLAPSED) }
+
             AppCompatTheme {
                 Scaffold(
                     topBar = {
@@ -60,10 +65,15 @@ class ReaderActivity : ComponentActivity(), DIAware {
                         )
                     },
                     floatingActionButton = {
-                        MultipleFloatingActionButton(items = listOf(
-                            SubFabItem(Icons.Default.Science, "Testing"),
-                            SubFabItem(Icons.Default.DateRange, "EY")
-                        ))
+                        MultipleFloatingActionButton(
+                            items = listOf(
+                                // TODO
+                            ),
+                            targetState = isFABExpanded,
+                            onStateChanged = {
+                                isFABExpanded = it
+                            }
+                        )
                     }
                 ) {
 
