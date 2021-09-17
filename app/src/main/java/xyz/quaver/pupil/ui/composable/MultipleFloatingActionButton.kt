@@ -1,7 +1,5 @@
 package xyz.quaver.pupil.ui.composable
 
-import android.view.animation.AccelerateInterpolator
-import android.view.animation.OvershootInterpolator
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
