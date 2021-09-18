@@ -225,9 +225,9 @@ class Hitomi(app: Application) : Source(), DIAware {
         FullSearchResult(itemInfo = itemInfo)
     }
 
-    override fun getHeadersBuilderForImage(itemID: String, url: String): HeadersBuilder.() -> Unit = {
-        append("Referer", getReferer(itemID.toInt()))
-    }
+    override fun getHeadersForImage(itemID: String, url: String) = mapOf(
+        "Referer" to getReferer(itemID.toInt())
+    )
 
     override fun onSuggestionBind(binding: SearchSuggestionItemBinding, item: SearchSuggestion) {
         item as TagSuggestion

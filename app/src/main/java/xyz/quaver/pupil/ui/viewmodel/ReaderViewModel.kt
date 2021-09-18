@@ -28,7 +28,10 @@ import io.ktor.client.request.*
 import kotlinx.coroutines.*
 import org.kodein.di.DIAware
 import org.kodein.di.android.x.closestDI
+import org.kodein.di.direct
 import org.kodein.di.instance
+import org.kodein.log.LoggerFactory
+import org.kodein.log.newLogger
 import xyz.quaver.pupil.adapters.ReaderItem
 import xyz.quaver.pupil.db.AppDatabase
 import xyz.quaver.pupil.db.Bookmark
@@ -41,6 +44,8 @@ import xyz.quaver.pupil.util.source
 class ReaderViewModel(app: Application) : AndroidViewModel(app), DIAware {
 
     override val di by closestDI()
+
+    private val logger = newLogger(LoggerFactory.default)
 
     val isFullscreen = MutableLiveData(false)
 
@@ -72,11 +77,11 @@ class ReaderViewModel(app: Application) : AndroidViewModel(app), DIAware {
     }
 
     val sourceInstance = Transformations.map(source) {
-        source(it)
+        direct.source(it)
     }
 
     val sourceIcon = Transformations.map(sourceInstance) {
-        it.value.iconResID
+        it.iconResID
     }
 
     /**
@@ -89,18 +94,18 @@ class ReaderViewModel(app: Application) : AndroidViewModel(app), DIAware {
             val uri = intent.data
             val lastPathSegment = uri?.lastPathSegment
             if (uri != null && lastPathSegment != null) {
-                _source.postValue(uri.host ?: error("Source cannot be null"))
-                _itemID.postValue(when (uri.host) {
+                _source.value = uri.host ?: error("Source cannot be null")
+                _itemID.value = when (uri.host) {
                     "hitomi.la" ->
                         Regex("([0-9]+).html").find(lastPathSegment)?.groupValues?.get(1) ?: error("Invalid itemID")
                     "hiyobi.me" -> lastPathSegment
                     "e-hentai.org" -> uri.pathSegments[1]
                     else -> error("Invalid host")
-                })
+                }
             }
         } else {
-            _source.postValue(intent.getStringExtra("source") ?: error("Invalid source"))
-            _itemID.postValue(intent.getStringExtra("id") ?: error("Invalid itemID"))
+            _source.value = intent.getStringExtra("source") ?: error("Invalid source")
+            _itemID.value = intent.getStringExtra("id") ?: error("Invalid itemID")
         }
     }
 
@@ -124,7 +129,7 @@ class ReaderViewModel(app: Application) : AndroidViewModel(app), DIAware {
         viewModelScope.launch {
             _images.postValue(withContext(Dispatchers.IO) {
                 source.images(itemID)
-            })
+            }!!)
         }
     }
 
