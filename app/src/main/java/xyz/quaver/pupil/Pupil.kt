@@ -44,6 +44,8 @@ import io.ktor.client.features.json.*
 import io.ktor.client.features.json.serializer.*
 import org.kodein.di.*
 import org.kodein.di.android.x.androidXModule
+import org.kodein.log.LoggerFactory
+import org.kodein.log.newLogger
 import xyz.quaver.io.FileX
 import xyz.quaver.pupil.db.databaseModule
 import xyz.quaver.pupil.sources.sourceModule

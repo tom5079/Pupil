@@ -74,7 +74,7 @@ fun MiniFloatingActionButton(
 
         FloatingActionButton(
             modifier = Modifier
-                .size(32.dp)
+                .size(40.dp)
                 .scale(buttonScale),
             onClick = { onClick?.invoke(item) },
             elevation = elevation,
@@ -185,7 +185,7 @@ fun MultipleFloatingActionButton(
             }
 
             MiniFloatingActionButton(
-                modifier = Modifier.padding(end = 12.dp),
+                modifier = Modifier.padding(end = 8.dp),
                 item = item,
                 buttonScale = buttonScale,
                 labelAlpha = labelAlpha,

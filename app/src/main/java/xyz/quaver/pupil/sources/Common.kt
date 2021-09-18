@@ -64,7 +64,7 @@ abstract class Source {
     @Composable
     open fun SearchResult(itemInfo: ItemInfo, onEvent: ((SearchResultEvent) -> Unit)? = null) { }
 
-    open fun getHeadersBuilderForImage(itemID: String, url: String): HeadersBuilder.() -> Unit = { }
+    open fun getHeadersForImage(itemID: String, url: String): Map<String, String> = emptyMap()
 
     open fun onSuggestionBind(binding: SearchSuggestionItemBinding, item: SearchSuggestion) {
         binding.leftIcon.setImageResource(R.drawable.tag)
