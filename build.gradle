@@ -24,6 +24,7 @@ allprojects {
         google()
         mavenCentral()
         jcenter()
+        mavenLocal()
         maven { url "https://jitpack.io" }
         maven { url "https://guardian.github.io/maven/repo-releases/" }
     }
