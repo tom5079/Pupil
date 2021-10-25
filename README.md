@@ -20,7 +20,7 @@ or Build app yourself
 
 # Contribution
 
-Any kind of contribution is appriciated. Feel free to leave PR!
+Any kind of contribution is appreciated. Feel free to leave PR!
 
 ## Tag Translation
 Head over to [tags branch](https://github.com/tom5079/Pupil/tree/tags)
