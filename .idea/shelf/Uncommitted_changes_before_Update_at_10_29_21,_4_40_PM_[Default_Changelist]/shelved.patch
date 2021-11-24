@@ -1,0 +1,47 @@
+Index: app/build.gradle
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>apply plugin: \"com.android.application\"\r\napply plugin: \"kotlin-android\"\r\napply plugin: \"kotlin-kapt\"\r\napply plugin: \"kotlin-parcelize\"\r\napply plugin: \"kotlinx-serialization\"\r\napply plugin: \"com.google.android.gms.oss-licenses-plugin\"\r\n\r\nif (file(\"google-services.json\").exists()) {\r\n    logger.lifecycle(\"Firebase Enabled\")\r\n    apply plugin: \"com.google.gms.google-services\"\r\n    apply plugin: \"com.google.firebase.crashlytics\"\r\n    apply plugin: \"com.google.firebase.firebase-perf\"\r\n} else {\r\n    logger.lifecycle(\"Firebase Disabled\")\r\n}\r\n\r\next {\r\n    okhttp_version = \"3.12.12\"\r\n}\r\n\r\nconfigurations {\r\n    all {\r\n        resolutionStrategy {\r\n            eachDependency { DependencyResolveDetails details ->\r\n                if (details.requested.group == \"com.squareup.okhttp3\" && details.requested.name == \"okhttp\") {\r\n                    // OkHttp drops support before 5.0 since 3.13.0\r\n                    details.useVersion okhttp_version\r\n                }\r\n            }\r\n        }\r\n    }\r\n}\r\n\r\nandroid {\r\n    compileSdkVersion 30\r\n    defaultConfig {\r\n        applicationId \"xyz.quaver.pupil\"\r\n        minSdkVersion 16\r\n        targetSdkVersion 30\r\n        versionCode 67\r\n        versionName \"5.1.15\"\r\n        testInstrumentationRunner \"androidx.test.runner.AndroidJUnitRunner\"\r\n        vectorDrawables.useSupportLibrary = true\r\n    }\r\n    buildTypes {\r\n        debug {\r\n            defaultConfig.minSdkVersion 21\r\n\r\n            minifyEnabled false\r\n            shrinkResources false\r\n\r\n            debuggable true\r\n            applicationIdSuffix \".debug\"\r\n            versionNameSuffix \"-DEBUG\"\r\n\r\n            ext.enableCrashlytics = false\r\n            ext.alwaysUpdateBuildId = false\r\n        }\r\n        release {\r\n            minifyEnabled true\r\n            shrinkResources true\r\n\r\n            proguardFiles getDefaultProguardFile(\"proguard-android-optimize.txt\"), \"proguard-rules.pro\"\r\n        }\r\n    }\r\n    buildFeatures {\r\n        viewBinding true\r\n    }\r\n    kotlinOptions {\r\n        jvmTarget = JavaVersion.VERSION_1_8.toString()\r\n        freeCompilerArgs += \"-Xuse-experimental=kotlin.Experimental\"\r\n    }\r\n    compileOptions {\r\n        sourceCompatibility JavaVersion.VERSION_1_8\r\n        targetCompatibility JavaVersion.VERSION_1_8\r\n    }\r\n}\r\n\r\ndependencies {\r\n    implementation fileTree(dir: \"libs\", include: [\"*.jar\", \"*.aar\"])\r\n    implementation \"org.jetbrains.kotlin:kotlin-stdlib-jdk8\"\r\n    implementation \"org.jetbrains.kotlinx:kotlinx-coroutines-android:1.4.3\"\r\n    implementation \"org.jetbrains.kotlinx:kotlinx-serialization-json:1.2.0\"\r\n    \r\n    implementation \"androidx.appcompat:appcompat:1.3.0\"\r\n    implementation \"androidx.activity:activity-ktx:1.3.0-beta01\"\r\n    implementation \"androidx.fragment:fragment-ktx:1.3.4\"\r\n    implementation \"androidx.preference:preference-ktx:1.1.1\"\r\n    implementation \"androidx.recyclerview:recyclerview:1.2.1\"\r\n    implementation \"androidx.constraintlayout:constraintlayout:2.0.4\"\r\n    implementation \"androidx.gridlayout:gridlayout:1.0.0\"\r\n    implementation \"androidx.biometric:biometric:1.1.0\"\r\n    implementation \"androidx.work:work-runtime-ktx:2.6.0-beta01\"\r\n\r\n    implementation \"com.daimajia.swipelayout:library:1.2.0@aar\"\r\n\r\n    implementation \"com.google.android.material:material:1.3.0\"\r\n\r\n    implementation platform('com.google.firebase:firebase-bom:26.5.0')\r\n    implementation \"com.google.firebase:firebase-analytics-ktx\"\r\n    implementation \"com.google.firebase:firebase-crashlytics-ktx\"\r\n    implementation \"com.google.firebase:firebase-perf-ktx\"\r\n\r\n    implementation \"com.google.android.gms:play-services-oss-licenses:17.0.0\"\r\n    implementation \"com.google.android.gms:play-services-mlkit-face-detection:16.1.7\"\r\n\r\n    implementation \"com.github.clans:fab:1.6.4\"\r\n\r\n    //implementation \"com.quiph.ui:recyclerviewfastscroller:0.2.1\"\r\n\r\n    implementation 'com.github.piasy:BigImageViewer:1.8.1'\r\n    implementation 'com.github.piasy:FrescoImageLoader:1.8.1'\r\n    implementation 'com.github.piasy:FrescoImageViewFactory:1.8.1'\r\n\r\n    //noinspection GradleDependency\r\n    implementation \"com.squareup.okhttp3:okhttp:$okhttp_version\"\r\n\r\n    implementation \"com.tbuonomo.andrui:viewpagerdotsindicator:4.1.2\"\r\n\r\n    implementation \"net.rdrei.android.dirchooser:library:3.2@aar\"\r\n    implementation \"com.gu:option:1.3\"\r\n\r\n    implementation \"com.andrognito.patternlockview:patternlockview:1.0.0\"\r\n    //implementation \"com.andrognito.pinlockview:pinlockview:2.1.0\"\r\n\r\n    implementation \"ru.noties.markwon:core:3.1.0\"\r\n\r\n    implementation \"xyz.quaver:libpupil:2.1.8\"\r\n    implementation \"xyz.quaver:documentfilex:0.6.1\"\r\n    implementation \"xyz.quaver:floatingsearchview:1.1.7\"\r\n\r\n    testImplementation \"junit:junit:4.13.1\"\r\n    androidTestImplementation \"androidx.test.ext:junit:1.1.2\"\r\n    androidTestImplementation \"androidx.test:rules:1.3.0\"\r\n    androidTestImplementation \"androidx.test:runner:1.3.0\"\r\n    androidTestImplementation \"androidx.test.espresso:espresso-core:3.3.0\"\r\n}
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/build.gradle b/app/build.gradle
+--- a/app/build.gradle	(revision 97baca78c3b58a713db3234f7d75c021edd73a78)
++++ b/app/build.gradle	(date 1635493140530)
+@@ -38,7 +38,7 @@
+         minSdkVersion 16
+         targetSdkVersion 30
+         versionCode 67
+-        versionName "5.1.15"
++        versionName "5.1.16"
+         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+         vectorDrawables.useSupportLibrary = true
+     }
+@@ -125,7 +125,7 @@
+ 
+     implementation "ru.noties.markwon:core:3.1.0"
+ 
+-    implementation "xyz.quaver:libpupil:2.1.8"
++    implementation "xyz.quaver:libpupil:2.1.9"
+     implementation "xyz.quaver:documentfilex:0.6.1"
+     implementation "xyz.quaver:floatingsearchview:1.1.7"
+ 
+Index: README.md
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>![Banner](https://github.com/tom5079/Pupil/blob/gh-pages/assets/images/pupil-banner.png?raw=true)\r\n*Pupil, Hitomi.la viewer for Android*  \r\n\r\n![](https://img.shields.io/github/downloads/tom5079/Pupil/total)  \r\n[![](https://img.shields.io/github/downloads/tom5079/Pupil/5.1.14/Pupil-v5.1.14.apk?color=%234fc3f7&label=DOWNLOAD%20APP&style=for-the-badge)](https://github.com/tom5079/Pupil/releases/download/5.1.14/Pupil-v5.1.14.apk)  \r\n[![](https://discordapp.com/api/guilds/610452916612104194/embed.png?style=banner2)](https://discord.gg/Stj4b5v)\r\n\r\n# Features\r\n![Main Screen](https://github.com/tom5079/Pupil/blob/gh-pages/assets/images/main-screenshot.jpg?raw=true)\r\n\r\n# Installation\r\n\r\nGo [Releases page](https://github.com/tom5079/Pupil/releases) and get latest version or  \r\nVisit [github page](https://tom5079.github.io/Pupil/) (only available in Korean)  \r\nor Build app yourself  \r\n\r\n# Manual\r\n\r\n[Manual](https://tom5079.github.io/Pupil/2019/06/06/manual-kr.html) is only available in Korean. Consider using translator.\r\n\r\n# Contribution\r\n\r\nAny kind of contribution is appreciated. Feel free to leave PR!\r\n\r\n## Tag Translation\r\nHead over to [tags branch](https://github.com/tom5079/Pupil/tree/tags)\r\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/README.md b/README.md
+--- a/README.md	(revision 97baca78c3b58a713db3234f7d75c021edd73a78)
++++ b/README.md	(date 1635493201853)
+@@ -2,7 +2,7 @@
+ *Pupil, Hitomi.la viewer for Android*  
+ 
+ ![](https://img.shields.io/github/downloads/tom5079/Pupil/total)  
+-[![](https://img.shields.io/github/downloads/tom5079/Pupil/5.1.14/Pupil-v5.1.14.apk?color=%234fc3f7&label=DOWNLOAD%20APP&style=for-the-badge)](https://github.com/tom5079/Pupil/releases/download/5.1.14/Pupil-v5.1.14.apk)  
++[![](https://img.shields.io/github/downloads/tom5079/Pupil/5.1.16/Pupil-v5.1.16.apk?color=%234fc3f7&label=DOWNLOAD%20APP&style=for-the-badge)](https://github.com/tom5079/Pupil/releases/download/5.1.16/Pupil-v5.1.16.apk)  
+ [![](https://discordapp.com/api/guilds/610452916612104194/embed.png?style=banner2)](https://discord.gg/Stj4b5v)
+ 
+ # Features
