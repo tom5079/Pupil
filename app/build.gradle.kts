@@ -63,18 +63,18 @@ dependencies {
     implementation(fileTree(mapOf("dir" to "libs", "include" to listOf("*.aar"))))
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.5.2-native-mt")
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.2.2")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.3.1")
 
-    implementation("androidx.compose.ui:ui:1.0.2")
-    implementation("androidx.compose.ui:ui-tooling:1.0.2")
-    implementation("androidx.compose.foundation:foundation:1.0.2")
-    implementation("androidx.compose.material:material:1.0.2")
-    implementation("androidx.compose.material:material-icons-core:1.0.2")
-    implementation("androidx.compose.material:material-icons-extended:1.0.2")
-    implementation("androidx.compose.runtime:runtime-livedata:1.0.2")
-    implementation("androidx.compose.material:material-icons-extended:1.0.2")
-    implementation("androidx.activity:activity-compose:1.3.1")
-    implementation("androidx.navigation:navigation-compose:2.4.0-alpha09")
+    implementation("androidx.compose.ui:ui:1.0.5")
+    implementation("androidx.compose.ui:ui-tooling:1.0.5")
+    implementation("androidx.compose.foundation:foundation:1.0.5")
+    implementation("androidx.compose.material:material:1.0.5")
+    implementation("androidx.compose.material:material-icons-core:1.0.5")
+    implementation("androidx.compose.material:material-icons-extended:1.0.5")
+    implementation("androidx.compose.runtime:runtime-livedata:1.0.5")
+    implementation("androidx.compose.material:material-icons-extended:1.0.5")
+    implementation("androidx.activity:activity-compose:1.4.0")
+    implementation("androidx.navigation:navigation-compose:2.4.0-beta02")
 
     implementation("com.google.accompanist:accompanist-flowlayout:0.16.1")
     implementation("com.google.accompanist:accompanist-appcompat-theme:0.16.0")
@@ -83,27 +83,27 @@ dependencies {
 
     implementation("io.coil-kt:coil-compose:1.3.2")
 
-    implementation("io.ktor:ktor-client-core:1.6.3")
-    implementation("io.ktor:ktor-client-okhttp:1.6.3")
-    implementation("io.ktor:ktor-client-serialization:1.6.3")
+    implementation("io.ktor:ktor-client-core:1.6.5")
+    implementation("io.ktor:ktor-client-okhttp:1.6.5")
+    implementation("io.ktor:ktor-client-serialization:1.6.5")
 
-    implementation("androidx.appcompat:appcompat:1.3.1")
-    implementation("androidx.activity:activity-ktx:1.3.1")
-    implementation("androidx.fragment:fragment-ktx:1.3.6")
+    implementation("androidx.appcompat:appcompat:1.4.0")
+    implementation("androidx.activity:activity-ktx:1.4.0")
+    implementation("androidx.fragment:fragment-ktx:1.4.0")
     implementation("androidx.preference:preference-ktx:1.1.1")
     implementation("androidx.recyclerview:recyclerview:1.2.1")
-    implementation("androidx.constraintlayout:constraintlayout:2.1.0")
+    implementation("androidx.constraintlayout:constraintlayout:2.1.2")
     implementation("androidx.gridlayout:gridlayout:1.0.0")
     implementation("androidx.biometric:biometric:1.1.0")
-    implementation("androidx.work:work-runtime-ktx:2.6.0")
-    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:1.0.0-alpha07")
+    implementation("androidx.work:work-runtime-ktx:2.7.1")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.4.0")
 
     implementation("androidx.room:room-runtime:2.3.0")
     annotationProcessor("androidx.room:room-compiler:2.3.0")
     kapt("androidx.room:room-compiler:2.3.0")
     implementation("androidx.room:room-ktx:2.3.0")
 
-    implementation("org.kodein.di:kodein-di-framework-compose:7.7.0")
+    implementation("org.kodein.di:kodein-di-framework-compose:7.9.0")
 
     implementation("com.daimajia.swipelayout:library:1.2.0@aar")
 
@@ -120,11 +120,7 @@ dependencies {
 
     //implementation("com.quiph.ui:recyclerviewfastscroller:0.2.1")
 
-    implementation("com.github.piasy:BigImageViewer:1.8.1")
-    implementation("com.github.piasy:FrescoImageLoader:1.8.1")
-    implementation("com.github.piasy:FrescoImageViewFactory:1.8.1")
-
-    implementation("org.jsoup:jsoup:1.14.1")
+    implementation("org.jsoup:jsoup:1.14.3")
 
     implementation("com.tbuonomo:dotsindicator:4.2")
 
@@ -133,20 +129,21 @@ dependencies {
 
     implementation("ru.noties.markwon:core:3.1.0")
 
-    implementation("xyz.quaver:libpupil:2.1.6")
-    implementation("xyz.quaver:documentfilex:0.6.1")
+    implementation("xyz.quaver:libpupil:2.1.11")
+    implementation("xyz.quaver:documentfilex:0.7.1")
     implementation("xyz.quaver:floatingsearchview:1.1.7")
+    implementation("xyz.quaver:subsampledimage:0.0.1-alpha01-SNAPSHOT")
 
     implementation("org.kodein.log:kodein-log:0.11.1")
-    debugImplementation("com.squareup.leakcanary:leakcanary-android:2.6")
+    debugImplementation("com.squareup.leakcanary:leakcanary-android:2.7")
 
     testImplementation("junit:junit:4.13.2")
-    testImplementation("org.mockito:mockito-inline:3.12.4")
+    testImplementation("org.mockito:mockito-inline:4.1.0")
 
     androidTestImplementation("androidx.test.ext:junit:1.1.3")
     androidTestImplementation("androidx.test:rules:1.4.0")
     androidTestImplementation("androidx.test:runner:1.4.0")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.4.0")
 
-    androidTestImplementation("androidx.compose.ui:ui-test-junit4:1.1.0-alpha03")
+    androidTestImplementation("androidx.compose.ui:ui-test-junit4:1.1.0-beta03")
 }

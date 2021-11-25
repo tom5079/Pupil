@@ -52,6 +52,7 @@ import org.kodein.di.DIAware
 import org.kodein.di.android.closestDI
 import org.kodein.log.LoggerFactory
 import org.kodein.log.newLogger
+import xyz.quaver.graphics.subsampledimage.SubSampledImage
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.ui.composable.FloatingActionButtonState
 import xyz.quaver.pupil.ui.composable.MultipleFloatingActionButton
@@ -134,29 +135,8 @@ class ReaderActivity : ComponentActivity(), DIAware {
                         verticalArrangement = Arrangement.spacedBy(32.dp)
                     ) {
                         items(images) { image ->
-                            Image(
-                                modifier = Modifier.fillMaxWidth().heightIn(128.dp, 1000.dp),
-                                painter = rememberImagePainter(
-                                    ImageRequest.Builder(this@ReaderActivity)
-                                        .data(image)
-                                        .headers(
-                                            Headers.headersOf(
-                                                *(source!!.getHeadersForImage(model.itemID.value!!, image).entries.fold(arrayOf()) { acc, entry ->
-                                                    acc + entry.key + entry.value
-                                                })
-                                            ).also {
-                                                logger.debug {
-                                                    image
-                                                }
-                                                logger.debug {
-                                                    it.toString()
-                                                }
-                                            }
-                                        )
-                                        .transformations(BlurTransformation(this@ReaderActivity, 1f))
-                                        .build()
-                                ),
-                                contentDescription = null
+                            SubSampledImage(
+                                modifier = Modifier.fillMaxWidth().heightIn(128.dp, 1000.dp)
                             )
                         }
                     }

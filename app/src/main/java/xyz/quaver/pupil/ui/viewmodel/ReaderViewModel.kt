@@ -21,10 +21,7 @@ package xyz.quaver.pupil.ui.viewmodel
 
 import android.app.Application
 import android.content.Intent
-import android.net.Uri
-import androidx.constraintlayout.widget.ConstraintSet
 import androidx.lifecycle.*
-import io.ktor.client.request.*
 import kotlinx.coroutines.*
 import org.kodein.di.DIAware
 import org.kodein.di.android.x.closestDI
@@ -32,12 +29,10 @@ import org.kodein.di.direct
 import org.kodein.di.instance
 import org.kodein.log.LoggerFactory
 import org.kodein.log.newLogger
-import xyz.quaver.pupil.adapters.ReaderItem
 import xyz.quaver.pupil.db.AppDatabase
 import xyz.quaver.pupil.db.Bookmark
 import xyz.quaver.pupil.db.History
 import xyz.quaver.pupil.sources.Source
-import xyz.quaver.pupil.util.notify
 import xyz.quaver.pupil.util.source
 
 @Suppress("UNCHECKED_CAST")
@@ -65,9 +60,6 @@ class ReaderViewModel(app: Application) : AndroidViewModel(app), DIAware {
 
     private val _images = MutableLiveData<List<String>>()
     val images: LiveData<List<String>> = _images
-
-    private var _readerItems = MutableLiveData<MutableList<ReaderItem>>()
-    val readerItems = _readerItems as LiveData<List<ReaderItem>>
 
     val isBookmarked = Transformations.switchMap(MediatorLiveData<Pair<Source, String>>().apply {
         addSource(source) { source -> itemID.value?.let { itemID -> source to itemID } }
@@ -129,7 +121,7 @@ class ReaderViewModel(app: Application) : AndroidViewModel(app), DIAware {
         viewModelScope.launch {
             _images.postValue(withContext(Dispatchers.IO) {
                 source.images(itemID)
-            }!!)
+            })
         }
     }
 
