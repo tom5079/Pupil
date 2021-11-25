@@ -19,11 +19,6 @@
 package xyz.quaver.pupil.sources
 
 import android.app.Application
-import io.ktor.client.*
-import io.ktor.client.features.*
-import io.ktor.client.features.get
-import io.ktor.client.request.*
-import io.ktor.client.statement.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch

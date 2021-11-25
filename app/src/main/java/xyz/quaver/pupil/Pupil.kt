@@ -27,10 +27,7 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import androidx.appcompat.app.AppCompatDelegate
-import androidx.core.content.ContextCompat
 import androidx.preference.PreferenceManager
-import com.github.piasy.biv.BigImageViewer
-import com.github.piasy.biv.loader.fresco.FrescoImageLoader
 import com.google.android.gms.common.GooglePlayServicesNotAvailableException
 import com.google.android.gms.common.GooglePlayServicesRepairableException
 import com.google.android.gms.security.ProviderInstaller
@@ -116,8 +113,6 @@ class Pupil : Application(), DIAware {
         } catch (e: GooglePlayServicesNotAvailableException) {
             e.printStackTrace()
         }
-
-        BigImageViewer.initialize(FrescoImageLoader.with(this))
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
