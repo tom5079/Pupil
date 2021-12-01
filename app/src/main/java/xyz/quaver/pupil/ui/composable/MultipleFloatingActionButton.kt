@@ -1,6 +1,8 @@
 package xyz.quaver.pupil.ui.composable
 
 import androidx.compose.animation.core.*
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -17,6 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
@@ -72,16 +75,17 @@ fun MiniFloatingActionButton(
             }
         }
 
-        FloatingActionButton(
-            modifier = Modifier
-                .size(40.dp)
-                .scale(buttonScale),
-            onClick = { onClick?.invoke(item) },
-            elevation = elevation,
-            interactionSource = interactionSource
-        ) {
-            Icon(item.icon, contentDescription = null)
-        }
+        if (buttonScale > 0f)
+            FloatingActionButton(
+                modifier = Modifier
+                    .size(40.dp)
+                    .scale(buttonScale),
+                onClick = { onClick?.invoke(item) },
+                elevation = elevation,
+                interactionSource = interactionSource
+            ) {
+                Icon(item.icon, contentDescription = null)
+            }
     }
 }
 

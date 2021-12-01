@@ -58,6 +58,7 @@ class Pupil : Application(), DIAware {
         import(sourceModule)
 
         bind { singleton { DownloadManager(applicationContext) } }
+        bind { singleton { NetworkCache(applicationContext) } }
 
         bind { singleton {
             HttpClient(OkHttp) {

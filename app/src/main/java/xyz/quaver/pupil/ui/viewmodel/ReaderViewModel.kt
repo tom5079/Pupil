@@ -21,8 +21,17 @@ package xyz.quaver.pupil.ui.viewmodel
 
 import android.app.Application
 import android.content.Intent
+import android.net.Uri
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.*
+import io.ktor.client.request.*
+import io.ktor.http.*
 import kotlinx.coroutines.*
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import org.kodein.di.DIAware
 import org.kodein.di.android.x.closestDI
 import org.kodein.di.direct
@@ -33,12 +42,15 @@ import xyz.quaver.pupil.db.AppDatabase
 import xyz.quaver.pupil.db.Bookmark
 import xyz.quaver.pupil.db.History
 import xyz.quaver.pupil.sources.Source
+import xyz.quaver.pupil.util.NetworkCache
 import xyz.quaver.pupil.util.source
 
 @Suppress("UNCHECKED_CAST")
 class ReaderViewModel(app: Application) : AndroidViewModel(app), DIAware {
 
     override val di by closestDI()
+
+    private val cache: NetworkCache by instance()
 
     private val logger = newLogger(LoggerFactory.default)
 
@@ -58,8 +70,14 @@ class ReaderViewModel(app: Application) : AndroidViewModel(app), DIAware {
     private val _title = MutableLiveData<String>()
     val title = _title as LiveData<String>
 
-    private val _images = MutableLiveData<List<String>>()
-    val images: LiveData<List<String>> = _images
+    private val totalProgressMutex = Mutex()
+    var totalProgress by mutableStateOf(0)
+        private set
+    var imageCount by mutableStateOf(0)
+        private set
+
+    val imageList = mutableStateListOf<Uri?>()
+    val progressList = mutableStateListOf<Float>()
 
     val isBookmarked = Transformations.switchMap(MediatorLiveData<Pair<Source, String>>().apply {
         addSource(source) { source -> itemID.value?.let { itemID -> source to itemID } }
@@ -119,10 +137,64 @@ class ReaderViewModel(app: Application) : AndroidViewModel(app), DIAware {
         }
 
         viewModelScope.launch {
-            _images.postValue(withContext(Dispatchers.IO) {
+            withContext(Dispatchers.IO) {
                 source.images(itemID)
-            })
+            }.let { images ->
+                imageCount = images.size
+
+                progressList.addAll(List(imageCount) { 0f })
+                imageList.addAll(List(imageCount) { null })
+
+                images.forEachIndexed { index, image ->
+                    when (val scheme = image.takeWhile { it != ':' }) {
+                        "http", "https" -> {
+                            val file = cache.load {
+                                url(image)
+                                headers(source.getHeadersBuilderForImage(itemID, image))
+                            }
+
+                            val channel = cache.channels[image] ?: error("Channel is null")
+
+                            if (channel.isClosedForReceive) {
+                                imageList[index] = Uri.fromFile(file)
+                                totalProgressMutex.withLock {
+                                    totalProgress++
+                                }
+                            } else {
+                                channel.invokeOnClose { e ->
+                                    viewModelScope.launch {
+                                        if (e == null) {
+                                            imageList[index] = Uri.fromFile(file)
+                                            totalProgressMutex.withLock {
+                                                totalProgress++
+                                            }
+                                        } else {
+                                            TODO("Handle error")
+                                        }
+                                    }
+                                }
+
+                                launch {
+                                    kotlin.runCatching {
+                                        for (progress in channel) {
+                                            progressList[index] = progress
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        "content" -> {
+                            progressList[index] = 1f
+                        }
+                        else -> throw IllegalArgumentException("Expected URL scheme 'http(s)' or 'content' but was '$scheme'")
+                    }
+                }
+            }
         }
+    }
+
+    fun error(index: Int) {
+        progressList[index] = -1f
     }
 
     fun toggleBookmark() {

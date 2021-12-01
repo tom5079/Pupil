@@ -132,7 +132,7 @@ dependencies {
     implementation("xyz.quaver:libpupil:2.1.11")
     implementation("xyz.quaver:documentfilex:0.7.1")
     implementation("xyz.quaver:floatingsearchview:1.1.7")
-    implementation("xyz.quaver:subsampledimage:0.0.1-alpha01-SNAPSHOT")
+    implementation("xyz.quaver:subsampledimage:0.0.1-alpha09-SNAPSHOT")
 
     implementation("org.kodein.log:kodein-log:0.11.1")
     debugImplementation("com.squareup.leakcanary:leakcanary-android:2.7")

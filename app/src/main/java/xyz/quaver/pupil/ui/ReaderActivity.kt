@@ -24,40 +24,44 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.BrokenImage
 import androidx.compose.material.icons.filled.Fullscreen
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import coil.annotation.ExperimentalCoilApi
-import coil.compose.rememberImagePainter
-import coil.request.ImageRequest
-import coil.transform.BlurTransformation
 import com.google.accompanist.appcompattheme.AppCompatTheme
-import io.ktor.http.*
-import okhttp3.Headers
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import org.kodein.di.DIAware
 import org.kodein.di.android.closestDI
 import org.kodein.log.LoggerFactory
 import org.kodein.log.newLogger
-import xyz.quaver.graphics.subsampledimage.SubSampledImage
+import xyz.quaver.graphics.subsampledimage.*
+import xyz.quaver.io.FileX
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.ui.composable.FloatingActionButtonState
 import xyz.quaver.pupil.ui.composable.MultipleFloatingActionButton
 import xyz.quaver.pupil.ui.composable.SubFabItem
 import xyz.quaver.pupil.ui.viewmodel.ReaderViewModel
+import xyz.quaver.pupil.util.FileXImageSource
+import kotlin.math.abs
 
 class ReaderActivity : ComponentActivity(), DIAware {
     override val di by closestDI()
@@ -78,10 +82,31 @@ class ReaderActivity : ComponentActivity(), DIAware {
             val isFullscreen by model.isFullscreen.observeAsState(false)
             val title by model.title.observeAsState(stringResource(R.string.reader_loading))
             val sourceIcon by model.sourceIcon.observeAsState()
-            val images by model.images.observeAsState(emptyList())
-            val source by model.sourceInstance.observeAsState()
+            val imageSources = remember { mutableStateListOf<ImageSource?>() }
+            val imageHeights = remember { mutableStateListOf<Float?>() }
+            val states = remember { mutableStateListOf<SubSampledImageState>() }
 
-            logger.debug { "target: ${R.drawable.hitomi} value: $sourceIcon" }
+            LaunchedEffect(model.totalProgress) {
+                if (imageSources.isEmpty() && model.imageList.isNotEmpty())
+                    imageSources.addAll(List(model.imageList.size) { null })
+
+                if (states.isEmpty() && model.imageList.isNotEmpty())
+                    states.addAll(List(model.imageList.size) { SubSampledImageState(ScaleTypes.FIT_WIDTH, Bounds.FORCE_OVERLAP_OR_CENTER) })
+
+                if (imageHeights.isEmpty() && model.imageList.isNotEmpty())
+                    imageHeights.addAll(List(model.imageList.size) { null })
+
+                model.imageList.forEachIndexed { i, image ->
+                    if (imageSources[i] == null && image != null)
+                        CoroutineScope(Dispatchers.Default).launch {
+                            imageSources[i] = kotlin.runCatching {
+                                FileXImageSource(FileX(this@ReaderActivity, image))
+                            }.onFailure { 
+                                model.error(i)
+                            }.getOrNull()
+                        }
+                }
+            }
 
             WindowInsetsControllerCompat(window, window.decorView).run {
                 if (isFullscreen) {
@@ -121,7 +146,7 @@ class ReaderActivity : ComponentActivity(), DIAware {
                                         icon = Icons.Default.Fullscreen,
                                         label = stringResource(id = R.string.reader_fab_fullscreen)
                                     ) {
-                                        model.isFullscreen.postValue(!isFullscreen)
+                                        model.isFullscreen.postValue(true)
                                     }
                                 ),
                                 targetState = isFABExpanded,
@@ -132,14 +157,57 @@ class ReaderActivity : ComponentActivity(), DIAware {
                     }
                 ) {
                     LazyColumn(
-                        verticalArrangement = Arrangement.spacedBy(32.dp)
+                        Modifier.fillMaxSize(),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
-                        items(images) { image ->
-                            SubSampledImage(
-                                modifier = Modifier.fillMaxWidth().heightIn(128.dp, 1000.dp)
-                            )
+                        itemsIndexed(imageSources) { i, imageSource ->
+                            LaunchedEffect(states[i].canvasSize, states[i].imageSize) {
+                                if (imageHeights.isNotEmpty() && imageHeights[i] == null)
+                                    states[i].canvasSize?.let { canvasSize ->
+                                    states[i].imageSize?.let { imageSize ->
+                                        imageHeights[i] = imageSize.height * canvasSize.width / imageSize.width
+                                    } }
+                            }
+
+                            Box(
+                                Modifier
+                                    .height(
+                                        imageHeights
+                                            .getOrNull(i)
+                                            ?.let { with(LocalDensity.current) { it.toDp() } }
+                                            ?: 500.dp)
+                                    .fillMaxWidth()
+                                    .border(1.dp, Color.Gray),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                if (imageSource == null)
+                                    model.progressList.getOrNull(i)?.let { progress ->
+                                        if (progress < 0f) 
+                                            Icon(Icons.Filled.BrokenImage, null)
+                                        else
+                                            Column(
+                                                horizontalAlignment = Alignment.CenterHorizontally
+                                            ) {
+                                                LinearProgressIndicator(progress)
+                                                Text((i + 1).toString())
+                                            }
+                                    }
+                                else
+                                    SubSampledImage(
+                                        modifier = Modifier.fillMaxSize(),
+                                        imageSource = imageSource,
+                                        state = states[i]
+                                    )
+                            }
                         }
                     }
+
+                    if (model.totalProgress != model.imageCount)
+                        LinearProgressIndicator(
+                            modifier = Modifier.fillMaxWidth(),
+                            progress = model.progressList.map { abs(it) }.sum() / model.progressList.size,
+                            color = colorResource(id = R.color.colorAccent)
+                        )
                 }
             }
         }
