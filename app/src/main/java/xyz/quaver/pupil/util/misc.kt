@@ -19,17 +19,33 @@
 package xyz.quaver.pupil.util
 
 import android.annotation.SuppressLint
+import android.content.Context
+import android.content.res.Resources
+import android.graphics.BitmapFactory
+import android.graphics.BitmapRegionDecoder
 import android.view.MenuItem
 import android.view.View
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.toAndroidRect
 import androidx.lifecycle.MutableLiveData
 import kotlinx.serialization.json.*
 import org.kodein.di.DIAware
 import org.kodein.di.DirectDIAware
 import org.kodein.di.direct
 import org.kodein.di.instance
+import xyz.quaver.graphics.subsampledimage.ImageSource
+import xyz.quaver.graphics.subsampledimage.newBitmapRegionDecoder
+import xyz.quaver.io.FileX
+import xyz.quaver.io.util.inputStream
 import xyz.quaver.pupil.db.AppDatabase
 import xyz.quaver.pupil.sources.ItemInfo
 import xyz.quaver.pupil.sources.SourceEntries
+import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
 import java.util.*
@@ -136,4 +152,20 @@ fun View.hide() {
 
 fun View.show() {
     visibility = View.VISIBLE
+}
+
+class FileXImageSource(file: FileX): ImageSource {
+    private val decoder = newBitmapRegionDecoder(file.inputStream()!!)
+
+    override val imageSize by lazy { Size(decoder.width.toFloat(), decoder.height.toFloat()) }
+
+    override fun decodeRegion(region: Rect, sampleSize: Int): ImageBitmap =
+        decoder.decodeRegion(region.toAndroidRect(), BitmapFactory.Options().apply {
+            inSampleSize = sampleSize
+        }).asImageBitmap()
+}
+
+@Composable
+fun rememberFileXImageSource(file: FileX) = remember {
+    FileXImageSource(file)
 }

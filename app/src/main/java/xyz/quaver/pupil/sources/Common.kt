@@ -21,6 +21,7 @@ package xyz.quaver.pupil.sources
 import android.app.Application
 import android.os.Parcelable
 import androidx.compose.runtime.Composable
+import io.ktor.http.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.parcelize.Parcelize
 import org.kodein.di.*
@@ -61,7 +62,7 @@ abstract class Source {
     @Composable
     open fun SearchResult(itemInfo: ItemInfo, onEvent: ((SearchResultEvent) -> Unit)? = null) { }
 
-    open fun getHeadersForImage(itemID: String, url: String): Map<String, String> = emptyMap()
+    open fun getHeadersBuilderForImage(itemID: String, url: String): HeadersBuilder.() -> Unit = { }
 
     open fun onSuggestionBind(binding: SearchSuggestionItemBinding, item: SearchSuggestion) {
         binding.leftIcon.setImageResource(R.drawable.tag)

@@ -190,7 +190,7 @@ class Hitomi(app: Application) : Source(), DIAware {
         val reader = getGalleryInfo(galleryID)
 
         return reader.files.map {
-            imageUrlFromImage(galleryID, it, true)
+            imageUrlFromImage(galleryID, it, false)
         }
     }
 
@@ -225,9 +225,9 @@ class Hitomi(app: Application) : Source(), DIAware {
         FullSearchResult(itemInfo = itemInfo)
     }
 
-    override fun getHeadersForImage(itemID: String, url: String) = mapOf(
-        "Referer" to getReferer(itemID.toInt())
-    )
+    override fun getHeadersBuilderForImage(itemID: String, url: String): HeadersBuilder.() -> Unit = {
+        append("Referer", getReferer(itemID.toInt()))
+    }
 
     override fun onSuggestionBind(binding: SearchSuggestionItemBinding, item: SearchSuggestion) {
         item as TagSuggestion
