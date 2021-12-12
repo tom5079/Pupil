@@ -27,6 +27,7 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.app.TaskStackBuilder
 import androidx.core.content.ContextCompat
+import com.google.firebase.crashlytics.FirebaseCrashlytics
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -167,13 +168,7 @@ class DownloadService : Service() {
 
     private val interceptor: PupilInterceptor = { chain ->
         val request = chain.request()
-        var response = chain.proceed(request)
-
-        var retry = 5
-        while (!response.isSuccessful && retry > 0) {
-            response = chain.proceed(request)
-            retry--
-        }
+        val response = chain.proceed(request)
 
         response.newBuilder()
             .body(response.body()?.let {
@@ -202,14 +197,10 @@ class DownloadService : Service() {
     private val callback = object: Callback {
 
         override fun onFailure(call: Call, e: IOException) {
-            e.printStackTrace()
+            FirebaseCrashlytics.getInstance().recordException(e)
 
             if (e.message?.contains("cancel", true) == false) {
                 val galleryID = (call.request().tag() as Tag).galleryID
-
-                // Retry
-                cancel(galleryID)
-                download(galleryID)
             }
         }
 
@@ -236,9 +227,7 @@ class DownloadService : Service() {
                             startId?.let { stopSelf(it) }
                         }
                     }.onFailure {
-                        it.printStackTrace()
-                        cancel(galleryID)
-                        download(galleryID)
+                        FirebaseCrashlytics.getInstance().recordException(it)
                     }
                 }
             }
