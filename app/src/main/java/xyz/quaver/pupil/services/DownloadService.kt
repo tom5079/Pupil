@@ -23,6 +23,7 @@ import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
 import android.content.Intent
+import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.app.TaskStackBuilder
@@ -209,7 +210,7 @@ class DownloadService : Service() {
             val ext = call.request().url().encodedPath().split('.').last()
 
             kotlin.runCatching {
-                val image = response.also { if (it.code() != 200) throw IOException() }.body()?.use { it.bytes() } ?: throw Exception()
+                val image = response.also { if (it.code() != 200) throw IOException("$galleryID $index ${response.request().url()} CODE ${it.code()}") }.body()?.use { it.bytes() } ?: throw Exception("Response null")
                 val padding = ceil(progress[galleryID]?.size?.let { log10(it.toFloat()) } ?: 0F).toInt()
 
                 CoroutineScope(Dispatchers.IO).launch {
@@ -230,6 +231,8 @@ class DownloadService : Service() {
                         FirebaseCrashlytics.getInstance().recordException(it)
                     }
                 }
+            }.onFailure {
+                FirebaseCrashlytics.getInstance().recordException(it)
             }
         }
     }
