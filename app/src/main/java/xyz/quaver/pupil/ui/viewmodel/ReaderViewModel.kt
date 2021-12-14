@@ -144,6 +144,9 @@ class ReaderViewModel(app: Application) : AndroidViewModel(app), DIAware {
 
                 progressList.addAll(List(imageCount) { 0f })
                 imageList.addAll(List(imageCount) { null })
+                totalProgressMutex.withLock {
+                    totalProgress = 0
+                }
 
                 images.forEachIndexed { index, image ->
                     when (val scheme = image.takeWhile { it != ':' }) {
@@ -169,7 +172,7 @@ class ReaderViewModel(app: Application) : AndroidViewModel(app), DIAware {
                                                 totalProgress++
                                             }
                                         } else {
-                                            TODO("Handle error")
+                                            error(index)
                                         }
                                     }
                                 }

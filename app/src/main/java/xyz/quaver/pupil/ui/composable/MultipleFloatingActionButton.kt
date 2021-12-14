@@ -20,6 +20,8 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
@@ -41,7 +43,7 @@ enum class FloatingActionButtonState(private val isExpanded: Boolean) {
 }
 
 data class SubFabItem(
-    val icon: ImageVector,
+    val icon: Any, // ImageVector | Painter | ImageBitmap
     val label: String? = null,
     val onClick: ((SubFabItem) -> Unit)? = null
 )
@@ -84,7 +86,15 @@ fun MiniFloatingActionButton(
                 elevation = elevation,
                 interactionSource = interactionSource
             ) {
-                Icon(item.icon, contentDescription = null)
+                when (item.icon) {
+                    is ImageVector ->
+                        Icon(item.icon, contentDescription = null)
+                    is Painter ->
+                        Icon(item.icon, contentDescription = null)
+                    is ImageBitmap ->
+                        Icon(item.icon, contentDescription = null)
+                    else -> error("Icon is not ImageVector | Painter | ImageBitmap")
+                }
             }
     }
 }

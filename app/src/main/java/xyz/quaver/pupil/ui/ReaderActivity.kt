@@ -59,6 +59,7 @@ import xyz.quaver.pupil.R
 import xyz.quaver.pupil.ui.composable.FloatingActionButtonState
 import xyz.quaver.pupil.ui.composable.MultipleFloatingActionButton
 import xyz.quaver.pupil.ui.composable.SubFabItem
+import xyz.quaver.pupil.ui.theme.PupilTheme
 import xyz.quaver.pupil.ui.viewmodel.ReaderViewModel
 import xyz.quaver.pupil.util.FileXImageSource
 import kotlin.math.abs
@@ -86,7 +87,7 @@ class ReaderActivity : ComponentActivity(), DIAware {
             val imageHeights = remember { mutableStateListOf<Float?>() }
             val states = remember { mutableStateListOf<SubSampledImageState>() }
 
-            LaunchedEffect(model.totalProgress) {
+            LaunchedEffect(model.progressList.sum()) {
                 if (imageSources.isEmpty() && model.imageList.isNotEmpty())
                     imageSources.addAll(List(model.imageList.size) { null })
 
@@ -101,7 +102,8 @@ class ReaderActivity : ComponentActivity(), DIAware {
                         CoroutineScope(Dispatchers.Default).launch {
                             imageSources[i] = kotlin.runCatching {
                                 FileXImageSource(FileX(this@ReaderActivity, image))
-                            }.onFailure { 
+                            }.onFailure {
+                                logger.warning(it)
                                 model.error(i)
                             }.getOrNull()
                         }
@@ -116,7 +118,7 @@ class ReaderActivity : ComponentActivity(), DIAware {
                     show(WindowInsetsCompat.Type.systemBars())
             }
 
-            AppCompatTheme {
+            PupilTheme {
                 Scaffold(
                     topBar = {
                         if (!isFullscreen)
