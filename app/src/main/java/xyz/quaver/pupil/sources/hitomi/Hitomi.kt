@@ -61,6 +61,8 @@ import org.kodein.di.DI
 import org.kodein.di.DIAware
 import org.kodein.di.android.closestDI
 import org.kodein.di.instance
+import org.kodein.log.LoggerFactory
+import org.kodein.log.newLogger
 import xyz.quaver.floatingsearchview.databinding.SearchSuggestionItemBinding
 import xyz.quaver.floatingsearchview.suggestions.model.SearchSuggestion
 import xyz.quaver.hitomi.*
@@ -119,6 +121,8 @@ data class HitomiItemInfo(
 class Hitomi(app: Application) : Source(), DIAware {
 
     override val di: DI by closestDI(app)
+
+    private val logger = newLogger(LoggerFactory.default)
 
     private val database: AppDatabase by instance()
 
@@ -435,13 +439,13 @@ class Hitomi(app: Application) : Source(), DIAware {
         var pageCount by remember { mutableStateOf("-") }
 
         LaunchedEffect(itemInfo) {
-            launch {
+            launch(Dispatchers.Default) {
                 itemInfo.getPageCount()?.run {
                     pageCount = "${this}P"
                 }
             }
 
-            launch {
+            launch(Dispatchers.Default) {
                 itemInfo.getGroups()?.run {
                     group = this
                 }
@@ -518,7 +522,9 @@ class Hitomi(app: Application) : Source(), DIAware {
                         )
                     }
 
-                    TagGroup(tags = itemInfo.tags)
+                    key(itemInfo.tags) {
+                        TagGroup(tags = itemInfo.tags)
+                    }
                 }
             }
 

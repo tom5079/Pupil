@@ -31,6 +31,8 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.*
 import kotlinx.serialization.json.Json
 import org.junit.Test
+import xyz.quaver.hitomi.getGalleryInfo
+import xyz.quaver.hitomi.imageUrlFromImage
 import java.lang.reflect.ParameterizedType
 import kotlin.reflect.KClass
 import kotlin.reflect.KType
@@ -40,8 +42,11 @@ class ExampleUnitTest {
 
     @Test
     fun test() {
-        runBlocking {
+        val galleryID = 479010
+        val files = getGalleryInfo(galleryID).files
 
+        files.forEachIndexed { i, it ->
+            println("$i: ${imageUrlFromImage(galleryID, it, true)}")
         }
     }
 

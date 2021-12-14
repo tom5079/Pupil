@@ -1,18 +1,20 @@
 {
-  "version": 2,
+  "version": 3,
   "artifactType": {
     "type": "APK",
     "kind": "Directory"
   },
-  "applicationId": "xyz.quaver.pupil",
-  "variantName": "processReleaseResources",
+  "applicationId": "xyz.quaver.pupil.beta",
+  "variantName": "release",
   "elements": [
     {
       "type": "SINGLE",
       "filters": [],
-      "versionCode": 64,
-      "versionName": "5.1.7-alpha1",
+      "attributes": [],
+      "versionCode": 600,
+      "versionName": "6.0.0-alpha2",
       "outputFile": "app-release.apk"
     }
-  ]
+  ],
+  "elementType": "File"
 }

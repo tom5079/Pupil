@@ -19,361 +19,169 @@
 package xyz.quaver.pupil.ui
 
 import android.content.Intent
-import android.net.Uri
 import android.os.Bundle
-import android.text.InputType
-import android.view.KeyEvent
-import android.view.Menu
-import android.view.MenuItem
-import android.widget.EditText
-import android.widget.ImageView
-import android.widget.TextView
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
 import androidx.activity.viewModels
-import androidx.appcompat.app.AlertDialog
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.forEachGesture
+import androidx.compose.foundation.gestures.scrollable
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.CircularProgressIndicator
+import androidx.compose.material.Icon
+import androidx.compose.material.Scaffold
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.pointer.pointerInteropFilter
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.core.view.GravityCompat
-import androidx.core.view.children
-import androidx.core.widget.ImageViewCompat
-import androidx.swiperefreshlayout.widget.CircularProgressDrawable
-import com.google.android.material.navigation.NavigationView
+import androidx.compose.ui.util.fastAny
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.distinctUntilChanged
 import org.kodein.di.DIAware
 import org.kodein.di.android.closestDI
-import xyz.quaver.floatingsearchview.FloatingSearchView
+import org.kodein.log.LoggerFactory
+import org.kodein.log.newLogger
 import xyz.quaver.pupil.*
 import xyz.quaver.pupil.R
-import xyz.quaver.pupil.databinding.MainActivityBinding
-import xyz.quaver.pupil.sources.ItemInfo
 import xyz.quaver.pupil.sources.Source
 import xyz.quaver.pupil.types.*
-import xyz.quaver.pupil.ui.dialog.DownloadLocationDialogFragment
-import xyz.quaver.pupil.ui.dialog.SourceSelectDialog
+import xyz.quaver.pupil.ui.composable.FloatingActionButtonState
+import xyz.quaver.pupil.ui.composable.FloatingSearchBar
+import xyz.quaver.pupil.ui.composable.MultipleFloatingActionButton
+import xyz.quaver.pupil.ui.composable.SubFabItem
+import xyz.quaver.pupil.ui.theme.PupilTheme
 import xyz.quaver.pupil.ui.view.ProgressCardView
 import xyz.quaver.pupil.ui.viewmodel.MainViewModel
 import xyz.quaver.pupil.util.*
 import kotlin.math.*
 
-class MainActivity :
-    BaseActivity(),
-    NavigationView.OnNavigationItemSelectedListener,
-    DIAware
-{
+class MainActivity : ComponentActivity(), DIAware {
     override val di by closestDI()
 
-    private lateinit var binding: MainActivityBinding
     private val model: MainViewModel by viewModels()
 
-    private var refreshOnResume = true
+    private val logger = newLogger(LoggerFactory.default)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        binding = MainActivityBinding.inflate(layoutInflater)
 
-        binding.contents.composeView.setContent {
-            val searchResults: List<ItemInfo> by model.searchResults.observeAsState(emptyList())
+        setContent {
             val source: Source? by model.source.observeAsState(null)
             val loading: Boolean by model.loading.observeAsState(false)
 
-            val listState = rememberLazyListState()
+            var query by remember { mutableStateOf("") }
 
-            LaunchedEffect(listState) {
+            var isFabExpanded by remember { mutableStateOf(FloatingActionButtonState.COLLAPSED) }
+
+            val lazyListState = rememberLazyListState()
+
+            val searchBarHeight = LocalDensity.current.run { 56.dp.roundToPx() }
+            var searchBarOffset by remember { mutableStateOf(0) }
+
+            LaunchedEffect(lazyListState) {
                 var lastOffset = 0
-                val querySectionHeight = binding.contents.searchview.binding.querySection.root.height.toFloat()
 
-                snapshotFlow { listState.firstVisibleItemScrollOffset }
+                snapshotFlow { lazyListState.firstVisibleItemScrollOffset }
                     .distinctUntilChanged()
                     .collect { newOffset ->
                         val dy = newOffset - lastOffset
                         lastOffset = newOffset
 
-                        binding.contents.searchview.apply {
-                            translationY = (translationY - dy).coerceIn(-querySectionHeight .. 0f)
-                        }
+                        if (abs(dy) < searchBarHeight)
+                            searchBarOffset = (searchBarOffset-dy).coerceIn(-searchBarHeight, 0)
                     }
             }
 
-            Box(Modifier.fillMaxSize()) {
-                LazyColumn(Modifier.fillMaxSize(), state = listState, contentPadding = PaddingValues(0.dp, 64.dp, 0.dp, 0.dp)) {
-                    item(searchResults) {
-                        searchResults.forEach { itemInfo ->
-                            ProgressCardView(
-                                progress = 0.5f,
-                                onClick = {
-                                    startActivity(
-                                        Intent(
-                                            this@MainActivity,
-                                            ReaderActivity::class.java
-                                        ).apply {
-                                            putExtra("source", model.source.value!!.name)
-                                            putExtra("id", itemInfo.itemID)
-                                        })
+            PupilTheme {
+                Scaffold(
+                    floatingActionButton = {
+                        MultipleFloatingActionButton(
+                            listOf(
+                                SubFabItem(
+                                    Icons.Default.Block,
+                                    stringResource(R.string.main_fab_cancel)
+                                ),
+                                SubFabItem(
+                                    painterResource(R.drawable.ic_jump),
+                                    stringResource(R.string.main_jump_title)
+                                ),
+                                SubFabItem(
+                                    Icons.Default.Shuffle,
+                                    stringResource(R.string.main_fab_random)
+                                ),
+                                SubFabItem(
+                                    painterResource(R.drawable.numeric),
+                                    stringResource(R.string.main_open_gallery_by_id)
+                                ),
+                            ),
+                            targetState = isFabExpanded,
+                            onStateChanged = {
+                                isFabExpanded = it
+                            }
+                        )
+                    }
+                ) {
+                    Box(Modifier.fillMaxSize()) {
+                        LazyColumn(
+                            Modifier.fillMaxSize(),
+                            state = lazyListState,
+                            contentPadding = PaddingValues(0.dp, 56.dp, 0.dp, 0.dp)
+                        ) {
+                            items(model.searchResults, key = { it.itemID }) { itemInfo ->
+                                ProgressCardView(
+                                    progress = 0.5f,
+                                    onClick = {
+                                        startActivity(
+                                            Intent(
+                                                this@MainActivity,
+                                                ReaderActivity::class.java
+                                            ).apply {
+                                                putExtra("source", model.source.value!!.name)
+                                                putExtra("id", itemInfo.itemID)
+                                            })
+                                    }
+                                ) {
+                                    source?.SearchResult(itemInfo = itemInfo)
                                 }
-                            ) {
-                                source?.SearchResult(itemInfo = itemInfo)
                             }
                         }
-                    }
-                }
 
-                if (loading)
-                    CircularProgressIndicator(Modifier.align(Alignment.Center))
-            }
-        }
+                        if (loading)
+                            CircularProgressIndicator(Modifier.align(Alignment.Center))
 
-        setContentView(binding.root)
-
-        if (Preferences["download_folder", ""].isEmpty())
-            DownloadLocationDialogFragment().show(supportFragmentManager, "Download Location Dialog")
-
-        checkUpdate(this)
-
-        initView()
-
-        model.query.observe(this)  {
-            binding.contents.searchview.binding.querySection.searchBarText.run {
-                if (text?.toString() != it) setText(it, TextView.BufferType.EDITABLE)
-            }
-        }
-
-        model.availableSortMode.observe(this) {
-            binding.contents.searchview.post {
-                binding.contents.searchview.binding.querySection.menuView.menuItems.findMenu(R.id.sort)?.subMenu?.apply {
-                    clear()
-
-                    it.forEachIndexed { index, sortMode ->
-                        add(R.id.sort_mode_group_id, index, Menu.NONE, sortMode).setOnMenuItemClickListener {
-                            model.setPage(1)
-                            model.sortModeIndex.value = it.itemId
-
-                            children.forEachIndexed { menuIndex, menuItem ->
-                                menuItem.isChecked = menuIndex == index
+                        FloatingSearchBar(
+                            modifier = Modifier.offset(0.dp, LocalDensity.current.run { searchBarOffset.toDp() }),
+                            query = query,
+                            onQueryChange = { query = it },
+                            actions = {
+                                Icon(
+                                    Icons.Default.Sort,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                                Icon(
+                                    Icons.Default.Settings,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(24.dp)
+                                )
                             }
-
-                            model.query()
-                            true
-                        }
-                    }
-
-                    setGroupCheckable(R.id.sort_mode_group_id, true, true)
-
-                    children.first().isChecked = true
-                }
-            }
-        }
-
-        model.sourceIcon.observe(this) {
-            binding.contents.searchview.post {
-                (binding.contents.searchview.binding.querySection.menuView.getChildAt(1) as ImageView).apply {
-                    ImageViewCompat.setImageTintList(this, null)
-
-                    setImageResource(it)
-                }
-            }
-        }
-
-        model.suggestions.observe(this) { runOnUiThread {
-            binding.contents.searchview.swapSuggestions(
-                if (it.isEmpty()) listOf(NoResultSuggestion(getString(R.string.main_no_result))) else it
-            )
-        } }
-    }
-
-    override fun onResume() {
-        super.onResume()
-        if (refreshOnResume) {
-            model.query()
-
-            refreshOnResume = false
-        }
-    }
-
-    override fun onBackPressed() {
-        if (binding.drawer.isDrawerOpen(GravityCompat.START))
-            binding.drawer.closeDrawer(GravityCompat.START)
-        else if (!model.onBackPressed())
-                super.onBackPressed()
-    }
-
-    override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
-        return when(keyCode) {
-            KeyEvent.KEYCODE_VOLUME_UP -> {
-                if (model.currentPage.value!! > 1) {
-                    runOnUiThread {
-                        model.prevPage()
-                        model.query()
+                        )
                     }
                 }
-
-                true
-            }
-            KeyEvent.KEYCODE_VOLUME_DOWN -> {
-                if (model.currentPage.value!! < model.totalPages.value!!) {
-                    runOnUiThread {
-                        model.nextPage()
-                        model.query()
-                    }
-                }
-
-                true
-            }
-            else -> super.onKeyDown(keyCode, event)
-        }
-    }
-
-    private fun initView() {
-        //NavigationView
-        binding.navView.setNavigationItemSelectedListener(this)
-
-        with (binding.contents.cancelFab) {
-            setOnClickListener {
-
             }
         }
-
-        with (binding.contents.jumpFab) {
-            setOnClickListener {
-                val perPage = Preferences["per_page", "25"].toInt()
-                val editText = EditText(context)
-
-                AlertDialog.Builder(context).apply {
-                    setView(editText)
-                    setTitle(R.string.main_jump_title)
-                    setMessage(getString(
-                        R.string.main_jump_message,
-                        model.currentPage.value!!,
-                        ceil(model.totalPages.value!! / perPage.toDouble()).roundToInt()
-                    ))
-
-                    setPositiveButton(android.R.string.ok) { _, _ ->
-                        model.setPage(editText.text.toString().toIntOrNull() ?: return@setPositiveButton)
-                        model.query()
-                    }
-                }.show()
-            }
-        }
-
-        with (binding.contents.randomFab) {
-            setOnClickListener {
-                setImageDrawable(CircularProgressDrawable(context))
-/*
-                model.random { runOnUiThread {
-                    GalleryDialogFragment(model.source.value!!.name, it.itemID).apply {
-                        onChipClickedHandler.add {
-                            model.setQueryAndSearch(it.toQuery())
-                            dismiss()
-                        }
-                    }.show(supportFragmentManager, "GalleryDialogFragment")
-                } } */
-            }
-        }
-
-        with (binding.contents.idFab) {
-            setOnClickListener {
-                val editText = EditText(context).apply {
-                    inputType = InputType.TYPE_CLASS_NUMBER
-                }
-
-                AlertDialog.Builder(context).apply {
-                    setView(editText)
-                    setTitle(R.string.main_open_gallery_by_id)
-
-                    setPositiveButton(android.R.string.ok) { _, _ ->
-                        val galleryID = editText.text.toString()
-/*
-                        GalleryDialogFragment(model.source.value!!.name, galleryID).apply {
-                            onChipClickedHandler.add {
-                                model.setQueryAndSearch(it.toQuery())
-                                dismiss()
-                            }
-                        }.show(supportFragmentManager, "GalleryDialogFragment")*/
-                    }
-                }.show()
-            }
-        }
-
-        setupSearchBar()
-        // TODO: Save recent source
-    }
-
-    private fun setupSearchBar() {
-        with (binding.contents.searchview) {
-            onMenuItemClickListener = {
-                onActionMenuItemSelected(it)
-            }
-
-            onQueryChangeListener = { _, query ->
-                model.query.value = query
-
-                model.suggestion()
-
-                swapSuggestions(listOf(LoadingSuggestion(getText(R.string.reader_loading).toString())))
-            }
-
-            onSuggestionBinding = model.source.value!!::onSuggestionBind
-
-            onFocusChangeListener = object: FloatingSearchView.OnFocusChangeListener {
-                override fun onFocus() {
-
-                }
-
-                override fun onFocusCleared() {
-                    model.setPage(1)
-                    model.query()
-                }
-            }
-
-            attachNavigationDrawerToMenuButton(this@MainActivity.binding.drawer)
-        }
-    }
-
-    private fun onActionMenuItemSelected(item: MenuItem?) {
-        when(item?.itemId) {
-            R.id.main_menu_settings -> startActivity(Intent(this@MainActivity, SettingsActivity::class.java))
-            R.id.source -> SourceSelectDialog().apply {
-                onSourceSelectedListener = {
-                    model.setSourceAndReset(it)
-
-                    dismiss()
-                }
-
-                onSourceSettingsSelectedListener = {
-                    startActivity(Intent(this@MainActivity, SettingsActivity::class.java).putExtra(SettingsActivity.SETTINGS_EXTRA, it))
-
-                    refreshOnResume = true
-                    dismiss()
-                }
-            }.show(supportFragmentManager, null)
-        }
-    }
-
-    override fun onNavigationItemSelected(item: MenuItem): Boolean {
-        runOnUiThread {
-            binding.drawer.closeDrawers()
-
-            when(item.itemId) {
-                R.id.main_drawer_home -> model.setModeAndReset(MainViewModel.MainMode.SEARCH)
-                R.id.main_drawer_history -> model.setModeAndReset(MainViewModel.MainMode.HISTORY)
-                R.id.main_drawer_downloads -> model.setModeAndReset(MainViewModel.MainMode.DOWNLOADS)
-                R.id.main_drawer_help -> startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(getString(R.string.help))))
-                R.id.main_drawer_github -> startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(getString(R.string.github))))
-                R.id.main_drawer_homepage -> startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(getString(R.string.home_page))))
-                R.id.main_drawer_email -> startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(getString(R.string.email))))
-                R.id.main_drawer_kakaotalk -> startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(getString(R.string.discord))))
-            }
-        }
-
-        return true
     }
 }

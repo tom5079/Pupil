@@ -26,18 +26,16 @@ import xyz.quaver.pupil.sources.Source
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ProgressCardView(progress: Float? = null, onLongClick: (() -> Unit)? = null, onClick: () -> Unit, content: @Composable () -> Unit) {
-    MaterialTheme(if (isSystemInDarkTheme()) darkColors() else lightColors()) {
-        Card(
-            modifier = Modifier
-                .padding(8.dp)
-                .combinedClickable(onClick = onClick, onLongClick = onLongClick),
-            shape = RoundedCornerShape(4.dp),
-            elevation = 4.dp
-        ) {
-            Column {
-                progress?.run { LinearProgressIndicator(progress = progress, modifier = Modifier.fillMaxWidth()) }
-                content.invoke()
-            }
+    Card(
+        modifier = Modifier
+            .padding(8.dp)
+            .combinedClickable(onClick = onClick, onLongClick = onLongClick),
+        shape = RoundedCornerShape(4.dp),
+        elevation = 4.dp
+    ) {
+        Column {
+            progress?.run { LinearProgressIndicator(progress = progress, modifier = Modifier.fillMaxWidth()) }
+            content()
         }
     }
 }

@@ -20,6 +20,7 @@ package xyz.quaver.pupil.ui.viewmodel
 
 import android.annotation.SuppressLint
 import android.app.Application
+import androidx.compose.runtime.mutableStateListOf
 import androidx.lifecycle.*
 import kotlinx.coroutines.*
 import org.kodein.di.DIAware
@@ -38,8 +39,7 @@ import kotlin.random.Random
 class MainViewModel(app: Application) : AndroidViewModel(app), DIAware {
     override val di by closestDI()
 
-    private val _searchResults = MutableLiveData<List<ItemInfo>>()
-    val searchResults = _searchResults as LiveData<List<ItemInfo>>
+    val searchResults = mutableStateListOf<ItemInfo>()
 
     private val _loading = MutableLiveData(false)
     val loading = _loading as LiveData<Boolean>
@@ -127,29 +127,28 @@ class MainViewModel(app: Application) : AndroidViewModel(app), DIAware {
         queryJob?.cancel()
 
         _loading.value = true
-        val results = mutableListOf<ItemInfo>()
-        _searchResults.value = results
 
         queryJob = viewModelScope.launch {
-            val channel = withContext(Dispatchers.IO) {
-                val (channel, count) = source.search(
-                    query.value ?: "",
-                    (currentPage - 1) * perPage until currentPage * perPage,
-                    sortModeIndex
-                )
+            launch(Dispatchers.Default) {
+                val channel = withContext(Dispatchers.IO) {
+                    val (channel, count) = source.search(
+                        query.value ?: "",
+                        (currentPage - 1) * perPage until currentPage * perPage,
+                        sortModeIndex
+                    )
 
-                totalItems.postValue(count)
+                    totalItems.postValue(count)
 
-                channel
+                    channel
+                }
+
+                for (result in channel) {
+                    yield()
+                    searchResults.add(result)
+                }
+
+                _loading.postValue(false)
             }
-
-            for (result in channel) {
-                yield()
-                results.add(result)
-                _searchResults.value = results.toList()
-            }
-
-            _loading.value = false
         }
     }
 

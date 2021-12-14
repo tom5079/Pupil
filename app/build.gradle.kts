@@ -22,7 +22,8 @@ android {
     }
     buildTypes {
         getByName("debug") {
-            isDebuggable = true
+            isDebuggable = false
+            isMinifyEnabled = true
             applicationIdSuffix = ".debug"
             versionNameSuffix = "-DEBUG"
 
@@ -34,6 +35,7 @@ android {
         getByName("release") {
             isMinifyEnabled = true
             isShrinkResources = true
+            applicationIdSuffix = ".beta"
 
             isCrunchPngs = false
 
@@ -47,7 +49,7 @@ android {
         compose = true
     }
     composeOptions {
-        kotlinCompilerExtensionVersion = "1.0.0"
+        kotlinCompilerExtensionVersion = "1.0.5"
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_1_8
@@ -69,17 +71,16 @@ dependencies {
     implementation("androidx.compose.ui:ui-tooling:1.0.5")
     implementation("androidx.compose.foundation:foundation:1.0.5")
     implementation("androidx.compose.material:material:1.0.5")
-    implementation("androidx.compose.material:material-icons-core:1.0.5")
     implementation("androidx.compose.material:material-icons-extended:1.0.5")
     implementation("androidx.compose.runtime:runtime-livedata:1.0.5")
-    implementation("androidx.compose.material:material-icons-extended:1.0.5")
+    implementation("androidx.compose.ui:ui-util:1.0.5")
     implementation("androidx.activity:activity-compose:1.4.0")
     implementation("androidx.navigation:navigation-compose:2.4.0-beta02")
 
-    implementation("com.google.accompanist:accompanist-flowlayout:0.16.1")
-    implementation("com.google.accompanist:accompanist-appcompat-theme:0.16.0")
-    implementation("com.google.accompanist:accompanist-insets:0.18.0")
-    implementation("com.google.accompanist:accompanist-insets-ui:0.18.0")
+    implementation("com.google.accompanist:accompanist-flowlayout:0.20.2")
+    implementation("com.google.accompanist:accompanist-appcompat-theme:0.20.2")
+    implementation("com.google.accompanist:accompanist-insets:0.20.2")
+    implementation("com.google.accompanist:accompanist-insets-ui:0.20.2")
 
     implementation("io.coil-kt:coil-compose:1.3.2")
 
@@ -135,7 +136,7 @@ dependencies {
     implementation("xyz.quaver:subsampledimage:0.0.1-alpha09-SNAPSHOT")
 
     implementation("org.kodein.log:kodein-log:0.11.1")
-    debugImplementation("com.squareup.leakcanary:leakcanary-android:2.7")
+    //debugImplementation("com.squareup.leakcanary:leakcanary-android:2.7")
 
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.mockito:mockito-inline:4.1.0")
@@ -145,5 +146,9 @@ dependencies {
     androidTestImplementation("androidx.test:runner:1.4.0")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.4.0")
 
-    androidTestImplementation("androidx.compose.ui:ui-test-junit4:1.1.0-beta03")
+    androidTestImplementation("androidx.compose.ui:ui-test-junit4:1.0.5")
+}
+
+task<Exec>("clearAppCache") {
+    commandLine("adb", "shell", "pm", "clear", "xyz.quaver.pupil.debug")
 }

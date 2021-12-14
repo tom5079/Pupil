@@ -37,8 +37,10 @@ import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.google.firebase.ktx.Firebase
 import io.ktor.client.*
 import io.ktor.client.engine.okhttp.*
+import io.ktor.client.features.*
 import io.ktor.client.features.json.*
 import io.ktor.client.features.json.serializer.*
+import okhttp3.Protocol
 import org.kodein.di.*
 import org.kodein.di.android.x.androidXModule
 import org.kodein.log.LoggerFactory
@@ -49,6 +51,7 @@ import xyz.quaver.pupil.sources.sourceModule
 import xyz.quaver.pupil.util.*
 import java.io.File
 import java.util.*
+import java.util.concurrent.TimeUnit
 
 class Pupil : Application(), DIAware {
 
@@ -62,9 +65,21 @@ class Pupil : Application(), DIAware {
 
         bind { singleton {
             HttpClient(OkHttp) {
+                engine {
+                    config {
+                        protocols(listOf(Protocol.HTTP_1_1))
+                    }
+                }
                 install(JsonFeature) {
                     serializer = KotlinxSerializer()
                 }
+                install(HttpTimeout) {
+                    requestTimeoutMillis = HttpTimeout.INFINITE_TIMEOUT_MS
+                    socketTimeoutMillis = HttpTimeout.INFINITE_TIMEOUT_MS
+                    connectTimeoutMillis = HttpTimeout.INFINITE_TIMEOUT_MS
+                }
+
+                BrowserUserAgent()
             }
         } }
     }

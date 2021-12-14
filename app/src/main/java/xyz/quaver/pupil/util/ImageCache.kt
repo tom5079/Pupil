@@ -34,6 +34,8 @@ import kotlinx.coroutines.channels.Channel
 import org.kodein.di.DIAware
 import org.kodein.di.android.closestDI
 import org.kodein.di.instance
+import org.kodein.log.LoggerFactory
+import org.kodein.log.newLogger
 import xyz.quaver.hitomi.sha256
 import java.io.File
 import java.util.concurrent.ConcurrentHashMap
@@ -53,6 +55,8 @@ class NetworkCache(context: Context) : DIAware {
     private val requests = mutableMapOf<String, Job>()
 
     private val networkScope = CoroutineScope(Executors.newFixedThreadPool(4).asCoroutineDispatcher())
+
+    private val logger = newLogger(LoggerFactory.default)
 
     @OptIn(ExperimentalCoroutinesApi::class)
     suspend fun load(requestBuilder: HttpRequestBuilder.() -> Unit): File = coroutineScope {
@@ -95,6 +99,7 @@ class NetworkCache(context: Context) : DIAware {
                         progressChannel.close()
                     }
                 }.onFailure {
+                    logger.warning(it)
                     file.delete()
                     FirebaseCrashlytics.getInstance().recordException(it)
                     progressChannel.close(it)
