@@ -20,13 +20,18 @@ package xyz.quaver.pupil.ui.viewmodel
 
 import android.annotation.SuppressLint
 import android.app.Application
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.*
 import kotlinx.coroutines.*
 import org.kodein.di.DIAware
 import org.kodein.di.android.x.closestDI
 import org.kodein.di.direct
 import org.kodein.di.instance
+import org.kodein.log.LoggerFactory
+import org.kodein.log.newLogger
 import xyz.quaver.floatingsearchview.suggestions.model.SearchSuggestion
 import xyz.quaver.pupil.sources.*
 import xyz.quaver.pupil.util.Preferences
@@ -39,15 +44,17 @@ import kotlin.random.Random
 class MainViewModel(app: Application) : AndroidViewModel(app), DIAware {
     override val di by closestDI()
 
+    private val logger = newLogger(LoggerFactory.default)
+
     val searchResults = mutableStateListOf<ItemInfo>()
 
-    private val _loading = MutableLiveData(false)
-    val loading = _loading as LiveData<Boolean>
+    var loading by mutableStateOf(false)
+        private set
 
     private var queryJob: Job? = null
     private var suggestionJob: Job? = null
 
-    val query = MutableLiveData<String>()
+    var query by mutableStateOf("")
     private val queryStack = mutableListOf<String>()
 
     private val defaultSourceFactory: (String) -> Source = {
@@ -90,11 +97,11 @@ class MainViewModel(app: Application) : AndroidViewModel(app), DIAware {
             sortModeIndex.value = 0
         }
 
-        setQueryAndSearch()
+        query = ""
+        resetAndQuery()
     }
 
-    fun setQueryAndSearch(query: String = "") {
-        this.query.value = query
+    fun resetAndQuery() {
         queryStack.add(query)
         setPage(1)
 
@@ -126,29 +133,26 @@ class MainViewModel(app: Application) : AndroidViewModel(app), DIAware {
         suggestionJob?.cancel()
         queryJob?.cancel()
 
-        _loading.value = true
+        loading = true
+        searchResults.clear()
 
         queryJob = viewModelScope.launch {
-            launch(Dispatchers.Default) {
-                val channel = withContext(Dispatchers.IO) {
-                    val (channel, count) = source.search(
-                        query.value ?: "",
-                        (currentPage - 1) * perPage until currentPage * perPage,
-                        sortModeIndex
-                    )
+            val (channel, count) = source.search(
+                query,
+                (currentPage - 1) * perPage until currentPage * perPage,
+                sortModeIndex
+            )
 
-                    totalItems.postValue(count)
+            logger.info { count.toString() }
 
-                    channel
-                }
+            totalItems.postValue(count)
 
-                for (result in channel) {
-                    yield()
-                    searchResults.add(result)
-                }
-
-                _loading.postValue(false)
+            for (result in channel) {
+                yield()
+                searchResults.add(result)
             }
+
+            loading = false
         }
     }
 
@@ -165,7 +169,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app), DIAware {
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
                 _source.value?.search(
-                    query.value + Preferences["default_query", ""],
+                    query + Preferences["default_query", ""],
                     random .. random,
                     sortModeIndex.value!!
                 )?.first?.receive()
@@ -182,7 +186,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app), DIAware {
             @SuppressLint("NullSafeMutableLiveData")
             _suggestions.value = withContext(Dispatchers.IO) {
                 kotlin.runCatching {
-                    _source.value!!.suggestion(query.value!!)
+                    _source.value!!.suggestion(query)
                 }.getOrElse { emptyList() }
             }
         }
@@ -195,7 +199,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app), DIAware {
         if (queryStack.removeLastOrNull() == null || queryStack.isEmpty())
             return false
 
-        setQueryAndSearch(queryStack.removeLast())
+        query = queryStack.removeLast()
+        resetAndQuery()
         return true
     }
 

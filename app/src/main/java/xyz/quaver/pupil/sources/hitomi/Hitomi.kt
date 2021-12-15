@@ -152,7 +152,7 @@ class Hitomi(app: Application) : Source(), DIAware {
     var cachedSortMode: Int = -1
     private val cache = mutableListOf<Int>()
 
-    override suspend fun search(query: String, range: IntRange, sortMode: Int): Pair<Channel<ItemInfo>, Int> {
+    override suspend fun search(query: String, range: IntRange, sortMode: Int): Pair<Channel<ItemInfo>, Int> = coroutineScope { withContext(Dispatchers.IO) {
         if (cachedQuery != query || cachedSortMode != sortMode || cache.isEmpty()) {
             cachedQuery = null
             cache.clear()
@@ -179,8 +179,8 @@ class Hitomi(app: Application) : Source(), DIAware {
             channel.close()
         }
 
-        return Pair(channel, cache.size)
-    }
+        Pair(channel, cache.size)
+    } }
 
     override suspend fun suggestion(query: String) : List<TagSuggestion> {
         return getSuggestionsForQuery(query.takeLastWhile { !it.isWhitespace() }).map {
