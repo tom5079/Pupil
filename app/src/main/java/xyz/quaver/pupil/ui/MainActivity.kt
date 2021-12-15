@@ -23,22 +23,33 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
-import androidx.compose.foundation.gestures.awaitFirstDown
-import androidx.compose.foundation.gestures.forEachGesture
-import androidx.compose.foundation.gestures.scrollable
+import androidx.appcompat.graphics.drawable.DrawerArrowDrawable
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.updateTransition
+import androidx.compose.foundation.MutatePriority
+import androidx.compose.foundation.ScrollState
+import androidx.compose.foundation.gestures.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.material.CircularProgressIndicator
-import androidx.compose.material.Icon
-import androidx.compose.material.Scaffold
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.pointerInteropFilter
@@ -47,6 +58,10 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastAny
+import androidx.core.graphics.drawable.toBitmap
+import androidx.core.view.WindowCompat
+import com.google.accompanist.drawablepainter.rememberDrawablePainter
+import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -68,6 +83,11 @@ import xyz.quaver.pupil.ui.viewmodel.MainViewModel
 import xyz.quaver.pupil.util.*
 import kotlin.math.*
 
+private enum class NavigationIconState {
+    MENU,
+    ARROW
+}
+
 class MainActivity : ComponentActivity(), DIAware {
     override val di by closestDI()
 
@@ -75,37 +95,36 @@ class MainActivity : ComponentActivity(), DIAware {
 
     private val logger = newLogger(LoggerFactory.default)
 
+    @OptIn(ExperimentalAnimationApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         setContent {
-            val source: Source? by model.source.observeAsState(null)
-            val loading: Boolean by model.loading.observeAsState(false)
-
-            var query by remember { mutableStateOf("") }
-
-            var isFabExpanded by remember { mutableStateOf(FloatingActionButtonState.COLLAPSED) }
-
-            val lazyListState = rememberLazyListState()
-
-            val searchBarHeight = LocalDensity.current.run { 56.dp.roundToPx() }
-            var searchBarOffset by remember { mutableStateOf(0) }
-
-            LaunchedEffect(lazyListState) {
-                var lastOffset = 0
-
-                snapshotFlow { lazyListState.firstVisibleItemScrollOffset }
-                    .distinctUntilChanged()
-                    .collect { newOffset ->
-                        val dy = newOffset - lastOffset
-                        lastOffset = newOffset
-
-                        if (abs(dy) < searchBarHeight)
-                            searchBarOffset = (searchBarOffset-dy).coerceIn(-searchBarHeight, 0)
-                    }
-            }
-
             PupilTheme {
+                val source: Source? by model.source.observeAsState(null)
+
+                var isFabExpanded by remember { mutableStateOf(FloatingActionButtonState.COLLAPSED) }
+                var isFabVisible by remember { mutableStateOf(true) }
+
+                val searchBarHeight = LocalDensity.current.run { 56.dp.roundToPx() }
+                var searchBarOffset by remember { mutableStateOf(0) }
+
+                val navigationIcon = remember { DrawerArrowDrawable(this) }
+                var navigationIconState by remember { mutableStateOf(NavigationIconState.MENU) }
+                val navigationIconTransition = updateTransition(navigationIconState, label = "navigationIconTransition")
+                val navigationIconProgress by navigationIconTransition.animateFloat(
+                    label = "navigationIconProgress"
+                ) { state ->
+                    when (state) {
+                        NavigationIconState.MENU -> 0f
+                        NavigationIconState.ARROW -> 1f
+                    }
+                }
+
+                LaunchedEffect(navigationIconProgress) {
+                    navigationIcon.progress = navigationIconProgress
+                }
+
                 Scaffold(
                     floatingActionButton = {
                         MultipleFloatingActionButton(
@@ -127,6 +146,7 @@ class MainActivity : ComponentActivity(), DIAware {
                                     stringResource(R.string.main_open_gallery_by_id)
                                 ),
                             ),
+                            visible = isFabVisible,
                             targetState = isFabExpanded,
                             onStateChanged = {
                                 isFabExpanded = it
@@ -136,8 +156,24 @@ class MainActivity : ComponentActivity(), DIAware {
                 ) {
                     Box(Modifier.fillMaxSize()) {
                         LazyColumn(
-                            Modifier.fillMaxSize(),
-                            state = lazyListState,
+                            Modifier
+                                .fillMaxSize()
+                                .nestedScroll(object : NestedScrollConnection {
+                                    override fun onPreScroll(
+                                        available: Offset,
+                                        source: NestedScrollSource
+                                    ): Offset {
+                                        searchBarOffset =
+                                            (searchBarOffset + available.y.roundToInt()).coerceIn(
+                                                -searchBarHeight,
+                                                0
+                                            )
+
+                                        isFabVisible = available.y > 0f
+
+                                        return Offset.Zero
+                                    }
+                                }),
                             contentPadding = PaddingValues(0.dp, 56.dp, 0.dp, 0.dp)
                         ) {
                             items(model.searchResults, key = { it.itemID }) { itemInfo ->
@@ -159,25 +195,36 @@ class MainActivity : ComponentActivity(), DIAware {
                             }
                         }
 
-                        if (loading)
+                        if (model.loading)
                             CircularProgressIndicator(Modifier.align(Alignment.Center))
 
                         FloatingSearchBar(
                             modifier = Modifier.offset(0.dp, LocalDensity.current.run { searchBarOffset.toDp() }),
-                            query = query,
-                            onQueryChange = { query = it },
+                            query = model.query,
+                            onQueryChange = { model.query = it },
+                            navigationIcon = {
+                                Icon(
+                                    painter = rememberDrawablePainter(navigationIcon),
+                                    contentDescription = null,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            },
                             actions = {
                                 Icon(
                                     Icons.Default.Sort,
                                     contentDescription = null,
-                                    modifier = Modifier.size(24.dp)
+                                    modifier = Modifier.size(24.dp),
+                                    tint = MaterialTheme.colors.onSurface.copy(alpha = 0.5f)
                                 )
                                 Icon(
                                     Icons.Default.Settings,
                                     contentDescription = null,
-                                    modifier = Modifier.size(24.dp)
+                                    modifier = Modifier.size(24.dp),
+                                    tint = MaterialTheme.colors.onSurface.copy(alpha = 0.5f)
                                 )
-                            }
+                            },
+                            onTextFieldFocused = { navigationIconState = NavigationIconState.ARROW },
+                            onTextFieldUnfocused = { navigationIconState = NavigationIconState.MENU; model.resetAndQuery() }
                         )
                     }
                 }

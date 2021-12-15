@@ -16,6 +16,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.Modifier.Companion.any
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.scale
@@ -28,6 +29,7 @@ import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.util.fastAll
 
 enum class FloatingActionButtonState(private val isExpanded: Boolean) {
     COLLAPSED(false), EXPANDED(true);
@@ -112,6 +114,7 @@ private class FloatingActionButtonItemProvider : PreviewParameterProvider<SubFab
 fun MultipleFloatingActionButton(
     @PreviewParameter(provider = FloatingActionButtonItemProvider::class) items: List<SubFabItem>,
     fabIcon: ImageVector = Icons.Default.Add,
+    visible: Boolean = true,
     targetState: FloatingActionButtonState = FloatingActionButtonState.COLLAPSED,
     onStateChanged: ((FloatingActionButtonState) -> Unit)? = null
 ) {
@@ -131,10 +134,14 @@ fun MultipleFloatingActionButton(
         }
     }
 
+    if (!visible) onStateChanged?.invoke(FloatingActionButtonState.COLLAPSED)
+
     Column(
         horizontalAlignment = Alignment.End,
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
+        var allCollapsed = true
+
         items.forEachIndexed { index, item ->
             val delay = when (targetState) {
                 FloatingActionButtonState.COLLAPSED -> index
@@ -207,12 +214,26 @@ fun MultipleFloatingActionButton(
             ) {
                 item.onClick?.invoke(it)
             }
+
+            if (buttonScale != 0f) allCollapsed = false
         }
 
-        FloatingActionButton(onClick = {
-            onStateChanged?.invoke(!targetState)
-        }) {
-            Icon(modifier = Modifier.rotate(rotation), imageVector = fabIcon, contentDescription = null)
+        val visibilityTransition = updateTransition(targetState = visible || !allCollapsed, label = "visible")
+
+        val scale by visibilityTransition.animateFloat(
+            label = "main FAB scale"
+        ) { state ->
+            if (state) 1f else 0f
         }
+
+        if (scale > 0f)
+            FloatingActionButton(
+                modifier = Modifier.scale(scale),
+                onClick = {
+                    onStateChanged?.invoke(!targetState)
+                }
+            ) {
+                Icon(modifier = Modifier.rotate(rotation), imageVector = fabIcon, contentDescription = null)
+            }
     }
 }
