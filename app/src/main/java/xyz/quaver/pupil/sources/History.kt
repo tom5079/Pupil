@@ -73,7 +73,7 @@ class History(override val di: DI) : Source(), DIAware {
 
 
     @Composable
-    override fun SearchResult(itemInfo: ItemInfo, onEvent: ((SearchResultEvent) -> Unit)?) {
+    override fun SearchResult(itemInfo: ItemInfo, onEvent: (SearchResultEvent) -> Unit) {
 
     }
 

@@ -28,6 +28,8 @@
         <entry key="../../../../layout/compose-model-1639478149655.xml" value="0.33" />
         <entry key="../../../../layout/compose-model-1639535152524.xml" value="0.3055555555555556" />
         <entry key="../../../../layout/compose-model-1639538998660.xml" value="0.30277777777777776" />
+        <entry key="../../../../layout/compose-model-1639625734547.xml" value="0.1" />
+        <entry key="../../../../layout/compose-model-1639629588722.xml" value="0.3472222222222222" />
         <entry key="../../../../layout/custom_preview.xml" value="0.518974358974359" />
         <entry key="app/src/main/res/drawable/avd_star.xml" value="0.2722222222222222" />
         <entry key="app/src/main/res/drawable/history.xml" value="0.3055555555555556" />
@@ -38,6 +40,7 @@
         <entry key="app/src/main/res/layout/reader_activity.xml" value="0.3" />
         <entry key="app/src/main/res/layout/reader_item.xml" value="0.1" />
         <entry key="app/src/main/res/layout/search_result_item.xml" value="0.2489868287740628" />
+        <entry key="app/src/main/res/layout/source_select_dialog_item.xml" value="0.5119791666666667" />
       </map>
     </option>
   </component>

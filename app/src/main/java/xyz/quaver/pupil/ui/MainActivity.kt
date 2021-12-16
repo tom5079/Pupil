@@ -24,59 +24,48 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.appcompat.graphics.drawable.DrawerArrowDrawable
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.updateTransition
-import androidx.compose.foundation.MutatePriority
-import androidx.compose.foundation.ScrollState
+import androidx.compose.foundation.*
 import androidx.compose.foundation.gestures.*
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.runtime.*
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.input.pointer.PointerEventPass
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.input.pointer.pointerInteropFilter
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.util.fastAny
-import androidx.core.graphics.drawable.toBitmap
-import androidx.core.view.WindowCompat
 import com.google.accompanist.drawablepainter.rememberDrawablePainter
-import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.distinctUntilChanged
 import org.kodein.di.DIAware
 import org.kodein.di.android.closestDI
+import org.kodein.di.compose.withDI
 import org.kodein.log.LoggerFactory
 import org.kodein.log.newLogger
 import xyz.quaver.pupil.*
 import xyz.quaver.pupil.R
-import xyz.quaver.pupil.sources.Source
+import xyz.quaver.pupil.sources.SearchResultEvent
 import xyz.quaver.pupil.types.*
 import xyz.quaver.pupil.ui.composable.FloatingActionButtonState
 import xyz.quaver.pupil.ui.composable.FloatingSearchBar
 import xyz.quaver.pupil.ui.composable.MultipleFloatingActionButton
 import xyz.quaver.pupil.ui.composable.SubFabItem
+import xyz.quaver.pupil.ui.dialog.SourceSelectDialog
+import xyz.quaver.pupil.ui.dialog.SourceSelectDialogItem
 import xyz.quaver.pupil.ui.theme.PupilTheme
 import xyz.quaver.pupil.ui.view.ProgressCardView
 import xyz.quaver.pupil.ui.viewmodel.MainViewModel
@@ -101,7 +90,7 @@ class MainActivity : ComponentActivity(), DIAware {
 
         setContent {
             PupilTheme {
-                val source: Source? by model.source.observeAsState(null)
+                val focusManager = LocalFocusManager.current
 
                 var isFabExpanded by remember { mutableStateOf(FloatingActionButtonState.COLLAPSED) }
                 var isFabVisible by remember { mutableStateOf(true) }
@@ -121,9 +110,16 @@ class MainActivity : ComponentActivity(), DIAware {
                     }
                 }
 
+                var openSourceSelectDialog by remember { mutableStateOf(false) }
+
                 LaunchedEffect(navigationIconProgress) {
                     navigationIcon.progress = navigationIconProgress
                 }
+
+                if (openSourceSelectDialog)
+                    SourceSelectDialog {
+                        openSourceSelectDialog = false
+                    }
 
                 Scaffold(
                     floatingActionButton = {
@@ -178,19 +174,23 @@ class MainActivity : ComponentActivity(), DIAware {
                         ) {
                             items(model.searchResults, key = { it.itemID }) { itemInfo ->
                                 ProgressCardView(
-                                    progress = 0.5f,
-                                    onClick = {
-                                        startActivity(
-                                            Intent(
-                                                this@MainActivity,
-                                                ReaderActivity::class.java
-                                            ).apply {
-                                                putExtra("source", model.source.value!!.name)
-                                                putExtra("id", itemInfo.itemID)
-                                            })
-                                    }
+                                    progress = 0.5f
                                 ) {
-                                    source?.SearchResult(itemInfo = itemInfo)
+                                    model.source.SearchResult(itemInfo = itemInfo) { event ->
+                                        when (event.type) {
+                                            SearchResultEvent.Type.OPEN_READER -> {
+                                                startActivity(
+                                                    Intent(
+                                                        this@MainActivity,
+                                                        ReaderActivity::class.java
+                                                    ).apply {
+                                                        putExtra("source", model.source.name)
+                                                        putExtra("id", itemInfo.itemID)
+                                                    })
+                                            }
+                                            else -> TODO("")
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -206,10 +206,24 @@ class MainActivity : ComponentActivity(), DIAware {
                                 Icon(
                                     painter = rememberDrawablePainter(navigationIcon),
                                     contentDescription = null,
-                                    modifier = Modifier.size(24.dp)
+                                    modifier = Modifier
+                                        .size(24.dp)
+                                        .clickable(
+                                            interactionSource = remember { MutableInteractionSource() },
+                                            indication = rememberRipple(bounded = false)
+                                        ) {
+                                            focusManager.clearFocus()
+                                        }
                                 )
                             },
                             actions = {
+                                Image(
+                                    painterResource(model.source.iconResID),
+                                    contentDescription = null,
+                                    modifier = Modifier.size(24.dp).clickable {
+                                        openSourceSelectDialog = true
+                                    }
+                                )
                                 Icon(
                                     Icons.Default.Sort,
                                     contentDescription = null,

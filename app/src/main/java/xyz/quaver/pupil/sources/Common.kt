@@ -60,7 +60,7 @@ abstract class Source {
     abstract suspend fun info(itemID: String): ItemInfo
 
     @Composable
-    open fun SearchResult(itemInfo: ItemInfo, onEvent: ((SearchResultEvent) -> Unit)? = null) { }
+    open fun SearchResult(itemInfo: ItemInfo, onEvent: (SearchResultEvent) -> Unit = { }) { }
 
     open fun getHeadersBuilderForImage(itemID: String, url: String): HeadersBuilder.() -> Unit = { }
 
