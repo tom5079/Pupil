@@ -31,7 +31,6 @@ import org.kodein.log.LoggerFactory
 import org.kodein.log.newLogger
 import xyz.quaver.floatingsearchview.suggestions.model.SearchSuggestion
 import xyz.quaver.pupil.sources.*
-import xyz.quaver.pupil.sources.hitomi.Hitomi
 import xyz.quaver.pupil.util.Preferences
 import xyz.quaver.pupil.util.source
 import kotlin.math.ceil
@@ -59,7 +58,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app), DIAware {
         direct.source(it)
     }
     private var sourceFactory: (String) -> Source = defaultSourceFactory
-    var source by mutableStateOf(sourceFactory("hitomi.la"))
+    var source by mutableStateOf(sourceFactory("hiyobi.io"))
         private set
 
     var sortModeIndex by mutableStateOf(0)
@@ -125,13 +124,12 @@ class MainViewModel(app: Application) : AndroidViewModel(app), DIAware {
                 sortModeIndex
             )
 
-            logger.info { count.toString() }
-
             totalItems.postValue(count)
 
             for (result in channel) {
                 yield()
                 searchResults.add(result)
+                logger.info { result.toString() }
             }
 
             loading = false

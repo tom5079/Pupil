@@ -22,10 +22,7 @@ package xyz.quaver.pupil.ui.viewmodel
 import android.app.Application
 import android.content.Intent
 import android.net.Uri
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.lifecycle.*
 import io.ktor.client.request.*
 import io.ktor.http.*
@@ -36,11 +33,13 @@ import org.kodein.di.DIAware
 import org.kodein.di.android.x.closestDI
 import org.kodein.di.direct
 import org.kodein.di.instance
+import org.kodein.di.instanceOrNull
 import org.kodein.log.LoggerFactory
 import org.kodein.log.newLogger
 import xyz.quaver.pupil.db.AppDatabase
 import xyz.quaver.pupil.db.Bookmark
 import xyz.quaver.pupil.db.History
+import xyz.quaver.pupil.sources.ItemInfo
 import xyz.quaver.pupil.sources.Source
 import xyz.quaver.pupil.util.NetworkCache
 import xyz.quaver.pupil.util.source
@@ -61,14 +60,12 @@ class ReaderViewModel(app: Application) : AndroidViewModel(app), DIAware {
     private val historyDao = database.historyDao()
     private val bookmarkDao = database.bookmarkDao()
 
-    private val _source = MutableLiveData<String>()
-    val source = _source as LiveData<String>
-
-    private val _itemID = MutableLiveData<String>()
-    val itemID = _itemID as LiveData<String>
-
-    private val _title = MutableLiveData<String>()
-    val title = _title as LiveData<String>
+    var source by mutableStateOf<Source?>(null)
+        private set
+    var itemID by mutableStateOf<String?>(null)
+        private set
+    var title by mutableStateOf<String?>(null)
+        private set
 
     private val totalProgressMutex = Mutex()
     var totalProgress by mutableStateOf(0)
@@ -80,19 +77,8 @@ class ReaderViewModel(app: Application) : AndroidViewModel(app), DIAware {
     val imageList = mutableStateListOf<Uri?>()
     val progressList = mutableStateListOf<Float>()
 
-    val isBookmarked = Transformations.switchMap(MediatorLiveData<Pair<Source, String>>().apply {
-        addSource(source) { source -> itemID.value?.let { itemID -> source to itemID } }
-        addSource(itemID) { itemID -> source.value?.let { source -> source to itemID } }
-    }) { (source, itemID) ->
-        bookmarkDao.contains(source.name, itemID)
-    }
-
-    val sourceInstance = Transformations.map(source) {
-        direct.source(it)
-    }
-
-    val sourceIcon = Transformations.map(sourceInstance) {
-        it.iconResID
+    val sourceIcon by derivedStateOf {
+        source?.iconResID
     }
 
     /**
@@ -105,8 +91,8 @@ class ReaderViewModel(app: Application) : AndroidViewModel(app), DIAware {
             val uri = intent.data
             val lastPathSegment = uri?.lastPathSegment
             if (uri != null && lastPathSegment != null) {
-                _source.value = uri.host ?: error("Source cannot be null")
-                _itemID.value = when (uri.host) {
+                source = uri.host?.let { direct.source(it) } ?: error("Invalid host")
+                itemID = when (uri.host) {
                     "hitomi.la" ->
                         Regex("([0-9]+).html").find(lastPathSegment)?.groupValues?.get(1) ?: error("Invalid itemID")
                     "hiyobi.me" -> lastPathSegment
@@ -115,15 +101,16 @@ class ReaderViewModel(app: Application) : AndroidViewModel(app), DIAware {
                 }
             }
         } else {
-            _source.value = intent.getStringExtra("source") ?: error("Invalid source")
-            _itemID.value = intent.getStringExtra("id") ?: error("Invalid itemID")
+            source = intent.getStringExtra("source")?.let { direct.source(it) } ?: error("Invalid source")
+            itemID = intent.getStringExtra("id") ?: error("Invalid itemID")
+            title = intent.getParcelableExtra<ItemInfo>("payload")?.title
         }
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
     fun load() {
-        val source: Source by source(source.value ?: return)
-        val itemID = itemID.value ?: return
+        val source = source ?: return
+        val itemID = itemID ?: return
 
         viewModelScope.launch {
             launch(Dispatchers.IO) {
@@ -132,9 +119,10 @@ class ReaderViewModel(app: Application) : AndroidViewModel(app), DIAware {
         }
 
         viewModelScope.launch {
-            _title.value = withContext(Dispatchers.IO) {
-                source.info(itemID)
-            }.title
+            if (title == null)
+                title = withContext(Dispatchers.IO) {
+                    source.info(itemID)
+                }.title
         }
 
         viewModelScope.launch {
@@ -152,6 +140,9 @@ class ReaderViewModel(app: Application) : AndroidViewModel(app), DIAware {
                 }
 
                 images.forEachIndexed { index, image ->
+                    logger.info {
+                        progressList.toList().toString()
+                    }
                     when (val scheme = image.takeWhile { it != ':' }) {
                         "http", "https" -> {
                             val (channel, file) = cache.load {
@@ -203,7 +194,7 @@ class ReaderViewModel(app: Application) : AndroidViewModel(app), DIAware {
     }
 
     fun toggleBookmark() {
-        val bookmark = source.value?.let { source -> itemID.value?.let { itemID -> Bookmark(source, itemID) } } ?: return
+        val bookmark = source?.let { source -> itemID?.let { itemID -> Bookmark(source.name, itemID) } } ?: return
 
         CoroutineScope(Dispatchers.IO).launch {
             if (bookmarkDao.contains(bookmark).value ?: return@launch)

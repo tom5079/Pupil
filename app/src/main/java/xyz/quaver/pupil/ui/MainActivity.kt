@@ -53,7 +53,6 @@ import com.google.accompanist.drawablepainter.rememberDrawablePainter
 import kotlinx.coroutines.*
 import org.kodein.di.DIAware
 import org.kodein.di.android.closestDI
-import org.kodein.di.compose.withDI
 import org.kodein.log.LoggerFactory
 import org.kodein.log.newLogger
 import xyz.quaver.pupil.*
@@ -65,7 +64,6 @@ import xyz.quaver.pupil.ui.composable.FloatingSearchBar
 import xyz.quaver.pupil.ui.composable.MultipleFloatingActionButton
 import xyz.quaver.pupil.ui.composable.SubFabItem
 import xyz.quaver.pupil.ui.dialog.SourceSelectDialog
-import xyz.quaver.pupil.ui.dialog.SourceSelectDialogItem
 import xyz.quaver.pupil.ui.theme.PupilTheme
 import xyz.quaver.pupil.ui.view.ProgressCardView
 import xyz.quaver.pupil.ui.viewmodel.MainViewModel
@@ -117,8 +115,12 @@ class MainActivity : ComponentActivity(), DIAware {
                 }
 
                 if (openSourceSelectDialog)
-                    SourceSelectDialog {
+                    SourceSelectDialog(
+                        currentSource = model.source.name,
+                        onDismissRequest = { openSourceSelectDialog = false }
+                    ) { source ->
                         openSourceSelectDialog = false
+                        model.setSourceAndReset(source.name)
                     }
 
                 Scaffold(
@@ -185,7 +187,8 @@ class MainActivity : ComponentActivity(), DIAware {
                                                         ReaderActivity::class.java
                                                     ).apply {
                                                         putExtra("source", model.source.name)
-                                                        putExtra("id", itemInfo.itemID)
+                                                        putExtra("id", event.itemID)
+                                                        putExtra("payload", event.payload)
                                                     })
                                             }
                                             else -> TODO("")

@@ -20,11 +20,12 @@ package xyz.quaver.pupil.ui
 
 import android.os.Bundle
 import android.view.MenuItem
+import androidx.appcompat.app.AppCompatActivity
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.ui.fragment.SettingsFragment
 import xyz.quaver.pupil.ui.fragment.SourceSettingsFragment
 
-class SettingsActivity : BaseActivity() {
+class SettingsActivity : AppCompatActivity() {
 
     companion object {
         const val SETTINGS_EXTRA = "xyz.quaver.pupil.ui.SettingsActivity.SETTINGS_EXTRA"

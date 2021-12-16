@@ -16,7 +16,7 @@
  *     along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package xyz.quaver.pupil.sources.hitomi
+package xyz.quaver.pupil.sources
 
 import android.app.Application
 import android.view.LayoutInflater
@@ -40,12 +40,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.LiveData
-import androidx.room.*
 import coil.annotation.ExperimentalCoilApi
 import coil.compose.rememberImagePainter
 import com.google.accompanist.flowlayout.FlowRow
@@ -57,7 +54,6 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.parcelize.IgnoredOnParcel
 import kotlinx.parcelize.Parcelize
 import kotlinx.serialization.Serializable
-import org.kodein.di.DI
 import org.kodein.di.DIAware
 import org.kodein.di.android.closestDI
 import org.kodein.di.instance
@@ -69,9 +65,9 @@ import xyz.quaver.hitomi.*
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.db.AppDatabase
 import xyz.quaver.pupil.db.Bookmark
-import xyz.quaver.pupil.sources.ItemInfo
-import xyz.quaver.pupil.sources.SearchResultEvent
-import xyz.quaver.pupil.sources.Source
+import xyz.quaver.pupil.ui.theme.Blue700
+import xyz.quaver.pupil.ui.theme.Orange500
+import xyz.quaver.pupil.ui.theme.Pink600
 import xyz.quaver.pupil.util.Preferences
 import xyz.quaver.pupil.util.wordCapitalize
 import kotlin.math.max
@@ -152,7 +148,7 @@ class Hitomi(app: Application) : Source(), DIAware {
     var cachedSortMode: Int = -1
     private val cache = mutableListOf<Int>()
 
-    override suspend fun search(query: String, range: IntRange, sortMode: Int): Pair<Channel<ItemInfo>, Int> = coroutineScope { withContext(Dispatchers.IO) {
+    override suspend fun search(query: String, range: IntRange, sortMode: Int): Pair<Channel<ItemInfo>, Int> = withContext(Dispatchers.IO) {
         if (cachedQuery != query || cachedSortMode != sortMode || cache.isEmpty()) {
             cachedQuery = null
             cache.clear()
@@ -179,8 +175,8 @@ class Hitomi(app: Application) : Source(), DIAware {
             channel.close()
         }
 
-        Pair(channel, cache.size)
-    } }
+        channel to cache.size
+    }
 
     override suspend fun suggestion(query: String) : List<TagSuggestion> {
         return getSuggestionsForQuery(query.takeLastWhile { !it.isWhitespace() }).map {
@@ -336,10 +332,10 @@ class Hitomi(app: Application) : Source(), DIAware {
         }
 
         val (surfaceColor, textTint) = when {
-            isFavorite -> Pair(colorResource(id = R.color.material_orange_500), Color.White)
+            isFavorite -> Pair(Orange500, Color.White)
             else -> when (tagParts[0]) {
-                "male" -> Pair(colorResource(id = R.color.material_blue_700), Color.White)
-                "female" -> Pair(colorResource(id = R.color.material_pink_600), Color.White)
+                "male" -> Pair(Blue700, Color.White)
+                "female" -> Pair(Pink600, Color.White)
                 else -> Pair(MaterialTheme.colors.background, MaterialTheme.colors.onBackground)
             }
         }
@@ -394,7 +390,7 @@ class Hitomi(app: Application) : Source(), DIAware {
         var isFolded by remember { mutableStateOf(true) }
         val bookmarkedTags by bookmarkDao.getAll(name).observeAsState(emptyList())
 
-        val bookmarkedTagsInList = bookmarkedTags.toSet() intersect tags
+        val bookmarkedTagsInList = bookmarkedTags.toSet() intersect tags.toSet()
 
         FlowRow(Modifier.padding(0.dp, 16.dp)) {
             tags.sortedBy { if (bookmarkedTagsInList.contains(it)) 0 else 1 }.let { (if (isFolded) it.take(10) else it) }.forEach { tag ->
@@ -454,7 +450,9 @@ class Hitomi(app: Application) : Source(), DIAware {
 
         val painter = rememberImagePainter(itemInfo.thumbnail)
 
-        Column {
+        Column(
+            modifier = Modifier.clickable { onEvent(SearchResultEvent(SearchResultEvent.Type.OPEN_READER, itemInfo.itemID, itemInfo)) }
+        ) {
             Row {
                 Image(
                     painter = painter,
