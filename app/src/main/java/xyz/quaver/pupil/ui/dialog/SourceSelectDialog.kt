@@ -20,15 +20,9 @@ package xyz.quaver.pupil.ui.dialog
 
 import android.app.Dialog
 import android.os.Bundle
-import android.view.ViewGroup.LayoutParams
-import android.view.Window
 import androidx.fragment.app.DialogFragment
-import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
-import org.kodein.di.*
+import org.kodein.di.DIAware
 import org.kodein.di.android.x.closestDI
-import xyz.quaver.pupil.adapters.SourceAdapter
-import xyz.quaver.pupil.sources.*
 
 class SourceSelectDialog : DialogFragment(), DIAware {
 

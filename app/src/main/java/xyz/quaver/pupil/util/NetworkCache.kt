@@ -26,6 +26,7 @@ import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
 import io.ktor.util.*
+import io.ktor.util.collections.*
 import io.ktor.utils.io.*
 import io.ktor.utils.io.core.*
 import kotlinx.coroutines.*
@@ -38,39 +39,64 @@ import org.kodein.log.LoggerFactory
 import org.kodein.log.newLogger
 import xyz.quaver.hitomi.sha256
 import java.io.File
+import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executors
 import kotlin.text.toByteArray
 
+private const val CACHE_LIMIT = 100*1024*1024 // 100M
+
 class NetworkCache(context: Context) : DIAware {
     override val di by closestDI(context)
 
+    private val logger = newLogger(LoggerFactory.default)
+
     private val client: HttpClient by instance()
+    private val networkScope = CoroutineScope(Executors.newFixedThreadPool(4).asCoroutineDispatcher())
 
     private val cacheDir = context.cacheDir
 
-    private val _channels = ConcurrentHashMap<String, Channel<Float>>()
-    val channels = _channels as Map<String, Channel<Float>>
+    private val channel = ConcurrentHashMap<String, Channel<Float>>()
+    private val requests = ConcurrentHashMap<String, Job>()
+    private val activeFiles = Collections.newSetFromMap(ConcurrentHashMap<String, Boolean>())
 
-    private val requests = mutableMapOf<String, Job>()
+    private fun urlToFilename(url: String): String {
+        val hash = sha256(url.toByteArray()).joinToString("") { "%02x".format(it) }
+        return "$hash.${url.takeLastWhile { it != '.' }}"
+    }
 
-    private val networkScope = CoroutineScope(Executors.newFixedThreadPool(4).asCoroutineDispatcher())
+    fun cleanup() = CoroutineScope(Dispatchers.IO).launch {
+        if (cacheDir.size() > CACHE_LIMIT)
+            cacheDir.listFiles { file -> file.name !in activeFiles }?.forEach { it.delete() }
+    }
 
-    private val logger = newLogger(LoggerFactory.default)
+    fun free(urls: List<String>) = urls.forEach {
+        requests[it]?.cancel()
+        channel.remove(it)
+        activeFiles.remove(urlToFilename(it))
+    }
+
+    fun clear() = CoroutineScope(Dispatchers.IO).launch {
+        requests.values.forEach { it.cancel() }
+        channel.clear()
+        activeFiles.clear()
+        cacheDir.listFiles()?.forEach { it.delete() }
+    }
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    suspend fun load(requestBuilder: HttpRequestBuilder.() -> Unit): File = coroutineScope {
+    suspend fun load(requestBuilder: HttpRequestBuilder.() -> Unit): Pair<Channel<Float>, File> = coroutineScope {
         val request = HttpRequestBuilder().apply(requestBuilder)
 
         val url = request.url.buildString()
-        val hash = sha256(url.toByteArray()).joinToString("") { "%02x".format(it) }
 
-        val file = File(cacheDir, "$hash.${url.takeLastWhile { it != '.' }}")
+        val fileName = urlToFilename(url)
+        val file = File(cacheDir, fileName)
+        activeFiles.add(fileName)
 
-        val progressChannel = if (_channels[url]?.isClosedForSend == false)
-            _channels[url]!!
+        val progressChannel = if (channel[url]?.isClosedForSend == false)
+            channel[url]!!
         else
-            Channel<Float>(1, BufferOverflow.DROP_OLDEST).also { _channels[url] = it }
+            Channel<Float>(1, BufferOverflow.DROP_OLDEST).also { channel[url] = it }
 
         if (file.exists())
             progressChannel.close()
@@ -86,8 +112,18 @@ class NetworkCache(context: Context) : DIAware {
 
                         file.outputStream().use { outputStream ->
                             while (!responseChannel.isClosedForRead) {
+                                if (!isActive) {
+                                    file.delete()
+                                    break
+                                }
+
                                 val packet = responseChannel.readRemaining(DEFAULT_BUFFER_SIZE.toLong())
                                 while (!packet.isEmpty) {
+                                    if (!isActive) {
+                                        file.delete()
+                                        break
+                                    }
+
                                     val bytes = packet.readBytes()
                                     outputStream.write(bytes)
 
@@ -106,6 +142,6 @@ class NetworkCache(context: Context) : DIAware {
                 }
             }
 
-        return@coroutineScope file
+        return@coroutineScope progressChannel to file
     }
 }

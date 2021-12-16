@@ -87,7 +87,7 @@ class ReaderActivity : ComponentActivity(), DIAware {
             val imageHeights = remember { mutableStateListOf<Float?>() }
             val states = remember { mutableStateListOf<SubSampledImageState>() }
 
-            LaunchedEffect(model.progressList.sum()) {
+            LaunchedEffect(model.imageList.count { it != null }) {
                 if (imageSources.isEmpty() && model.imageList.isNotEmpty())
                     imageSources.addAll(List(model.imageList.size) { null })
 
@@ -97,16 +97,22 @@ class ReaderActivity : ComponentActivity(), DIAware {
                 if (imageHeights.isEmpty() && model.imageList.isNotEmpty())
                     imageHeights.addAll(List(model.imageList.size) { null })
 
+                logger.info {
+                    "${model.imageList.count { it == null }} nulls"
+                }
+
                 model.imageList.forEachIndexed { i, image ->
                     if (imageSources[i] == null && image != null)
-                        CoroutineScope(Dispatchers.Default).launch {
-                            imageSources[i] = kotlin.runCatching {
-                                FileXImageSource(FileX(this@ReaderActivity, image))
-                            }.onFailure {
-                                logger.warning(it)
-                                model.error(i)
-                            }.getOrNull()
-                        }
+                        imageSources[i] = kotlin.runCatching {
+                            FileXImageSource(FileX(this@ReaderActivity, image))
+                        }.onFailure {
+                            logger.warning(it)
+                            model.error(i)
+                        }.getOrNull()
+                }
+
+                logger.info {
+                    "${imageSources.count { it == null }} nulls"
                 }
             }
 
