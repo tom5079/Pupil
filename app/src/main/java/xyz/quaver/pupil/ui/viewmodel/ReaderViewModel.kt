@@ -76,6 +76,7 @@ class ReaderViewModel(app: Application) : AndroidViewModel(app), DIAware {
     var imageCount by mutableStateOf(0)
         private set
 
+    private var images: List<String>? = null
     val imageList = mutableStateListOf<Uri?>()
     val progressList = mutableStateListOf<Float>()
 
@@ -140,6 +141,8 @@ class ReaderViewModel(app: Application) : AndroidViewModel(app), DIAware {
             withContext(Dispatchers.IO) {
                 source.images(itemID)
             }.let { images ->
+                this@ReaderViewModel.images = images
+
                 imageCount = images.size
 
                 progressList.addAll(List(imageCount) { 0f })
@@ -151,12 +154,10 @@ class ReaderViewModel(app: Application) : AndroidViewModel(app), DIAware {
                 images.forEachIndexed { index, image ->
                     when (val scheme = image.takeWhile { it != ':' }) {
                         "http", "https" -> {
-                            val file = cache.load {
+                            val (channel, file) = cache.load {
                                 url(image)
                                 headers(source.getHeadersBuilderForImage(itemID, image))
                             }
-
-                            val channel = cache.channels[image] ?: error("Channel is null")
 
                             if (channel.isClosedForReceive) {
                                 imageList[index] = Uri.fromFile(file)
@@ -187,6 +188,7 @@ class ReaderViewModel(app: Application) : AndroidViewModel(app), DIAware {
                             }
                         }
                         "content" -> {
+                            imageList[index] = Uri.parse(image)
                             progressList[index] = 1f
                         }
                         else -> throw IllegalArgumentException("Expected URL scheme 'http(s)' or 'content' but was '$scheme'")
@@ -209,6 +211,11 @@ class ReaderViewModel(app: Application) : AndroidViewModel(app), DIAware {
             else
                 bookmarkDao.insert(bookmark)
         }
+    }
+
+    override fun onCleared() {
+        cache.cleanup()
+        images?.let { cache.free(it) }
     }
 
 }
