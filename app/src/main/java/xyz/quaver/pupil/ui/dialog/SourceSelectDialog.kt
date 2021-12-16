@@ -18,37 +18,67 @@
 
 package xyz.quaver.pupil.ui.dialog
 
-import android.app.Dialog
-import android.os.Bundle
-import androidx.fragment.app.DialogFragment
-import org.kodein.di.DIAware
-import org.kodein.di.android.x.closestDI
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+import org.kodein.di.compose.rememberInstance
+import xyz.quaver.pupil.sources.Source
+import xyz.quaver.pupil.sources.SourceEntries
 
-class SourceSelectDialog : DialogFragment(), DIAware {
+@Composable
+fun SourceSelectDialogItem(source: Source) {
+    Row(
+        modifier = Modifier.padding(16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        Image(
+            painter = painterResource(source.iconResID),
+            contentDescription = null,
+            modifier = Modifier.size(24.dp)
+        )
 
-    override val di by closestDI()
+        Text(
+            source.name,
+            modifier = Modifier.weight(1f)
+        )
 
-    var onSourceSelectedListener: ((String) -> Unit)? = null
-    var onSourceSettingsSelectedListener: ((String) -> Unit)? = null
+        Icon(
+            Icons.Default.Settings,
+            contentDescription = null,
+            tint = MaterialTheme.colors.onSurface.copy(alpha = 0.5f)
+        )
 
-    override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {/*
-        return Dialog(requireContext()).apply {
-            window?.requestFeature(Window.FEATURE_NO_TITLE)
-            window?.setLayout(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT)
-
-            val sourcesWithPreferenceID = direct.instance<SourcePreferenceIDs>().map { it.first }
-            val preferences = direct.instance<SourceEntries>().filter {
-                it.first in sourcesWithPreferenceID
-            }.toSet()
-
-            setContentView(RecyclerView(context).apply {
-                layoutManager = LinearLayoutManager(context)
-                adapter = SourceAdapter(preferences).apply {
-                    onSourceSelectedListener = this@SourceSelectDialog.onSourceSelectedListener
-                    onSourceSettingsSelectedListener = this@SourceSelectDialog.onSourceSettingsSelectedListener
-                }
-            })
+        Button(onClick = { /*TODO*/ }) {
+            Text("GO")
         }
-    */return super.onCreateDialog(savedInstanceState)}
 
+    }
+}
+
+@Preview
+@Composable
+fun SourceSelectDialog(onDismissRequest: () -> Unit = { }) {
+    val sourceEntries: SourceEntries by rememberInstance()
+
+    Dialog(onDismissRequest = onDismissRequest) {
+        Card(
+            elevation = 8.dp,
+            shape = RoundedCornerShape(12.dp)
+        ) {
+            Column() {
+                sourceEntries.forEach { SourceSelectDialogItem(it.second) }
+            }
+        }
+    }
 }

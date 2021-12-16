@@ -20,10 +20,7 @@ package xyz.quaver.pupil.ui.viewmodel
 
 import android.annotation.SuppressLint
 import android.app.Application
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.lifecycle.*
 import kotlinx.coroutines.*
 import org.kodein.di.DIAware
@@ -34,6 +31,7 @@ import org.kodein.log.LoggerFactory
 import org.kodein.log.newLogger
 import xyz.quaver.floatingsearchview.suggestions.model.SearchSuggestion
 import xyz.quaver.pupil.sources.*
+import xyz.quaver.pupil.sources.hitomi.Hitomi
 import xyz.quaver.pupil.util.Preferences
 import xyz.quaver.pupil.util.source
 import kotlin.math.ceil
@@ -61,21 +59,13 @@ class MainViewModel(app: Application) : AndroidViewModel(app), DIAware {
         direct.source(it)
     }
     private var sourceFactory: (String) -> Source = defaultSourceFactory
-    private val _source = MutableLiveData<Source>()
-    val source: LiveData<Source> = _source
+    var source by mutableStateOf(sourceFactory("hitomi.la"))
+        private set
 
-    val availableSortMode = Transformations.map(_source) {
-        it.availableSortMode
-    }
+    var sortModeIndex by mutableStateOf(0)
+        private set
 
-    val sortModeIndex = MutableLiveData<Int>()
-
-    val sourceIcon = Transformations.map(_source) {
-        it.iconResID
-    }
-
-    private val _currentPage = MutableLiveData<Int>()
-    val currentPage: LiveData<Int> = _currentPage
+    var currentPage by mutableStateOf(1)
 
     private val totalItems = MutableLiveData<Int>()
 
@@ -88,14 +78,9 @@ class MainViewModel(app: Application) : AndroidViewModel(app), DIAware {
     private val _suggestions = MutableLiveData<List<SearchSuggestion>>()
     val suggestions: LiveData<List<SearchSuggestion>> = _suggestions
 
-    init {
-        setSourceAndReset("hitomi.la")
-    }
-
     fun setSourceAndReset(sourceName: String) {
-        _source.value = sourceFactory(sourceName).also {
-            sortModeIndex.value = 0
-        }
+        source = sourceFactory(sourceName)
+        sortModeIndex = 0
 
         query = ""
         resetAndQuery()
@@ -103,7 +88,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app), DIAware {
 
     fun resetAndQuery() {
         queryStack.add(query)
-        setPage(1)
+        currentPage = 1
 
         query()
     }
@@ -119,16 +104,13 @@ class MainViewModel(app: Application) : AndroidViewModel(app), DIAware {
             when {
                 mode == MainMode.DOWNLOADS -> "downloads"
                 //source.value is Downloads -> "hitomi.la"
-                else -> source.value!!.name
+                else -> source.name
             }
         )
     }
 
     fun query() {
         val perPage = Preferences["per_page", "25"].toInt()
-        val source = _source.value ?: error("Source is null")
-        val sortModeIndex = sortModeIndex.value ?: 0
-        val currentPage = currentPage.value ?: 1
 
         suggestionJob?.cancel()
         queryJob?.cancel()
@@ -156,10 +138,6 @@ class MainViewModel(app: Application) : AndroidViewModel(app), DIAware {
         }
     }
 
-    fun prevPage() { _currentPage.value = _currentPage.value!! - 1 }
-    fun nextPage() { _currentPage.value = _currentPage.value!! + 1 }
-    fun setPage(page: Int) { _currentPage.value = page }
-
     fun random(callback: (ItemInfo) -> Unit) {
         if (totalItems.value!! == 0)
             return
@@ -168,12 +146,12 @@ class MainViewModel(app: Application) : AndroidViewModel(app), DIAware {
 
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
-                _source.value?.search(
+                source.search(
                     query + Preferences["default_query", ""],
                     random .. random,
-                    sortModeIndex.value!!
-                )?.first?.receive()
-            }?.let(callback)
+                    sortModeIndex
+                ).first.receive()
+            }.let(callback)
         }
     }
 
@@ -186,7 +164,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app), DIAware {
             @SuppressLint("NullSafeMutableLiveData")
             _suggestions.value = withContext(Dispatchers.IO) {
                 kotlin.runCatching {
-                    _source.value!!.suggestion(query)
+                    source.suggestion(query)
                 }.getOrElse { emptyList() }
             }
         }

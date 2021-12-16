@@ -25,11 +25,9 @@ import xyz.quaver.pupil.sources.Source
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun ProgressCardView(progress: Float? = null, onLongClick: (() -> Unit)? = null, onClick: () -> Unit, content: @Composable () -> Unit) {
+fun ProgressCardView(progress: Float? = null, content: @Composable () -> Unit) {
     Card(
-        modifier = Modifier
-            .padding(8.dp)
-            .combinedClickable(onClick = onClick, onLongClick = onLongClick),
+        modifier = Modifier.padding(8.dp),
         shape = RoundedCornerShape(4.dp),
         elevation = 4.dp
     ) {
@@ -38,64 +36,4 @@ fun ProgressCardView(progress: Float? = null, onLongClick: (() -> Unit)? = null,
             content()
         }
     }
-}
-
-class ProgressCardView @JvmOverloads constructor(context: Context, attr: AttributeSet? = null, defStyle: Int = R.attr.cardViewStyle) : CardView(context, attr, defStyle) {
-
-    enum class Type {
-        LOADING,
-        CACHE,
-        DOWNLOAD
-    }
-
-    var type: Type = Type.LOADING
-        set(value) {
-            field = value
-
-            when (field) {
-                Type.LOADING -> R.color.colorAccent
-                Type.CACHE -> R.color.material_blue_700
-                Type.DOWNLOAD -> R.color.material_green_a700
-            }.let {
-                val color = ContextCompat.getColor(context, it)
-                DrawableCompat.setTint(binding.progressbar.progressDrawable, color)
-            }
-        }
-
-    var progress: Int
-        get() = binding.progressbar.progress
-        set(value) {
-            binding.progressbar.progress = value
-        }
-    var max: Int
-        get() = binding.progressbar.max
-        set(value) {
-            binding.progressbar.max = value
-
-            binding.progressbar.visibility =
-                if (value == 0)
-                    GONE
-                else
-                    VISIBLE
-        }
-
-    val binding = ProgressCardViewBinding.inflate(LayoutInflater.from(context), this)
-
-    init {
-        binding.content.setOnClickListener {
-            performClick()
-        }
-
-        binding.content.setOnLongClickListener {
-            performLongClick()
-        }
-    }
-
-    override fun addView(child: View?, index: Int, params: ViewGroup.LayoutParams?) {
-        if (childCount == 0)
-            super.addView(child, index, params)
-        else
-            binding.content.addView(child, index, params)
-    }
-
 }

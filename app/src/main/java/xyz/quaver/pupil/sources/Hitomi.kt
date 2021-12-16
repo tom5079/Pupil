@@ -120,7 +120,7 @@ data class HitomiItemInfo(
 
 class Hitomi(app: Application) : Source(), DIAware {
 
-    override val di: DI by closestDI(app)
+    override val di by closestDI(app)
 
     private val logger = newLogger(LoggerFactory.default)
 
@@ -223,10 +223,10 @@ class Hitomi(app: Application) : Source(), DIAware {
     }
 
     @Composable
-    override fun SearchResult(itemInfo: ItemInfo, onEvent: ((SearchResultEvent) -> Unit)?) {
+    override fun SearchResult(itemInfo: ItemInfo, onEvent: (SearchResultEvent) -> Unit) {
         itemInfo as HitomiItemInfo
 
-        FullSearchResult(itemInfo = itemInfo)
+        FullSearchResult(itemInfo = itemInfo, onEvent = onEvent)
     }
 
     override fun getHeadersBuilderForImage(itemID: String, url: String): HeadersBuilder.() -> Unit = {
@@ -434,7 +434,7 @@ class Hitomi(app: Application) : Source(), DIAware {
 
     @OptIn(ExperimentalCoilApi::class)
     @Composable
-    fun FullSearchResult(itemInfo: HitomiItemInfo) {
+    fun FullSearchResult(itemInfo: HitomiItemInfo, onEvent: (SearchResultEvent) -> Unit) {
         var group by remember { mutableStateOf(emptyList<String>()) }
         var pageCount by remember { mutableStateOf("-") }
 
