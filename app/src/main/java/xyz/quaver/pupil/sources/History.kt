@@ -26,11 +26,8 @@ import kotlinx.coroutines.launch
 import org.kodein.di.DI
 import org.kodein.di.DIAware
 import org.kodein.di.direct
-import org.kodein.di.instance
 import xyz.quaver.floatingsearchview.suggestions.model.SearchSuggestion
-import xyz.quaver.pupil.db.AppDatabase
 import xyz.quaver.pupil.util.database
-import xyz.quaver.pupil.util.source
 
 class History(override val di: DI) : Source(), DIAware {
 

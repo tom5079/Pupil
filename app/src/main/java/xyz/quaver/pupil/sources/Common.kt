@@ -28,7 +28,6 @@ import org.kodein.di.*
 import xyz.quaver.floatingsearchview.databinding.SearchSuggestionItemBinding
 import xyz.quaver.floatingsearchview.suggestions.model.SearchSuggestion
 import xyz.quaver.pupil.R
-import xyz.quaver.pupil.sources.hitomi.Hitomi
 
 interface ItemInfo : Parcelable {
     val source: String
@@ -39,7 +38,7 @@ interface ItemInfo : Parcelable {
 @Parcelize
 class DefaultSearchSuggestion(override val body: String) : SearchSuggestion
 
-data class SearchResultEvent(val type: Type, val payload: String) {
+data class SearchResultEvent(val type: Type, val itemID: String, val payload: Parcelable? = null) {
     enum class Type {
         OPEN_READER,
         OPEN_DETAILS,
@@ -75,7 +74,8 @@ val sourceModule = DI.Module(name = "source") {
     bindSet<SourceEntry>()
 
     listOf<(Application) -> (Source)>(
-        { Hitomi(it) }
+        { Hitomi(it) },
+        { Hiyobi_io(it) }
     ).forEach { source ->
         inSet { singleton { source.invoke(instance()).let { it.name to it } } }
     }

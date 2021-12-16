@@ -32,7 +32,6 @@ import org.kodein.di.instance
 import xyz.quaver.io.FileX
 import xyz.quaver.io.util.getChild
 import xyz.quaver.pupil.R
-import xyz.quaver.pupil.ui.LockActivity
 import xyz.quaver.pupil.ui.SettingsActivity
 import xyz.quaver.pupil.ui.dialog.*
 import xyz.quaver.pupil.util.*
@@ -48,16 +47,6 @@ class SettingsFragment :
     override val di by closestDI()
 
     private val downloadManager: DownloadManager by instance()
-
-    private val lockLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
-        if (it.resultCode == Activity.RESULT_OK) {
-            parentFragmentManager
-                .beginTransaction()
-                .replace(R.id.settings, LockSettingsFragment())
-                .addToBackStack("Lock")
-                .commitAllowingStateLoss()
-        }
-    }
 
     override fun onResume() {
         super.onResume()
@@ -87,12 +76,6 @@ class SettingsFragment :
                 }
                 "download_folder" -> {
                     DownloadLocationDialogFragment().show(parentFragmentManager, "Download Location Dialog")
-                }
-                "app_lock" -> {
-                    val intent = Intent(requireContext(), LockActivity::class.java).apply {
-                        putExtra("force", true)
-                    }
-                    lockLauncher.launch(intent)
                 }
                 "proxy" -> {
                     ProxyDialogFragment().show(parentFragmentManager, "Proxy Dialog")

@@ -19,6 +19,7 @@
 package xyz.quaver.pupil.ui.dialog
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
@@ -36,7 +37,7 @@ import xyz.quaver.pupil.sources.Source
 import xyz.quaver.pupil.sources.SourceEntries
 
 @Composable
-fun SourceSelectDialogItem(source: Source) {
+fun SourceSelectDialogItem(source: Source, isSelected: Boolean, onSelected: (Source) -> Unit = { }) {
     Row(
         modifier = Modifier.padding(16.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -59,16 +60,20 @@ fun SourceSelectDialogItem(source: Source) {
             tint = MaterialTheme.colors.onSurface.copy(alpha = 0.5f)
         )
 
-        Button(onClick = { /*TODO*/ }) {
+        Button(
+            enabled = !isSelected,
+            onClick = {
+                onSelected(source)
+            }
+        ) {
             Text("GO")
         }
 
     }
 }
 
-@Preview
 @Composable
-fun SourceSelectDialog(onDismissRequest: () -> Unit = { }) {
+fun SourceSelectDialog(currentSource: String, onDismissRequest: () -> Unit = { }, onSelected: (Source) -> Unit = { }) {
     val sourceEntries: SourceEntries by rememberInstance()
 
     Dialog(onDismissRequest = onDismissRequest) {
@@ -77,7 +82,7 @@ fun SourceSelectDialog(onDismissRequest: () -> Unit = { }) {
             shape = RoundedCornerShape(12.dp)
         ) {
             Column() {
-                sourceEntries.forEach { SourceSelectDialogItem(it.second) }
+                sourceEntries.forEach { SourceSelectDialogItem(it.second, it.first == currentSource, onSelected) }
             }
         }
     }

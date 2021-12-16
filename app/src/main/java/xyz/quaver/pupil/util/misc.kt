@@ -19,24 +19,16 @@
 package xyz.quaver.pupil.util
 
 import android.annotation.SuppressLint
-import android.content.Context
-import android.content.res.Resources
 import android.graphics.BitmapFactory
-import android.graphics.BitmapRegionDecoder
 import android.view.MenuItem
 import android.view.View
 import androidx.compose.runtime.*
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.composed
-import androidx.compose.ui.focus.onFocusEvent
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.toAndroidRect
-import androidx.compose.ui.platform.LocalFocusManager
 import androidx.lifecycle.MutableLiveData
-import com.google.accompanist.insets.LocalWindowInsets
 import kotlinx.serialization.json.*
 import org.kodein.di.DIAware
 import org.kodein.di.DirectDIAware
@@ -49,7 +41,6 @@ import xyz.quaver.io.util.inputStream
 import xyz.quaver.pupil.db.AppDatabase
 import xyz.quaver.pupil.sources.ItemInfo
 import xyz.quaver.pupil.sources.SourceEntries
-import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
 import java.util.*

@@ -27,7 +27,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.DialogFragment
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.databinding.DefaultQueryDialogBinding
-import xyz.quaver.pupil.sources.hitomi.Hitomi
+import xyz.quaver.pupil.sources.Hitomi
 import xyz.quaver.pupil.types.Tags
 import xyz.quaver.pupil.util.Preferences
 

@@ -33,6 +33,7 @@ import kotlinx.serialization.json.Json
 import org.junit.Test
 import xyz.quaver.hitomi.getGalleryInfo
 import xyz.quaver.hitomi.imageUrlFromImage
+import xyz.quaver.pupil.sources.Hiyobi_io
 import java.lang.reflect.ParameterizedType
 import kotlin.reflect.KClass
 import kotlin.reflect.KType
@@ -48,6 +49,11 @@ class ExampleUnitTest {
         files.forEachIndexed { i, it ->
             println("$i: ${imageUrlFromImage(galleryID, it, true)}")
         }
+    }
+
+    @Test
+    fun test2() {
+        print(Hiyobi_io.parseQuery("female:loli female:big_breast tag:group"))
     }
 
 }

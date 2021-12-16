@@ -81,8 +81,6 @@ class ReaderActivity : ComponentActivity(), DIAware {
         setContent {
             var isFABExpanded by remember { mutableStateOf(FloatingActionButtonState.COLLAPSED) }
             val isFullscreen by model.isFullscreen.observeAsState(false)
-            val title by model.title.observeAsState(stringResource(R.string.reader_loading))
-            val sourceIcon by model.sourceIcon.observeAsState()
             val imageSources = remember { mutableStateListOf<ImageSource?>() }
             val imageHeights = remember { mutableStateListOf<Float?>() }
             val states = remember { mutableStateListOf<SubSampledImageState>() }
@@ -131,12 +129,12 @@ class ReaderActivity : ComponentActivity(), DIAware {
                             TopAppBar(
                                 title = {
                                     Text(
-                                        title,
+                                        model.title ?: stringResource(R.string.reader_loading),
                                         color = MaterialTheme.colors.onSecondary
                                     )
                                 },
                                 actions = {
-                                    sourceIcon?.let { sourceIcon ->
+                                    model.sourceIcon?.let { sourceIcon ->
                                         Image(
                                             modifier = Modifier.size(36.dp),
                                             painter = painterResource(id = sourceIcon),

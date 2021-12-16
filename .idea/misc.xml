@@ -41,6 +41,7 @@
         <entry key="app/src/main/res/layout/reader_item.xml" value="0.1" />
         <entry key="app/src/main/res/layout/search_result_item.xml" value="0.2489868287740628" />
         <entry key="app/src/main/res/layout/source_select_dialog_item.xml" value="0.5119791666666667" />
+        <entry key="app/src/main/res/xml/hitomi_preferences.xml" value="0.5119791666666667" />
       </map>
     </option>
   </component>
