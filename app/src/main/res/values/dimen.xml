@@ -1,19 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
 
-	<dimen name="activity_horizontal_margin">16dp</dimen>
-	<dimen name="activity_vertical_margin">16dp</dimen>
-
-	<dimen name="galleryblock_thumbnail_thin">100dp</dimen>
-
-	<dimen name="reader_max_height" tools:ignore="PxUsage">2000px</dimen>
-
-	<dimen name="thumb_width">24dp</dimen>
-	<dimen name="thumb_height">72dp</dimen>
-
-	<dimen name="thumbnail_page_height">300dp</dimen>
-
-	<dimen name="gallery_dialog_preview_height">150dp</dimen>
-
-	<dimen name="settings_progressbar_icon_size">24dp</dimen>
 </resources>

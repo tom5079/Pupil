@@ -43,8 +43,6 @@ android {
         }
     }
     buildFeatures {
-        viewBinding = true
-        dataBinding = true
         compose = true
     }
     composeOptions {
@@ -91,11 +89,11 @@ dependencies {
     implementation("com.google.accompanist:accompanist-drawablepainter:0.20.3")
     implementation("com.google.accompanist:accompanist-systemuicontroller:0.20.3")
 
-    implementation("io.coil-kt:coil-compose:1.3.2")
+    implementation("io.coil-kt:coil-compose:1.4.0")
 
-    implementation("io.ktor:ktor-client-core:1.6.5")
-    implementation("io.ktor:ktor-client-okhttp:1.6.5")
-    implementation("io.ktor:ktor-client-serialization:1.6.5")
+    implementation("io.ktor:ktor-client-core:1.6.7")
+    implementation("io.ktor:ktor-client-okhttp:1.6.7")
+    implementation("io.ktor:ktor-client-serialization:1.6.7")
 
     implementation("androidx.appcompat:appcompat:1.4.0")
     implementation("androidx.activity:activity-ktx:1.4.0")
@@ -115,10 +113,8 @@ dependencies {
 
     implementation("org.kodein.di:kodein-di-framework-compose:7.9.0")
 
-    implementation("com.daimajia.swipelayout:library:1.2.0@aar")
-
     implementation("com.google.android.material:material:1.4.0")
-
+    0
     implementation(platform("com.google.firebase:firebase-bom:28.3.0"))
     implementation("com.google.firebase:firebase-analytics-ktx")
     implementation("com.google.firebase:firebase-crashlytics")
@@ -126,26 +122,16 @@ dependencies {
 
     implementation("com.google.android.gms:play-services-oss-licenses:17.0.0")
 
-    implementation("com.github.clans:fab:1.6.4")
-
-    //implementation("com.quiph.ui:recyclerviewfastscroller:0.2.1")
-
     implementation("org.jsoup:jsoup:1.14.3")
-
-    implementation("com.tbuonomo:dotsindicator:4.2")
-
-    //implementation("com.andrognito.patternlockview:patternlockview:1.0.0")
-    //implementation("com.andrognito.pinlockview:pinlockview:2.1.0")
 
     implementation("ru.noties.markwon:core:3.1.0")
 
     implementation("xyz.quaver:libpupil:2.1.11")
     implementation("xyz.quaver:documentfilex:0.7.1")
-    implementation("xyz.quaver:floatingsearchview:1.1.7")
-    implementation("xyz.quaver:subsampledimage:0.0.1-alpha09-SNAPSHOT")
+    implementation("xyz.quaver:subsampledimage:0.0.1-alpha10-SNAPSHOT")
 
     implementation("org.kodein.log:kodein-log:0.11.1")
-    //debugImplementation("com.squareup.leakcanary:leakcanary-android:2.7")
+    debugImplementation("com.squareup.leakcanary:leakcanary-android:2.7")
 
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.mockito:mockito-inline:4.1.0")

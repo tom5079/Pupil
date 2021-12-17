@@ -60,7 +60,6 @@ import org.kodein.di.android.closestDI
 import org.kodein.di.instance
 import org.kodein.log.LoggerFactory
 import org.kodein.log.newLogger
-import xyz.quaver.floatingsearchview.suggestions.model.SearchSuggestion
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.db.AppDatabase
 import xyz.quaver.pupil.db.Bookmark
@@ -205,10 +204,6 @@ class Hiyobi_io(app: Application): Source(), DIAware {
         }
 
         channel to totalCount(tags)
-    }
-
-    override suspend fun suggestion(query: String): List<SearchSuggestion> {
-        return emptyList()
     }
 
     override suspend fun images(itemID: String): List<String> = withContext(Dispatchers.IO) {

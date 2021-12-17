@@ -1,34 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <string-array name="settings_galleries_per_page">
-        <item>5</item>
-        <item>10</item>
-        <item>25</item>
-        <item>50</item>
-    </string-array>
-
-    <string-array name="mirrors">
-        <item>HITOMI|hitomi.la</item>
-        <item>HIYOBI|hiyobi.me</item>
-    </string-array>
-
-    <string-array name="proxy_type">
-        <item>Direct</item>
-        <item>HTTP</item>
-        <item>SOCKS</item>
-    </string-array>
-
     <string-array name="hitomi_sort_mode">
         <item>NEWEST</item>
         <item>POPULAR</item>
-    </string-array>
-
-    <string-array name="imhentai_sort_mode">
-        <item>LATEST</item>
-        <item>DOWNLOADED</item>
-        <item>POPULAR</item>
-        <item>TOP RATED</item>
     </string-array>
 
 </resources>

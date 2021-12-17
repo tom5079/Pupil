@@ -198,12 +198,13 @@ class ReaderActivity : ComponentActivity(), DIAware {
                                                 Text((i + 1).toString())
                                             }
                                     }
-                                else
+                                else {
                                     SubSampledImage(
                                         modifier = Modifier.fillMaxSize(),
                                         imageSource = imageSource,
                                         state = states[i]
                                     )
+                                }
                             }
                         }
                     }

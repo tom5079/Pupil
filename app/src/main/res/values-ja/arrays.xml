@@ -17,10 +17,4 @@
   ~     along with this program.  If not, see <http://www.gnu.org/licenses/>.
   -->
 
-<resources>
-    <string-array name="proxy_type">
-        <item>ダイレクト</item>
-        <item>HTTP</item>
-        <item>SOCKS</item>
-    </string-array>
-</resources>
+<resources></resources>

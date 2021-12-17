@@ -29,7 +29,6 @@ import org.kodein.di.direct
 import org.kodein.di.instance
 import org.kodein.log.LoggerFactory
 import org.kodein.log.newLogger
-import xyz.quaver.floatingsearchview.suggestions.model.SearchSuggestion
 import xyz.quaver.pupil.sources.*
 import xyz.quaver.pupil.util.Preferences
 import xyz.quaver.pupil.util.source
@@ -58,7 +57,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app), DIAware {
         direct.source(it)
     }
     private var sourceFactory: (String) -> Source = defaultSourceFactory
-    var source by mutableStateOf(sourceFactory("hiyobi.io"))
+    var source by mutableStateOf(sourceFactory("hitomi.la"))
         private set
 
     var sortModeIndex by mutableStateOf(0)
@@ -73,9 +72,6 @@ class MainViewModel(app: Application) : AndroidViewModel(app), DIAware {
 
         ceil(it / perPage.toDouble()).roundToInt()
     }
-
-    private val _suggestions = MutableLiveData<List<SearchSuggestion>>()
-    val suggestions: LiveData<List<SearchSuggestion>> = _suggestions
 
     fun setSourceAndReset(sourceName: String) {
         source = sourceFactory(sourceName)
@@ -150,21 +146,6 @@ class MainViewModel(app: Application) : AndroidViewModel(app), DIAware {
                     sortModeIndex
                 ).first.receive()
             }.let(callback)
-        }
-    }
-
-    fun suggestion() {
-        suggestionJob?.cancel()
-
-        _suggestions.value = mutableListOf()
-
-        suggestionJob = viewModelScope.launch {
-            @SuppressLint("NullSafeMutableLiveData")
-            _suggestions.value = withContext(Dispatchers.IO) {
-                kotlin.runCatching {
-                    source.suggestion(query)
-                }.getOrElse { emptyList() }
-            }
         }
     }
 

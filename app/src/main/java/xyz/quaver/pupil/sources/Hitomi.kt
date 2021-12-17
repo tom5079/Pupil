@@ -19,8 +19,6 @@
 package xyz.quaver.pupil.sources
 
 import android.app.Application
-import android.view.LayoutInflater
-import android.widget.TextView
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -59,8 +57,6 @@ import org.kodein.di.android.closestDI
 import org.kodein.di.instance
 import org.kodein.log.LoggerFactory
 import org.kodein.log.newLogger
-import xyz.quaver.floatingsearchview.databinding.SearchSuggestionItemBinding
-import xyz.quaver.floatingsearchview.suggestions.model.SearchSuggestion
 import xyz.quaver.hitomi.*
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.db.AppDatabase
@@ -124,21 +120,6 @@ class Hitomi(app: Application) : Source(), DIAware {
 
     private val bookmarkDao = database.bookmarkDao()
 
-    @Parcelize
-    data class TagSuggestion(val s: String, val t: Int, val u: String, val n: String) : SearchSuggestion {
-        constructor(s: Suggestion) : this(s.s, s.t, s.u, s.n)
-
-        @IgnoredOnParcel
-        override val body = s
-        /*
-            TODO
-            if (translations[s] != null)
-                "${translations[s]} ($s)"
-            else
-                s
-         */
-    }
-
     override val name: String = "hitomi.la"
     override val iconResID: Int = R.drawable.hitomi
     override val preferenceID: Int = R.xml.hitomi_preferences
@@ -176,12 +157,6 @@ class Hitomi(app: Application) : Source(), DIAware {
         }
 
         channel to cache.size
-    }
-
-    override suspend fun suggestion(query: String) : List<TagSuggestion> {
-        return getSuggestionsForQuery(query.takeLastWhile { !it.isWhitespace() }).map {
-            TagSuggestion(it)
-        }
     }
 
     override suspend fun images(itemID: String): List<String> {
@@ -227,40 +202,6 @@ class Hitomi(app: Application) : Source(), DIAware {
 
     override fun getHeadersBuilderForImage(itemID: String, url: String): HeadersBuilder.() -> Unit = {
         append("Referer", getReferer(itemID.toInt()))
-    }
-
-    override fun onSuggestionBind(binding: SearchSuggestionItemBinding, item: SearchSuggestion) {
-        item as TagSuggestion
-
-        binding.leftIcon.setImageResource(
-            when(item.n) {
-                "female" -> R.drawable.gender_female
-                "male" -> R.drawable.gender_male
-                "language" -> R.drawable.translate
-                "group" -> R.drawable.account_group
-                "character" -> R.drawable.account_star
-                "series" -> R.drawable.book_open
-                "artist" -> R.drawable.brush
-                else -> R.drawable.tag
-            }
-        )
-
-        if (item.t > 0) {
-            with (binding.root) {
-                val count = findViewById<TextView>(R.id.count)
-                if (count == null)
-                    addView(
-                        LayoutInflater.from(context).inflate(R.layout.suggestion_count, binding.root, false)
-                            .apply {
-                                this as TextView
-
-                                text = item.t.toString()
-                            }, 2
-                    )
-                else
-                    count.text = item.t.toString()
-            }
-        }
     }
 
     companion object {
