@@ -35,8 +35,7 @@ data class SearchResultEvent(val type: Type, val itemID: String, val payload: Pa
     enum class Type {
         OPEN_READER,
         OPEN_DETAILS,
-        NEW_QUERY,
-        TOGGLE_FAVORITES
+        NEW_QUERY
     }
 }
 

@@ -132,7 +132,6 @@ class MainViewModel(app: Application) : AndroidViewModel(app), DIAware {
             for (result in channel) {
                 yield()
                 searchResults.add(result)
-                logger.info { result.toString() }
             }
 
             loading = false
