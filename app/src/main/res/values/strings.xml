@@ -3,34 +3,11 @@
 
     <string name="release_url" translatable="false">https://api.github.com/repos/tom5079/Pupil/releases</string>
 
-    <string name="home_page" translatable="false">http://bit.ly/2EZDClw</string>
-    <string name="help" translatable="false">http://bit.ly/2Z7lNZE</string>
-    <string name="github" translatable="false">https://github.com/tom5079/Pupil/</string>
-    <string name="email" translatable="false">mailto:pupil.hentai@gmail.com</string>
-    <string name="discord" translatable="false">https://discord.gg/Stj4b5v</string>
-
     <!-- Korean only -->
-    <string name="https_text" translatable="false">해결법</string>
-    <string name="https" translatable="false">https://bit.ly/34dUBwy</string>
-
-    <string name="backup_url" translatable="false">http://ix.io/</string>
-
-    <string name="main_settings" translatable="false">Settings</string>
-    <string name="galleryblock_thumbnail_description" translatable="false">Thumbnail</string>
-
-    <string name="reader_imageview_description" translatable="false">Content ImageView</string>
-    <string name="page_indicator_placeholder" translatable="false">-/-</string>
-
-    <string name="galleryblock_artist_with_group" translatable="false">%s (%s)</string>
 
     <!-- Translate needed down here -->
 
-    <string name="warning">Warning</string>
-    <string name="error">Error</string>
-
     <string name="ignore_update">Ignore</string>
-
-    <string name="copied_to_clipboard">Copied to clipboard</string>
 
     <string name="channel_download">Download</string>
     <string name="channel_download_description">Shows download status</string>
@@ -41,38 +18,10 @@
     <string name="channel_update">Update</string>
     <string name="channel_update_description">Shows update progress</string>
 
-    <string name="unable_to_connect">Unable to connect to hitomi.la</string>
-
-    <string name="lock_corrupted">Lock file corrupted! Please re-install Pupil</string>
-
-    <string name="main_no_result">No result</string>
-
-    <string name="main_drawer_home">Home</string>
-    <string name="main_drawer_history">History</string>
-    <string name="main_drawer_downloads">Downloads</string>
-    <string name="main_drawer_favorite">Favorites</string>
-    <string name="main_drawer_group_contact_title">Contact</string>
-    <string name="main_drawer_group_contact_help">Help</string>
-    <string name="main_drawer_group_contact_homepage">Visit homepage</string>
-    <string name="main_drawer_group_contact_github">Visit github</string>
-    <string name="main_drawer_group_contact_email">Email me!</string>
-    <string name="main_drawer_grouop_contact_discord">Discord</string>
-
-    <string name="main_menu_sort">Sort</string>
-    <string name="main_menu_sort_newest">Newest</string>
-    <string name="main_menu_sort_popular">Popular</string>
-
     <string name="main_jump_title">Jump to page</string>
-    <string name="main_jump_message">Current page: %1$d\nMaximum page: %2$d</string>
     <string name="main_open_gallery_by_id">Open Gallery by ID</string>
-    <string name="reader_failed_to_find_gallery">Failed to open gallery</string>
     <string name="main_fab_random">Open a random gallery</string>
     <string name="main_fab_cancel">Cancel all downloads</string>
-
-    <string name="main_move_to_page">Move to page %1$d</string>
-
-    <string name="main_download">DOWNLOAD</string>
-    <string name="main_delete">DELETE</string>
 
     <string name="update_title">Update available</string>
     <string name="update_download_completed">Download Completed</string>
@@ -81,164 +30,44 @@
     <string name="update_release_note"># Release Note(v%1$s)\n%2$s</string>
 
     <string name="search_hint">Search galleries</string>
-    <string name="search_all">Search all galleries</string>
-    <string name="search_show_histories">Show histories</string>
-    <string name="search_show_tags">Show favorite tags</string>
-
-    <string name="gallery_details">Details</string>
-    <string name="gallery_thumbnails">Thumbnails</string>
-    <string name="gallery_related">Related Galleries</string>
-    <string name="gallery_artists">Artists</string>
-    <string name="gallery_groups">Groups</string>
-    <string name="gallery_language">Language</string>
-    <string name="gallery_series">Series</string>
-    <string name="gallery_characters">Characters</string>
-    <string name="gallery_tags">Tags</string>
 
     <string name="galleryblock_series">Series: %1$s</string>
     <string name="galleryblock_type">Type: %1$s</string>
     <string name="galleryblock_language">Language: %1$s</string>
-    <string name="galleryblock_pagecount" translatable="false">%sP</string>
 
     <!-- READER -->
 
     <string name="reader_loading">Loading</string>
-    <string name="reader_go_to_page">Go to page</string>
-    <string name="reader_fab_fullscreen">Fullscreen</string>>
-    <string name="reader_fab_retry">Retry</string>
-    <string name="reader_fab_auto">Scroll with eye blink</string>
-    <string name="reader_fab_auto_cancel">Stop scroll with eye blink</string>
-    <string name="reader_fab_download">Background download</string>
-    <string name="reader_fab_download_cancel">Cancel background download</string>
-    <string name="reader_notification_text">Downloading&#8230;</string>
-    <string name="reader_notification_complete">Download complete</string>
+    <string name="reader_fab_fullscreen">Fullscreen</string><![CDATA[>
 
-    <string name="camera_denied">Eye blink detection cannot be used without a permission</string>
-    <string name="no_camera">There is no front facing camera in this device</string>
-
-    <!-- DOWNLOADER -->
-    <string name="downloader_running">Downloader running…</string>
+    ]]><!-- DOWNLOADER -->
 
     <!-- SETTINGS -->
 
-    <string name="settings_title">Settings</string>
-
-    <string name="settings_app_version_title">App version(Click to check update)</string>
-    <string name="settings_app_version_description">v%s</string>
-    <string name="settings_beta">Update from beta channel</string>
-
     <!-- SEARCH -->
 
-    <string name="settings_search_title">Search Settings</string>
-    <string name="settings_galleries_per_page">Galleries per page</string>
     <string name="settings_default_query">Default query</string>
 
     <!-- SETTINGS/STORAGE -->
 
-    <string name="settings_storage">Storage</string>
-
     <!-- SETTINGS/STORAGE / MANAGE STORAGE -->
-
-    <string name="settings_manage_storage">Manage Storage</string>
-    <string name="settings_storage_usage">Currently using %s</string>
-    <string name="settings_storage_usage_loading">Calculating storage usage…</string>
-    <string name="settings_clear_cache">Clear cache</string>
-    <string name="settings_clear_cache_alert_message">Deleting cache can affect image loading speed. Do you want to continue?</string>
-    <string name="settings_clear_downloads">Clear downloads</string>
-    <string name="settings_clear_downloads_alert_message">Delete all downloaded galleries.\nDo you want to continue?</string>
-    <string name="settings_clear_history">Clear history</string>
-    <string name="settings_clear_history_alert_message">Do you want to clear histories?</string>
-    <string name="settings_clear_history_summary">%1$d histories saved</string>
 
     <!-- SETTINGS/STORAGE / MISCELLANEOUS -->
 
-    <string name="settings_download_folder_name">Folder naming pattern</string>
-    <string name="settings_invalid_download_folder_name">Folder naming pattern is containing invalid characters</string>
-    <string name="settings_download_folder_name_message">%s will be replaced to its corresponding value\n\n%s</string>
-    <string name="settings_download_folder">Download folder</string>
-    <string name="settings_download_folder_removable">Removable Storage</string>
-    <string name="settings_download_folder_internal">Internal Storage</string>
-    <string name="settings_download_folder_available">%s available</string>
-    <string name="settings_download_folder_custom">Custom Location</string>
-    <string name="settings_download_folder_not_writable">This folder is not writable. Please select another folder.</string>
-    <string name="settings_cache_limit">Cache Limit</string>
-    <string name="settings_cache_unlimited">Unlimited</string>
-    <string name="settings_nomedia_title">Hide image from gallery</string>
-    <string name="settings_low_quality">Low quality images</string>
-    <string name="settings_low_quality_summary">Load low quality images to improve load speed and data usage</string>
-
     <!-- SETTINGS/APP LOCK -->
-
-    <string name="settings_app_lock">App lock</string>
-    <string name="settings_app_lock_type">App lock type</string>
 
     <!-- SETTINGS/MISCELLANEOUS -->
 
-    <string name="settings_miscellaneous_title">Miscellaneous</string>
     <string name="settings_tag_translation">Tag Language</string>
-    <string name="settings_concurrent_download">Concurrent Download</string>
-    <string name="settings_tag_translation_message">Participate in translation on Github</string>
-    <string name="settings_mirror_summary">Load images from mirrors</string>
-    <string name="settings_proxy_title">Proxy</string>
-    <string name="settings_rtl">Turn pages Right-to-Left</string>
-    <string name="settings_security_mode_title">Enable security mode</string>
-    <string name="settings_security_mode_summary">Enable security mode to make the screen invisible on recent app window</string>
-    <string name="settings_dark_mode_title">Dark mode</string>
-    <string name="settings_dark_mode_summary">Protect yourself against light attacks!</string>
-    <string name="settings_import_old_galleries">Import old galleries</string>
-    <string name="settings_user_id">User ID</string>
-    <string name="settings_oss">Open Source Notice</string>
 
     <!-- MANAGE FAVORITES -->
 
-    <string name="settings_manage_favorites">Manage favorites</string>
-    <string name="settings_backup_title">Backup favorites</string>
-    <string name="settings_backup_failed">Upload Failed</string>
-    <string name="settings_backup_share">Share Backup</string>
-    <string name="settings_backup_file_created">Backup file created</string>
-    <string name="settings_restore_title">Restore favorites</string>
-    <string name="settings_restore_failed">Restore failed</string>
-    <string name="settings_restore_success">%1$d entries restored</string>
-
     <!-- SETTINGS/APP LOCK ACTIVITY -->
-
-    <string name="settings_lock_none">None</string>
-    <string name="settings_lock_pattern">Pattern</string>
-    <string name="settings_lock_pin" translatable="false">PIN</string>
-    <string name="settings_lock_password">Password</string>
-    <string name="settings_lock_biometrics">Biometrics</string>
-    <string name="settings_lock_fingerprint">Fingerprint</string>
-    <string name="settings_lock_fingerprint_without_lock">Fingerprint can be only enabled if one of the other locks are enabled</string>
-    <string name="settings_lock_fingerprint_prompt">Pupil Fingerprint Lock™</string>
-    <string name="settings_lock_enabled">Enabled</string>
-    <string name="settings_lock_confirm">Input same lock once more to confirm Lock</string>
-    <string name="settings_lock_remove_message">Do you want to remove lock?</string>
-    <string name="settings_lock_wrong_confirm">Lock is different from last one. Please try again.</string>
 
     <!-- SETTINGS/DEFAULT QUERY DIALOG -->
 
-    <string name="default_query_dialog_title">Set default query</string>
-    <string name="default_query_dialog_language">Language: </string>
-    <string name="default_query_dialog_filter_BL">Filter BL</string>
-    <string name="default_query_dialog_filter_guro">Filter Guro</string>
-    <string name="default_query_dialog_filter_loli">I\'m not a pedophile</string>
-    <string name="default_query_dialog_language_selector_none">Any</string>
-    <string name="settings_mirror_title">Mirrors</string>
-
     <!-- PROXY DIALOG -->
-    <string name="proxy_dialog_type">type</string>
-    <string name="proxy_dialog_addr_hint">address</string>
-    <string name="proxy_dialog_port_hint">port</string>
-    <string name="proxy_dialog_username_hint">username</string>
-    <string name="proxy_dialog_password_hint">password</string>
-    <string name="proxy_dialog_error">Wrong value</string>
-    <string name="proxy_dialog_server">server</string>
 
     <!-- IMPORT OLD GALLERIES -->
-    <string name="import_old_galleries_folder_not_readable">This folder is not readable</string>
-    <string name="import_old_galleries_notification">Importing old galleries…</string>
-    <string name="import_old_galleries_notification_text" translatable="false">%1$d/%2$d</string>
-    <string name="import_old_galleries_notification_done">Importing completed</string>
-    <string name="settings_lock_fingerprint_prompt_subtitle">Ah Shit, Here we go again</string>
 
 </resources>

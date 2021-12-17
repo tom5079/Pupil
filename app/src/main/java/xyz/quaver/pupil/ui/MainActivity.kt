@@ -65,7 +65,7 @@ import xyz.quaver.pupil.ui.composable.MultipleFloatingActionButton
 import xyz.quaver.pupil.ui.composable.SubFabItem
 import xyz.quaver.pupil.ui.dialog.SourceSelectDialog
 import xyz.quaver.pupil.ui.theme.PupilTheme
-import xyz.quaver.pupil.ui.view.ProgressCardView
+import xyz.quaver.pupil.ui.composable.ProgressCard
 import xyz.quaver.pupil.ui.viewmodel.MainViewModel
 import xyz.quaver.pupil.util.*
 import kotlin.math.*
@@ -175,7 +175,7 @@ class MainActivity : ComponentActivity(), DIAware {
                             contentPadding = PaddingValues(0.dp, 56.dp, 0.dp, 0.dp)
                         ) {
                             items(model.searchResults, key = { it.itemID }) { itemInfo ->
-                                ProgressCardView(
+                                ProgressCard(
                                     progress = 0.5f
                                 ) {
                                     model.source.SearchResult(itemInfo = itemInfo) { event ->

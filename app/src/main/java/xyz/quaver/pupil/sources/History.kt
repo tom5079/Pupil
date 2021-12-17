@@ -26,7 +26,6 @@ import kotlinx.coroutines.launch
 import org.kodein.di.DI
 import org.kodein.di.DIAware
 import org.kodein.di.direct
-import xyz.quaver.floatingsearchview.suggestions.model.SearchSuggestion
 import xyz.quaver.pupil.util.database
 
 class History(override val di: DI) : Source(), DIAware {
@@ -54,10 +53,6 @@ class History(override val di: DI) : Source(), DIAware {
 
         throw NotImplementedError("")
         //return Pair(channel, histories.map.size)
-    }
-
-    override suspend fun suggestion(query: String): List<SearchSuggestion> {
-        throw NotImplementedError("")
     }
 
     override suspend fun images(itemID: String): List<String> {

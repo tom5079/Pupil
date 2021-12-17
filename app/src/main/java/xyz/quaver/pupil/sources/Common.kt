@@ -23,20 +23,13 @@ import android.os.Parcelable
 import androidx.compose.runtime.Composable
 import io.ktor.http.*
 import kotlinx.coroutines.channels.Channel
-import kotlinx.parcelize.Parcelize
 import org.kodein.di.*
-import xyz.quaver.floatingsearchview.databinding.SearchSuggestionItemBinding
-import xyz.quaver.floatingsearchview.suggestions.model.SearchSuggestion
-import xyz.quaver.pupil.R
 
 interface ItemInfo : Parcelable {
     val source: String
     val itemID: String
     val title: String
 }
-
-@Parcelize
-class DefaultSearchSuggestion(override val body: String) : SearchSuggestion
 
 data class SearchResultEvent(val type: Type, val itemID: String, val payload: Parcelable? = null) {
     enum class Type {
@@ -54,7 +47,6 @@ abstract class Source {
     abstract val availableSortMode: List<String>
 
     abstract suspend fun search(query: String, range: IntRange, sortMode: Int): Pair<Channel<ItemInfo>, Int>
-    abstract suspend fun suggestion(query: String): List<SearchSuggestion>
     abstract suspend fun images(itemID: String): List<String>
     abstract suspend fun info(itemID: String): ItemInfo
 
@@ -62,10 +54,6 @@ abstract class Source {
     open fun SearchResult(itemInfo: ItemInfo, onEvent: (SearchResultEvent) -> Unit = { }) { }
 
     open fun getHeadersBuilderForImage(itemID: String, url: String): HeadersBuilder.() -> Unit = { }
-
-    open fun onSuggestionBind(binding: SearchSuggestionItemBinding, item: SearchSuggestion) {
-        binding.leftIcon.setImageResource(R.drawable.tag)
-    }
 }
 
 typealias SourceEntry = Pair<String, Source>

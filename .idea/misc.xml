@@ -32,8 +32,13 @@
         <entry key="../../../../layout/compose-model-1639629588722.xml" value="0.3472222222222222" />
         <entry key="../../../../layout/custom_preview.xml" value="0.518974358974359" />
         <entry key="app/src/main/res/drawable/avd_star.xml" value="0.2722222222222222" />
+        <entry key="app/src/main/res/drawable/close.xml" value="0.31614583333333335" />
         <entry key="app/src/main/res/drawable/history.xml" value="0.3055555555555556" />
+        <entry key="app/src/main/res/drawable/ic_star_empty.xml" value="0.31614583333333335" />
+        <entry key="app/src/main/res/drawable/numeric.xml" value="0.31614583333333335" />
+        <entry key="app/src/main/res/drawable/swap_horizontal.xml" value="0.31614583333333335" />
         <entry key="app/src/main/res/layout/gallery_dialog.xml" value="0.30052083333333335" />
+        <entry key="app/src/main/res/layout/gallery_dialog_dotindicator.xml" value="0.2859375" />
         <entry key="app/src/main/res/layout/main_activity.xml" value="0.2953125" />
         <entry key="app/src/main/res/layout/main_activity_content.xml" value="0.2953125" />
         <entry key="app/src/main/res/layout/progress_card_view.xml" value="0.2953125" />
