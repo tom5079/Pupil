@@ -30,6 +30,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Female
 import androidx.compose.material.icons.filled.Male
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.StarOutline
 import androidx.compose.material.icons.outlined.StarOutline
 import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
@@ -329,67 +330,100 @@ class Hiyobi_io(app: Application): Source(), DIAware {
     override fun SearchResult(itemInfo: ItemInfo, onEvent: (SearchResultEvent) -> Unit) {
         itemInfo as HiyobiItemInfo
 
+        val bookmark by bookmarkDao.contains(itemInfo).observeAsState(false)
+
         val painter = rememberImagePainter(itemInfo.thumbnail)
 
-        Row(
+        Column(
             modifier = Modifier.clickable {
                 onEvent(SearchResultEvent(SearchResultEvent.Type.OPEN_READER, itemInfo.itemID, itemInfo))
             }
         ) {
-            Image(
-                painter = painter,
-                contentDescription = null,
-                modifier = Modifier
-                    .requiredWidth(150.dp)
-                    .aspectRatio(
-                        with(painter.intrinsicSize) { if (this == Size.Unspecified) 1f else width / height },
-                        true
-                    )
-                    .padding(0.dp, 0.dp, 8.dp, 0.dp)
-                    .align(Alignment.CenterVertically),
-                contentScale = ContentScale.FillWidth
-            )
-
-            Column {
-                Text(
-                    itemInfo.title,
-                    style = MaterialTheme.typography.h6,
-                    color = MaterialTheme.colors.onSurface
+            Row {
+                Image(
+                    painter = painter,
+                    contentDescription = null,
+                    modifier = Modifier
+                        .requiredWidth(150.dp)
+                        .aspectRatio(
+                            with(painter.intrinsicSize) { if (this == Size.Unspecified) 1f else width / height },
+                            true
+                        )
+                        .padding(0.dp, 0.dp, 8.dp, 0.dp)
+                        .align(Alignment.CenterVertically),
+                    contentScale = ContentScale.FillWidth
                 )
 
-                val artistStringBuilder = StringBuilder()
-
-                with (itemInfo.artists) {
-                    if (this.isNotEmpty())
-                        artistStringBuilder.append(this.joinToString(", ") { it.wordCapitalize() })
-                }
-
-                if (artistStringBuilder.isNotEmpty())
+                Column {
                     Text(
-                        artistStringBuilder.toString(),
-                        style = MaterialTheme.typography.subtitle1,
-                        color = MaterialTheme.colors.onSurface.copy(alpha = 0.6F)
+                        itemInfo.title,
+                        style = MaterialTheme.typography.h6,
+                        color = MaterialTheme.colors.onSurface
                     )
 
-                if (itemInfo.series.isNotEmpty())
+                    val artistStringBuilder = StringBuilder()
+
+                    with(itemInfo.artists) {
+                        if (this.isNotEmpty())
+                            artistStringBuilder.append(this.joinToString(", ") { it.wordCapitalize() })
+                    }
+
+                    if (artistStringBuilder.isNotEmpty())
+                        Text(
+                            artistStringBuilder.toString(),
+                            style = MaterialTheme.typography.subtitle1,
+                            color = MaterialTheme.colors.onSurface.copy(alpha = 0.6F)
+                        )
+
+                    if (itemInfo.series.isNotEmpty())
+                        Text(
+                            stringResource(
+                                id = R.string.galleryblock_series,
+                                itemInfo.series.joinToString { it.wordCapitalize() }
+                            ),
+                            style = MaterialTheme.typography.body2,
+                            color = MaterialTheme.colors.onSurface.copy(alpha = 0.6F)
+                        )
+
                     Text(
-                        stringResource(
-                            id = R.string.galleryblock_series,
-                            itemInfo.series.joinToString { it.wordCapitalize() }
-                        ),
+                        stringResource(id = R.string.galleryblock_type, itemInfo.type),
                         style = MaterialTheme.typography.body2,
                         color = MaterialTheme.colors.onSurface.copy(alpha = 0.6F)
                     )
 
-                Text(
-                    stringResource(id = R.string.galleryblock_type, itemInfo.type),
-                    style = MaterialTheme.typography.body2,
-                    color = MaterialTheme.colors.onSurface.copy(alpha = 0.6F)
-                )
-
-                key(itemInfo.tags) {
-                    TagGroup(tags = itemInfo.tags)
+                    key(itemInfo.tags) {
+                        TagGroup(tags = itemInfo.tags)
+                    }
                 }
+            }
+
+            Divider(
+                thickness = 1.dp,
+                modifier = Modifier.padding(0.dp, 8.dp, 0.dp, 0.dp)
+            )
+
+            Row(
+                modifier = Modifier.padding(8.dp).fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(itemInfo.itemID)
+
+                Text("${itemInfo.pageCount}P")
+
+                Icon(
+                    if (bookmark) Icons.Default.Star else Icons.Default.StarOutline,
+                    contentDescription = null,
+                    tint = Orange500,
+                    modifier = Modifier
+                        .size(32.dp)
+                        .clickable {
+                            CoroutineScope(Dispatchers.IO).launch {
+                                if (bookmark) bookmarkDao.delete(itemInfo)
+                                else          bookmarkDao.insert(itemInfo)
+                            }
+                        }
+                )
             }
         }
     }

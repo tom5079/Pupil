@@ -43,6 +43,7 @@ import xyz.quaver.pupil.sources.ItemInfo
 import xyz.quaver.pupil.sources.Source
 import xyz.quaver.pupil.util.NetworkCache
 import xyz.quaver.pupil.util.source
+import java.nio.file.Files.delete
 
 @Suppress("UNCHECKED_CAST")
 class ReaderViewModel(app: Application) : AndroidViewModel(app), DIAware {
@@ -59,6 +60,9 @@ class ReaderViewModel(app: Application) : AndroidViewModel(app), DIAware {
 
     private val historyDao = database.historyDao()
     private val bookmarkDao = database.bookmarkDao()
+
+    lateinit var bookmark: LiveData<Boolean>
+        private set
 
     var error by mutableStateOf(false)
         private set
@@ -108,6 +112,8 @@ class ReaderViewModel(app: Application) : AndroidViewModel(app), DIAware {
             itemID = intent.getStringExtra("id") ?: error("Invalid itemID")
             title = intent.getParcelableExtra<ItemInfo>("payload")?.title
         }
+
+        bookmark = bookmarkDao.contains(source!!.name, itemID!!)
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -203,14 +209,14 @@ class ReaderViewModel(app: Application) : AndroidViewModel(app), DIAware {
     }
 
     fun toggleBookmark() {
-        val bookmark = source?.let { source -> itemID?.let { itemID -> Bookmark(source.name, itemID) } } ?: return
-
-        CoroutineScope(Dispatchers.IO).launch {
-            if (bookmarkDao.contains(bookmark).value ?: return@launch)
-                bookmarkDao.delete(bookmark)
-            else
-                bookmarkDao.insert(bookmark)
-        }
+        source?.name?.let { source ->
+        itemID?.let { itemID ->
+        bookmark.value?.let { bookmark ->
+            CoroutineScope(Dispatchers.IO).launch {
+                if (bookmark) bookmarkDao.delete(source, itemID)
+                else          bookmarkDao.insert(source, itemID)
+            }
+        } } }
     }
 
     override fun onCleared() {

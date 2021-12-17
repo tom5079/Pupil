@@ -24,10 +24,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
-import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.border
-import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.*
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -36,7 +33,10 @@ import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BrokenImage
 import androidx.compose.material.icons.filled.Fullscreen
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.StarOutline
 import androidx.compose.runtime.*
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -45,6 +45,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
@@ -60,6 +61,7 @@ import xyz.quaver.pupil.R
 import xyz.quaver.pupil.ui.composable.FloatingActionButtonState
 import xyz.quaver.pupil.ui.composable.MultipleFloatingActionButton
 import xyz.quaver.pupil.ui.composable.SubFabItem
+import xyz.quaver.pupil.ui.theme.Orange500
 import xyz.quaver.pupil.ui.theme.PupilTheme
 import xyz.quaver.pupil.ui.viewmodel.ReaderViewModel
 import xyz.quaver.pupil.util.FileXImageSource
@@ -83,6 +85,7 @@ class ReaderActivity : ComponentActivity(), DIAware {
             var isFABExpanded by remember { mutableStateOf(FloatingActionButtonState.COLLAPSED) }
             val imageSources = remember { mutableStateListOf<ImageSource?>() }
             val states = remember { mutableStateListOf<SubSampledImageState>() }
+            val bookmark by model.bookmark.observeAsState(false)
 
             val scaffoldState = rememberScaffoldState()
             val snackbarCoroutineScope = rememberCoroutineScope()
@@ -130,16 +133,32 @@ class ReaderActivity : ComponentActivity(), DIAware {
                                 title = {
                                     Text(
                                         model.title ?: stringResource(R.string.reader_loading),
-                                        color = MaterialTheme.colors.onSecondary
+                                        color = MaterialTheme.colors.onSecondary,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
                                     )
                                 },
                                 actions = {
-                                    model.sourceIcon?.let { sourceIcon ->
-                                        Image(
-                                            modifier = Modifier.size(36.dp),
-                                            painter = painterResource(id = sourceIcon),
-                                            contentDescription = null
+                                    Row(
+                                        modifier = Modifier.padding(16.dp, 0.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(24.dp)
+                                    ) {
+                                        Icon(
+                                            if (bookmark) Icons.Default.Star else Icons.Default.StarOutline,
+                                            contentDescription = null,
+                                            tint = Orange500,
+                                            modifier = Modifier.size(24.dp).clickable {
+                                                model.toggleBookmark()
+                                            }
                                         )
+                                        model.sourceIcon?.let { sourceIcon ->
+                                            Image(
+                                                modifier = Modifier.size(24.dp),
+                                                painter = painterResource(id = sourceIcon),
+                                                contentDescription = null
+                                            )
+                                        }
                                     }
                                 }
                             )

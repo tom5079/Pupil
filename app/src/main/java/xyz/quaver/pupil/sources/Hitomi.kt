@@ -29,6 +29,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Female
 import androidx.compose.material.icons.filled.Male
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.StarOutline
+import androidx.compose.material.icons.outlined.Star
 import androidx.compose.material.icons.outlined.StarOutline
 import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
@@ -374,10 +376,12 @@ class Hitomi(app: Application) : Source(), DIAware {
         var group by remember { mutableStateOf(emptyList<String>()) }
         var pageCount by remember { mutableStateOf("-") }
 
+        val bookmark by bookmarkDao.contains(itemInfo).observeAsState(false)
+
         LaunchedEffect(itemInfo) {
             launch(Dispatchers.Default) {
-                itemInfo.getPageCount()?.run {
-                    pageCount = "${this}P"
+                itemInfo.getPageCount()?.let {
+                    pageCount = "${it}P"
                 }
             }
 
@@ -468,35 +472,32 @@ class Hitomi(app: Application) : Source(), DIAware {
 
             Divider(
                 thickness = 1.dp,
-                modifier = Modifier.padding(0.dp, 8.dp)
+                modifier = Modifier.padding(0.dp, 8.dp, 0.dp, 0.dp)
             )
 
-            Box(
-                Modifier
-                    .fillMaxWidth()
-                    .wrapContentHeight()
+            Row(
+                modifier = Modifier
+                    .padding(8.dp)
+                    .fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Text(
-                    itemInfo.itemID,
-                    color = MaterialTheme.colors.onSurface,
-                    modifier = Modifier
-                        .padding(8.dp)
-                        .align(Alignment.CenterStart)
-                )
+                Text(itemInfo.itemID)
 
-                Text(
-                    pageCount,
-                    color = MaterialTheme.colors.onSurface,
-                    modifier = Modifier.align(Alignment.Center)
-                )
+                Text(pageCount)
 
-                Image(
-                    painterResource(id = R.drawable.ic_star_empty),
-                    contentDescription = "Favorite",
+                Icon(
+                    if (bookmark) Icons.Default.Star else Icons.Default.StarOutline,
+                    contentDescription = null,
+                    tint = Orange500,
                     modifier = Modifier
                         .size(32.dp)
-                        .padding(4.dp)
-                        .align(Alignment.CenterEnd)
+                        .clickable {
+                            CoroutineScope(Dispatchers.IO).launch {
+                                if (bookmark) bookmarkDao.delete(itemInfo)
+                                else          bookmarkDao.insert(itemInfo)
+                            }
+                        }
                 )
             }
         }
