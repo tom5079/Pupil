@@ -23,9 +23,19 @@ import androidx.compose.material.MaterialTheme
 import androidx.compose.material.darkColors
 import androidx.compose.material.lightColors
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
 
-private val DarkColorPalette = darkColors()
-private val LightColorPalette = lightColors()
+private val DarkColorPalette = darkColors(
+    secondary = Pink600,
+    onSecondary = Color.White
+)
+private val LightColorPalette = lightColors(
+    primary = LightBlue300,
+    primaryVariant = LightBlue700,
+    secondary = Pink600,
+    onPrimary = Color.White,
+    onSecondary = Color.White
+)
 
 @Composable
 fun PupilTheme(

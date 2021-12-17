@@ -18,10 +18,15 @@
 
 package xyz.quaver.pupil.ui.viewmodel
 
-import android.annotation.SuppressLint
 import android.app.Application
-import androidx.compose.runtime.*
-import androidx.lifecycle.*
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.Transformations
+import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.*
 import org.kodein.di.DIAware
 import org.kodein.di.android.x.closestDI
@@ -29,7 +34,9 @@ import org.kodein.di.direct
 import org.kodein.di.instance
 import org.kodein.log.LoggerFactory
 import org.kodein.log.newLogger
-import xyz.quaver.pupil.sources.*
+import xyz.quaver.pupil.sources.History
+import xyz.quaver.pupil.sources.ItemInfo
+import xyz.quaver.pupil.sources.Source
 import xyz.quaver.pupil.util.Preferences
 import xyz.quaver.pupil.util.source
 import kotlin.math.ceil

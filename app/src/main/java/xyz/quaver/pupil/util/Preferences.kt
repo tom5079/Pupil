@@ -23,6 +23,7 @@ import kotlin.reflect.KClass
 
 lateinit var preferences: SharedPreferences
 
+@Deprecated("Use DataStore")
 object Preferences: SharedPreferences by preferences {
 
     val defMap = mapOf(

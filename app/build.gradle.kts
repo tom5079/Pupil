@@ -111,10 +111,13 @@ dependencies {
     kapt("androidx.room:room-compiler:2.3.0")
     implementation("androidx.room:room-ktx:2.3.0")
 
+    implementation("androidx.datastore:datastore:1.0.0")
+    implementation("androidx.datastore:datastore-preferences:1.0.0")
+
     implementation("org.kodein.di:kodein-di-framework-compose:7.9.0")
 
     implementation("com.google.android.material:material:1.4.0")
-    0
+
     implementation(platform("com.google.firebase:firebase-bom:28.3.0"))
     implementation("com.google.firebase:firebase-analytics-ktx")
     implementation("com.google.firebase:firebase-crashlytics")
