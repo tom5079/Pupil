@@ -185,6 +185,7 @@ class MainActivity : ComponentActivity(), DIAware {
                     }
                 ) {
                     Box(Modifier.fillMaxSize()) {
+
                         LazyColumn(
                             Modifier
                                 .fillMaxSize()
@@ -202,6 +203,16 @@ class MainActivity : ComponentActivity(), DIAware {
                                         isFabVisible = available.y > 0f
 
                                         return Offset.Zero
+                                    }
+
+                                    override fun onPostScroll(
+                                        consumed: Offset,
+                                        available: Offset,
+                                        source: NestedScrollSource
+                                    ): Offset {
+
+
+                                        return super.onPostScroll(consumed, available, source)
                                     }
                                 }),
                             contentPadding = PaddingValues(0.dp, 56.dp, 0.dp, 0.dp)
