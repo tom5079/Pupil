@@ -54,7 +54,7 @@ class NetworkCache(context: Context) : DIAware {
     private val client: HttpClient by instance()
     private val networkScope = CoroutineScope(Executors.newFixedThreadPool(4).asCoroutineDispatcher())
 
-    private val cacheDir = context.cacheDir
+    private val cacheDir = File(context.cacheDir, "networkcache")
 
     private val channel = ConcurrentHashMap<String, Channel<Float>>()
     private val requests = ConcurrentHashMap<String, Job>()
@@ -103,6 +103,7 @@ class NetworkCache(context: Context) : DIAware {
         else
             requests[url] = networkScope.launch {
                 kotlin.runCatching {
+                    cacheDir.mkdirs()
                     file.createNewFile()
 
                     client.request<HttpStatement>(request).execute { httpResponse ->

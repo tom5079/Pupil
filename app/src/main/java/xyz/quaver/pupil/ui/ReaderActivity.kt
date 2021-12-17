@@ -18,6 +18,7 @@
 
 package xyz.quaver.pupil.ui
 
+import android.content.ClipData
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
@@ -47,6 +48,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.core.content.FileProvider
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import coil.annotation.ExperimentalCoilApi
@@ -221,6 +223,13 @@ class ReaderActivity : ComponentActivity(), DIAware {
                                                         combinedClickable(
                                                             onLongClick = {
                                                                 haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+
+                                                                val uri = FileProvider.getUriForFile(this@ReaderActivity, "xyz.quaver.pupil.fileprovider", (imageSource as FileXImageSource).file)
+                                                                startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).apply {
+                                                                    type = "image/*"
+                                                                    putExtra(Intent.EXTRA_STREAM, uri)
+                                                                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                                                }, "Share image"))
                                                             }
                                                         ) {
                                                             model.isFullscreen = true
