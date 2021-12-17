@@ -53,12 +53,15 @@ class ReaderViewModel(app: Application) : AndroidViewModel(app), DIAware {
 
     private val logger = newLogger(LoggerFactory.default)
 
-    val isFullscreen = MutableLiveData(false)
+    var isFullscreen by mutableStateOf(false)
 
     private val database: AppDatabase by instance()
 
     private val historyDao = database.historyDao()
     private val bookmarkDao = database.bookmarkDao()
+
+    var error by mutableStateOf(false)
+        private set
 
     var source by mutableStateOf<Source?>(null)
         private set
@@ -121,14 +124,20 @@ class ReaderViewModel(app: Application) : AndroidViewModel(app), DIAware {
         viewModelScope.launch {
             if (title == null)
                 title = withContext(Dispatchers.IO) {
-                    source.info(itemID)
-                }.title
+                    kotlin.runCatching {
+                        source.info(itemID)
+                    }.getOrNull()
+                }?.title
         }
 
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
-                source.images(itemID)
-            }.let { images ->
+                kotlin.runCatching {
+                    source.images(itemID)
+                }.onFailure {
+                    error = true
+                }.getOrNull()
+            }?.let { images ->
                 this@ReaderViewModel.images = images
 
                 imageCount = images.size

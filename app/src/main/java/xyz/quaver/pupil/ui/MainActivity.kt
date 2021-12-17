@@ -58,7 +58,6 @@ import org.kodein.log.newLogger
 import xyz.quaver.pupil.*
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.sources.SearchResultEvent
-import xyz.quaver.pupil.types.*
 import xyz.quaver.pupil.ui.composable.FloatingActionButtonState
 import xyz.quaver.pupil.ui.composable.FloatingSearchBar
 import xyz.quaver.pupil.ui.composable.MultipleFloatingActionButton
@@ -66,6 +65,7 @@ import xyz.quaver.pupil.ui.composable.SubFabItem
 import xyz.quaver.pupil.ui.dialog.SourceSelectDialog
 import xyz.quaver.pupil.ui.theme.PupilTheme
 import xyz.quaver.pupil.ui.composable.ProgressCard
+import xyz.quaver.pupil.ui.dialog.OpenWithItemIDDialog
 import xyz.quaver.pupil.ui.viewmodel.MainViewModel
 import xyz.quaver.pupil.util.*
 import kotlin.math.*
@@ -108,19 +108,49 @@ class MainActivity : ComponentActivity(), DIAware {
                     }
                 }
 
-                var openSourceSelectDialog by remember { mutableStateOf(false) }
+                val onSearchResultEvent: (SearchResultEvent) -> Unit = { event ->
+                    when (event.type) {
+                        SearchResultEvent.Type.OPEN_READER -> {
+                            startActivity(
+                                Intent(
+                                    this@MainActivity,
+                                    ReaderActivity::class.java
+                                ).apply {
+                                    putExtra("source", model.source.name)
+                                    putExtra("id", event.itemID)
+                                    putExtra("payload", event.payload)
+                                })
+                        }
+                        else -> TODO("")
+                    }
+                }
+
+                var sourceSelectDialog by remember { mutableStateOf(false) }
+                var openWithItemIDDialog by remember { mutableStateOf(false) }
 
                 LaunchedEffect(navigationIconProgress) {
                     navigationIcon.progress = navigationIconProgress
                 }
 
-                if (openSourceSelectDialog)
+                if (sourceSelectDialog)
                     SourceSelectDialog(
                         currentSource = model.source.name,
-                        onDismissRequest = { openSourceSelectDialog = false }
+                        onDismissRequest = { sourceSelectDialog = false }
                     ) { source ->
-                        openSourceSelectDialog = false
+                        sourceSelectDialog = false
                         model.setSourceAndReset(source.name)
+                    }
+
+                if (openWithItemIDDialog)
+                    OpenWithItemIDDialog {
+                        openWithItemIDDialog = false
+
+                        it?.let {
+                            onSearchResultEvent(SearchResultEvent(
+                                SearchResultEvent.Type.OPEN_READER,
+                                it
+                            ))
+                        }
                     }
 
                 Scaffold(
@@ -142,7 +172,9 @@ class MainActivity : ComponentActivity(), DIAware {
                                 SubFabItem(
                                     painterResource(R.drawable.numeric),
                                     stringResource(R.string.main_open_gallery_by_id)
-                                ),
+                                ) {
+                                  openWithItemIDDialog = true
+                                }
                             ),
                             visible = isFabVisible,
                             targetState = isFabExpanded,
@@ -178,22 +210,7 @@ class MainActivity : ComponentActivity(), DIAware {
                                 ProgressCard(
                                     progress = 0.5f
                                 ) {
-                                    model.source.SearchResult(itemInfo = itemInfo) { event ->
-                                        when (event.type) {
-                                            SearchResultEvent.Type.OPEN_READER -> {
-                                                startActivity(
-                                                    Intent(
-                                                        this@MainActivity,
-                                                        ReaderActivity::class.java
-                                                    ).apply {
-                                                        putExtra("source", model.source.name)
-                                                        putExtra("id", event.itemID)
-                                                        putExtra("payload", event.payload)
-                                                    })
-                                            }
-                                            else -> TODO("")
-                                        }
-                                    }
+                                    model.source.SearchResult(itemInfo = itemInfo, onEvent = onSearchResultEvent)
                                 }
                             }
                         }
@@ -224,7 +241,7 @@ class MainActivity : ComponentActivity(), DIAware {
                                     painterResource(model.source.iconResID),
                                     contentDescription = null,
                                     modifier = Modifier.size(24.dp).clickable {
-                                        openSourceSelectDialog = true
+                                        sourceSelectDialog = true
                                     }
                                 )
                                 Icon(

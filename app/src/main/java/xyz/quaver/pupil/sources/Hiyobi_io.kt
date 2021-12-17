@@ -153,7 +153,6 @@ class Hiyobi_io(app: Application): Source(), DIAware {
 
     override val name = "hiyobi.io"
     override val iconResID = R.drawable.hitomi
-    override val preferenceID = 0
     override val availableSortMode = emptyList<String>()
 
     private val client: HttpClient by instance()

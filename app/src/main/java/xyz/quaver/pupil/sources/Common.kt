@@ -43,7 +43,6 @@ data class SearchResultEvent(val type: Type, val itemID: String, val payload: Pa
 abstract class Source {
     abstract val name: String
     abstract val iconResID: Int
-    abstract val preferenceID: Int
     abstract val availableSortMode: List<String>
 
     abstract suspend fun search(query: String, range: IntRange, sortMode: Int): Pair<Channel<ItemInfo>, Int>
