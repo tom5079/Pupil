@@ -24,23 +24,22 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.Transformations
+import androidx.lifecycle.asLiveData
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import org.kodein.di.DIAware
 import org.kodein.di.android.x.closestDI
 import org.kodein.di.direct
 import org.kodein.di.instance
 import org.kodein.log.LoggerFactory
 import org.kodein.log.newLogger
+import xyz.quaver.pupil.proto.settingsDataStore
 import xyz.quaver.pupil.sources.History
 import xyz.quaver.pupil.sources.ItemInfo
 import xyz.quaver.pupil.sources.Source
-import xyz.quaver.pupil.util.Preferences
 import xyz.quaver.pupil.util.source
-import kotlin.math.ceil
-import kotlin.math.roundToInt
 import kotlin.random.Random
 
 @Suppress("UNCHECKED_CAST")
@@ -50,6 +49,10 @@ class MainViewModel(app: Application) : AndroidViewModel(app), DIAware {
     private val logger = newLogger(LoggerFactory.default)
 
     val searchResults = mutableStateListOf<ItemInfo>()
+
+    private val resultsPerPage = app.settingsDataStore.data.map {
+        it.resultsPerPage
+    }
 
     var loading by mutableStateOf(false)
         private set
@@ -72,13 +75,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app), DIAware {
 
     var currentPage by mutableStateOf(1)
 
-    private val totalItems = MutableLiveData<Int>()
-
-    val totalPages = Transformations.map(totalItems) {
-        val perPage = Preferences["per_page", "25"].toInt()
-
-        ceil(it / perPage.toDouble()).roundToInt()
-    }
+    var totalItems by mutableStateOf(0)
+        private set
 
     fun setSourceAndReset(sourceName: String) {
         source = sourceFactory(sourceName)
@@ -112,8 +110,6 @@ class MainViewModel(app: Application) : AndroidViewModel(app), DIAware {
     }
 
     fun query() {
-        val perPage = Preferences["per_page", "25"].toInt()
-
         suggestionJob?.cancel()
         queryJob?.cancel()
 
@@ -121,13 +117,19 @@ class MainViewModel(app: Application) : AndroidViewModel(app), DIAware {
         searchResults.clear()
 
         queryJob = viewModelScope.launch {
+            val resultsPerPage = resultsPerPage.first()
+
+            logger.info {
+                resultsPerPage.toString()
+            }
+
             val (channel, count) = source.search(
                 query,
-                (currentPage - 1) * perPage until currentPage * perPage,
+                (currentPage - 1) * resultsPerPage until currentPage * resultsPerPage,
                 sortModeIndex
             )
 
-            totalItems.postValue(count)
+            totalItems = count
 
             for (result in channel) {
                 yield()
@@ -139,15 +141,15 @@ class MainViewModel(app: Application) : AndroidViewModel(app), DIAware {
     }
 
     fun random(callback: (ItemInfo) -> Unit) {
-        if (totalItems.value!! == 0)
+        if (totalItems == 0)
             return
 
-        val random = Random.Default.nextInt(totalItems.value!!)
+        val random = Random.Default.nextInt(totalItems)
 
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
                 source.search(
-                    query + Preferences["default_query", ""],
+                    query,
                     random .. random,
                     sortModeIndex
                 ).first.receive()

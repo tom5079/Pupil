@@ -1,3 +1,5 @@
+import com.google.protobuf.gradle.*
+
 plugins {
     id("com.android.application")
     kotlin("android")
@@ -8,6 +10,7 @@ plugins {
     id("com.google.gms.google-services")
     id("com.google.firebase.crashlytics")
     id("com.google.firebase.firebase-perf")
+    id("com.google.protobuf")
 }
 
 android {
@@ -104,6 +107,7 @@ dependencies {
     implementation("androidx.gridlayout:gridlayout:1.0.0")
     implementation("androidx.biometric:biometric:1.1.0")
     implementation("androidx.work:work-runtime-ktx:2.7.1")
+    implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.4.0")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.4.0")
 
     implementation("androidx.room:room-runtime:2.3.0")
@@ -118,10 +122,12 @@ dependencies {
 
     implementation("com.google.android.material:material:1.4.0")
 
-    implementation(platform("com.google.firebase:firebase-bom:28.3.0"))
+    implementation(platform("com.google.firebase:firebase-bom:29.0.3"))
     implementation("com.google.firebase:firebase-analytics-ktx")
-    implementation("com.google.firebase:firebase-crashlytics")
-    implementation("com.google.firebase:firebase-perf")
+    implementation("com.google.firebase:firebase-crashlytics-ktx")
+    implementation("com.google.firebase:firebase-perf-ktx")
+
+    implementation("com.google.protobuf:protobuf-javalite:3.19.1")
 
     implementation("com.google.android.gms:play-services-oss-licenses:17.0.0")
 
@@ -145,6 +151,21 @@ dependencies {
     androidTestImplementation("androidx.test.espresso:espresso-core:3.4.0")
 
     androidTestImplementation("androidx.compose.ui:ui-test-junit4:1.0.5")
+}
+
+protobuf {
+    protoc {
+        artifact = "com.google.protobuf:protoc:3.19.1"
+    }
+    generateProtoTasks {
+        all().forEach { task ->
+            task.builtins {
+                id("java") {
+                    option("lite")
+                }
+            }
+        }
+    }
 }
 
 task<Exec>("clearAppCache") {

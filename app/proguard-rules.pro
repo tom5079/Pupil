@@ -40,5 +40,6 @@
 -keepclasseswithmembers class xyz.quaver.** {
     kotlinx.serialization.KSerializer serializer(...);
 }
--keep class xyz.quaver.pupil.ui.fragment.ManageFavoritesFragment
--keep class xyz.quaver.pupil.ui.fragment.ManageStorageFragment
+-keepclassmembers class * extends androidx.datastore.preferences.protobuf.GeneratedMessageLite {
+    <fields>;
+}
