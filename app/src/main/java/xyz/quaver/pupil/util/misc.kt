@@ -149,7 +149,7 @@ fun View.show() {
     visibility = View.VISIBLE
 }
 
-class FileXImageSource(file: FileX): ImageSource {
+class FileXImageSource(val file: FileX): ImageSource {
     private val decoder = newBitmapRegionDecoder(file.inputStream()!!)
 
     override val imageSize by lazy { Size(decoder.width.toFloat(), decoder.height.toFloat()) }

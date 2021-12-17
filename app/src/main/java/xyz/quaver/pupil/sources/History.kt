@@ -36,8 +36,6 @@ class History(override val di: DI) : Source(), DIAware {
         get() = "history"
     override val iconResID: Int
         get() = 0 //TODO
-    override val preferenceID: Int
-        get() = 0 //TODO
     override val availableSortMode: List<String> = emptyList()
 
     private val history = direct.database().historyDao()

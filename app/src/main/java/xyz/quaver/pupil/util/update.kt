@@ -150,7 +150,7 @@ fun checkUpdate(context: Context, force: Boolean = false) {
                     Preferences["update_download_id"] = it
                 }
             }
-            setNegativeButton(if (force) android.R.string.cancel else R.string.ignore_update) { _, _ ->
+            setNegativeButton(if (force) android.R.string.cancel else R.string.ignore) { _, _ ->
                 if (!force)
                     preferences.edit()
                         .putLong("ignore_update_until", System.currentTimeMillis() + 604800000)

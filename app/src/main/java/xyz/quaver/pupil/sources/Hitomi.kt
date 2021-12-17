@@ -122,7 +122,6 @@ class Hitomi(app: Application) : Source(), DIAware {
 
     override val name: String = "hitomi.la"
     override val iconResID: Int = R.drawable.hitomi
-    override val preferenceID: Int = R.xml.hitomi_preferences
     override val availableSortMode: List<String> = app.resources.getStringArray(R.array.hitomi_sort_mode).toList()
 
     var cachedQuery: String? = null
