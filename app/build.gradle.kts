@@ -135,7 +135,6 @@ dependencies {
 
     implementation("ru.noties.markwon:core:3.1.0")
 
-    implementation("xyz.quaver:libpupil:2.1.11")
     implementation("xyz.quaver:documentfilex:0.7.1")
     implementation("xyz.quaver:subsampledimage:0.0.1-alpha11-SNAPSHOT")
 

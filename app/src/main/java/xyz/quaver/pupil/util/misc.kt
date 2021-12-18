@@ -38,6 +38,7 @@ import xyz.quaver.io.FileX
 import xyz.quaver.io.util.inputStream
 import xyz.quaver.pupil.db.AppDatabase
 import xyz.quaver.pupil.sources.SourceEntries
+import java.security.MessageDigest
 
 operator fun JsonElement.get(index: Int) =
     this.jsonArray[index]
@@ -76,4 +77,8 @@ class FileXImageSource(val file: FileX): ImageSource {
 @Composable
 fun rememberFileXImageSource(file: FileX) = remember {
     FileXImageSource(file)
+}
+
+fun sha256(data: ByteArray) : ByteArray {
+    return MessageDigest.getInstance("SHA-256").digest(data)
 }

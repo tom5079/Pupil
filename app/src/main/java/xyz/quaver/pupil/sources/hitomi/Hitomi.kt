@@ -27,6 +27,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import io.ktor.client.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.kodein.di.DIAware
@@ -35,17 +36,19 @@ import org.kodein.di.compose.rememberInstance
 import org.kodein.di.instance
 import org.kodein.log.LoggerFactory
 import org.kodein.log.newLogger
-import xyz.quaver.hitomi.getGalleryInfo
-import xyz.quaver.hitomi.getReferer
-import xyz.quaver.hitomi.imageUrlFromImage
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.db.AppDatabase
 import xyz.quaver.pupil.sources.Source
 import xyz.quaver.pupil.sources.composable.*
 import xyz.quaver.pupil.sources.hitomi.composable.DetailedSearchResult
+import xyz.quaver.pupil.sources.hitomi.lib.getGalleryInfo
+import xyz.quaver.pupil.sources.hitomi.lib.getReferer
+import xyz.quaver.pupil.sources.hitomi.lib.imageUrlFromImage
 
 class Hitomi(app: Application) : Source(), DIAware {
     override val di by closestDI(app)
+
+    private val client: HttpClient by instance()
 
     private val logger = newLogger(LoggerFactory.default)
 
@@ -73,6 +76,10 @@ class Hitomi(app: Application) : Source(), DIAware {
         val bookmarks by bookmarkDao.getAll(name).observeAsState()
         val bookmarkSet by derivedStateOf {
             bookmarks?.toSet() ?: emptySet()
+        }
+
+        LaunchedEffect(model.currentPage) {
+            model.search()
         }
 
         SearchBase(
@@ -133,7 +140,7 @@ class Hitomi(app: Application) : Source(), DIAware {
                 kotlin.runCatching {
                     val galleryID = itemID.toInt()
 
-                    val galleryInfo = getGalleryInfo(galleryID)
+                    val galleryInfo = getGalleryInfo(client, galleryID)
 
                     model.title = galleryInfo.title
 
@@ -141,6 +148,7 @@ class Hitomi(app: Application) : Source(), DIAware {
                         append("Referer", getReferer(galleryID))
                     }
                 }.onFailure {
+                    logger.warning(it)
                     model.error = true
                 }
             }

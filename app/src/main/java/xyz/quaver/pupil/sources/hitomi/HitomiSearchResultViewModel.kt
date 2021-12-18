@@ -19,38 +19,77 @@
 package xyz.quaver.pupil.sources.hitomi
 
 import android.app.Application
-import kotlinx.coroutines.*
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.lifecycle.viewModelScope
+import io.ktor.client.*
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.yield
 import org.kodein.di.DIAware
 import org.kodein.di.android.closestDI
 import org.kodein.di.instance
-import xyz.quaver.hitomi.GalleryBlock
-import xyz.quaver.hitomi.doSearch
-import xyz.quaver.hitomi.getGalleryBlock
 import xyz.quaver.pupil.db.AppDatabase
 import xyz.quaver.pupil.sources.composable.SearchBaseViewModel
+import xyz.quaver.pupil.sources.hitomi.lib.GalleryBlock
+import xyz.quaver.pupil.sources.hitomi.lib.doSearch
+import xyz.quaver.pupil.sources.hitomi.lib.getGalleryBlock
+import kotlin.math.ceil
 
 class HitomiSearchResultViewModel(app: Application) : SearchBaseViewModel<HitomiSearchResult>(app), DIAware {
     override val di by closestDI(app)
 
+    private val client: HttpClient by instance()
+
     private val database: AppDatabase by instance()
     private val bookmarkDao = database.bookmarkDao()
 
-    init {
-        search()
-    }
+    private var cachedQuery: String? = null
+    private var cachedSortByPopularity: Boolean? = null
+    private val cache = mutableListOf<Int>()
+
+    var sortByPopularity by mutableStateOf(false)
 
     private var searchJob: Job? = null
     fun search() {
-        searchJob?.cancel()
-        searchResults.clear()
-        searchJob = CoroutineScope(Dispatchers.IO).launch {
-            val result = doSearch("female:loli")
+        val resultsPerPage = 25
 
-            yield()
+        viewModelScope.launch {
+            searchJob?.cancelAndJoin()
 
-            result.take(25).forEach {
+            searchResults.clear()
+            searchBarOffset = 0
+            loading = true
+
+            searchJob = launch {
+                if (cachedQuery != query || cachedSortByPopularity != sortByPopularity || cache.isEmpty()) {
+                    cachedQuery = null
+                    cache.clear()
+
+                    yield()
+
+                    val result = doSearch(client, query, sortByPopularity)
+
+                    yield()
+
+                    cache.addAll(result)
+                    cachedQuery = query
+                    totalItems = result.size
+                    maxPage = ceil(result.size / resultsPerPage.toDouble()).toInt()
+                }
+
                 yield()
-                searchResults.add(transform(getGalleryBlock(it)))
+
+                cache.slice((currentPage-1)*resultsPerPage until currentPage*resultsPerPage).forEach { galleryID ->
+                    searchResults.add(transform(getGalleryBlock(client, galleryID)))
+                }
+            }
+
+            viewModelScope.launch {
+                searchJob?.join()
+                loading = false
             }
         }
     }
