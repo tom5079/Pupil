@@ -33,17 +33,14 @@ import org.kodein.di.DIAware
 import org.kodein.di.android.x.closestDI
 import org.kodein.di.direct
 import org.kodein.di.instance
-import org.kodein.di.instanceOrNull
 import org.kodein.log.LoggerFactory
 import org.kodein.log.newLogger
 import xyz.quaver.pupil.db.AppDatabase
-import xyz.quaver.pupil.db.Bookmark
 import xyz.quaver.pupil.db.History
 import xyz.quaver.pupil.sources.ItemInfo
 import xyz.quaver.pupil.sources.Source
 import xyz.quaver.pupil.util.NetworkCache
 import xyz.quaver.pupil.util.source
-import java.nio.file.Files.delete
 
 @Suppress("UNCHECKED_CAST")
 class ReaderViewModel(app: Application) : AndroidViewModel(app), DIAware {
