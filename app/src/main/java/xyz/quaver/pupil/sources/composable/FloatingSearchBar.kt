@@ -16,7 +16,7 @@
  *     along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package xyz.quaver.pupil.ui.composable
+package xyz.quaver.pupil.sources.composable
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable

@@ -19,40 +19,23 @@
 package xyz.quaver.pupil.sources
 
 import android.app.Application
-import android.os.Parcelable
 import androidx.compose.runtime.Composable
-import io.ktor.http.*
-import kotlinx.coroutines.channels.Channel
+import androidx.navigation.NavController
 import org.kodein.di.*
-import xyz.quaver.pupil.sources.manatoki.Manatoki
-
-interface ItemInfo : Parcelable {
-    val source: String
-    val itemID: String
-    val title: String
-}
-
-data class SearchResultEvent(val type: Type, val itemID: String, val payload: Parcelable? = null) {
-    enum class Type {
-        OPEN_READER,
-        OPEN_DETAILS,
-        NEW_QUERY
-    }
-}
+import xyz.quaver.pupil.sources.hitomi.Hitomi
 
 abstract class Source {
     abstract val name: String
     abstract val iconResID: Int
-    abstract val availableSortMode: List<String>
-
-    abstract suspend fun search(query: String, range: IntRange, sortMode: Int): Pair<Channel<ItemInfo>, Int>
-    abstract suspend fun images(itemID: String): List<String>
-    abstract suspend fun info(itemID: String): ItemInfo
 
     @Composable
-    open fun SearchResult(itemInfo: ItemInfo, onEvent: (SearchResultEvent) -> Unit = { }) { }
+    open fun MainScreen(navController: NavController) { }
 
-    open fun getHeadersBuilderForImage(itemID: String, url: String): HeadersBuilder.() -> Unit = { }
+    @Composable
+    open fun Search(navController: NavController) { }
+
+    @Composable
+    open fun Reader(navController: NavController) { }
 }
 
 typealias SourceEntry = Pair<String, Source>
@@ -62,12 +45,12 @@ val sourceModule = DI.Module(name = "source") {
 
     listOf<(Application) -> (Source)>(
         { Hitomi(it) },
-        { Hiyobi_io(it) },
-        { Manatoki(it) }
+        //{ Hiyobi_io(it) },
+        //{ Manatoki(it) }
     ).forEach { source ->
         inSet { singleton { source(instance()).let { it.name to it } } }
     }
 
-    bind { singleton { History(di) } }
+    //bind { singleton { History(di) } }
    // inSet { singleton { Downloads(di).let { it.name to it as Source } } }
 }

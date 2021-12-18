@@ -18,60 +18,23 @@
 
 package xyz.quaver.pupil.ui
 
-import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
-import androidx.appcompat.graphics.drawable.DrawerArrowDrawable
 import androidx.compose.animation.ExperimentalAnimationApi
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.updateTransition
-import androidx.compose.foundation.*
-import androidx.compose.foundation.gestures.*
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.material.*
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material.ripple.rememberRipple
-import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
-import androidx.compose.ui.input.nestedscroll.NestedScrollSource
-import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.input.pointer.*
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.util.fastFirstOrNull
-import com.google.accompanist.drawablepainter.rememberDrawablePainter
-import kotlinx.coroutines.*
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
 import org.kodein.di.DIAware
 import org.kodein.di.android.closestDI
+import org.kodein.di.direct
 import org.kodein.log.LoggerFactory
 import org.kodein.log.newLogger
-import xyz.quaver.pupil.*
-import xyz.quaver.pupil.R
-import xyz.quaver.pupil.sources.SearchResultEvent
-import xyz.quaver.pupil.ui.composable.*
-import xyz.quaver.pupil.ui.dialog.OpenWithItemIDDialog
-import xyz.quaver.pupil.ui.dialog.SourceSelectDialog
 import xyz.quaver.pupil.ui.theme.PupilTheme
 import xyz.quaver.pupil.ui.viewmodel.MainViewModel
-import xyz.quaver.pupil.util.*
-import kotlin.math.*
+import xyz.quaver.pupil.util.source
 
-private enum class NavigationIconState {
-    MENU,
-    ARROW
-}
 
 class MainActivity : ComponentActivity(), DIAware {
     override val di by closestDI()
@@ -86,251 +49,22 @@ class MainActivity : ComponentActivity(), DIAware {
 
         setContent {
             PupilTheme {
-                val focusManager = LocalFocusManager.current
+                val navController = rememberNavController()
 
-                val maxPage by model.maxPage.collectAsState(0)
-
-                val pageTurnIndicatorHeight = LocalDensity.current.run { 64.dp.toPx() }
-
-                val prevPageAvailable by derivedStateOf {
-                    model.currentPage > 1
-                }
-
-                val nextPageAvailable by derivedStateOf {
-                    model.currentPage <= maxPage
-                }
-
-                var overscroll: Float? by remember { mutableStateOf(null) }
-
-                var isFabExpanded by remember { mutableStateOf(FloatingActionButtonState.COLLAPSED) }
-                var isFabVisible by remember { mutableStateOf(true) }
-
-                val searchBarHeight = LocalDensity.current.run { 56.dp.roundToPx() }
-                var searchBarOffset by remember { mutableStateOf(0) }
-
-                val navigationIcon = remember { DrawerArrowDrawable(this) }
-                var navigationIconState by remember { mutableStateOf(NavigationIconState.MENU) }
-                val navigationIconTransition = updateTransition(navigationIconState, label = "navigationIconTransition")
-                val navigationIconProgress by navigationIconTransition.animateFloat(
-                    label = "navigationIconProgress"
-                ) { state ->
-                    when (state) {
-                        NavigationIconState.MENU -> 0f
-                        NavigationIconState.ARROW -> 1f
-                    }
-                }
-
-                val onSearchResultEvent: (SearchResultEvent) -> Unit = { event ->
-                    when (event.type) {
-                        SearchResultEvent.Type.OPEN_READER -> {
-                            startActivity(
-                                Intent(
-                                    this@MainActivity,
-                                    ReaderActivity::class.java
-                                ).apply {
-                                    putExtra("source", model.source.name)
-                                    putExtra("id", event.itemID)
-                                    putExtra("payload", event.payload)
-                                })
-                        }
-                        else -> TODO("")
-                    }
-                }
-
-                var sourceSelectDialog by remember { mutableStateOf(false) }
-                var openWithItemIDDialog by remember { mutableStateOf(false) }
-
-                LaunchedEffect(navigationIconProgress) {
-                    navigationIcon.progress = navigationIconProgress
-                }
-
-                if (sourceSelectDialog)
-                    SourceSelectDialog(
-                        currentSource = model.source.name,
-                        onDismissRequest = { sourceSelectDialog = false }
-                    ) { source ->
-                        sourceSelectDialog = false
-                        model.setSourceAndReset(source.name)
+                NavHost(navController, startDestination = "main/{source}") {
+                    composable("main/{source}") {
+                        direct.source(it.arguments?.getString("source") ?: "hitomi.la")
+                            .MainScreen(navController)
                     }
 
-                if (openWithItemIDDialog)
-                    OpenWithItemIDDialog {
-                        openWithItemIDDialog = false
-
-                        it?.let {
-                            onSearchResultEvent(SearchResultEvent(
-                                SearchResultEvent.Type.OPEN_READER,
-                                it
-                            ))
-                        }
+                    composable("search/{source}") {
+                        direct.source(it.arguments?.getString("source") ?: "hitomi.la")
+                            .Search(navController)
                     }
 
-                Scaffold(
-                    floatingActionButton = {
-                        MultipleFloatingActionButton(
-                            listOf(
-                                SubFabItem(
-                                    Icons.Default.Block,
-                                    stringResource(R.string.main_fab_cancel)
-                                ),
-                                SubFabItem(
-                                    painterResource(R.drawable.ic_jump),
-                                    stringResource(R.string.main_jump_title)
-                                ),
-                                SubFabItem(
-                                    Icons.Default.Shuffle,
-                                    stringResource(R.string.main_fab_random)
-                                ),
-                                SubFabItem(
-                                    painterResource(R.drawable.numeric),
-                                    stringResource(R.string.main_open_gallery_by_id)
-                                ) {
-                                  openWithItemIDDialog = true
-                                }
-                            ),
-                            visible = isFabVisible,
-                            targetState = isFabExpanded,
-                            onStateChanged = {
-                                isFabExpanded = it
-                            }
-                        )
-                    }
-                ) {
-                    Box(Modifier.fillMaxSize()) {
-                        LazyColumn(
-                            Modifier
-                                .fillMaxSize()
-                                .offset(0.dp, overscroll?.let { overscroll -> LocalDensity.current.run { overscroll.toDp() } } ?: 0.dp)
-                                .nestedScroll(object : NestedScrollConnection {
-                                    override fun onPreScroll(
-                                        available: Offset,
-                                        source: NestedScrollSource
-                                    ): Offset {
-                                        val overscrollSnapshot = overscroll
-
-                                        if (overscrollSnapshot == null || overscrollSnapshot == 0f) {
-                                            searchBarOffset =
-                                                (searchBarOffset + available.y.roundToInt()).coerceIn(
-                                                    -searchBarHeight,
-                                                    0
-                                                )
-
-                                            isFabVisible = available.y > 0f
-
-                                            return Offset.Zero
-                                        } else {
-                                            val newOverscroll =
-                                                if (overscrollSnapshot > 0f && available.y < 0f)
-                                                    max(overscrollSnapshot + available.y, 0f)
-                                                else if (overscrollSnapshot < 0f && available.y > 0f)
-                                                    min(overscrollSnapshot + available.y, 0f)
-                                                else
-                                                    overscrollSnapshot
-
-                                            return Offset(0f, newOverscroll - overscrollSnapshot).also {
-                                                overscroll = newOverscroll
-                                            }
-                                        }
-                                    }
-
-                                    override fun onPostScroll(
-                                        consumed: Offset,
-                                        available: Offset,
-                                        source: NestedScrollSource
-                                    ): Offset {
-                                        if (available.y == 0f || source == NestedScrollSource.Fling) return Offset.Zero
-
-                                        return overscroll?.let {
-                                            val newOverscroll = (it + available.y).coerceIn(-pageTurnIndicatorHeight, pageTurnIndicatorHeight)
-
-                                            Offset(0f, newOverscroll - it).also {
-                                                overscroll = newOverscroll
-                                            }
-                                        } ?: Offset.Zero
-                                    }
-                                }).pointerInput(Unit) {
-                                    forEachGesture {
-                                        awaitPointerEventScope {
-                                            val down = awaitFirstDown(requireUnconsumed = false)
-                                            var pointer = down.id
-                                            overscroll = 0f
-
-                                            while (true) {
-                                                val event = awaitPointerEvent()
-                                                val dragEvent = event.changes.fastFirstOrNull { it.id == pointer }!!
-
-                                                if (dragEvent.changedToUpIgnoreConsumed()) {
-                                                    val otherDown = event.changes.fastFirstOrNull { it.pressed }
-                                                    if (otherDown == null) {
-                                                        dragEvent.consumePositionChange()
-                                                        overscroll = null
-                                                        break
-                                                    }
-                                                    else
-                                                        pointer = otherDown.id
-                                                }
-                                            }
-                                        }
-                                    }
-                                },
-                            contentPadding = PaddingValues(0.dp, 56.dp, 0.dp, 0.dp)
-                        ) {
-                            items(model.searchResults, key = { it.itemID }) { itemInfo ->
-                                ProgressCard(
-                                    progress = 0.5f
-                                ) {
-                                    model.source.SearchResult(itemInfo = itemInfo, onEvent = onSearchResultEvent)
-                                }
-                            }
-                        }
-
-                        if (model.loading)
-                            CircularProgressIndicator(Modifier.align(Alignment.Center))
-
-                        FloatingSearchBar(
-                            modifier = Modifier.offset(0.dp, LocalDensity.current.run { searchBarOffset.toDp() }),
-                            query = model.query,
-                            onQueryChange = { model.query = it },
-                            navigationIcon = {
-                                Icon(
-                                    painter = rememberDrawablePainter(navigationIcon),
-                                    contentDescription = null,
-                                    modifier = Modifier
-                                        .size(24.dp)
-                                        .clickable(
-                                            interactionSource = remember { MutableInteractionSource() },
-                                            indication = rememberRipple(bounded = false)
-                                        ) {
-                                            focusManager.clearFocus()
-                                        }
-                                )
-                            },
-                            actions = {
-                                Image(
-                                    painterResource(model.source.iconResID),
-                                    contentDescription = null,
-                                    modifier = Modifier
-                                        .size(24.dp)
-                                        .clickable {
-                                            sourceSelectDialog = true
-                                        }
-                                )
-                                Icon(
-                                    Icons.Default.Sort,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(24.dp),
-                                    tint = MaterialTheme.colors.onSurface.copy(alpha = 0.5f)
-                                )
-                                Icon(
-                                    Icons.Default.Settings,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(24.dp),
-                                    tint = MaterialTheme.colors.onSurface.copy(alpha = 0.5f)
-                                )
-                            },
-                            onTextFieldFocused = { navigationIconState = NavigationIconState.ARROW },
-                            onTextFieldUnfocused = { navigationIconState = NavigationIconState.MENU; model.resetAndQuery() }
-                        )
+                    composable("reader/{source}/{itemID}") {
+                        direct.source(it.arguments?.getString("source") ?: "hitomi.la")
+                            .Reader(navController)
                     }
                 }
             }
