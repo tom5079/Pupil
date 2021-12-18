@@ -44,11 +44,13 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.input.pointer.*
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.util.fastFirstOrNull
 import com.google.accompanist.drawablepainter.rememberDrawablePainter
 import kotlinx.coroutines.*
 import org.kodein.di.DIAware
@@ -58,14 +60,10 @@ import org.kodein.log.newLogger
 import xyz.quaver.pupil.*
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.sources.SearchResultEvent
-import xyz.quaver.pupil.ui.composable.FloatingActionButtonState
-import xyz.quaver.pupil.ui.composable.FloatingSearchBar
-import xyz.quaver.pupil.ui.composable.MultipleFloatingActionButton
-import xyz.quaver.pupil.ui.composable.SubFabItem
+import xyz.quaver.pupil.ui.composable.*
+import xyz.quaver.pupil.ui.dialog.OpenWithItemIDDialog
 import xyz.quaver.pupil.ui.dialog.SourceSelectDialog
 import xyz.quaver.pupil.ui.theme.PupilTheme
-import xyz.quaver.pupil.ui.composable.ProgressCard
-import xyz.quaver.pupil.ui.dialog.OpenWithItemIDDialog
 import xyz.quaver.pupil.ui.viewmodel.MainViewModel
 import xyz.quaver.pupil.util.*
 import kotlin.math.*
@@ -89,6 +87,20 @@ class MainActivity : ComponentActivity(), DIAware {
         setContent {
             PupilTheme {
                 val focusManager = LocalFocusManager.current
+
+                val maxPage by model.maxPage.collectAsState(0)
+
+                val pageTurnIndicatorHeight = LocalDensity.current.run { 64.dp.toPx() }
+
+                val prevPageAvailable by derivedStateOf {
+                    model.currentPage > 1
+                }
+
+                val nextPageAvailable by derivedStateOf {
+                    model.currentPage <= maxPage
+                }
+
+                var overscroll: Float? by remember { mutableStateOf(null) }
 
                 var isFabExpanded by remember { mutableStateOf(FloatingActionButtonState.COLLAPSED) }
                 var isFabVisible by remember { mutableStateOf(true) }
@@ -185,24 +197,40 @@ class MainActivity : ComponentActivity(), DIAware {
                     }
                 ) {
                     Box(Modifier.fillMaxSize()) {
-
                         LazyColumn(
                             Modifier
                                 .fillMaxSize()
+                                .offset(0.dp, overscroll?.let { overscroll -> LocalDensity.current.run { overscroll.toDp() } } ?: 0.dp)
                                 .nestedScroll(object : NestedScrollConnection {
                                     override fun onPreScroll(
                                         available: Offset,
                                         source: NestedScrollSource
                                     ): Offset {
-                                        searchBarOffset =
-                                            (searchBarOffset + available.y.roundToInt()).coerceIn(
-                                                -searchBarHeight,
-                                                0
-                                            )
+                                        val overscrollSnapshot = overscroll
 
-                                        isFabVisible = available.y > 0f
+                                        if (overscrollSnapshot == null || overscrollSnapshot == 0f) {
+                                            searchBarOffset =
+                                                (searchBarOffset + available.y.roundToInt()).coerceIn(
+                                                    -searchBarHeight,
+                                                    0
+                                                )
 
-                                        return Offset.Zero
+                                            isFabVisible = available.y > 0f
+
+                                            return Offset.Zero
+                                        } else {
+                                            val newOverscroll =
+                                                if (overscrollSnapshot > 0f && available.y < 0f)
+                                                    max(overscrollSnapshot + available.y, 0f)
+                                                else if (overscrollSnapshot < 0f && available.y > 0f)
+                                                    min(overscrollSnapshot + available.y, 0f)
+                                                else
+                                                    overscrollSnapshot
+
+                                            return Offset(0f, newOverscroll - overscrollSnapshot).also {
+                                                overscroll = newOverscroll
+                                            }
+                                        }
                                     }
 
                                     override fun onPostScroll(
@@ -210,11 +238,41 @@ class MainActivity : ComponentActivity(), DIAware {
                                         available: Offset,
                                         source: NestedScrollSource
                                     ): Offset {
+                                        if (available.y == 0f || source == NestedScrollSource.Fling) return Offset.Zero
 
+                                        return overscroll?.let {
+                                            val newOverscroll = (it + available.y).coerceIn(-pageTurnIndicatorHeight, pageTurnIndicatorHeight)
 
-                                        return super.onPostScroll(consumed, available, source)
+                                            Offset(0f, newOverscroll - it).also {
+                                                overscroll = newOverscroll
+                                            }
+                                        } ?: Offset.Zero
                                     }
-                                }),
+                                }).pointerInput(Unit) {
+                                    forEachGesture {
+                                        awaitPointerEventScope {
+                                            val down = awaitFirstDown(requireUnconsumed = false)
+                                            var pointer = down.id
+                                            overscroll = 0f
+
+                                            while (true) {
+                                                val event = awaitPointerEvent()
+                                                val dragEvent = event.changes.fastFirstOrNull { it.id == pointer }!!
+
+                                                if (dragEvent.changedToUpIgnoreConsumed()) {
+                                                    val otherDown = event.changes.fastFirstOrNull { it.pressed }
+                                                    if (otherDown == null) {
+                                                        dragEvent.consumePositionChange()
+                                                        overscroll = null
+                                                        break
+                                                    }
+                                                    else
+                                                        pointer = otherDown.id
+                                                }
+                                            }
+                                        }
+                                    }
+                                },
                             contentPadding = PaddingValues(0.dp, 56.dp, 0.dp, 0.dp)
                         ) {
                             items(model.searchResults, key = { it.itemID }) { itemInfo ->
@@ -251,9 +309,11 @@ class MainActivity : ComponentActivity(), DIAware {
                                 Image(
                                     painterResource(model.source.iconResID),
                                     contentDescription = null,
-                                    modifier = Modifier.size(24.dp).clickable {
-                                        sourceSelectDialog = true
-                                    }
+                                    modifier = Modifier
+                                        .size(24.dp)
+                                        .clickable {
+                                            sourceSelectDialog = true
+                                        }
                                 )
                                 Icon(
                                     Icons.Default.Sort,
