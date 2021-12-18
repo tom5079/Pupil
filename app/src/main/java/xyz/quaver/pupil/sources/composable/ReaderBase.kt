@@ -19,7 +19,6 @@
 package xyz.quaver.pupil.sources.composable
 
 import android.app.Application
-import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.border
@@ -35,20 +34,19 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.core.content.FileProvider
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import io.ktor.client.request.*
-import io.ktor.client.utils.*
 import io.ktor.http.*
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import org.kodein.di.DIAware
 import org.kodein.di.android.closestDI
 import org.kodein.di.instance
@@ -56,8 +54,8 @@ import xyz.quaver.graphics.subsampledimage.*
 import xyz.quaver.io.FileX
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.db.AppDatabase
-import xyz.quaver.pupil.util.FileXImageSource
 import xyz.quaver.pupil.util.NetworkCache
+import xyz.quaver.pupil.util.rememberFileXImageSource
 import kotlin.math.abs
 
 open class ReaderBaseViewModel(app: Application) : AndroidViewModel(app), DIAware {
@@ -78,9 +76,12 @@ open class ReaderBaseViewModel(app: Application) : AndroidViewModel(app), DIAwar
 
     var imageCount by mutableStateOf(0)
 
-    private var images: List<String>? = null
     val imageList = mutableStateListOf<Uri?>()
     val progressList = mutableStateListOf<Float>()
+
+    private val totalProgressMutex = Mutex()
+    var totalProgress by mutableStateOf(0)
+        private set
 
     @OptIn(ExperimentalCoroutinesApi::class)
     fun load(urls: List<String>, headerBuilder: HeadersBuilder.() -> Unit = { }) {
@@ -89,24 +90,35 @@ open class ReaderBaseViewModel(app: Application) : AndroidViewModel(app), DIAwar
 
             progressList.addAll(List(imageCount) { 0f })
             imageList.addAll(List(imageCount) { null })
+            totalProgressMutex.withLock {
+                totalProgress = 0
+            }
 
             urls.forEachIndexed { index, url ->
                 when (val scheme = url.takeWhile { it != ':' }) {
                     "http", "https" -> {
                         val (channel, file) = cache.load {
                             url(url)
-                            buildHeaders(headerBuilder)
+                            headers(headerBuilder)
                         }
 
                         if (channel.isClosedForReceive) {
                             imageList[index] = Uri.fromFile(file)
+                            totalProgressMutex.withLock {
+                                totalProgress++
+                            }
                         } else {
                             channel.invokeOnClose { e ->
                                 viewModelScope.launch {
                                     if (e == null) {
                                         imageList[index] = Uri.fromFile(file)
+
                                     } else {
                                         error(index)
+                                    }
+                                    imageList[index] = Uri.fromFile(file)
+                                    totalProgressMutex.withLock {
+                                        totalProgress++
                                     }
                                 }
                             }
@@ -143,34 +155,12 @@ fun ReaderBase(
     onToggleBookmark: () -> Unit = { }
 ) {
     val context = LocalContext.current
+    val haptic = LocalHapticFeedback.current
 
     var isFABExpanded by remember { mutableStateOf(FloatingActionButtonState.COLLAPSED) }
-    val imageSources = remember { mutableStateListOf<ImageSource?>() }
-    val states = remember { mutableStateListOf<SubSampledImageState>() }
 
     val scaffoldState = rememberScaffoldState()
     val snackbarCoroutineScope = rememberCoroutineScope()
-
-    LaunchedEffect(model.imageList.count { it != null }) {
-        if (imageSources.isEmpty() && model.imageList.isNotEmpty())
-            imageSources.addAll(List(model.imageList.size) { null })
-
-        if (states.isEmpty() && model.imageList.isNotEmpty())
-            states.addAll(List(model.imageList.size) {
-                SubSampledImageState(ScaleTypes.FIT_WIDTH, Bounds.FORCE_OVERLAP_OR_CENTER).apply {
-                    isGestureEnabled = true
-                }
-            })
-
-        model.imageList.forEachIndexed { i, image ->
-            if (imageSources[i] == null && image != null)
-                imageSources[i] = kotlin.runCatching {
-                    FileXImageSource(FileX(context, image))
-                }.onFailure {
-                    model.error(i)
-                }.getOrNull()
-        }
-    }
 
     if (model.error)
         stringResource(R.string.reader_failed_to_find_gallery).let {
@@ -224,15 +214,17 @@ fun ReaderBase(
                 Modifier.fillMaxSize(),
                 verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                itemsIndexed(imageSources) { i, imageSource ->
+                itemsIndexed(model.imageList) { i, uri ->
+                    val state = rememberSubSampledImageState(ScaleTypes.FIT_WIDTH)
+
                     Box(
                         Modifier
-                            .wrapContentHeight(states[i], 500.dp)
+                            .wrapContentHeight(state, 500.dp)
                             .fillMaxWidth()
                             .border(1.dp, Color.Gray),
                         contentAlignment = Alignment.Center
                     ) {
-                        if (imageSource == null)
+                        if (uri == null)
                             model.progressList.getOrNull(i)?.let { progress ->
                                 if (progress < 0f)
                                     Icon(Icons.Filled.BrokenImage, null)
@@ -245,55 +237,37 @@ fun ReaderBase(
                                     }
                             }
                         else {
-                            val haptic = LocalHapticFeedback.current
+                            val imageSource = kotlin.runCatching {
+                                rememberFileXImageSource(FileX(context, uri))
+                            }.getOrNull()
 
-                            SubSampledImage(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .run {
-                                        if (model.isFullscreen)
-                                            doubleClickCycleZoom(states[i], 2f)
-                                        else
-                                            combinedClickable(
-                                                onLongClick = {
-                                                    haptic.performHapticFeedback(
-                                                        HapticFeedbackType.LongPress
-                                                    )
+                            if (imageSource == null)
+                                Icon(Icons.Default.BrokenImage, contentDescription = null)
+                            else
+                                SubSampledImage(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .run {
+                                            if (model.isFullscreen)
+                                                doubleClickCycleZoom(state, 2f)
+                                            else
+                                                combinedClickable(
+                                                    onLongClick = {
 
-                                                    // TODO
-                                                    val uri = FileProvider.getUriForFile(
-                                                        context,
-                                                        "xyz.quaver.pupil.fileprovider",
-                                                        (imageSource as FileXImageSource).file
-                                                    )
-                                                    context.startActivity(
-                                                        Intent.createChooser(
-                                                            Intent(
-                                                                Intent.ACTION_SEND
-                                                            ).apply {
-                                                                type = "image/*"
-                                                                putExtra(
-                                                                    Intent.EXTRA_STREAM,
-                                                                    uri
-                                                                )
-                                                                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                                                            }, "Share image"
-                                                        )
-                                                    )
+                                                    }
+                                                ) {
+                                                    model.isFullscreen = true
                                                 }
-                                            ) {
-                                                model.isFullscreen = true
-                                            }
-                                    },
-                                imageSource = imageSource,
-                                state = states[i]
-                            )
+                                        },
+                                    imageSource = imageSource,
+                                    state = state
+                                )
                         }
                     }
                 }
             }
 
-            if (model.progressList.any { abs(it) != 1f })
+            if (model.totalProgress != model.imageCount)
                 LinearProgressIndicator(
                     modifier = Modifier
                         .fillMaxWidth()
