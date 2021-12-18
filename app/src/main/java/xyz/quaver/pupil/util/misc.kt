@@ -18,18 +18,15 @@
 
 package xyz.quaver.pupil.util
 
-import android.annotation.SuppressLint
 import android.graphics.BitmapFactory
-import android.view.MenuItem
 import android.view.View
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.toAndroidRect
-import androidx.lifecycle.MutableLiveData
-import kotlinx.coroutines.flow.Flow
 import kotlinx.serialization.json.*
 import org.kodein.di.DIAware
 import org.kodein.di.DirectDIAware
@@ -40,71 +37,7 @@ import xyz.quaver.graphics.subsampledimage.newBitmapRegionDecoder
 import xyz.quaver.io.FileX
 import xyz.quaver.io.util.inputStream
 import xyz.quaver.pupil.db.AppDatabase
-import xyz.quaver.pupil.sources.ItemInfo
 import xyz.quaver.pupil.sources.SourceEntries
-import java.io.InputStream
-import java.io.OutputStream
-import java.util.*
-import kotlin.collections.ArrayList
-
-@OptIn(ExperimentalStdlibApi::class)
-fun String.wordCapitalize() : String {
-    val result = ArrayList<String>()
-
-    @SuppressLint("DefaultLocale")
-    for (word in this.split(" "))
-        result.add(word.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() })
-
-    return result.joinToString(" ")
-}
-
-private val suffix = listOf(
-    "B",
-    "kB",
-    "MB",
-    "GB",
-    "TB" //really?
-)
-
-fun byteToString(byte: Long, precision : Int = 1) : String {
-    var size = byte.toDouble(); var suffixIndex = 0
-
-    while (size >= 1024) {
-        size /= 1024
-        suffixIndex++
-    }
-
-    return "%.${precision}f ${suffix[suffixIndex]}".format(size)
-}
-
-/**
- * Convert android generated ID to requestCode
- * to prevent java.lang.IllegalArgumentException: Can only use lower 16 bits for requestCode
- *
- * https://stackoverflow.com/questions/38072322/generate-16-bit-unique-ids-in-android-for-startactivityforresult
- */
-fun Int.normalizeID() = this.and(0xFFFF)
-
-val formatMap = mapOf<String, ItemInfo.() -> (String)>(
-    "-id-" to { itemID },
-    "-title-" to { title },
-    // TODO
-)
-/**
- * Formats download folder name with given Metadata
- */
-fun ItemInfo.formatDownloadFolder(format: String = Preferences["download_folder_name", "[-id-] -title-"]): String =
-    format.let {
-        formatMap.entries.fold(it) { str, (k, v) ->
-            str.replace(k, v.invoke(this), true)
-        }
-    }.replace(Regex("""[*\\|"?><:/]"""), "").ellipsize(127)
-
-fun String.ellipsize(n: Int): String =
-    if (this.length > n)
-        this.slice(0 until n) + "…"
-    else
-        this
 
 operator fun JsonElement.get(index: Int) =
     this.jsonArray[index]
@@ -114,27 +47,6 @@ operator fun JsonElement.get(tag: String) =
 
 val JsonElement.content
     get() = this.jsonPrimitive.contentOrNull
-
-fun List<MenuItem>.findMenu(itemID: Int): MenuItem? {
-    return firstOrNull { it.itemId == itemID }
-}
-
-fun <E> MutableLiveData<MutableList<E>>.notify() {
-    this.value = this.value
-}
-
-fun InputStream.copyTo(out: OutputStream, onCopy: (totalBytesCopied: Long, bytesJustCopied: Int) -> Unit): Long {
-    var bytesCopied: Long = 0
-    val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
-    var bytes = read(buffer)
-    while (bytes >= 0) {
-        out.write(buffer, 0, bytes)
-        bytesCopied += bytes
-        onCopy(bytesCopied, bytes)
-        bytes = read(buffer)
-    }
-    return bytesCopied
-}
 
 fun DIAware.source(source: String) = lazy { direct.source(source) }
 fun DirectDIAware.source(source: String) = instance<SourceEntries>().toMap()[source]!!

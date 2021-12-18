@@ -43,15 +43,11 @@ import io.ktor.client.features.json.serializer.*
 import okhttp3.Protocol
 import org.kodein.di.*
 import org.kodein.di.android.x.androidXModule
-import org.kodein.log.LoggerFactory
-import org.kodein.log.newLogger
 import xyz.quaver.io.FileX
 import xyz.quaver.pupil.db.databaseModule
 import xyz.quaver.pupil.sources.sourceModule
 import xyz.quaver.pupil.util.*
-import java.io.File
 import java.util.*
-import java.util.concurrent.TimeUnit
 
 class Pupil : Application(), DIAware {
 
@@ -60,7 +56,6 @@ class Pupil : Application(), DIAware {
         import(databaseModule)
         import(sourceModule)
 
-        bind { singleton { DownloadManager(applicationContext) } }
         bind { singleton { NetworkCache(applicationContext) } }
 
         bind { singleton {

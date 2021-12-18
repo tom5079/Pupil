@@ -4,5 +4,5 @@ option java_package = "xyz.quaver.pupil.proto";
 option java_multiple_files = true;
 
 message Settings {
-  optional int32 results_per_page = 1 [default = 25];
+
 }

@@ -83,7 +83,7 @@ dependencies {
     implementation("androidx.compose.runtime:runtime-livedata:1.0.5")
     implementation("androidx.compose.ui:ui-util:1.0.5")
     implementation("androidx.activity:activity-compose:1.4.0")
-    implementation("androidx.navigation:navigation-compose:2.4.0-beta02")
+    implementation("androidx.navigation:navigation-compose:2.4.0-rc01")
 
     implementation("com.google.accompanist:accompanist-flowlayout:0.20.3")
     implementation("com.google.accompanist:accompanist-appcompat-theme:0.20.3")

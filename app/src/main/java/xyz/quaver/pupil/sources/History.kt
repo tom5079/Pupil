@@ -18,53 +18,43 @@
 
 package xyz.quaver.pupil.sources
 
-import androidx.compose.runtime.Composable
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.launch
-import org.kodein.di.DI
-import org.kodein.di.DIAware
-import org.kodein.di.direct
-import xyz.quaver.pupil.util.database
-
-class History(override val di: DI) : Source(), DIAware {
-
-    private val historyDao = direct.database().historyDao()
-
-    override val name: String
-        get() = "history"
-    override val iconResID: Int
-        get() = 0 //TODO
-    override val availableSortMode: List<String> = emptyList()
-
-    private val history = direct.database().historyDao()
-
-    override suspend fun search(query: String, range: IntRange, sortMode: Int): Pair<Channel<ItemInfo>, Int> {
-        val channel = Channel<ItemInfo>()
-
-        CoroutineScope(Dispatchers.IO).launch {
-
-
-            channel.close()
-        }
-
-        throw NotImplementedError("")
-        //return Pair(channel, histories.map.size)
-    }
-
-    override suspend fun images(itemID: String): List<String> {
-        throw NotImplementedError("")
-    }
-
-    override suspend fun info(itemID: String): ItemInfo {
-        throw NotImplementedError("")
-    }
-
-
-    @Composable
-    override fun SearchResult(itemInfo: ItemInfo, onEvent: (SearchResultEvent) -> Unit) {
-
-    }
-
-}
+//
+//class History(override val di: DI) : Source(), DIAware {
+//    private val historyDao = direct.database().historyDao()
+//
+//    override val name: String
+//        get() = "history"
+//    override val iconResID: Int
+//        get() = 0 //TODO
+//    override val availableSortMode: List<String> = emptyList()
+//
+//    private val history = direct.database().historyDao()
+//
+//    override suspend fun search(query: String, range: IntRange, sortMode: Int): Pair<Channel<ItemInfo>, Int> {
+//        val channel = Channel<ItemInfo>()
+//
+//        CoroutineScope(Dispatchers.IO).launch {
+//
+//
+//            channel.close()
+//        }
+//
+//        throw NotImplementedError("")
+//        //return Pair(channel, histories.map.size)
+//    }
+//
+//    override suspend fun images(itemID: String): List<String> {
+//        throw NotImplementedError("")
+//    }
+//
+//    override suspend fun info(itemID: String): ItemInfo {
+//        throw NotImplementedError("")
+//    }
+//
+//
+//    @Composable
+//    override fun SearchResult(itemInfo: ItemInfo, onEvent: (SearchResultEvent) -> Unit) {
+//
+//    }
+//
+//}
