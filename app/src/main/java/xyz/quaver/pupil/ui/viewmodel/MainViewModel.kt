@@ -19,10 +19,7 @@
 package xyz.quaver.pupil.ui.viewmodel
 
 import android.app.Application
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.asLiveData
 import androidx.lifecycle.viewModelScope
@@ -40,6 +37,7 @@ import xyz.quaver.pupil.sources.History
 import xyz.quaver.pupil.sources.ItemInfo
 import xyz.quaver.pupil.sources.Source
 import xyz.quaver.pupil.util.source
+import kotlin.math.ceil
 import kotlin.random.Random
 
 @Suppress("UNCHECKED_CAST")
@@ -77,6 +75,12 @@ class MainViewModel(app: Application) : AndroidViewModel(app), DIAware {
 
     var totalItems by mutableStateOf(0)
         private set
+
+    val maxPage by derivedStateOf {
+        resultsPerPage.map {
+            ceil(totalItems / it.toDouble()).toInt()
+        }
+    }
 
     fun setSourceAndReset(sourceName: String) {
         source = sourceFactory(sourceName)
