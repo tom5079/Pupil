@@ -37,7 +37,6 @@ import org.kodein.di.android.closestDI
 import org.kodein.di.instance
 import org.kodein.log.LoggerFactory
 import org.kodein.log.newLogger
-import xyz.quaver.hitomi.sha256
 import java.io.File
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
