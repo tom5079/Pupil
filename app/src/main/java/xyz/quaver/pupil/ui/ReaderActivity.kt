@@ -224,6 +224,7 @@ class ReaderActivity : ComponentActivity(), DIAware {
                                                             onLongClick = {
                                                                 haptic.performHapticFeedback(HapticFeedbackType.LongPress)
 
+                                                                // TODO
                                                                 val uri = FileProvider.getUriForFile(this@ReaderActivity, "xyz.quaver.pupil.fileprovider", (imageSource as FileXImageSource).file)
                                                                 startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).apply {
                                                                     type = "image/*"
