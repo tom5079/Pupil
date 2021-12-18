@@ -24,6 +24,7 @@ import androidx.compose.runtime.Composable
 import io.ktor.http.*
 import kotlinx.coroutines.channels.Channel
 import org.kodein.di.*
+import xyz.quaver.pupil.sources.manatoki.Manatoki
 
 interface ItemInfo : Parcelable {
     val source: String
@@ -61,9 +62,10 @@ val sourceModule = DI.Module(name = "source") {
 
     listOf<(Application) -> (Source)>(
         { Hitomi(it) },
-        { Hiyobi_io(it) }
+        { Hiyobi_io(it) },
+        { Manatoki(it) }
     ).forEach { source ->
-        inSet { singleton { source.invoke(instance()).let { it.name to it } } }
+        inSet { singleton { source(instance()).let { it.name to it } } }
     }
 
     bind { singleton { History(di) } }
