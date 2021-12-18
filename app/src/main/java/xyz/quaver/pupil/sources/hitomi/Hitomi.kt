@@ -59,7 +59,7 @@ class Hitomi(app: Application) : Source(), DIAware {
     override fun MainScreen(navController: NavController) {
         navController.navigate("search/hitomi.la") {
             launchSingleTop = true
-            popUpTo("main") { inclusive = true }
+            navController.popBackStack()
         }
     }
 
