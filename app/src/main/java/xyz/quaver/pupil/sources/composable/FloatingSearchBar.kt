@@ -24,10 +24,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.Card
-import androidx.compose.material.Icon
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Text
+import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.runtime.*
@@ -80,7 +77,8 @@ fun FloatingSearchBar(
         elevation = 8.dp
     ) {
         Row(
-            modifier = Modifier.fillMaxSize().padding(16.dp, 0.dp),
+            modifier = Modifier
+                .fillMaxSize(),
             verticalAlignment = Alignment.CenterVertically
         ) {
             navigationIcon()
@@ -91,14 +89,15 @@ fun FloatingSearchBar(
                     .padding(16.dp, 0.dp)
                     .onFocusChanged {
                         if (it.isFocused) onTextFieldFocused()
-                        else              onTextFieldUnfocused()
+                        else onTextFieldUnfocused()
 
                         isFocused = it.isFocused
                     },
                 value = query,
                 onValueChange = onQueryChange,
                 singleLine = true,
-                cursorBrush = SolidColor(MaterialTheme.colors.primary),
+                textStyle = LocalTextStyle.current.copy(color = MaterialTheme.colors.onSurface),
+                cursorBrush = SolidColor(MaterialTheme.colors.secondary),
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
                 keyboardActions = KeyboardActions(
                     onSearch = {
@@ -129,11 +128,14 @@ fun FloatingSearchBar(
                 }
             )
 
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(24.dp),
-                content = actions
-            )
+            CompositionLocalProvider(LocalContentAlpha provides ContentAlpha.medium) {
+                Row(
+                    Modifier.fillMaxHeight(),
+                    horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically,
+                    content = actions
+                )
+            }
         }
     }
 }

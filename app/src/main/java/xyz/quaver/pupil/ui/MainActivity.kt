@@ -21,25 +21,24 @@ package xyz.quaver.pupil.ui
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.viewModels
 import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.core.view.WindowCompat
 import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.google.accompanist.insets.ProvideWindowInsets
 import org.kodein.di.DIAware
 import org.kodein.di.android.closestDI
-import org.kodein.di.direct
+import org.kodein.di.instance
 import org.kodein.log.LoggerFactory
 import org.kodein.log.newLogger
+import xyz.quaver.pupil.sources.SourceEntries
 import xyz.quaver.pupil.ui.theme.PupilTheme
-import xyz.quaver.pupil.ui.viewmodel.MainViewModel
-import xyz.quaver.pupil.util.source
 
 
 class MainActivity : ComponentActivity(), DIAware {
     override val di by closestDI()
 
-    private val model: MainViewModel by viewModels()
+    private val sources: SourceEntries by instance()
 
     private val logger = newLogger(LoggerFactory.default)
 
@@ -47,24 +46,17 @@ class MainActivity : ComponentActivity(), DIAware {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+
         setContent {
             PupilTheme {
-                val navController = rememberNavController()
+                ProvideWindowInsets {
+                    val navController = rememberNavController()
 
-                NavHost(navController, startDestination = "main/{source}") {
-                    composable("main/{source}") {
-                        direct.source(it.arguments?.getString("source") ?: "hitomi.la")
-                            .MainScreen(navController)
-                    }
-
-                    composable("search/{source}") {
-                        direct.source(it.arguments?.getString("source") ?: "hitomi.la")
-                            .Search(navController)
-                    }
-
-                    composable("reader/{source}/{itemID}") {
-                        direct.source(it.arguments?.getString("source") ?: "hitomi.la")
-                            .Reader(navController)
+                    NavHost(navController, startDestination = "hitomi.la") {
+                        sources.forEach {
+                            it.second.run { navGraph(navController) }
+                        }
                     }
                 }
             }

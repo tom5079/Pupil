@@ -126,6 +126,7 @@ private class FloatingActionButtonItemProvider : PreviewParameterProvider<SubFab
 @Composable
 fun MultipleFloatingActionButton(
     @PreviewParameter(provider = FloatingActionButtonItemProvider::class) items: List<SubFabItem>,
+    modifier: Modifier = Modifier,
     fabIcon: ImageVector = Icons.Default.Add,
     visible: Boolean = true,
     targetState: FloatingActionButtonState = FloatingActionButtonState.COLLAPSED,
@@ -150,6 +151,7 @@ fun MultipleFloatingActionButton(
     if (!visible) onStateChanged?.invoke(FloatingActionButtonState.COLLAPSED)
 
     Column(
+        modifier = modifier,
         horizontalAlignment = Alignment.End,
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {

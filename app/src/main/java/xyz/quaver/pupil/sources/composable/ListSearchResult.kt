@@ -28,10 +28,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun <T> ListSearchResult(searchResults: List<T>, content: @Composable (T) -> Unit) {
+fun <T> ListSearchResult(searchResults: List<T>, contentPadding: PaddingValues = PaddingValues(0.dp), content: @Composable (T) -> Unit) {
     LazyColumn(
         Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(0.dp, 64.dp, 0.dp, 0.dp),
+        contentPadding = contentPadding,
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         items(searchResults) { itemInfo ->
