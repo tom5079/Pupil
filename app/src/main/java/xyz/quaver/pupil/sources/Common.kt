@@ -19,8 +19,8 @@
 package xyz.quaver.pupil.sources
 
 import android.app.Application
-import androidx.compose.runtime.Composable
 import androidx.navigation.NavController
+import androidx.navigation.NavGraphBuilder
 import org.kodein.di.*
 import xyz.quaver.pupil.sources.hitomi.Hitomi
 
@@ -28,14 +28,7 @@ abstract class Source {
     abstract val name: String
     abstract val iconResID: Int
 
-    @Composable
-    open fun MainScreen(navController: NavController) { }
-
-    @Composable
-    open fun Search(navController: NavController) { }
-
-    @Composable
-    open fun Reader(navController: NavController) { }
+    open fun NavGraphBuilder.navGraph(navController: NavController) { }
 }
 
 typealias SourceEntry = Pair<String, Source>

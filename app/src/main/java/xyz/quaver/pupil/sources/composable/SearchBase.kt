@@ -24,20 +24,18 @@ import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.updateTransition
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.forEachGesture
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.NavigateBefore
 import androidx.compose.material.icons.filled.NavigateNext
-import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
@@ -55,6 +53,12 @@ import androidx.compose.ui.util.fastFirstOrNull
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.google.accompanist.drawablepainter.rememberDrawablePainter
+import com.google.accompanist.insets.LocalWindowInsets
+import com.google.accompanist.insets.navigationBarsPadding
+import com.google.accompanist.insets.rememberInsetsPaddingValues
+import com.google.accompanist.insets.systemBarsPadding
+import com.google.accompanist.insets.ui.Scaffold
+import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.ui.theme.LightBlue300
 import kotlin.math.*
@@ -95,7 +99,7 @@ fun <T> SearchBase(
     fabSubMenu: List<SubFabItem> = emptyList(),
     actions: @Composable RowScope.() -> Unit = { },
     onSearch: () -> Unit = { },
-    content: @Composable BoxScope.() -> Unit
+    content: @Composable BoxScope.(contentPadding: PaddingValues) -> Unit
 ) {
     val context = LocalContext.current
     val focusManager = LocalFocusManager.current
@@ -115,10 +119,24 @@ fun <T> SearchBase(
         }
     }
 
+    val systemBarsPaddingValues = rememberInsetsPaddingValues(insets = LocalWindowInsets.current.systemBars)
+
     val pageTurnIndicatorHeight = LocalDensity.current.run { 64.dp.toPx() }
-    val searchBarHeight = LocalDensity.current.run { 64.dp.roundToPx() }
+
+    val searchBarDefaultOffset = systemBarsPaddingValues.calculateTopPadding() + 64.dp
+    val searchBarDefaultOffsetPx = LocalDensity.current.run { searchBarDefaultOffset.roundToPx() }
 
     var overscroll: Float? by remember { mutableStateOf(null) }
+
+    val systemUiController = rememberSystemUiController()
+    val useDarkIcons = MaterialTheme.colors.isLight
+
+    SideEffect {
+        systemUiController.setSystemBarsColor(
+            color = Color.Transparent,
+            darkIcons = useDarkIcons
+        )
+    }
 
     LaunchedEffect(navigationIconProgress) {
         navigationIcon.progress = navigationIconProgress
@@ -127,6 +145,7 @@ fun <T> SearchBase(
     Scaffold(
         floatingActionButton = {
             MultipleFloatingActionButton(
+                modifier = Modifier.navigationBarsPadding(),
                 items = fabSubMenu,
                 visible = model.isFabVisible,
                 targetState = isFabExpanded,
@@ -135,8 +154,8 @@ fun <T> SearchBase(
                 }
             )
         }
-    ) {
-        Box(Modifier.fillMaxSize()) {
+    ) { contentPadding ->
+        Box(Modifier.padding(contentPadding)) {
             val topCircleRadius by animateFloatAsState(if (overscroll?.let { it >= pageTurnIndicatorHeight } == true) 1000f else 0f)
             val bottomCircleRadius by animateFloatAsState(if (overscroll?.let { it <= -pageTurnIndicatorHeight } == true) 1000f else 0f)
 
@@ -144,7 +163,7 @@ fun <T> SearchBase(
                 Canvas(modifier = Modifier.fillMaxSize()) {
                     drawCircle(
                         LightBlue300.copy(alpha = 0.6f),
-                        center = Offset(this.center.x, searchBarHeight.toFloat()),
+                        center = Offset(this.center.x, searchBarDefaultOffsetPx.toFloat()),
                         radius = topCircleRadius
                     )
                     drawCircle(
@@ -195,7 +214,9 @@ fun <T> SearchBase(
                 modifier = Modifier
                     .offset(
                         0.dp,
-                        overscroll?.coerceIn(-pageTurnIndicatorHeight, pageTurnIndicatorHeight)?.let { overscroll -> LocalDensity.current.run { overscroll.toDp() } }
+                        overscroll
+                            ?.coerceIn(-pageTurnIndicatorHeight, pageTurnIndicatorHeight)
+                            ?.let { overscroll -> LocalDensity.current.run { overscroll.toDp() } }
                             ?: 0.dp)
                     .nestedScroll(object : NestedScrollConnection {
                         override fun onPreScroll(
@@ -207,7 +228,7 @@ fun <T> SearchBase(
                             if (overscrollSnapshot == null || overscrollSnapshot == 0f) {
                                 model.searchBarOffset =
                                     (model.searchBarOffset + available.y.roundToInt()).coerceIn(
-                                        -searchBarHeight,
+                                        -searchBarDefaultOffsetPx,
                                         0
                                     )
 
@@ -275,29 +296,29 @@ fun <T> SearchBase(
                             }
                         }
                     },
-                content = content
+                content = {
+                    this.content(
+                        PaddingValues(0.dp, searchBarDefaultOffset, 0.dp, 0.dp)
+                    )
+                }
             )
 
             if (model.loading)
                 CircularProgressIndicator(Modifier.align(Alignment.Center))
 
             FloatingSearchBar(
-                modifier = Modifier.offset(0.dp, LocalDensity.current.run { model.searchBarOffset.toDp() }),
+                modifier = Modifier
+                    .systemBarsPadding()
+                    .offset(0.dp, LocalDensity.current.run { model.searchBarOffset.toDp() }),
                 query = model.query,
                 onQueryChange = { model.query = it },
                 navigationIcon = {
-                    Icon(
-                        painter = rememberDrawablePainter(navigationIcon),
-                        contentDescription = null,
-                        modifier = Modifier
-                            .size(24.dp)
-                            .clickable(
-                                interactionSource = remember { MutableInteractionSource() },
-                                indication = rememberRipple(bounded = false)
-                            ) {
-                                focusManager.clearFocus()
-                            }
-                    )
+                    IconButton(onClick = { focusManager.clearFocus() }) {
+                        Icon(
+                            painter = rememberDrawablePainter(navigationIcon),
+                            contentDescription = null
+                        )
+                    }
                 },
                 actions = actions,
                 onTextFieldFocused = { navigationIconState = NavigationIconState.ARROW },

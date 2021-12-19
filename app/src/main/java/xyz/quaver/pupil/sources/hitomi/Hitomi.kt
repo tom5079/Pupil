@@ -19,14 +19,27 @@
 package xyz.quaver.pupil.sources.hitomi
 
 import android.app.Application
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.size
+import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Shuffle
+import androidx.compose.material.icons.filled.Sort
 import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import androidx.navigation.NavGraphBuilder
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.navigation
 import io.ktor.client.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -44,6 +57,7 @@ import xyz.quaver.pupil.sources.hitomi.composable.DetailedSearchResult
 import xyz.quaver.pupil.sources.hitomi.lib.getGalleryInfo
 import xyz.quaver.pupil.sources.hitomi.lib.getReferer
 import xyz.quaver.pupil.sources.hitomi.lib.imageUrlFromImage
+import xyz.quaver.pupil.ui.dialog.SourceSelectDialog
 
 class Hitomi(app: Application) : Source(), DIAware {
     override val di by closestDI(app)
@@ -58,16 +72,15 @@ class Hitomi(app: Application) : Source(), DIAware {
     override val name: String = "hitomi.la"
     override val iconResID: Int = R.drawable.hitomi
 
-    @Composable
-    override fun MainScreen(navController: NavController) {
-        navController.navigate("search/hitomi.la") {
-            launchSingleTop = true
-            navController.popBackStack()
+    override fun NavGraphBuilder.navGraph(navController: NavController) {
+        navigation(startDestination = "search", route = name) {
+            composable("search") { Search(navController) }
+            composable("reader/{itemID}") { Reader(navController) }
         }
     }
 
     @Composable
-    override fun Search(navController: NavController) {
+    fun Search(navController: NavController) {
         val model: HitomiSearchResultViewModel = viewModel()
         val database: AppDatabase by rememberInstance()
         val bookmarkDao = remember { database.bookmarkDao() }
@@ -78,7 +91,21 @@ class Hitomi(app: Application) : Source(), DIAware {
             bookmarks?.toSet() ?: emptySet()
         }
 
-        LaunchedEffect(model.currentPage) {
+        var sourceSelectDialog by remember { mutableStateOf(false) }
+
+        if (sourceSelectDialog)
+            SourceSelectDialog(
+                currentSource = name,
+                onDismissRequest = { sourceSelectDialog = false }
+            ) {
+                sourceSelectDialog = false
+                navController.navigate("main/${it.name}") {
+                    launchSingleTop = true
+                    popUpTo("main/{source}") { inclusive = true }
+                }
+            }
+
+        LaunchedEffect(model.currentPage, model.sortByPopularity) {
             model.search()
         }
 
@@ -99,11 +126,58 @@ class Hitomi(app: Application) : Source(), DIAware {
                 )
             ),
             actions = {
+                var expanded by remember { mutableStateOf(false) }
 
+                IconButton(onClick = { sourceSelectDialog = true }) {
+                    Image(
+                        painter = painterResource(id = R.drawable.hitomi),
+                        contentDescription = null,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+
+                IconButton(onClick = { expanded = true }) {
+                    Icon(Icons.Default.Sort, contentDescription = null)
+                }
+
+                IconButton(onClick = { navController.navigate("settings") }) {
+                    Icon(Icons.Default.Settings, contentDescription = null)
+                }
+
+                val onClick: (Boolean?) -> Unit = {
+                    expanded = false
+
+                    it?.let {
+                        model.sortByPopularity = it
+                    }
+                }
+                DropdownMenu(expanded, onDismissRequest = { onClick(null) }) {
+                    DropdownMenuItem(onClick = { onClick(false) }) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            Text(stringResource(R.string.main_menu_sort_newest))
+                            RadioButton(selected = !model.sortByPopularity, onClick = { onClick(false) })
+                        }
+                    }
+
+                    Divider()
+
+                    DropdownMenuItem(onClick = { onClick(true) }){
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            Text(stringResource(R.string.main_menu_sort_popular))
+                            RadioButton(selected = model.sortByPopularity, onClick = { onClick(true) })
+                        }
+                    }
+                }
             },
             onSearch = { model.search() }
-        ) {
-            ListSearchResult(model.searchResults) {
+        ) { contentPadding ->
+            ListSearchResult(model.searchResults, contentPadding = contentPadding) {
                 DetailedSearchResult(
                     it,
                     bookmarks = bookmarkSet,
@@ -114,14 +188,14 @@ class Hitomi(app: Application) : Source(), DIAware {
                         }
                     }
                 ) { result ->
-                    navController.navigate("reader/$name/${result.itemID}")
+                    navController.navigate("reader/${result.itemID}")
                 }
             }
         }
     }
 
     @Composable
-    override fun Reader(navController: NavController) {
+    fun Reader(navController: NavController) {
         val model: ReaderBaseViewModel = viewModel()
 
         val database: AppDatabase by rememberInstance()
@@ -148,7 +222,6 @@ class Hitomi(app: Application) : Source(), DIAware {
                         append("Referer", getReferer(galleryID))
                     }
                 }.onFailure {
-                    logger.warning(it)
                     model.error = true
                 }
             }

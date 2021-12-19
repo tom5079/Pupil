@@ -41,6 +41,11 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.accompanist.insets.LocalWindowInsets
+import com.google.accompanist.insets.rememberInsetsPaddingValues
+import com.google.accompanist.insets.ui.Scaffold
+import com.google.accompanist.insets.ui.TopAppBar
+import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import io.ktor.client.request.*
 import io.ktor.http.*
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -172,6 +177,16 @@ fun ReaderBase(
             }
         }
 
+    val systemUiController = rememberSystemUiController()
+    val useDarkIcons = MaterialTheme.colors.isLight
+
+    SideEffect {
+        systemUiController.setSystemBarsColor(
+            color = Color.Transparent,
+            darkIcons = useDarkIcons
+        )
+    }
+
     Scaffold(
         topBar = {
             if (!model.isFullscreen)
@@ -186,7 +201,11 @@ fun ReaderBase(
                     },
                     actions = {
                         //TODO
-                    }
+                    },
+                    contentPadding = rememberInsetsPaddingValues(
+                        LocalWindowInsets.current.statusBars,
+                        applyBottom = false
+                    )
                 )
         },
         floatingActionButton = {
@@ -208,8 +227,8 @@ fun ReaderBase(
         },
         scaffoldState = scaffoldState,
         snackbarHost = { scaffoldState.snackbarHostState }
-    ) {
-        Box {
+    ) { contentPadding ->
+        Box(Modifier.padding(contentPadding)) {
             LazyColumn(
                 Modifier.fillMaxSize(),
                 verticalArrangement = Arrangement.spacedBy(4.dp)

@@ -31,6 +31,8 @@ import kotlinx.coroutines.yield
 import org.kodein.di.DIAware
 import org.kodein.di.android.closestDI
 import org.kodein.di.instance
+import org.kodein.log.LoggerFactory
+import org.kodein.log.newLogger
 import xyz.quaver.pupil.db.AppDatabase
 import xyz.quaver.pupil.sources.composable.SearchBaseViewModel
 import xyz.quaver.pupil.sources.hitomi.lib.GalleryBlock
@@ -40,6 +42,8 @@ import kotlin.math.ceil
 
 class HitomiSearchResultViewModel(app: Application) : SearchBaseViewModel<HitomiSearchResult>(app), DIAware {
     override val di by closestDI(app)
+
+    private val logger = newLogger(LoggerFactory.default)
 
     private val client: HttpClient by instance()
 
@@ -80,9 +84,9 @@ class HitomiSearchResultViewModel(app: Application) : SearchBaseViewModel<Hitomi
                     maxPage = ceil(result.size / resultsPerPage.toDouble()).toInt()
                 }
 
-                yield()
-
                 cache.slice((currentPage-1)*resultsPerPage until currentPage*resultsPerPage).forEach { galleryID ->
+                    yield()
+                    loading = false
                     searchResults.add(transform(getGalleryBlock(client, galleryID)))
                 }
             }
