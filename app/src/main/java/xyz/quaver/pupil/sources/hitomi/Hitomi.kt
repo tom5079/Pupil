@@ -229,6 +229,13 @@ class Hitomi(app: Application) : Source(), DIAware {
 
         ReaderBase(
             model,
+            icon = {
+                Image(
+                    painter = painterResource(R.drawable.hitomi),
+                    contentDescription = null,
+                    modifier = Modifier.size(24.dp)
+                )
+            },
             bookmark = bookmark,
             onToggleBookmark = {
                 coroutineScope.launch {
