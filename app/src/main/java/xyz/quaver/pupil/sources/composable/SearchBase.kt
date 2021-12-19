@@ -257,7 +257,6 @@ fun <T> SearchBase(
                         ): Offset {
                             if (
                                 available.y == 0f ||
-                                source == NestedScrollSource.Fling ||
                                 !model.prevPageAvailable && available.y > 0f ||
                                 !model.nextPageAvailable && available.y < 0f
                             ) return Offset.Zero

@@ -30,6 +30,8 @@ import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BrokenImage
 import androidx.compose.material.icons.filled.Fullscreen
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.StarOutline
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -59,6 +61,7 @@ import xyz.quaver.graphics.subsampledimage.*
 import xyz.quaver.io.FileX
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.db.AppDatabase
+import xyz.quaver.pupil.ui.theme.Orange500
 import xyz.quaver.pupil.util.NetworkCache
 import xyz.quaver.pupil.util.rememberFileXImageSource
 import kotlin.math.abs
@@ -156,6 +159,7 @@ open class ReaderBaseViewModel(app: Application) : AndroidViewModel(app), DIAwar
 @Composable
 fun ReaderBase(
     model: ReaderBaseViewModel,
+    icon: @Composable () -> Unit = { },
     bookmark: Boolean = false,
     onToggleBookmark: () -> Unit = { }
 ) {
@@ -200,7 +204,17 @@ fun ReaderBase(
                         )
                     },
                     actions = {
-                        //TODO
+                        IconButton(onClick = { }) {
+                            icon()
+                        }
+
+                        IconButton(onClick = onToggleBookmark) {
+                            Icon(
+                                if (bookmark) Icons.Default.Star else Icons.Default.StarOutline,
+                                contentDescription = null,
+                                tint = Orange500
+                            )
+                        }
                     },
                     contentPadding = rememberInsetsPaddingValues(
                         LocalWindowInsets.current.statusBars,
