@@ -1,6 +1,6 @@
 /*
  *     Pupil, Hitomi.la viewer for Android
- *     Copyright (C) 2020  tom5079
+ *     Copyright (C) 2021 tom5079
  *
  *     This program is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
@@ -13,13 +13,12 @@
  *     GNU General Public License for more details.
  *
  *     You should have received a copy of the GNU General Public License
- *     along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *     along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package xyz.quaver.pupil.ui.dialog
+package xyz.quaver.pupil.sources.composable
 
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
@@ -29,12 +28,22 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import androidx.navigation.NavController
 import org.kodein.di.compose.rememberInstance
 import xyz.quaver.pupil.sources.Source
 import xyz.quaver.pupil.sources.SourceEntries
+
+@Composable
+fun SourceSelectDialog(navController: NavController, currentSource: String, onDismissRequest: () -> Unit = { }) {
+    SourceSelectDialog(currentSource = currentSource, onDismissRequest = onDismissRequest) {
+        onDismissRequest()
+        navController.navigate(it.name) {
+            popUpTo(currentSource) { inclusive = true }
+        }
+    }
+}
 
 @Composable
 fun SourceSelectDialogItem(source: Source, isSelected: Boolean, onSelected: (Source) -> Unit = { }) {

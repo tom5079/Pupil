@@ -110,10 +110,10 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.4.0")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.4.0")
 
-    implementation("androidx.room:room-runtime:2.3.0")
-    annotationProcessor("androidx.room:room-compiler:2.3.0")
-    kapt("androidx.room:room-compiler:2.3.0")
-    implementation("androidx.room:room-ktx:2.3.0")
+    implementation("androidx.room:room-runtime:2.4.0")
+    annotationProcessor("androidx.room:room-compiler:2.4.0")
+    kapt("androidx.room:room-compiler:2.4.0")
+    implementation("androidx.room:room-ktx:2.4.0")
 
     implementation("androidx.datastore:datastore:1.0.0")
     implementation("androidx.datastore:datastore-preferences:1.0.0")
@@ -137,6 +137,8 @@ dependencies {
 
     implementation("xyz.quaver:documentfilex:0.7.1")
     implementation("xyz.quaver:subsampledimage:0.0.1-alpha11-SNAPSHOT")
+
+    implementation("com.google.guava:guava:31.0.1-android")
 
     implementation("org.kodein.log:kodein-log:0.11.1")
     debugImplementation("com.squareup.leakcanary:leakcanary-android:2.7")
