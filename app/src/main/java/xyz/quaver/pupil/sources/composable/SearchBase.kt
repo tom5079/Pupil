@@ -35,7 +35,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
@@ -56,9 +55,8 @@ import com.google.accompanist.drawablepainter.rememberDrawablePainter
 import com.google.accompanist.insets.LocalWindowInsets
 import com.google.accompanist.insets.navigationBarsPadding
 import com.google.accompanist.insets.rememberInsetsPaddingValues
-import com.google.accompanist.insets.systemBarsPadding
+import com.google.accompanist.insets.statusBarsPadding
 import com.google.accompanist.insets.ui.Scaffold
-import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.ui.theme.LightBlue300
 import kotlin.math.*
@@ -119,24 +117,14 @@ fun <T> SearchBase(
         }
     }
 
-    val systemBarsPaddingValues = rememberInsetsPaddingValues(insets = LocalWindowInsets.current.systemBars)
+    val statusBarsPaddingValues = rememberInsetsPaddingValues(insets = LocalWindowInsets.current.statusBars)
 
     val pageTurnIndicatorHeight = LocalDensity.current.run { 64.dp.toPx() }
 
-    val searchBarDefaultOffset = systemBarsPaddingValues.calculateTopPadding() + 64.dp
+    val searchBarDefaultOffset = statusBarsPaddingValues.calculateTopPadding() + 64.dp
     val searchBarDefaultOffsetPx = LocalDensity.current.run { searchBarDefaultOffset.roundToPx() }
 
     var overscroll: Float? by remember { mutableStateOf(null) }
-
-    val systemUiController = rememberSystemUiController()
-    val useDarkIcons = MaterialTheme.colors.isLight
-
-    SideEffect {
-        systemUiController.setSystemBarsColor(
-            color = Color.Transparent,
-            darkIcons = useDarkIcons
-        )
-    }
 
     LaunchedEffect(navigationIconProgress) {
         navigationIcon.progress = navigationIconProgress
@@ -307,7 +295,7 @@ fun <T> SearchBase(
 
             FloatingSearchBar(
                 modifier = Modifier
-                    .systemBarsPadding()
+                    .statusBarsPadding()
                     .offset(0.dp, LocalDensity.current.run { model.searchBarOffset.toDp() }),
                 query = model.query,
                 onQueryChange = { model.query = it },

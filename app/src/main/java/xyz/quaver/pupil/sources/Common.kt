@@ -23,6 +23,7 @@ import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
 import org.kodein.di.*
 import xyz.quaver.pupil.sources.hitomi.Hitomi
+import xyz.quaver.pupil.sources.manatoki.Manatoki
 
 abstract class Source {
     abstract val name: String
@@ -39,7 +40,7 @@ val sourceModule = DI.Module(name = "source") {
     listOf<(Application) -> (Source)>(
         { Hitomi(it) },
         //{ Hiyobi_io(it) },
-        //{ Manatoki(it) }
+        { Manatoki(it) }
     ).forEach { source ->
         inSet { singleton { source(instance()).let { it.name to it } } }
     }

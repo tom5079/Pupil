@@ -41,7 +41,6 @@ import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.navigation
 import io.ktor.client.*
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.kodein.di.DIAware
 import org.kodein.di.android.closestDI
@@ -57,7 +56,6 @@ import xyz.quaver.pupil.sources.hitomi.composable.DetailedSearchResult
 import xyz.quaver.pupil.sources.hitomi.lib.getGalleryInfo
 import xyz.quaver.pupil.sources.hitomi.lib.getReferer
 import xyz.quaver.pupil.sources.hitomi.lib.imageUrlFromImage
-import xyz.quaver.pupil.ui.dialog.SourceSelectDialog
 
 class Hitomi(app: Application) : Source(), DIAware {
     override val di by closestDI(app)
@@ -73,9 +71,9 @@ class Hitomi(app: Application) : Source(), DIAware {
     override val iconResID: Int = R.drawable.hitomi
 
     override fun NavGraphBuilder.navGraph(navController: NavController) {
-        navigation(startDestination = "search", route = name) {
-            composable("search") { Search(navController) }
-            composable("reader/{itemID}") { Reader(navController) }
+        navigation(startDestination = "hitomi.la/search", route = name) {
+            composable("hitomi.la/search") { Search(navController) }
+            composable("hitomi.la/reader/{itemID}") { Reader(navController) }
         }
     }
 
@@ -94,16 +92,7 @@ class Hitomi(app: Application) : Source(), DIAware {
         var sourceSelectDialog by remember { mutableStateOf(false) }
 
         if (sourceSelectDialog)
-            SourceSelectDialog(
-                currentSource = name,
-                onDismissRequest = { sourceSelectDialog = false }
-            ) {
-                sourceSelectDialog = false
-                navController.navigate("main/${it.name}") {
-                    launchSingleTop = true
-                    popUpTo("main/{source}") { inclusive = true }
-                }
-            }
+            SourceSelectDialog(navController, name) { sourceSelectDialog = false }
 
         LaunchedEffect(model.currentPage, model.sortByPopularity) {
             model.search()
@@ -188,7 +177,10 @@ class Hitomi(app: Application) : Source(), DIAware {
                         }
                     }
                 ) { result ->
-                    navController.navigate("reader/${result.itemID}")
+                    logger.info {
+                        result.toString()
+                    }
+                    navController.navigate("hitomi.la/reader/${result.itemID}")
                 }
             }
         }
@@ -209,21 +201,19 @@ class Hitomi(app: Application) : Source(), DIAware {
 
         val bookmark by bookmarkDao.contains(name, itemID).observeAsState(false)
 
-        LaunchedEffect(model) {
-            launch(Dispatchers.IO) {
-                kotlin.runCatching {
-                    val galleryID = itemID.toInt()
+        LaunchedEffect(itemID) {
+            runCatching {
+                val galleryID = itemID.toInt()
 
-                    val galleryInfo = getGalleryInfo(client, galleryID)
+                val galleryInfo = getGalleryInfo(client, galleryID)
 
-                    model.title = galleryInfo.title
+                model.title = galleryInfo.title
 
-                    model.load(galleryInfo.files.map { imageUrlFromImage(galleryID, it, false) }) {
-                        append("Referer", getReferer(galleryID))
-                    }
-                }.onFailure {
-                    model.error = true
+                model.load(galleryInfo.files.map { imageUrlFromImage(galleryID, it, false) }) {
+                    append("Referer", getReferer(galleryID))
                 }
+            }.onFailure {
+                model.error = true
             }
         }
 

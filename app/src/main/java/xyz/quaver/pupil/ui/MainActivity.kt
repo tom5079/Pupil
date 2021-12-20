@@ -22,10 +22,16 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.material.MaterialTheme
+import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.graphics.Color
 import androidx.core.view.WindowCompat
 import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.google.accompanist.insets.ProvideWindowInsets
+import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import org.kodein.di.DIAware
 import org.kodein.di.android.closestDI
 import org.kodein.di.instance
@@ -53,9 +59,34 @@ class MainActivity : ComponentActivity(), DIAware {
                 ProvideWindowInsets {
                     val navController = rememberNavController()
 
-                    NavHost(navController, startDestination = "hitomi.la") {
+                    val systemUiController = rememberSystemUiController()
+                    val useDarkIcons = MaterialTheme.colors.isLight
+
+                    SideEffect {
+                        systemUiController.setSystemBarsColor(
+                            color = Color.Transparent,
+                            darkIcons = useDarkIcons
+                        )
+                    }
+
+                    NavHost(navController, startDestination = "main") {
+                        composable("main") {
+                            var launched by rememberSaveable { mutableStateOf(false) }
+
+                            LaunchedEffect(Unit) {
+                                if (!launched) {
+                                    val source = it.arguments?.getString("source") ?: "hitomi.la"
+                                    navController.navigate(source)
+                                    launched = true
+                                } else {
+                                    onBackPressed()
+                                }
+                            }
+                        }
                         sources.forEach {
-                            it.second.run { navGraph(navController) }
+                            it.second.run {
+                                navGraph(navController)
+                            }
                         }
                     }
                 }

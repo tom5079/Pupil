@@ -41,13 +41,16 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.accompanist.insets.LocalWindowInsets
+import com.google.accompanist.insets.navigationBarsPadding
 import com.google.accompanist.insets.rememberInsetsPaddingValues
 import com.google.accompanist.insets.ui.Scaffold
 import com.google.accompanist.insets.ui.TopAppBar
-import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import io.ktor.client.request.*
 import io.ktor.http.*
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -63,6 +66,7 @@ import xyz.quaver.pupil.R
 import xyz.quaver.pupil.db.AppDatabase
 import xyz.quaver.pupil.ui.theme.Orange500
 import xyz.quaver.pupil.util.NetworkCache
+import xyz.quaver.pupil.util.activity
 import xyz.quaver.pupil.util.rememberFileXImageSource
 import kotlin.math.abs
 
@@ -74,9 +78,6 @@ open class ReaderBaseViewModel(app: Application) : AndroidViewModel(app), DIAwar
     var isFullscreen by mutableStateOf(false)
 
     private val database: AppDatabase by instance()
-
-    private val historyDao = database.historyDao()
-    private val bookmarkDao = database.bookmarkDao()
 
     var error by mutableStateOf(false)
 
@@ -171,6 +172,19 @@ fun ReaderBase(
     val scaffoldState = rememberScaffoldState()
     val snackbarCoroutineScope = rememberCoroutineScope()
 
+    LaunchedEffect(model.isFullscreen) {
+        context.activity?.window?.let { window ->
+            ViewCompat.getWindowInsetsController(window.decorView)?.let {
+                if (model.isFullscreen) {
+                    it.systemBarsBehavior =
+                        WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+                    it.hide(WindowInsetsCompat.Type.systemBars())
+                } else
+                    it.show(WindowInsetsCompat.Type.systemBars())
+            }
+        }
+    }
+
     if (model.error)
         stringResource(R.string.reader_failed_to_find_gallery).let {
             snackbarCoroutineScope.launch {
@@ -180,16 +194,6 @@ fun ReaderBase(
                 )
             }
         }
-
-    val systemUiController = rememberSystemUiController()
-    val useDarkIcons = MaterialTheme.colors.isLight
-
-    SideEffect {
-        systemUiController.setSystemBarsColor(
-            color = Color.Transparent,
-            darkIcons = useDarkIcons
-        )
-    }
 
     Scaffold(
         topBar = {
@@ -225,6 +229,7 @@ fun ReaderBase(
         floatingActionButton = {
             if (!model.isFullscreen)
                 MultipleFloatingActionButton(
+                    modifier = Modifier.navigationBarsPadding(),
                     items = listOf(
                         SubFabItem(
                             icon = Icons.Default.Fullscreen,
@@ -245,7 +250,8 @@ fun ReaderBase(
         Box(Modifier.padding(contentPadding)) {
             LazyColumn(
                 Modifier.fillMaxSize(),
-                verticalArrangement = Arrangement.spacedBy(4.dp)
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+                contentPadding = rememberInsetsPaddingValues(LocalWindowInsets.current.navigationBars)
             ) {
                 itemsIndexed(model.imageList) { i, uri ->
                     val state = rememberSubSampledImageState(ScaleTypes.FIT_WIDTH)

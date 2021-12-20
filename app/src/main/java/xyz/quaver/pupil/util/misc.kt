@@ -18,6 +18,9 @@
 
 package xyz.quaver.pupil.util
 
+import android.app.Activity
+import android.content.Context
+import android.content.ContextWrapper
 import android.graphics.BitmapFactory
 import android.view.View
 import androidx.compose.runtime.Composable
@@ -82,3 +85,15 @@ fun rememberFileXImageSource(file: FileX) = remember {
 fun sha256(data: ByteArray) : ByteArray {
     return MessageDigest.getInstance("SHA-256").digest(data)
 }
+
+val Context.activity: Activity?
+    get() {
+        var currentContext = this
+        while (currentContext is ContextWrapper) {
+            if (currentContext is Activity)
+                return currentContext
+            currentContext = currentContext.baseContext
+        }
+
+        return null
+    }
