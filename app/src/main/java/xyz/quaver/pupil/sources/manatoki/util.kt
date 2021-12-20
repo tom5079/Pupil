@@ -71,13 +71,14 @@ data class MangaListing(
 data class ReaderInfo(
     val itemID: String,
     val title: String,
-    val urls: List<String>
+    val urls: List<String>,
+    val listingItemID: String
 ): Parcelable
 
 suspend fun HttpClient.getItem(
     itemID: String,
-    onListing: (MangaListing) -> Unit,
-    onReader: (ReaderInfo) -> Unit
+    onListing: (MangaListing) -> Unit = { },
+    onReader: (ReaderInfo) -> Unit = { }
 ) = coroutineScope {
     waitForRateLimit()
     val content: String = get("https://manatoki116.net/comic/$itemID")
@@ -110,7 +111,16 @@ suspend fun HttpClient.getItem(
 
         val title = doc.getElementsByClass("toon-title").first()!!.ownText()
 
-        onReader(ReaderInfo(itemID, title, urls))
+        val listingItemID = doc.select("a:contains(전체목록)").first()!!.attr("href").takeLastWhile { it != '/' }
+
+        onReader(
+            ReaderInfo(
+                itemID,
+                title,
+                urls,
+                listingItemID
+            )
+        )
     } else {
         val titleBlock = doc.selectFirst("div.view-title")!!
 

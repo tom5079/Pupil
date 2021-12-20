@@ -18,24 +18,27 @@
 package xyz.quaver.pupil.sources.manatoki
 
 import android.app.Application
+import android.util.LruCache
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
+import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.StarOutline
 import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -50,11 +53,13 @@ import com.google.accompanist.insets.rememberInsetsPaddingValues
 import com.google.accompanist.insets.ui.Scaffold
 import com.google.accompanist.insets.ui.TopAppBar
 import io.ktor.client.*
-import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import org.kodein.di.DIAware
 import org.kodein.di.android.closestDI
 import org.kodein.di.compose.rememberInstance
+import org.kodein.di.instance
 import org.kodein.log.LoggerFactory
 import org.kodein.log.newLogger
 import xyz.quaver.pupil.R
@@ -67,17 +72,20 @@ import xyz.quaver.pupil.sources.manatoki.composable.BoardButton
 import xyz.quaver.pupil.sources.manatoki.composable.MangaListingBottomSheet
 import xyz.quaver.pupil.sources.manatoki.composable.Thumbnail
 import xyz.quaver.pupil.sources.manatoki.viewmodel.MainViewModel
-import java.util.concurrent.ConcurrentHashMap
+import xyz.quaver.pupil.ui.theme.Orange500
 
 class Manatoki(app: Application) : Source(), DIAware {
     override val di by closestDI(app)
 
     private val logger = newLogger(LoggerFactory.default)
 
+    private val client: HttpClient by instance()
+
     override val name = "manatoki.net"
     override val iconResID = R.drawable.manatoki
 
-    private val readerInfoChannel = ConcurrentHashMap<String, Channel<ReaderInfo>>()
+    private val readerInfoMutex = Mutex()
+    private val readerInfoCache = LruCache<String, ReaderInfo>(25)
 
     override fun NavGraphBuilder.navGraph(navController: NavController) {
         navigation(route = name, startDestination = "manatoki.net/") {
@@ -91,8 +99,6 @@ class Manatoki(app: Application) : Source(), DIAware {
     fun Main(navController: NavController) {
         val model: MainViewModel = viewModel()
 
-        val client: HttpClient by rememberInstance()
-
         val sheetState = rememberModalBottomSheetState(ModalBottomSheetValue.Hidden)
         var mangaListing: MangaListing? by rememberSaveable { mutableStateOf(null) }
 
@@ -100,22 +106,16 @@ class Manatoki(app: Application) : Source(), DIAware {
 
         val onListing: (MangaListing) -> Unit = {
             mangaListing = it
-            logger.info {
-                it.toString()
-            }
-            coroutineScope.launch {
-                sheetState.show()
-            }
         }
 
         val onReader: (ReaderInfo) -> Unit = { readerInfo ->
-            val channel = Channel<ReaderInfo>()
-            readerInfoChannel[readerInfo.itemID] = channel
-
             coroutineScope.launch {
-                channel.send(readerInfo)
+                readerInfoMutex.withLock {
+                    readerInfoCache.put(readerInfo.itemID, readerInfo)
+                }
+                sheetState.snapTo(ModalBottomSheetValue.Hidden)
+                navController.navigate("manatoki.net/reader/${readerInfo.itemID}")
             }
-            navController.navigate("manatoki.net/reader/${readerInfo.itemID}")
         }
 
         var sourceSelectDialog by remember { mutableStateOf(false) }
@@ -124,11 +124,6 @@ class Manatoki(app: Application) : Source(), DIAware {
             SourceSelectDialog(navController, name) { sourceSelectDialog = false }
 
         LaunchedEffect(Unit) {
-            navController.backQueue.forEach {
-                logger.info {
-                    it.destination.route.toString()
-                }
-            }
             model.load()
         }
 
@@ -199,6 +194,10 @@ class Manatoki(app: Application) : Source(), DIAware {
                             items(model.recentUpload) { item ->
                                 Thumbnail(item) {
                                     coroutineScope.launch {
+                                        mangaListing = null
+                                        sheetState.show()
+                                    }
+                                    coroutineScope.launch {
                                         client.getItem(it, onListing, onReader)
                                     }
                                 }
@@ -238,6 +237,10 @@ class Manatoki(app: Application) : Source(), DIAware {
                             items(model.mangaList) { item ->
                                 Thumbnail(item) {
                                     coroutineScope.launch {
+                                        mangaListing = null
+                                        sheetState.show()
+                                    }
+                                    coroutineScope.launch {
                                         client.getItem(it, onListing, onReader)
                                     }
                                 }
@@ -250,29 +253,49 @@ class Manatoki(app: Application) : Source(), DIAware {
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             model.topWeekly.forEachIndexed { index, item ->
-                                Row(
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                Card(
+                                    modifier = Modifier.clickable {
+                                        coroutineScope.launch {
+                                            mangaListing = null
+                                            sheetState.show()
+                                        }
+
+                                        coroutineScope.launch {
+                                            client.getItem(item.itemID, onListing, onReader)
+                                        }
+                                    }
                                 ) {
-                                    Text(
-                                        (index + 1).toString(),
-                                        modifier = Modifier
-                                            .background(Color(0xFF64C3F5))
-                                            .width(24.dp),
-                                        color = Color.White,
-                                        textAlign = TextAlign.Center
-                                    )
+                                    Row(
+                                        modifier = Modifier.height(IntrinsicSize.Min),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        Box(
+                                            modifier = Modifier
+                                                .background(Color(0xFF64C3F5))
+                                                .width(24.dp)
+                                                .fillMaxHeight(),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Text(
+                                                (index + 1).toString(),
+                                                color = Color.White,
+                                                textAlign = TextAlign.Center
+                                            )
+                                        }
 
-                                    Text(
-                                        item.title,
-                                        modifier = Modifier.weight(1f),
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis
-                                    )
+                                        Text(
+                                            item.title,
+                                            modifier = Modifier.weight(1f).padding(0.dp, 4.dp),
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
 
-                                    Text(
-                                        item.count,
-                                        color = Color(0xFFFF4500)
-                                    )
+                                        Text(
+                                            item.count,
+                                            color = Color(0xFFFF4500)
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -284,6 +307,7 @@ class Manatoki(app: Application) : Source(), DIAware {
         }
     }
 
+    @OptIn(ExperimentalMaterialApi::class)
     @Composable
     fun Reader(navController: NavController) {
         val model: ReaderBaseViewModel = viewModel()
@@ -294,46 +318,127 @@ class Manatoki(app: Application) : Source(), DIAware {
         val coroutineScope = rememberCoroutineScope()
 
         val itemID = navController.currentBackStackEntry?.arguments?.getString("itemID")
+        var readerInfo: ReaderInfo? by rememberSaveable { mutableStateOf(null) }
 
-        LaunchedEffect(Unit) {
-            val channel = itemID?.let { readerInfoChannel.remove(it) }
-
-            if (channel == null)
-                model.error = true
-            else {
-                val readerInfo = channel.receive()
-
-                model.title = readerInfo.title
-                model.load(readerInfo.urls)
-            }
+        LaunchedEffect(itemID) {
+            if (itemID != null)
+                readerInfoMutex.withLock {
+                    readerInfoCache.get(itemID)?.let {
+                        readerInfo = it
+                        model.load(it.urls)
+                    } ?: run {
+                        model.error = true
+                    }
+                }
         }
 
         val bookmark by bookmarkDao.contains(name, itemID ?: "").observeAsState(false)
 
+        val sheetState = rememberModalBottomSheetState(ModalBottomSheetValue.Hidden)
+        var mangaListing: MangaListing? by rememberSaveable { mutableStateOf(null) }
+
         BackHandler {
-            if (model.isFullscreen)
-                model.isFullscreen = false
-            else
-                navController.popBackStack()
+            when {
+                sheetState.isVisible -> coroutineScope.launch { sheetState.hide() }
+                model.fullscreen -> model.fullscreen = false
+                else -> navController.popBackStack()
+            }
         }
 
-        ReaderBase(
-            model,
-            icon = {
-                Image(
-                    painter = painterResource(R.drawable.manatoki),
-                    contentDescription = null,
-                    modifier = Modifier.size(24.dp)
-                )
-            },
-            bookmark = bookmark,
-            onToggleBookmark = {
-                if (itemID != null)
+        ModalBottomSheetLayout(
+            sheetState = sheetState,
+            sheetShape = RoundedCornerShape(32.dp, 32.dp, 0.dp, 0.dp),
+            sheetContent = {
+                MangaListingBottomSheet(mangaListing) {
                     coroutineScope.launch {
-                        if (bookmark) bookmarkDao.delete(name, itemID)
-                        else          bookmarkDao.insert(name, itemID)
+                        client.getItem(
+                            it,
+                            onReader = {
+                                coroutineScope.launch {
+                                    readerInfoMutex.withLock {
+                                        readerInfoCache.put(it.itemID, it)
+                                    }
+                                    navController.navigate("manatoki.net/reader/${it.itemID}") {
+                                        popUpTo("manatoki.net/reader/$itemID") { inclusive = true }
+                                    }
+                                }
+                            }
+                        )
                     }
+                }
             }
-        )
+        ) {
+            Scaffold(
+                topBar = {
+                    if (!model.fullscreen)
+                        TopAppBar(
+                            title = {
+                                Text(
+                                    readerInfo?.title ?: stringResource(R.string.reader_loading),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            },
+                            actions = {
+                                IconButton({ }) {
+                                    Image(
+                                        painter = painterResource(R.drawable.manatoki),
+                                        contentDescription = null,
+                                        modifier = Modifier.size(24.dp)
+                                    )
+                                }
+
+                                IconButton(onClick = {
+                                    itemID?.let {
+                                        coroutineScope.launch {
+                                            if (bookmark) bookmarkDao.delete(name, it)
+                                            else          bookmarkDao.insert(name, it)
+                                        }
+                                    }
+                                }) {
+                                    Icon(
+                                        if (bookmark) Icons.Default.Star else Icons.Default.StarOutline,
+                                        contentDescription = null,
+                                        tint = Orange500
+                                    )
+                                }
+                            },
+                            contentPadding = rememberInsetsPaddingValues(
+                                LocalWindowInsets.current.statusBars,
+                                applyBottom = false
+                            )
+                        )
+                },
+                floatingActionButton = {
+                    FloatingActionButton(
+                        modifier = Modifier.navigationBarsPadding(),
+                        onClick = {
+                            readerInfo?.let {
+                                coroutineScope.launch {
+                                    sheetState.show()
+                                }
+
+                                coroutineScope.launch {
+                                    if (mangaListing?.itemID != it.listingItemID)
+                                        client.getItem(it.listingItemID, onListing = {
+                                            mangaListing = it
+                                        })
+                                }
+                            }
+                        }
+                    ) {
+                        Icon(
+                            Icons.Default.List,
+                            contentDescription = null
+                        )
+                    }
+                }
+            ) { contentPadding ->
+                ReaderBase(
+                    Modifier.padding(contentPadding),
+                    model
+                )
+            }
+        }
     }
 }

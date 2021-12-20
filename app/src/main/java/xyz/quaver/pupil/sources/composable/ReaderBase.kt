@@ -29,9 +29,6 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BrokenImage
-import androidx.compose.material.icons.filled.Fullscreen
-import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.filled.StarOutline
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -39,7 +36,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
@@ -47,19 +43,22 @@ import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.accompanist.insets.LocalWindowInsets
-import com.google.accompanist.insets.navigationBarsPadding
 import com.google.accompanist.insets.rememberInsetsPaddingValues
-import com.google.accompanist.insets.ui.Scaffold
-import com.google.accompanist.insets.ui.TopAppBar
 import io.ktor.client.request.*
 import io.ktor.http.*
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.takeWhile
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import org.kodein.di.DIAware
 import org.kodein.di.android.closestDI
 import org.kodein.di.instance
+import org.kodein.log.LoggerFactory
+import org.kodein.log.newLogger
 import xyz.quaver.graphics.subsampledimage.*
 import xyz.quaver.io.FileX
 import xyz.quaver.pupil.R
@@ -68,33 +67,47 @@ import xyz.quaver.pupil.ui.theme.Orange500
 import xyz.quaver.pupil.util.NetworkCache
 import xyz.quaver.pupil.util.activity
 import xyz.quaver.pupil.util.rememberFileXImageSource
+import java.util.concurrent.ConcurrentHashMap
 import kotlin.math.abs
 
 open class ReaderBaseViewModel(app: Application) : AndroidViewModel(app), DIAware {
     override val di by closestDI(app)
 
+    private val logger = newLogger(LoggerFactory.default)
+
     private val cache: NetworkCache by instance()
 
-    var isFullscreen by mutableStateOf(false)
+    var fullscreen by mutableStateOf(false)
 
     private val database: AppDatabase by instance()
 
     var error by mutableStateOf(false)
-
-    var title by mutableStateOf<String?>(null)
 
     var imageCount by mutableStateOf(0)
 
     val imageList = mutableStateListOf<Uri?>()
     val progressList = mutableStateListOf<Float>()
 
+    private val progressCollectJobs = ConcurrentHashMap<Int, Job>()
+
     private val totalProgressMutex = Mutex()
     var totalProgress by mutableStateOf(0)
         private set
 
+    private var urls: List<String>? = null
+
+    var loadJob: Job? = null
     @OptIn(ExperimentalCoroutinesApi::class)
     fun load(urls: List<String>, headerBuilder: HeadersBuilder.() -> Unit = { }) {
+        this.urls = urls
         viewModelScope.launch {
+            loadJob?.cancelAndJoin()
+            progressList.clear()
+            imageList.clear()
+            totalProgressMutex.withLock {
+                totalProgress = 0
+            }
+
             imageCount = urls.size
 
             progressList.addAll(List(imageCount) { 0f })
@@ -103,79 +116,61 @@ open class ReaderBaseViewModel(app: Application) : AndroidViewModel(app), DIAwar
                 totalProgress = 0
             }
 
-            urls.forEachIndexed { index, url ->
-                when (val scheme = url.takeWhile { it != ':' }) {
-                    "http", "https" -> {
-                        val (channel, file) = cache.load {
-                            url(url)
-                            headers(headerBuilder)
-                        }
+            loadJob = launch {
+                urls.forEachIndexed { index, url ->
+                    when (val scheme = url.takeWhile { it != ':' }) {
+                        "http", "https" -> {
+                            val (flow, file) = cache.load {
+                                url(url)
+                                headers(headerBuilder)
+                            }
 
-                        if (channel.isClosedForReceive) {
                             imageList[index] = Uri.fromFile(file)
-                            totalProgressMutex.withLock {
-                                totalProgress++
-                            }
-                        } else {
-                            channel.invokeOnClose { e ->
-                                viewModelScope.launch {
-                                    if (e == null) {
-                                        imageList[index] = Uri.fromFile(file)
-
-                                    } else {
-                                        error(index)
-                                    }
-                                    imageList[index] = Uri.fromFile(file)
-                                    totalProgressMutex.withLock {
-                                        totalProgress++
-                                    }
+                            progressCollectJobs[index] = launch {
+                                flow.takeWhile { it.isFinite() }.collect {
+                                    progressList[index] = it
                                 }
-                            }
 
-                            launch {
-                                kotlin.runCatching {
-                                    for (progress in channel) {
-                                        progressList[index] = progress
-                                    }
-                                }
+                                progressList[index] = flow.value
                             }
                         }
+                        "content" -> {
+                            imageList[index] = Uri.parse(url)
+                            progressList[index] = Float.POSITIVE_INFINITY
+                        }
+                        else -> throw IllegalArgumentException("Expected URL scheme 'http(s)' or 'content' but was '$scheme'")
                     }
-                    "content" -> {
-                        imageList[index] = Uri.parse(url)
-                        progressList[index] = 1f
-                    }
-                    else -> throw IllegalArgumentException("Expected URL scheme 'http(s)' or 'content' but was '$scheme'")
                 }
             }
         }
     }
 
     fun error(index: Int) {
-        progressList[index] = -1f
+        progressList[index] = Float.NEGATIVE_INFINITY
+    }
+
+    override fun onCleared() {
+        urls?.let { cache.free(it) }
+        cache.cleanup()
     }
 }
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ReaderBase(
-    model: ReaderBaseViewModel,
-    icon: @Composable () -> Unit = { },
-    bookmark: Boolean = false,
-    onToggleBookmark: () -> Unit = { }
+    modifier: Modifier = Modifier,
+    model: ReaderBaseViewModel
 ) {
     val context = LocalContext.current
     val haptic = LocalHapticFeedback.current
 
-    var isFABExpanded by remember { mutableStateOf(FloatingActionButtonState.COLLAPSED) }
-
     val scaffoldState = rememberScaffoldState()
     val snackbarCoroutineScope = rememberCoroutineScope()
 
-    LaunchedEffect(model.isFullscreen) {
+    LaunchedEffect(model.fullscreen) {
         context.activity?.window?.let { window ->
             ViewCompat.getWindowInsetsController(window.decorView)?.let {
-                if (model.isFullscreen) {
+                if (model.fullscreen) {
                     it.systemBarsBehavior =
                         WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
                     it.hide(WindowInsetsCompat.Type.systemBars())
@@ -195,130 +190,79 @@ fun ReaderBase(
             }
         }
 
-    Scaffold(
-        topBar = {
-            if (!model.isFullscreen)
-                TopAppBar(
-                    title = {
-                        Text(
-                            model.title ?: stringResource(R.string.reader_loading),
-                            color = MaterialTheme.colors.onSecondary,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    },
-                    actions = {
-                        IconButton(onClick = { }) {
-                            icon()
-                        }
+    Box(modifier) {
+        LazyColumn(
+            Modifier
+                .fillMaxSize()
+                .align(Alignment.TopStart),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+            contentPadding = rememberInsetsPaddingValues(LocalWindowInsets.current.navigationBars)
+        ) {
+            itemsIndexed(model.imageList) { i, uri ->
+                val state = rememberSubSampledImageState(ScaleTypes.FIT_WIDTH)
 
-                        IconButton(onClick = onToggleBookmark) {
-                            Icon(
-                                if (bookmark) Icons.Default.Star else Icons.Default.StarOutline,
-                                contentDescription = null,
-                                tint = Orange500
-                            )
-                        }
-                    },
-                    contentPadding = rememberInsetsPaddingValues(
-                        LocalWindowInsets.current.statusBars,
-                        applyBottom = false
-                    )
-                )
-        },
-        floatingActionButton = {
-            if (!model.isFullscreen)
-                MultipleFloatingActionButton(
-                    modifier = Modifier.navigationBarsPadding(),
-                    items = listOf(
-                        SubFabItem(
-                            icon = Icons.Default.Fullscreen,
-                            label = stringResource(id = R.string.reader_fab_fullscreen)
+                Box(
+                    Modifier
+                        .wrapContentHeight(state, 500.dp)
+                        .fillMaxWidth()
+                        .border(1.dp, Color.Gray),
+                    contentAlignment = Alignment.Center
+                ) {
+                    val progress = model.progressList.getOrNull(i) ?: 0f
+
+                    if (progress == Float.NEGATIVE_INFINITY)
+                        Icon(Icons.Filled.BrokenImage, null, tint = Orange500)
+                    else if (progress.isFinite())
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            model.isFullscreen = true
+                            LinearProgressIndicator(progress)
+                            Text((i + 1).toString())
                         }
-                    ),
-                    targetState = isFABExpanded,
-                    onStateChanged = {
-                        isFABExpanded = it
-                    }
-                )
-        },
-        scaffoldState = scaffoldState,
-        snackbarHost = { scaffoldState.snackbarHostState }
-    ) { contentPadding ->
-        Box(Modifier.padding(contentPadding)) {
-            LazyColumn(
-                Modifier.fillMaxSize(),
-                verticalArrangement = Arrangement.spacedBy(4.dp),
-                contentPadding = rememberInsetsPaddingValues(LocalWindowInsets.current.navigationBars)
-            ) {
-                itemsIndexed(model.imageList) { i, uri ->
-                    val state = rememberSubSampledImageState(ScaleTypes.FIT_WIDTH)
+                    else if (uri != null && progress == Float.POSITIVE_INFINITY) {
+                        val imageSource = kotlin.runCatching {
+                            rememberFileXImageSource(FileX(context, uri))
+                        }.getOrNull()
 
-                    Box(
-                        Modifier
-                            .wrapContentHeight(state, 500.dp)
-                            .fillMaxWidth()
-                            .border(1.dp, Color.Gray),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        if (uri == null)
-                            model.progressList.getOrNull(i)?.let { progress ->
-                                if (progress < 0f)
-                                    Icon(Icons.Filled.BrokenImage, null)
-                                else
-                                    Column(
-                                        horizontalAlignment = Alignment.CenterHorizontally
-                                    ) {
-                                        LinearProgressIndicator(progress)
-                                        Text((i + 1).toString())
-                                    }
-                            }
-                        else {
-                            val imageSource = kotlin.runCatching {
-                                rememberFileXImageSource(FileX(context, uri))
-                            }.getOrNull()
+                        if (imageSource != null)
+                            SubSampledImage(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .run {
+                                        if (model.fullscreen)
+                                            doubleClickCycleZoom(state, 2f)
+                                        else
+                                            combinedClickable(
+                                                onLongClick = {
 
-                            if (imageSource == null)
-                                Icon(Icons.Default.BrokenImage, contentDescription = null)
-                            else
-                                SubSampledImage(
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .run {
-                                            if (model.isFullscreen)
-                                                doubleClickCycleZoom(state, 2f)
-                                            else
-                                                combinedClickable(
-                                                    onLongClick = {
-
-                                                    }
-                                                ) {
-                                                    model.isFullscreen = true
                                                 }
-                                        },
-                                    imageSource = imageSource,
-                                    state = state
-                                )
-                        }
+                                            ) {
+                                                model.fullscreen = true
+                                            }
+                                    },
+                                imageSource = imageSource,
+                                state = state,
+                                onError = {
+                                    model.error(i)
+                                }
+                            )
                     }
                 }
             }
-
-            if (model.totalProgress != model.imageCount)
-                LinearProgressIndicator(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .align(Alignment.TopCenter),
-                    progress = model.progressList.map { abs(it) }.sum() / model.progressList.size,
-                    color = MaterialTheme.colors.secondary
-                )
-
-            SnackbarHost(
-                scaffoldState.snackbarHostState,
-                modifier = Modifier.align(Alignment.BottomCenter)
-            )
         }
+
+        if (model.progressList.any { it.isFinite() })
+            LinearProgressIndicator(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .align(Alignment.TopCenter),
+                progress = model.progressList.map { if (it.isInfinite()) 1f else abs(it) }.sum() / model.progressList.size,
+                color = MaterialTheme.colors.secondary
+            )
+
+        SnackbarHost(
+            scaffoldState.snackbarHostState,
+            modifier = Modifier.align(Alignment.BottomCenter)
+        )
     }
 }
