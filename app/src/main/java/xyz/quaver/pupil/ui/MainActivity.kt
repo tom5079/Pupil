@@ -75,7 +75,7 @@ class MainActivity : ComponentActivity(), DIAware {
 
                             LaunchedEffect(Unit) {
                                 if (!launched) {
-                                    val source = it.arguments?.getString("source") ?: "hitomi.la"
+                                    val source = it.arguments?.getString("source") ?: "manatoki.net"
                                     navController.navigate(source)
                                     launched = true
                                 } else {

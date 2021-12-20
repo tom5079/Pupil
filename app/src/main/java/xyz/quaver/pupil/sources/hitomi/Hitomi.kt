@@ -19,27 +19,32 @@
 package xyz.quaver.pupil.sources.hitomi
 
 import android.app.Application
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.Shuffle
-import androidx.compose.material.icons.filled.Sort
+import androidx.compose.material.icons.filled.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.navigation
+import com.google.accompanist.insets.LocalWindowInsets
+import com.google.accompanist.insets.rememberInsetsPaddingValues
+import com.google.accompanist.insets.ui.Scaffold
+import com.google.accompanist.insets.ui.TopAppBar
 import io.ktor.client.*
 import kotlinx.coroutines.launch
 import org.kodein.di.DIAware
@@ -53,9 +58,11 @@ import xyz.quaver.pupil.db.AppDatabase
 import xyz.quaver.pupil.sources.Source
 import xyz.quaver.pupil.sources.composable.*
 import xyz.quaver.pupil.sources.hitomi.composable.DetailedSearchResult
+import xyz.quaver.pupil.sources.hitomi.lib.GalleryInfo
 import xyz.quaver.pupil.sources.hitomi.lib.getGalleryInfo
 import xyz.quaver.pupil.sources.hitomi.lib.getReferer
 import xyz.quaver.pupil.sources.hitomi.lib.imageUrlFromImage
+import xyz.quaver.pupil.ui.theme.Orange500
 
 class Hitomi(app: Application) : Source(), DIAware {
     override val di by closestDI(app)
@@ -195,44 +202,76 @@ class Hitomi(app: Application) : Source(), DIAware {
 
         val coroutineScope = rememberCoroutineScope()
 
-        val itemID = navController.currentBackStackEntry?.arguments?.getString("itemID") ?: ""
+        val itemID = navController.currentBackStackEntry?.arguments?.getString("itemID")
 
-        if (itemID.isEmpty()) model.error = true
+        if (itemID == null) model.error = true
 
-        val bookmark by bookmarkDao.contains(name, itemID).observeAsState(false)
-
-        LaunchedEffect(itemID) {
+        val bookmark by bookmarkDao.contains(name, itemID ?: "").observeAsState(false)
+        val galleryInfo by produceState<GalleryInfo?>(null) {
             runCatching {
-                val galleryID = itemID.toInt()
+                val galleryID = itemID!!.toInt()
 
-                val galleryInfo = getGalleryInfo(client, galleryID)
-
-                model.title = galleryInfo.title
-
-                model.load(galleryInfo.files.map { imageUrlFromImage(galleryID, it, false) }) {
-                    append("Referer", getReferer(galleryID))
+                value = getGalleryInfo(client, galleryID).also {
+                    model.load(it.files.map { imageUrlFromImage(galleryID, it, false) }) {
+                        append("Referer", getReferer(galleryID))
+                    }
                 }
             }.onFailure {
                 model.error = true
             }
         }
 
-        ReaderBase(
-            model,
-            icon = {
-                Image(
-                    painter = painterResource(R.drawable.hitomi),
-                    contentDescription = null,
-                    modifier = Modifier.size(24.dp)
-                )
-            },
-            bookmark = bookmark,
-            onToggleBookmark = {
-                coroutineScope.launch {
-                    if (itemID.isEmpty() || bookmark) bookmarkDao.delete(name, itemID)
-                    else                              bookmarkDao.insert(name, itemID)
-                }
+        BackHandler {
+            if (model.fullscreen) model.fullscreen = false
+            else navController.popBackStack()
+        }
+
+        Scaffold(
+            topBar = {
+                if (!model.fullscreen)
+                    TopAppBar(
+                        title = {
+                            Text(
+                                galleryInfo?.title ?: stringResource(R.string.reader_loading),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        },
+                        actions = {
+                            IconButton({ }) {
+                                Image(
+                                    painter = painterResource(R.drawable.hitomi),
+                                    contentDescription = null,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            }
+
+                            IconButton(onClick = {
+                                itemID?.let {
+                                    coroutineScope.launch {
+                                        if (bookmark) bookmarkDao.delete(name, it)
+                                        else          bookmarkDao.insert(name, it)
+                                    }
+                                }
+                            }) {
+                                Icon(
+                                    if (bookmark) Icons.Default.Star else Icons.Default.StarOutline,
+                                    contentDescription = null,
+                                    tint = Orange500
+                                )
+                            }
+                        },
+                        contentPadding = rememberInsetsPaddingValues(
+                            LocalWindowInsets.current.statusBars,
+                            applyBottom = false
+                        )
+                    )
             }
-        )
+        ) { contentPadding ->
+            ReaderBase(
+                Modifier.padding(contentPadding),
+                model
+            )
+        }
     }
 }

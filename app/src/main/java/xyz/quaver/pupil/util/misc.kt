@@ -67,7 +67,11 @@ fun View.show() {
 }
 
 class FileXImageSource(val file: FileX): ImageSource {
-    private val decoder = newBitmapRegionDecoder(file.inputStream()!!)
+    private val decoder by lazy {
+        file.inputStream()!!.use {
+            newBitmapRegionDecoder(it)
+        }
+    }
 
     override val imageSize by lazy { Size(decoder.width.toFloat(), decoder.height.toFloat()) }
 

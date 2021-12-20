@@ -38,6 +38,7 @@ import com.google.firebase.ktx.Firebase
 import io.ktor.client.*
 import io.ktor.client.engine.okhttp.*
 import io.ktor.client.features.*
+import io.ktor.client.features.cache.*
 import io.ktor.client.features.json.*
 import io.ktor.client.features.json.serializer.*
 import okhttp3.Protocol
@@ -73,8 +74,12 @@ class Pupil : Application(), DIAware {
                     socketTimeoutMillis = HttpTimeout.INFINITE_TIMEOUT_MS
                     connectTimeoutMillis = HttpTimeout.INFINITE_TIMEOUT_MS
                 }
+                install(HttpCache)
 
-                BrowserUserAgent()
+                install(UserAgent) {
+                    agent = "Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.45 Mobile Safari/537.36"
+                }
+                //BrowserUserAgent()
             }
         } }
     }

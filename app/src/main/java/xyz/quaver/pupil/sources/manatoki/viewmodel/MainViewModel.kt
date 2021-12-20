@@ -86,7 +86,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app), DIAware {
                         }
 
                     misoPostGallery[1]
-                        .select(".post-image > a").also { logger.info { it.size.toString() } }
+                        .select(".post-image > a")
                         .forEach { entry ->
                             val itemID = entry.attr("href").takeLastWhile { it != '/' }
                             val title = entry.selectFirst("div.in-subject")!!.ownText()
@@ -99,7 +99,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app), DIAware {
                     val misoPostList = doc.select(".miso-post-list")
 
                     misoPostList[4]
-                        .select(".post-row > a")
+                        .select(".post-row > a").also { logger.info { it.size.toString() } }
                         .forEach { entry ->
                             yield()
                             val itemID = entry.attr("href").takeLastWhile { it != '/' }

@@ -20,40 +20,33 @@
 
 package xyz.quaver.pupil
 
+import io.ktor.client.*
+import kotlinx.coroutines.runBlocking
+import org.junit.Test
+import xyz.quaver.pupil.sources.manatoki.getItem
+
 /**
  * Example local unit test, which will execute on the development machine (host).
  *
  * See [testing documentation](http://d.android.com/tools/testing).
  */
 
-import kotlinx.coroutines.async
-import kotlinx.coroutines.runBlocking
-import kotlinx.serialization.*
-import kotlinx.serialization.json.Json
-import org.junit.Test
-import xyz.quaver.hitomi.getGalleryInfo
-import xyz.quaver.hitomi.imageUrlFromImage
-import xyz.quaver.pupil.sources.Hiyobi_io
-import java.lang.reflect.ParameterizedType
-import kotlin.reflect.KClass
-import kotlin.reflect.KType
-import kotlin.reflect.typeOf
-
 class ExampleUnitTest {
 
     @Test
     fun test() {
-        val galleryID = 479010
-        val files = getGalleryInfo(galleryID).files
+        val itemID = 232566
 
-        files.forEachIndexed { i, it ->
-            println("$i: ${imageUrlFromImage(galleryID, it, true)}")
+        val client = HttpClient()
+
+        runBlocking {
+            client.getItem(
+                itemID.toString(),
+                onReader = {
+                    print(it)
+                }
+            )
         }
-    }
-
-    @Test
-    fun test2() {
-        print(Hiyobi_io.parseQuery("female:loli female:big_breast tag:group"))
     }
 
 }

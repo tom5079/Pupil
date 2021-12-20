@@ -98,12 +98,16 @@ fun MangaListingBottomSheet(
     Box(
         modifier = Modifier.fillMaxWidth()
     ) {
-        mangaListing?.run {
+        if (mangaListing == null)
+            CircularProgressIndicator(Modifier.navigationBarsPadding().padding(16.dp).align(Alignment.Center))
+        else
             MangaListingBottomSheetLayout(
                 floatingActionButton = {
                     ExtendedFloatingActionButton(
                         text = { Text("첫화보기") },
-                        onClick = { entries.lastOrNull()?.let { onOpenItem(it.itemID) } }
+                        onClick = {
+                            mangaListing.entries.lastOrNull()?.let { onOpenItem(it.itemID) }
+                        }
                     )
                 },
                 top = {
@@ -114,7 +118,7 @@ fun MangaListingBottomSheet(
                             .padding(0.dp, 0.dp, 0.dp, 4.dp),
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        val painter = rememberImagePainter(thumbnail)
+                        val painter = rememberImagePainter(mangaListing.thumbnail)
 
                         Image(
                             modifier = Modifier
@@ -135,13 +139,13 @@ fun MangaListingBottomSheet(
                             verticalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
                             Text(
-                                title,
+                                mangaListing.title,
                                 style = MaterialTheme.typography.h5,
                                 modifier = Modifier.weight(1f)
                             )
 
                             CompositionLocalProvider(LocalContentAlpha provides 0.7f) {
-                                Text("작가: $author")
+                                Text("작가: ${mangaListing.author}")
 
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Text("분류: ")
@@ -151,7 +155,7 @@ fun MangaListingBottomSheet(
                                             modifier = Modifier.weight(1f),
                                             mainAxisSpacing = 8.dp
                                         ) {
-                                            tags.forEach {
+                                            mangaListing.tags.forEach {
                                                 Card(
                                                     elevation = 4.dp
                                                 ) {
@@ -166,7 +170,7 @@ fun MangaListingBottomSheet(
                                     }
                                 }
 
-                                Text("발행구분: $type")
+                                Text("발행구분: ${mangaListing.type}")
                             }
                         }
                     }
@@ -177,7 +181,7 @@ fun MangaListingBottomSheet(
                         verticalArrangement = Arrangement.spacedBy(8.dp),
                         contentPadding = rememberInsetsPaddingValues(LocalWindowInsets.current.navigationBars)
                     ) {
-                        items(entries) { entry ->
+                        items(mangaListing.entries) { entry ->
                             Row(
                                 modifier = Modifier
                                     .clickable {
@@ -200,10 +204,5 @@ fun MangaListingBottomSheet(
                     }
                 }
             )
-        } ?: run {
-            CircularProgressIndicator(
-                Modifier.align(Alignment.Center).navigationBarsPadding().padding(16.dp)
-            )
-        }
     }
 }
