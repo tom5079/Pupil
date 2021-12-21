@@ -18,6 +18,7 @@
 package xyz.quaver.pupil.sources.manatoki
 
 import android.app.Application
+import android.util.Half
 import android.util.LruCache
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
@@ -812,6 +813,9 @@ class Manatoki(app: Application) : Source(), DIAware {
                             currentPage = model.page,
                             prevPageAvailable = model.page > 1,
                             nextPageAvailable = model.page < model.maxPage,
+                            nextPageTurnIndicatorOffset = rememberInsetsPaddingValues(
+                                LocalWindowInsets.current.navigationBars
+                            ).calculateBottomPadding(),
                             onPageTurn = {
                                 model.page = it
                                 coroutineScope.launch {

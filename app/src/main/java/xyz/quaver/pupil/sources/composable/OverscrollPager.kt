@@ -77,12 +77,12 @@ fun OverscrollPager(
     if (topCircleRadius != 0f || bottomCircleRadius != 0f)
         Canvas(modifier = Modifier.fillMaxSize()) {
             drawCircle(
-                LightBlue300.copy(alpha = 0.6f),
+                LightBlue300,
                 center = Offset(this.center.x, prevPageTurnIndicatorOffsetPx),
                 radius = topCircleRadius
             )
             drawCircle(
-                LightBlue300.copy(alpha = 0.6f),
+                LightBlue300,
                 center = Offset(this.center.x, this.size.height-pageTurnIndicatorHeight-nextPageTurnIndicatorOffsetPx),
                 radius = bottomCircleRadius
             )
