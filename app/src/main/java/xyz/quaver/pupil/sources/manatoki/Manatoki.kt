@@ -677,7 +677,7 @@ class Manatoki(app: Application) : Source(), DIAware {
                                 modifier = Modifier
                                     .onFocusChanged {
                                         searchFocused = it.isFocused
-                                    },
+                                    }.fillMaxWidth(),
                                 onValueChange = { model.stx = it },
                                 placeholder = { Text("제목") },
                                 textStyle = MaterialTheme.typography.subtitle1,
