@@ -19,6 +19,21 @@
 package xyz.quaver.pupil.sources.manatoki
 
 import android.os.Parcelable
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.Card
+import androidx.compose.material.ExperimentalMaterialApi
+import androidx.compose.material.MaterialTheme
+import androidx.compose.material.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.runtime.saveable.Saver
+import androidx.compose.runtime.snapshots.SnapshotStateMap
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
 import com.google.common.util.concurrent.RateLimiter
 import io.ktor.client.*
 import io.ktor.client.request.*
@@ -26,6 +41,7 @@ import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.yield
+import kotlinx.parcelize.IgnoredOnParcel
 import kotlinx.parcelize.Parcelize
 import kotlinx.serialization.Serializable
 import org.jsoup.Jsoup
@@ -74,6 +90,19 @@ data class ReaderInfo(
     val urls: List<String>,
     val listingItemID: String
 ): Parcelable
+
+@ExperimentalMaterialApi
+@Composable
+fun Chip(text: String, selected: Boolean = false, onClick: () -> Unit = { }) {
+    Card(
+        onClick = onClick,
+        backgroundColor = if (selected) MaterialTheme.colors.secondary else MaterialTheme.colors.surface,
+        shape = RoundedCornerShape(8.dp),
+        elevation = 4.dp
+    ) {
+        Text(text, modifier = Modifier.padding(4.dp))
+    }
+}
 
 suspend fun HttpClient.getItem(
     itemID: String,

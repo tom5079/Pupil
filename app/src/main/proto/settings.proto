@@ -4,5 +4,5 @@ option java_package = "xyz.quaver.pupil.proto";
 option java_multiple_files = true;
 
 message Settings {
-
+    optional string recent_source = 1;
 }

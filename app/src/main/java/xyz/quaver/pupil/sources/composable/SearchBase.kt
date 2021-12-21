@@ -47,6 +47,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastFirstOrNull
 import androidx.lifecycle.AndroidViewModel
@@ -101,7 +102,6 @@ fun <T> SearchBase(
 ) {
     val context = LocalContext.current
     val focusManager = LocalFocusManager.current
-    val haptic = LocalHapticFeedback.current
 
     var isFabExpanded by remember { mutableStateOf(FloatingActionButtonState.COLLAPSED) }
 
@@ -119,12 +119,8 @@ fun <T> SearchBase(
 
     val statusBarsPaddingValues = rememberInsetsPaddingValues(insets = LocalWindowInsets.current.statusBars)
 
-    val pageTurnIndicatorHeight = LocalDensity.current.run { 64.dp.toPx() }
-
     val searchBarDefaultOffset = statusBarsPaddingValues.calculateTopPadding() + 64.dp
     val searchBarDefaultOffsetPx = LocalDensity.current.run { searchBarDefaultOffset.roundToPx() }
-
-    var overscroll: Float? by remember { mutableStateOf(null) }
 
     LaunchedEffect(navigationIconProgress) {
         navigationIcon.progress = navigationIconProgress
@@ -144,76 +140,21 @@ fun <T> SearchBase(
         }
     ) { contentPadding ->
         Box(Modifier.padding(contentPadding)) {
-            val topCircleRadius by animateFloatAsState(if (overscroll?.let { it >= pageTurnIndicatorHeight } == true) 1000f else 0f)
-            val bottomCircleRadius by animateFloatAsState(if (overscroll?.let { it <= -pageTurnIndicatorHeight } == true) 1000f else 0f)
-
-            if (topCircleRadius != 0f || bottomCircleRadius != 0f)
-                Canvas(modifier = Modifier.fillMaxSize()) {
-                    drawCircle(
-                        LightBlue300.copy(alpha = 0.6f),
-                        center = Offset(this.center.x, searchBarDefaultOffsetPx.toFloat()),
-                        radius = topCircleRadius
-                    )
-                    drawCircle(
-                        LightBlue300.copy(alpha = 0.6f),
-                        center = Offset(this.center.x, this.size.height-pageTurnIndicatorHeight),
-                        radius = bottomCircleRadius
-                    )
-                }
-
-            val isOverscrollOverHeight = overscroll?.let { abs(it) >= pageTurnIndicatorHeight } == true
-            LaunchedEffect(isOverscrollOverHeight) {
-                if (isOverscrollOverHeight) haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-            }
-
-            overscroll?.let { overscroll ->
-                if (overscroll > 0f)
-                    Row(
-                        modifier = Modifier
-                            .align(Alignment.TopCenter)
-                            .offset(0.dp, 64.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            Icons.Default.NavigateBefore,
-                            contentDescription = null,
-                            tint = MaterialTheme.colors.secondary,
-                            modifier = Modifier.size(48.dp)
-                        )
-                        Text(stringResource(R.string.main_move_to_page, model.currentPage-1))
-                    }
-
-                if (overscroll < 0f)
-                    Row(
-                        modifier = Modifier.align(Alignment.BottomCenter),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(stringResource(R.string.main_move_to_page, model.currentPage+1))
-                        Icon(
-                            Icons.Default.NavigateNext,
-                            contentDescription = null,
-                            tint = MaterialTheme.colors.secondary,
-                            modifier = Modifier.size(48.dp)
-                        )
-                    }
-            }
-
-            Box(
-                modifier = Modifier
-                    .offset(
-                        0.dp,
-                        overscroll
-                            ?.coerceIn(-pageTurnIndicatorHeight, pageTurnIndicatorHeight)
-                            ?.let { overscroll -> LocalDensity.current.run { overscroll.toDp() } }
-                            ?: 0.dp)
-                    .nestedScroll(object : NestedScrollConnection {
-                        override fun onPreScroll(
-                            available: Offset,
-                            source: NestedScrollSource
-                        ): Offset {
-                            val overscrollSnapshot = overscroll
-
-                            if (overscrollSnapshot == null || overscrollSnapshot == 0f) {
+            OverscrollPager(
+                currentPage = model.currentPage,
+                prevPageAvailable = model.prevPageAvailable,
+                nextPageAvailable = model.nextPageAvailable,
+                onPageTurn = { model.currentPage = it },
+                prevPageTurnIndicatorOffset = searchBarDefaultOffset,
+                nextPageTurnIndicatorOffset = rememberInsetsPaddingValues(LocalWindowInsets.current.navigationBars).calculateBottomPadding()
+            ) {
+                Box(
+                    Modifier
+                        .nestedScroll(object: NestedScrollConnection {
+                            override fun onPreScroll(
+                                available: Offset,
+                                source: NestedScrollSource
+                            ): Offset {
                                 model.searchBarOffset =
                                     (model.searchBarOffset + available.y.roundToInt()).coerceIn(
                                         -searchBarDefaultOffsetPx,
@@ -223,72 +164,14 @@ fun <T> SearchBase(
                                 model.isFabVisible = available.y > 0f
 
                                 return Offset.Zero
-                            } else {
-                                val newOverscroll =
-                                    if (overscrollSnapshot > 0f && available.y < 0f)
-                                        max(overscrollSnapshot + available.y, 0f)
-                                    else if (overscrollSnapshot < 0f && available.y > 0f)
-                                        min(overscrollSnapshot + available.y, 0f)
-                                    else
-                                        overscrollSnapshot
-
-                                return Offset(0f, newOverscroll - overscrollSnapshot).also {
-                                    overscroll = newOverscroll
-                                }
                             }
-                        }
-
-                        override fun onPostScroll(
-                            consumed: Offset,
-                            available: Offset,
-                            source: NestedScrollSource
-                        ): Offset {
-                            if (
-                                available.y == 0f ||
-                                !model.prevPageAvailable && available.y > 0f ||
-                                !model.nextPageAvailable && available.y < 0f
-                            ) return Offset.Zero
-
-                            return overscroll?.let {
-                                overscroll = it + available.y
-                                Offset(0f, available.y)
-                            } ?: Offset.Zero
-                        }
-                    })
-                    .pointerInput(Unit) {
-                        forEachGesture {
-                            awaitPointerEventScope {
-                                val down = awaitFirstDown(requireUnconsumed = false)
-                                var pointer = down.id
-                                overscroll = 0f
-
-                                while (true) {
-                                    val event = awaitPointerEvent()
-                                    val dragEvent =
-                                        event.changes.fastFirstOrNull { it.id == pointer }!!
-
-                                    if (dragEvent.changedToUpIgnoreConsumed()) {
-                                        val otherDown = event.changes.fastFirstOrNull { it.pressed }
-                                        if (otherDown == null) {
-                                            dragEvent.consumePositionChange()
-                                            overscroll?.let {
-                                                model.currentPage -= it.sign.toInt()
-                                            }
-                                            overscroll = null
-                                            break
-                                        } else
-                                            pointer = otherDown.id
-                                    }
-                                }
-                            }
-                        }
-                    },
-                content = {
-                    this.content(
-                        PaddingValues(0.dp, searchBarDefaultOffset, 0.dp, 0.dp)
-                    )
+                        })
+                ) {
+                    content(PaddingValues(0.dp, searchBarDefaultOffset, 0.dp, rememberInsetsPaddingValues(
+                        insets = LocalWindowInsets.current.navigationBars
+                    ).calculateBottomPadding()))
                 }
-            )
+            }
 
             if (model.loading)
                 CircularProgressIndicator(Modifier.align(Alignment.Center))

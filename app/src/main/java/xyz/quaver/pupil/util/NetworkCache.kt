@@ -160,7 +160,6 @@ class NetworkCache(context: Context) : DIAware {
                             progressFlow.emit(Float.POSITIVE_INFINITY)
                         }
                     }.onFailure {
-                        Log.d("PUPILD-NC", it.message.toString())
                         file.delete()
                         FirebaseCrashlytics.getInstance().recordException(it)
                         progressFlow.emit(Float.NEGATIVE_INFINITY)

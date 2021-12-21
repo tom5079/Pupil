@@ -18,24 +18,35 @@
 
 package xyz.quaver.pupil.sources.manatoki.composable
 
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.indication
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.*
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.*
+import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.SubcomposeLayout
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.toSize
 import coil.compose.rememberImagePainter
 import com.google.accompanist.flowlayout.FlowRow
 import com.google.accompanist.insets.LocalWindowInsets
 import com.google.accompanist.insets.navigationBarsPadding
 import com.google.accompanist.insets.rememberInsetsPaddingValues
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.launch
 import xyz.quaver.pupil.sources.manatoki.MangaListing
 
 private val FabSpacing = 8.dp
@@ -44,7 +55,6 @@ private enum class MangaListingBottomSheetLayoutContent { Top, Bottom, Fab }
 
 @Composable
 fun MangaListingBottomSheetLayout(
-    modifier: Modifier = Modifier,
     floatingActionButton: @Composable () -> Unit,
     top: @Composable () -> Unit,
     bottom: @Composable () -> Unit
@@ -93,13 +103,30 @@ fun MangaListingBottomSheetLayout(
 @Composable
 fun MangaListingBottomSheet(
     mangaListing: MangaListing? = null,
-    onOpenItem: (String) -> Unit = { }
+    onListSize: (Size) -> Unit = { },
+    listState: LazyListState = rememberLazyListState(),
+    rippleInteractionSource: List<MutableInteractionSource> = emptyList(),
+    onOpenItem: (String) -> Unit = { },
 ) {
+    val coroutineScope = rememberCoroutineScope()
+
+    rippleInteractionSource.forEach {
+        coroutineScope.launch {
+            it.interactions.collect {
+                Log.d("PUPILD", it.toString())
+            }
+        }
+    }
+
     Box(
         modifier = Modifier.fillMaxWidth()
     ) {
         if (mangaListing == null)
-            CircularProgressIndicator(Modifier.navigationBarsPadding().padding(16.dp).align(Alignment.Center))
+            CircularProgressIndicator(
+                Modifier
+                    .navigationBarsPadding()
+                    .padding(16.dp)
+                    .align(Alignment.Center))
         else
             MangaListingBottomSheetLayout(
                 floatingActionButton = {
@@ -157,7 +184,8 @@ fun MangaListingBottomSheet(
                                         ) {
                                             mangaListing.tags.forEach {
                                                 Card(
-                                                    elevation = 4.dp
+                                                    elevation = 4.dp,
+                                                    backgroundColor = Color.White
                                                 ) {
                                                     Text(
                                                         it,
@@ -177,15 +205,26 @@ fun MangaListingBottomSheet(
                 },
                 bottom = {
                     LazyColumn(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .onGloballyPositioned {
+                                onListSize(it.size.toSize())
+                            },
+                        state = listState,
                         contentPadding = rememberInsetsPaddingValues(LocalWindowInsets.current.navigationBars)
                     ) {
-                        items(mangaListing.entries) { entry ->
+                        itemsIndexed(mangaListing.entries, key = { _, entry -> entry.itemID }) { index, entry ->
                             Row(
                                 modifier = Modifier
                                     .clickable {
                                         onOpenItem(entry.itemID)
+                                    }
+                                    .run {
+                                        rippleInteractionSource
+                                            .getOrNull(index)
+                                            ?.let {
+                                                indication(it, rememberRipple())
+                                            } ?: this
                                     }
                                     .padding(16.dp),
                                 verticalAlignment = Alignment.CenterVertically,
