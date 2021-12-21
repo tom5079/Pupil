@@ -68,10 +68,8 @@ class NetworkCache(context: Context) : DIAware {
     private val activeFilesMutex = Mutex()
     private val activeFiles = Collections.newSetFromMap(ConcurrentHashMap<String, Boolean>())
 
-    private fun urlToFilename(url: String): String {
-        val hash = sha256(url.toByteArray()).joinToString("") { "%02x".format(it) }
-        return "$hash.${url.takeLastWhile { it != '.' }}"
-    }
+    private fun urlToFilename(url: String): String =
+        sha256(url.toByteArray()).joinToString("") { "%02x".format(it) }
 
     fun cleanup() = CoroutineScope(Dispatchers.IO).launch {
         if (cacheDir.size() > CACHE_LIMIT)
@@ -160,6 +158,7 @@ class NetworkCache(context: Context) : DIAware {
                             progressFlow.emit(Float.POSITIVE_INFINITY)
                         }
                     }.onFailure {
+                        logger.warning(it)
                         file.delete()
                         FirebaseCrashlytics.getInstance().recordException(it)
                         progressFlow.emit(Float.NEGATIVE_INFINITY)
