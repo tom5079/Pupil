@@ -110,14 +110,6 @@ fun MangaListingBottomSheet(
 ) {
     val coroutineScope = rememberCoroutineScope()
 
-    rippleInteractionSource.forEach {
-        coroutineScope.launch {
-            it.interactions.collect {
-                Log.d("PUPILD", it.toString())
-            }
-        }
-    }
-
     Box(
         modifier = Modifier.fillMaxWidth()
     ) {
