@@ -32,6 +32,7 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
@@ -55,6 +56,7 @@ import org.kodein.log.LoggerFactory
 import org.kodein.log.newLogger
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.db.AppDatabase
+import xyz.quaver.pupil.proto.settingsDataStore
 import xyz.quaver.pupil.sources.Source
 import xyz.quaver.pupil.sources.composable.*
 import xyz.quaver.pupil.sources.hitomi.composable.DetailedSearchResult
@@ -94,6 +96,15 @@ class Hitomi(app: Application) : Source(), DIAware {
         val bookmarks by bookmarkDao.getAll(name).observeAsState()
         val bookmarkSet by derivedStateOf {
             bookmarks?.toSet() ?: emptySet()
+        }
+
+        val context = LocalContext.current
+        LaunchedEffect(Unit) {
+            context.settingsDataStore.updateData {
+                it.toBuilder()
+                    .setRecentSource(name)
+                    .build()
+            }
         }
 
         var sourceSelectDialog by remember { mutableStateOf(false) }

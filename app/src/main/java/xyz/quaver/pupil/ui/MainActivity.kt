@@ -26,18 +26,24 @@ import androidx.compose.material.MaterialTheme
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.core.view.WindowCompat
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.google.accompanist.insets.ProvideWindowInsets
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.runBlocking
 import org.kodein.di.DIAware
 import org.kodein.di.android.closestDI
 import org.kodein.di.instance
 import org.kodein.log.LoggerFactory
 import org.kodein.log.newLogger
+import xyz.quaver.pupil.proto.settingsDataStore
 import xyz.quaver.pupil.sources.SourceEntries
+import xyz.quaver.pupil.sources.composable.SourceSelectDialog
 import xyz.quaver.pupil.ui.theme.PupilTheme
 
 
@@ -56,7 +62,7 @@ class MainActivity : ComponentActivity(), DIAware {
 
         setContent {
             PupilTheme {
-                ProvideWindowInsets {
+                ProvideWindowInsets(windowInsetsAnimationsEnabled = true) {
                     val navController = rememberNavController()
 
                     val systemUiController = rememberSystemUiController()
@@ -72,16 +78,31 @@ class MainActivity : ComponentActivity(), DIAware {
                     NavHost(navController, startDestination = "main") {
                         composable("main") {
                             var launched by rememberSaveable { mutableStateOf(false) }
+                            val context = LocalContext.current
+
+                            var sourceSelectDialog by remember { mutableStateOf(false) }
+
+                            if (sourceSelectDialog)
+                                SourceSelectDialog(navController, null)
 
                             LaunchedEffect(Unit) {
-                                if (!launched) {
-                                    val source = it.arguments?.getString("source") ?: "manatoki.net"
-                                    navController.navigate(source)
+                                val recentSource = context.settingsDataStore.data.map { it.recentSource }.first()
+
+                                if (recentSource.isEmpty()) {
+                                    sourceSelectDialog = true
                                     launched = true
                                 } else {
-                                    onBackPressed()
+                                    if (!launched) {
+                                        navController.navigate(recentSource)
+                                        launched = true
+                                    } else {
+                                        onBackPressed()
+                                    }
                                 }
                             }
+                        }
+                        composable("settings") {
+
                         }
                         sources.forEach {
                             it.second.run {

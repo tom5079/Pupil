@@ -23,6 +23,7 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme"
         android:networkSecurityConfig="@xml/network_security_config"
+        android:windowSoftInputMode="adjustResize"
         tools:replace="android:theme"
         tools:ignore="UnusedAttribute">
 

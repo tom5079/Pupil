@@ -36,11 +36,11 @@ import xyz.quaver.pupil.sources.Source
 import xyz.quaver.pupil.sources.SourceEntries
 
 @Composable
-fun SourceSelectDialog(navController: NavController, currentSource: String, onDismissRequest: () -> Unit = { }) {
+fun SourceSelectDialog(navController: NavController, currentSource: String? = null, onDismissRequest: () -> Unit = { }) {
     SourceSelectDialog(currentSource = currentSource, onDismissRequest = onDismissRequest) {
         onDismissRequest()
         navController.navigate(it.name) {
-            popUpTo(currentSource) { inclusive = true }
+            currentSource?.let { popUpTo(currentSource) { inclusive = true } }
         }
     }
 }
@@ -82,7 +82,7 @@ fun SourceSelectDialogItem(source: Source, isSelected: Boolean, onSelected: (Sou
 }
 
 @Composable
-fun SourceSelectDialog(currentSource: String, onDismissRequest: () -> Unit = { }, onSelected: (Source) -> Unit = { }) {
+fun SourceSelectDialog(currentSource: String? = null, onDismissRequest: () -> Unit = { }, onSelected: (Source) -> Unit = { }) {
     val sourceEntries: SourceEntries by rememberInstance()
 
     Dialog(onDismissRequest = onDismissRequest) {

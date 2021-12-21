@@ -47,18 +47,19 @@ data class Thumbnail(
 @Composable
 fun Thumbnail(
     thumbnail: Thumbnail,
+    modifier: Modifier = Modifier,
     onClick: (String) -> Unit = { }
 ) {
     Card(
         shape = RoundedCornerShape(12.dp),
         elevation = 8.dp,
-        modifier = Modifier.clickable { onClick(thumbnail.itemID) }
+        modifier = modifier.clickable { onClick(thumbnail.itemID) }
     ) {
         Box(
             modifier = Modifier.width(IntrinsicSize.Min)
         ) {
             Image(
-                modifier = Modifier.size(180.dp, 210.dp),
+                modifier = Modifier.fillMaxSize(),
                 painter = rememberImagePainter(thumbnail.thumbnail),
                 contentDescription = null
             )
