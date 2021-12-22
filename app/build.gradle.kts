@@ -119,7 +119,7 @@ dependencies {
     implementation("androidx.datastore:datastore:1.0.0")
     implementation("androidx.datastore:datastore-preferences:1.0.0")
 
-    implementation("org.kodein.di:kodein-di-framework-compose:7.9.0")
+    implementation("org.kodein.di:kodein-di-framework-compose:7.10.0")
 
     implementation("com.google.android.material:material:1.4.0")
 
@@ -139,13 +139,13 @@ dependencies {
     implementation("xyz.quaver:documentfilex:0.7.1")
     implementation("xyz.quaver:subsampledimage:0.0.1-alpha13-SNAPSHOT")
 
-    implementation("com.google.guava:guava:31.0.1-android")
+    implementation("com.google.guava:guava:31.0.1-jre")
 
     implementation("org.kodein.log:kodein-log:0.11.1")
     debugImplementation("com.squareup.leakcanary:leakcanary-android:2.7")
 
     testImplementation("junit:junit:4.13.2")
-    testImplementation("org.mockito:mockito-inline:4.1.0")
+    testImplementation("org.mockito:mockito-inline:4.2.0")
 
     androidTestImplementation("androidx.test.ext:junit:1.1.3")
     androidTestImplementation("androidx.test:rules:1.4.0")

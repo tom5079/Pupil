@@ -182,7 +182,8 @@ fun MangaListingBottomSheet(
                                                     Text(
                                                         it,
                                                         style = MaterialTheme.typography.caption,
-                                                        modifier = Modifier.padding(4.dp)
+                                                        modifier = Modifier.padding(4.dp),
+                                                        color = Color.Black
                                                     )
                                                 }
                                             }
