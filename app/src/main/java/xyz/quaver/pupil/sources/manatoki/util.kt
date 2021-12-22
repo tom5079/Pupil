@@ -19,20 +19,15 @@
 package xyz.quaver.pupil.sources.manatoki
 
 import android.os.Parcelable
-import androidx.compose.foundation.clickable
+import androidx.collection.LruCache
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Card
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateMapOf
-import androidx.compose.runtime.saveable.Saver
-import androidx.compose.runtime.snapshots.SnapshotStateMap
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.google.common.util.concurrent.RateLimiter
 import io.ktor.client.*
@@ -41,7 +36,6 @@ import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.yield
-import kotlinx.parcelize.IgnoredOnParcel
 import kotlinx.parcelize.Parcelize
 import kotlinx.serialization.Serializable
 import org.jsoup.Jsoup
@@ -104,119 +98,151 @@ fun Chip(text: String, selected: Boolean = false, onClick: () -> Unit = { }) {
     }
 }
 
+private val cache = LruCache<String, Any>(50)
 suspend fun HttpClient.getItem(
     itemID: String,
     onListing: (MangaListing) -> Unit = { },
-    onReader: (ReaderInfo) -> Unit = { }
+    onReader: (ReaderInfo) -> Unit = { },
+    onError: (Throwable) -> Unit = { throw it }
 ) = coroutineScope {
-    waitForRateLimit()
-    val content: String = get("https://manatoki116.net/comic/$itemID")
+    val cachedValue = synchronized(cache) {
+        cache.get(itemID)
+    }
 
-    val doc = Jsoup.parse(content)
-
-    yield()
-
-    if (doc.getElementsByClass("serial-list").size == 0) {
-        val htmlData = doc
-            .selectFirst(".view-padding > script")!!
-            .data()
-            .splitToSequence('\n')
-            .fold(StringBuilder()) { sb, line ->
-                if (!line.startsWith("html_data")) return@fold sb
-
-                line.drop(12).dropLast(2).split('.').forEach {
-                    if (it.isNotBlank()) sb.appendCodePoint(it.toInt(16))
-                }
-                sb
-            }.toString()
-
-        val urls = Jsoup.parse(htmlData)
-            .select("img[^data-]:not([style])")
-            .map {
-                it.attributes()
-                    .first { it.key.startsWith("data-") }
-                    .value
-            }
-
-        val title = doc.getElementsByClass("toon-title").first()!!.ownText()
-
-        val listingItemID = doc.select("a:contains(전체목록)").first()!!.attr("href").takeLastWhile { it != '/' }
-
-        onReader(
-            ReaderInfo(
-                itemID,
-                title,
-                urls,
-                listingItemID
-            )
-        )
+    if (cachedValue != null) {
+        when (cachedValue) {
+            is MangaListing -> onListing(cachedValue)
+            is ReaderInfo -> onReader(cachedValue)
+            else -> onError(IllegalStateException("Cached value is not MangaListing nor ReaderInfo"))
+        }
     } else {
-        val titleBlock = doc.selectFirst("div.view-title")!!
+        runCatching {
+            waitForRateLimit()
+            val content: String = get("https://manatoki116.net/comic/$itemID")
 
-        val title = titleBlock.select("div.view-content:not([itemprop])").first()!!.text()
+            val doc = Jsoup.parse(content)
 
-        val author =
-            titleBlock
-                .select("div.view-content:not([itemprop]):contains(작가)")
-                .first()!!
-                .getElementsByTag("a")
-                .first()!!
-                .text()
+            yield()
 
-        val tags =
-            titleBlock
-                .select("div.view-content:not([itemprop]):contains(분류)")
-                .first()!!
-                .getElementsByTag("a")
-                .map { it.text() }
+            if (doc.getElementsByClass("serial-list").size == 0) {
+                val htmlData = doc
+                    .selectFirst(".view-padding > script")!!
+                    .data()
+                    .splitToSequence('\n')
+                    .fold(StringBuilder()) { sb, line ->
+                        if (!line.startsWith("html_data")) return@fold sb
 
-        val type =
-            titleBlock
-                .select("div.view-content:not([itemprop]):contains(발행구분)")
-                .first()!!
-                .getElementsByTag("a")
-                .first()!!
-                .text()
+                        line.drop(12).dropLast(2).split('.').forEach {
+                            if (it.isNotBlank()) sb.appendCodePoint(it.toInt(16))
+                        }
+                        sb
+                    }.toString()
 
-        val thumbnail =
-            titleBlock.getElementsByTag("img").first()!!.attr("src")
+                val urls = Jsoup.parse(htmlData)
+                    .select("img[^data-]:not([style])")
+                    .map {
+                        it.attributes()
+                            .first { it.key.startsWith("data-") }
+                            .value
+                    }
 
-        val thumbsUpCount =
-            titleBlock.select("i.fa-thumbs-up + b").text().toInt()
+                val title = doc.getElementsByClass("toon-title").first()!!.ownText()
 
-        val entries =
-            doc.select("div.serial-list .list-item").map {
-                val episode = it.getElementsByClass("wr-num").first()!!.text().toInt()
-                val (itemID, title) = it.getElementsByClass("item-subject").first()!!.let { subject ->
-                    subject.attr("href").dropLastWhile { it != '?' }.dropLast(1).takeLastWhile { it != '/' } to subject.ownText()
-                }
-                val starRating = it.getElementsByClass("wr-star").first()!!.text().drop(1).takeWhile { it != ')' }.toFloat()
-                val date = it.getElementsByClass("wr-date").first()!!.text()
-                val viewCount = it.getElementsByClass("wr-hit").first()!!.text().replace(",", "").toInt()
-                val thumbsUpCount = it.getElementsByClass("wr-good").first()!!.text().replace(",", "").toInt()
+                val listingItemID = doc.select("a:contains(전체목록)").first()!!.attr("href")
+                    .takeLastWhile { it != '/' }
 
-                MangaListingEntry(
+                val readerInfo = ReaderInfo(
                     itemID,
-                    episode,
                     title,
-                    starRating,
-                    date,
-                    viewCount,
-                    thumbsUpCount
+                    urls,
+                    listingItemID
                 )
-            }
 
-        onListing(
-            MangaListing(
-                itemID,
-                title,
-                thumbnail,
-                author,
-                tags,
-                type,
-                thumbsUpCount,
-                entries
-            )
-        )
+                synchronized(cache) {
+                    cache.put(itemID, readerInfo)
+                }
+
+                onReader(readerInfo)
+            } else {
+                val titleBlock = doc.selectFirst("div.view-title")!!
+
+                val title = titleBlock.select("div.view-content:not([itemprop])").first()!!.text()
+
+                val author =
+                    titleBlock
+                        .select("div.view-content:not([itemprop]):contains(작가)")
+                        .first()!!
+                        .getElementsByTag("a")
+                        .first()!!
+                        .text()
+
+                val tags =
+                    titleBlock
+                        .select("div.view-content:not([itemprop]):contains(분류)")
+                        .first()!!
+                        .getElementsByTag("a")
+                        .map { it.text() }
+
+                val type =
+                    titleBlock
+                        .select("div.view-content:not([itemprop]):contains(발행구분)")
+                        .first()!!
+                        .getElementsByTag("a")
+                        .first()!!
+                        .text()
+
+                val thumbnail =
+                    titleBlock.getElementsByTag("img").first()!!.attr("src")
+
+                val thumbsUpCount =
+                    titleBlock.select("i.fa-thumbs-up + b").text().toInt()
+
+                val entries =
+                    doc.select("div.serial-list .list-item").map {
+                        val episode = it.getElementsByClass("wr-num").first()!!.text().toInt()
+                        val (itemID, title) = it.getElementsByClass("item-subject").first()!!
+                            .let { subject ->
+                                subject.attr("href").dropLastWhile { it != '?' }.dropLast(1)
+                                    .takeLastWhile { it != '/' } to subject.ownText()
+                            }
+                        val starRating = it.getElementsByClass("wr-star").first()!!.text().drop(1)
+                            .takeWhile { it != ')' }.toFloat()
+                        val date = it.getElementsByClass("wr-date").first()!!.text()
+                        val viewCount =
+                            it.getElementsByClass("wr-hit").first()!!.text().replace(",", "")
+                                .toInt()
+                        val thumbsUpCount =
+                            it.getElementsByClass("wr-good").first()!!.text().replace(",", "")
+                                .toInt()
+
+                        MangaListingEntry(
+                            itemID,
+                            episode,
+                            title,
+                            starRating,
+                            date,
+                            viewCount,
+                            thumbsUpCount
+                        )
+                    }
+
+                val mangaListing = MangaListing(
+                    itemID,
+                    title,
+                    thumbnail,
+                    author,
+                    tags,
+                    type,
+                    thumbsUpCount,
+                    entries
+                )
+
+                synchronized(cache) {
+                    cache.put(itemID, mangaListing)
+                }
+
+                onListing(mangaListing)
+            }
+        }.onFailure(onError)
     }
 }
