@@ -18,7 +18,6 @@
 
 package xyz.quaver.pupil.sources.manatoki.composable
 
-import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -26,8 +25,9 @@ import androidx.compose.foundation.indication
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.*
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowRight
 import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -45,8 +45,6 @@ import com.google.accompanist.flowlayout.FlowRow
 import com.google.accompanist.insets.LocalWindowInsets
 import com.google.accompanist.insets.navigationBarsPadding
 import com.google.accompanist.insets.rememberInsetsPaddingValues
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.launch
 import xyz.quaver.pupil.sources.manatoki.MangaListing
 
 private val FabSpacing = 8.dp
@@ -103,6 +101,7 @@ fun MangaListingBottomSheetLayout(
 @Composable
 fun MangaListingBottomSheet(
     mangaListing: MangaListing? = null,
+    currentItemID: String? = null,
     onListSize: (Size) -> Unit = { },
     listState: LazyListState = rememberLazyListState(),
     rippleInteractionSource: List<MutableInteractionSource> = emptyList(),
@@ -143,7 +142,7 @@ fun MangaListingBottomSheet(
                             modifier = Modifier
                                 .width(150.dp)
                                 .aspectRatio(
-                                    with(painter.intrinsicSize) { if (this == androidx.compose.ui.geometry.Size.Unspecified) 1f else width / height },
+                                    with(painter.intrinsicSize) { if (this == Size.Unspecified) 1f else width / height },
                                     true
                                 ),
                             painter = painter,
@@ -223,6 +222,13 @@ fun MangaListingBottomSheet(
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
+                                if (entry.itemID == currentItemID)
+                                    Icon(
+                                        Icons.Default.ArrowRight,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colors.secondary
+                                    )
+
                                 Text(
                                     entry.title,
                                     style = MaterialTheme.typography.h6,

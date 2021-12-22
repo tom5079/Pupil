@@ -429,6 +429,7 @@ class Manatoki(app: Application) : Source(), DIAware {
             sheetContent = {
                 MangaListingBottomSheet(
                     mangaListing,
+                    currentItemID = itemID,
                     onListSize = {
                         mangaListingListSize = it
                     },
