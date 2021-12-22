@@ -103,9 +103,6 @@ class Manatoki(app: Application) : Source(), DIAware {
     override val name = "manatoki.net"
     override val iconResID = R.drawable.manatoki
 
-    private val readerInfoMutex = Mutex()
-    private val readerInfoCache = LruCache<String, ReaderInfo>(25)
-
     override fun NavGraphBuilder.navGraph(navController: NavController) {
         navigation(route = name, startDestination = "manatoki.net/") {
             composable("manatoki.net/") { Main(navController) }
@@ -139,9 +136,6 @@ class Manatoki(app: Application) : Source(), DIAware {
 
         val onReader: (ReaderInfo) -> Unit = { readerInfo ->
             coroutineScope.launch {
-                readerInfoMutex.withLock {
-                    readerInfoCache.put(readerInfo.itemID, readerInfo)
-                }
                 sheetState.snapTo(ModalBottomSheetValue.Hidden)
                 navController.navigate("manatoki.net/reader/${readerInfo.itemID}")
             }
@@ -397,16 +391,13 @@ class Manatoki(app: Application) : Source(), DIAware {
 
         LaunchedEffect(Unit) {
             if (itemID != null)
-                readerInfoMutex.withLock {
-                    readerInfoCache.get(itemID)?.let {
-                        readerInfo = it
-                        model.load(it.urls) {
-                            set("User-Agent", imageUserAgent)
-                        }
-                    } ?: run {
-                        model.error = true
+                client.getItem(itemID, onReader = {
+                    readerInfo = it
+                    model.load(it.urls) {
+                        set("User-Agent", imageUserAgent)
                     }
-                }
+                })
+            else model.error = true
         }
 
         val bookmark by bookmarkDao.contains(name, itemID ?: "").observeAsState(false)
@@ -448,13 +439,8 @@ class Manatoki(app: Application) : Source(), DIAware {
                         client.getItem(
                             it,
                             onReader = {
-                                coroutineScope.launch {
-                                    readerInfoMutex.withLock {
-                                        readerInfoCache.put(it.itemID, it)
-                                    }
-                                    navController.navigate("manatoki.net/reader/${it.itemID}") {
-                                        popUpTo("manatoki.net/")
-                                    }
+                                navController.navigate("manatoki.net/reader/${it.itemID}") {
+                                    popUpTo("manatoki.net/")
                                 }
                             }
                         )
@@ -648,9 +634,6 @@ class Manatoki(app: Application) : Source(), DIAware {
                     coroutineScope.launch {
                         client.getItem(it, onReader = {
                             launch {
-                                readerInfoMutex.withLock {
-                                    readerInfoCache.put(it.itemID, it)
-                                }
                                 sheetState.snapTo(ModalBottomSheetValue.Hidden)
                                 navController.navigate("manatoki.net/reader/${it.itemID}")
                             }
