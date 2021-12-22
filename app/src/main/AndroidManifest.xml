@@ -28,7 +28,7 @@
         tools:ignore="UnusedAttribute">
 
         <provider
-            android:authorities="xyz.quaver.pupil.fileprovider"
+            android:authorities="${applicationId}.fileprovider"
             android:name="androidx.core.content.FileProvider"
             android:exported="false"
             android:grantUriPermissions="true">

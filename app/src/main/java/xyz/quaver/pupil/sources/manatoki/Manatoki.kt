@@ -535,7 +535,7 @@ class Manatoki(app: Application) : Source(), DIAware {
 
                                                     val targetIndex = it.entries.indexOfFirst { it.itemID == itemID }
 
-                                                    listState.animateScrollToItem(targetIndex)
+                                                    listState.scrollToItem(targetIndex)
 
                                                     mangaListingListSize?.let { sheetSize ->
                                                         val targetItem = listState.layoutInfo.visibleItemsInfo.first {
