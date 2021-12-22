@@ -18,7 +18,6 @@
 package xyz.quaver.pupil.sources.manatoki
 
 import android.app.Application
-import android.util.Half
 import android.util.LruCache
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
@@ -49,7 +48,6 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
@@ -86,10 +84,7 @@ import xyz.quaver.pupil.R
 import xyz.quaver.pupil.db.AppDatabase
 import xyz.quaver.pupil.proto.settingsDataStore
 import xyz.quaver.pupil.sources.Source
-import xyz.quaver.pupil.sources.composable.OverscrollPager
-import xyz.quaver.pupil.sources.composable.ReaderBase
-import xyz.quaver.pupil.sources.composable.ReaderBaseViewModel
-import xyz.quaver.pupil.sources.composable.SourceSelectDialog
+import xyz.quaver.pupil.sources.composable.*
 import xyz.quaver.pupil.sources.manatoki.composable.*
 import xyz.quaver.pupil.sources.manatoki.viewmodel.*
 import xyz.quaver.pupil.ui.theme.Orange500
@@ -623,7 +618,7 @@ class Manatoki(app: Application) : Source(), DIAware {
         var searchFocused by remember { mutableStateOf(false) }
         val handleOffset by animateDpAsState(if (searchFocused) 0.dp else (-36).dp)
 
-        val drawerState = rememberSwipeableState(SearchOptionDrawerStates.Hidden)
+        val drawerState = rememberSwipeableState(ModalTopSheetState.Hidden)
         val sheetState = rememberModalBottomSheetState(ModalBottomSheetValue.Hidden)
 
         var mangaListing: MangaListing? by rememberSaveable { mutableStateOf(null) }
@@ -639,8 +634,8 @@ class Manatoki(app: Application) : Source(), DIAware {
         BackHandler {
             when {
                 sheetState.isVisible -> coroutineScope.launch { sheetState.hide() }
-                drawerState.currentValue != SearchOptionDrawerStates.Hidden ->
-                    coroutineScope.launch { drawerState.animateTo(SearchOptionDrawerStates.Hidden) }
+                drawerState.currentValue != ModalTopSheetState.Hidden ->
+                    coroutineScope.launch { drawerState.animateTo(ModalTopSheetState.Hidden) }
                 else -> navController.popBackStack()
             }
         }
@@ -697,7 +692,7 @@ class Manatoki(app: Application) : Source(), DIAware {
                                     onSearch = {
                                         focusManager.clearFocus()
                                         coroutineScope.launch {
-                                            drawerState.animateTo(SearchOptionDrawerStates.Hidden)
+                                            drawerState.animateTo(ModalTopSheetState.Hidden)
                                         }
                                         coroutineScope.launch {
                                             model.search()
@@ -734,7 +729,7 @@ class Manatoki(app: Application) : Source(), DIAware {
                 Box(Modifier.padding(contentPadding)) {
                     SearchOptionDrawer(
                         modifier = Modifier.run {
-                            if (drawerState.currentValue == SearchOptionDrawerStates.Hidden)
+                            if (drawerState.currentValue == ModalTopSheetState.Hidden)
                                 offset(0.dp, handleOffset)
                             else
                                 navigationBarsWithImePadding()
