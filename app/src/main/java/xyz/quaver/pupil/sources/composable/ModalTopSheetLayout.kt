@@ -16,13 +16,11 @@
  *     along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package xyz.quaver.pupil.sources.manatoki.composable
+package xyz.quaver.pupil.sources.composable
 
-import android.util.Log
 import androidx.compose.animation.core.TweenSpec
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
@@ -41,14 +39,13 @@ import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.*
 import kotlinx.coroutines.launch
-import xyz.quaver.pupil.sources.manatoki.composable.SearchOptionDrawerStates.Hidden
-import xyz.quaver.pupil.sources.manatoki.composable.SearchOptionDrawerStates.Expanded
+import xyz.quaver.pupil.sources.composable.ModalTopSheetState.Expanded
+import xyz.quaver.pupil.sources.composable.ModalTopSheetState.Hidden
 import kotlin.math.roundToInt
 
-class SearchOptionDrawerShape(
+class ModalTopSheetLayout(
     private val cornerRadius: Dp,
     private val handleRadius: Dp
 ): Shape {
@@ -121,7 +118,7 @@ class SearchOptionDrawerShape(
 
 }
 
-enum class SearchOptionDrawerStates {
+enum class ModalTopSheetState {
     Hidden,
     Expanded
 }
@@ -160,7 +157,7 @@ fun SearchOptionDrawer(
     modifier: Modifier = Modifier,
     drawerCornerRadius: Dp = SearchOptionDrawerDefaults.CornerRadius,
     drawerHandleRadius: Dp = SearchOptionDrawerDefaults.HandleRadius,
-    drawerState: SwipeableState<SearchOptionDrawerStates> = rememberSwipeableState(Hidden),
+    drawerState: SwipeableState<ModalTopSheetState> = rememberSwipeableState(Hidden),
     drawerElevation: Dp = SearchOptionDrawerDefaults.Elevation,
     drawerBackgroundColor: Color = MaterialTheme.colors.surface,
     drawerContentColor: Color = contentColorFor(drawerBackgroundColor),
@@ -232,7 +229,7 @@ fun SearchOptionDrawer(
                 .onGloballyPositioned {
                     sheetHeight = it.size.height.toFloat()
                 },
-            shape = SearchOptionDrawerShape(drawerCornerRadius, drawerHandleRadius),
+            shape = ModalTopSheetLayout(drawerCornerRadius, drawerHandleRadius),
             elevation = drawerElevation,
             color = drawerBackgroundColor,
             contentColor = drawerContentColor
@@ -265,7 +262,7 @@ fun SearchOptionDrawer(
 
 @ExperimentalMaterialApi
 private fun Modifier.drawerSwipeable(
-    drawerState: SwipeableState<SearchOptionDrawerStates>,
+    drawerState: SwipeableState<ModalTopSheetState>,
     sheetHeight: Float?
 ) = this.then(
     if (sheetHeight != null) {
