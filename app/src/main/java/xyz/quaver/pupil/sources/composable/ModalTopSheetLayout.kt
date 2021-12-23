@@ -45,7 +45,7 @@ import xyz.quaver.pupil.sources.composable.ModalTopSheetState.Expanded
 import xyz.quaver.pupil.sources.composable.ModalTopSheetState.Hidden
 import kotlin.math.roundToInt
 
-class ModalTopSheetLayout(
+class ModalTopSheetLayoutShape(
     private val cornerRadius: Dp,
     private val handleRadius: Dp
 ): Shape {
@@ -152,7 +152,7 @@ private fun Scrim(
 
 @Composable
 @ExperimentalMaterialApi
-fun SearchOptionDrawer(
+fun ModalTopSheetLayout(
     drawerContent: @Composable ColumnScope.() -> Unit,
     modifier: Modifier = Modifier,
     drawerCornerRadius: Dp = SearchOptionDrawerDefaults.CornerRadius,
@@ -229,7 +229,7 @@ fun SearchOptionDrawer(
                 .onGloballyPositioned {
                     sheetHeight = it.size.height.toFloat()
                 },
-            shape = ModalTopSheetLayout(drawerCornerRadius, drawerHandleRadius),
+            shape = ModalTopSheetLayoutShape(drawerCornerRadius, drawerHandleRadius),
             elevation = drawerElevation,
             color = drawerBackgroundColor,
             contentColor = drawerContentColor

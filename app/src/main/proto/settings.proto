@@ -5,4 +5,26 @@ option java_multiple_files = true;
 
 message Settings {
     optional string recent_source = 1;
+    optional ReaderOptions mainReaderOption = 2;
+    optional ReaderOptions fullscreenReaderOption = 3;
+}
+
+message ReaderOptions {
+    enum Layout {
+        AUTO = 0;
+        SINGLE_PAGE = 1;
+        DOUBLE_PAGE = 2;
+    }
+
+    enum Orientation {
+        VERTICAL_DOWN = 0;
+        VERTICAL_UP = 1;
+        HORIZONTAL_RIGHT = 2;
+        HORIZONTAL_LEFT = 3;
+    }
+
+    optional Layout layout = 1;
+    optional Orientation orientation = 2;
+    optional bool snap = 3;
+    optional bool padding = 4;
 }

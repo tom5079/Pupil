@@ -20,6 +20,7 @@ package xyz.quaver.pupil.sources.hitomi
 
 import android.app.Application
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
@@ -66,6 +67,7 @@ import xyz.quaver.pupil.sources.hitomi.lib.getReferer
 import xyz.quaver.pupil.sources.hitomi.lib.imageUrlFromImage
 import xyz.quaver.pupil.ui.theme.Orange500
 
+@OptIn(ExperimentalMaterialApi::class, ExperimentalFoundationApi::class)
 class Hitomi(app: Application) : Source(), DIAware {
     override val di by closestDI(app)
 
