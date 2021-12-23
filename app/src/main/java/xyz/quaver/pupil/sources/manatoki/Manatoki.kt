@@ -18,7 +18,6 @@
 package xyz.quaver.pupil.sources.manatoki
 
 import android.app.Application
-import android.util.LruCache
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
@@ -47,6 +46,9 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -72,8 +74,6 @@ import com.google.accompanist.insets.ui.TopAppBar
 import io.ktor.client.*
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import org.kodein.di.DIAware
 import org.kodein.di.android.closestDI
 import org.kodein.di.compose.rememberInstance
@@ -89,6 +89,7 @@ import xyz.quaver.pupil.sources.manatoki.composable.*
 import xyz.quaver.pupil.sources.manatoki.viewmodel.*
 import xyz.quaver.pupil.ui.theme.Orange500
 import kotlin.math.max
+import kotlin.math.sign
 
 private val imageUserAgent = "Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.45 Mobile Safari/537.36"
 
@@ -413,6 +414,15 @@ class Manatoki(app: Application) : Source(), DIAware {
 
         val listState = rememberLazyListState()
 
+        var scrollDirection by remember { mutableStateOf(0f) }
+        val nestedScrollConnection = remember { object: NestedScrollConnection {
+            override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+                scrollDirection = available.y.sign
+
+                return Offset.Zero
+            }
+        } }
+
         BackHandler {
             when {
                 sheetState.isVisible -> coroutineScope.launch { sheetState.hide() }
@@ -492,7 +502,7 @@ class Manatoki(app: Application) : Source(), DIAware {
                 },
                 floatingActionButton = {
                     AnimatedVisibility(
-                        !model.fullscreen,
+                        !(model.fullscreen || scrollDirection < 0f),
                         enter = scaleIn(),
                         exit = scaleOut()
                     ) {
@@ -562,7 +572,7 @@ class Manatoki(app: Application) : Source(), DIAware {
                 }
             ) { contentPadding ->
                 ReaderBase(
-                    Modifier.padding(contentPadding),
+                    Modifier.padding(contentPadding).nestedScroll(nestedScrollConnection),
                     model
                 )
             }
@@ -711,7 +721,7 @@ class Manatoki(app: Application) : Source(), DIAware {
                 }
             ) { contentPadding ->
                 Box(Modifier.padding(contentPadding)) {
-                    SearchOptionDrawer(
+                    ModalTopSheetLayout(
                         modifier = Modifier.run {
                             if (drawerState.currentValue == ModalTopSheetState.Hidden)
                                 offset(0.dp, handleOffset)
