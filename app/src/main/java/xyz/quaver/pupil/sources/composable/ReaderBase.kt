@@ -25,8 +25,7 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.*
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AutoFixHigh
@@ -39,15 +38,20 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.toSize
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
@@ -78,6 +82,7 @@ import xyz.quaver.pupil.db.AppDatabase
 import xyz.quaver.pupil.proto.ReaderOptions
 import xyz.quaver.pupil.proto.settingsDataStore
 import xyz.quaver.pupil.ui.theme.Orange500
+import xyz.quaver.pupil.util.FileXImageSource
 import xyz.quaver.pupil.util.NetworkCache
 import xyz.quaver.pupil.util.activity
 import xyz.quaver.pupil.util.rememberFileXImageSource
@@ -248,12 +253,356 @@ open class ReaderBaseViewModel(app: Application) : AndroidViewModel(app), DIAwar
     }
 }
 
+val ReaderOptions.Orientation.isVertical: Boolean
+    get() =
+        this == ReaderOptions.Orientation.VERTICAL_DOWN ||
+        this == ReaderOptions.Orientation.VERTICAL_UP
+val ReaderOptions.Orientation.isReverse: Boolean
+    get() =
+        this == ReaderOptions.Orientation.VERTICAL_UP ||
+        this == ReaderOptions.Orientation.HORIZONTAL_LEFT
+
+@Composable
+fun ReaderOptionsSheet(readerOptions: ReaderOptions, onOptionsChange: (ReaderOptions.Builder.() -> Unit) -> Unit) {
+    CompositionLocalProvider(LocalTextStyle provides MaterialTheme.typography.h6) {
+        Column(Modifier.padding(16.dp, 0.dp)) {
+            val layout = readerOptions.layout
+            val snap = readerOptions.snap
+            val orientation = readerOptions.orientation
+            val padding = readerOptions.padding
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text("Layout")
+
+                Row {
+                    listOf(
+                        ReaderOptions.Layout.SINGLE_PAGE to SingleImage,
+                        ReaderOptions.Layout.DOUBLE_PAGE to DoubleImage,
+                        ReaderOptions.Layout.AUTO to Icons.Default.AutoFixHigh
+                    ).forEach { (option, icon) ->
+                        IconButton(onClick = {
+                            onOptionsChange {
+                                setLayout(option)
+                            }
+                        }) {
+                            Icon(
+                                icon,
+                                contentDescription = null,
+                                tint =
+                                    if (layout == option) MaterialTheme.colors.secondary
+                                    else LocalContentColor.current
+                            )
+                        }
+                    }
+                }
+            }
+
+            val infiniteTransition = rememberInfiniteTransition()
+
+            val isReverse = orientation.isReverse
+            val isVertical = orientation.isVertical
+
+            val animationOrientation = if (isReverse) -1f else 1f
+            val animationSpacing by animateFloatAsState(if (padding) 48f else 32f)
+            val animationOffset by infiniteTransition.animateFloat(
+                initialValue = animationOrientation * (if (snap) 0f else animationSpacing/2),
+                targetValue = animationOrientation * (if (snap) -animationSpacing else -animationSpacing/2),
+                animationSpec = infiniteRepeatable(
+                    animation = tween(
+                        durationMillis = 1000,
+                        easing = if(snap) FastOutSlowInEasing else LinearEasing
+                    ),
+                    repeatMode = RepeatMode.Restart
+                )
+            )
+            val animationRotation by animateFloatAsState(if (isVertical) 90f else 0f)
+
+            val setOrientation: (Boolean, Boolean) -> Unit = { isVertical, isReverse ->
+                val orientation = when {
+                    isVertical && !isReverse -> ReaderOptions.Orientation.VERTICAL_DOWN
+                    isVertical && isReverse -> ReaderOptions.Orientation.VERTICAL_UP
+                    !isVertical && !isReverse -> ReaderOptions.Orientation.HORIZONTAL_RIGHT
+                    !isVertical && isReverse -> ReaderOptions.Orientation.HORIZONTAL_LEFT
+                    else -> error("Invalid value")
+                }
+
+                onOptionsChange {
+                    setOrientation(orientation)
+                }
+            }
+
+            Box(
+                modifier = Modifier
+                    .size(48.dp)
+                    .clipToBounds()
+                    .rotate(animationRotation)
+                    .align(Alignment.CenterHorizontally)
+            ) {
+                for (i in 0..4)
+                    Icon(
+                        SingleImage,
+                        contentDescription = null,
+                        modifier = Modifier
+                            .size(48.dp)
+                            .align(Alignment.CenterStart)
+                            .offset((animationOffset + animationSpacing * (i - 2)).dp, 0.dp)
+                    )
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text("Orientation")
+
+                CompositionLocalProvider(LocalTextStyle provides MaterialTheme.typography.caption) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("H")
+                        Switch(checked = isVertical, onCheckedChange = {
+                            setOrientation(!isVertical, isReverse)
+                        })
+                        Text("V")
+                    }
+                }
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text("Reverse")
+                Switch(checked = isReverse, onCheckedChange = {
+                    setOrientation(isVertical, !isReverse)
+                })
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text("Snap")
+
+                Switch(checked = snap, onCheckedChange = {
+                    onOptionsChange {
+                        setSnap(!snap)
+                    }
+                })
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text("Padding")
+
+                Switch(checked = padding, onCheckedChange = {
+                    onOptionsChange {
+                        setPadding(!padding)
+                    }
+                })
+            }
+
+            Box(
+                Modifier
+                    .fillMaxWidth()
+                    .height(8.dp))
+        }
+    }
+}
+
+@Composable
+fun BoxScope.ReaderLazyList(
+    modifier: Modifier = Modifier,
+    state: LazyListState = rememberLazyListState(),
+    orientation: ReaderOptions.Orientation,
+    onScroll: (direction: Float) -> Unit,
+    content: LazyListScope.() -> Unit
+) {
+    val isReverse = orientation.isReverse
+
+    val nestedScrollConnection = remember(orientation) { object: NestedScrollConnection {
+        override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+            onScroll(
+                when (orientation) {
+                    ReaderOptions.Orientation.VERTICAL_DOWN -> available.y.sign
+                    ReaderOptions.Orientation.VERTICAL_UP -> -(available.y.sign)
+                    ReaderOptions.Orientation.HORIZONTAL_RIGHT -> available.x.sign
+                    ReaderOptions.Orientation.HORIZONTAL_LEFT -> -(available.x.sign)
+                }
+            )
+
+            return Offset.Zero
+        }
+    } }
+
+    when (orientation) {
+        ReaderOptions.Orientation.VERTICAL_DOWN,
+        ReaderOptions.Orientation.VERTICAL_UP ->
+            LazyColumn(
+                modifier = modifier
+                    .fillMaxSize()
+                    .align(Alignment.TopStart)
+                    .nestedScroll(nestedScrollConnection),
+                state = state,
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+                contentPadding = rememberInsetsPaddingValues(LocalWindowInsets.current.navigationBars),
+                reverseLayout = isReverse,
+                content = content
+            )
+        ReaderOptions.Orientation.HORIZONTAL_RIGHT,
+        ReaderOptions.Orientation.HORIZONTAL_LEFT ->
+            LazyRow(
+                modifier = modifier
+                    .fillMaxSize()
+                    .align(Alignment.CenterStart)
+                    .nestedScroll(nestedScrollConnection),
+                state = state,
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                reverseLayout = isReverse,
+                content = content
+            )
+    }
+}
+
+@Composable
+fun ReaderLayoutItem(
+    modifier: Modifier = Modifier,
+    isVertical: Boolean,
+    content: @Composable (Modifier) -> Unit
+) {
+    if (isVertical)
+        Row(
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            content(modifier.weight(1f))
+        }
+    else
+        Column(
+            modifier = Modifier.fillMaxHeight()
+        ) {
+            content(modifier.weight(1f))
+        }
+}
+
+@ExperimentalFoundationApi
+@Composable
+fun ReaderItem(
+    model: ReaderBaseViewModel,
+    readerOptions: ReaderOptions,
+    listSize: Size,
+    imageSources: List<ImageSource?>,
+) {
+    val context = LocalContext.current
+    val state = rememberSubSampledImageState(
+        when {
+            readerOptions.padding -> ScaleTypes.CENTER_INSIDE
+            readerOptions.orientation.isVertical -> ScaleTypes.FIT_WIDTH
+            else -> ScaleTypes.FIT_HEIGHT
+        }
+    )
+
+    val listSizeDp = LocalDensity.current.run { listSize.width.toDp() to listSize.height.toDp() }
+
+    val modifier = when {
+        readerOptions.padding -> Modifier.size(listSizeDp.first, listSizeDp.second)
+        readerOptions.orientation.isVertical -> Modifier
+            .wrapContentHeight(state, listSizeDp.second)
+            .fillMaxWidth()
+        else -> Modifier
+            .wrapContentWidth(state, listSizeDp.first)
+            .fillMaxHeight()
+    }
+
+    ReaderLayoutItem(modifier, readerOptions.orientation.isVertical) { modifier ->
+        indices.forEach { index ->
+            Box(
+                modifier.border(1.dp, Color.Gray),
+                contentAlignment = Alignment.Center
+            ) {
+                val progress = model.progressList.getOrNull(index) ?: 0f
+                val uri = model.imageList.getOrNull(index)
+
+                if (progress == Float.NEGATIVE_INFINITY)
+                    Icon(Icons.Filled.BrokenImage, null, tint = Orange500)
+                else if (progress.isFinite())
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        LinearProgressIndicator(progress)
+                        Text((index + 1).toString())
+                    }
+                else if (uri != null && progress == Float.POSITIVE_INFINITY) {
+                    val imageSource = kotlin.runCatching {
+                        rememberFileXImageSource(FileX(context, uri))
+                    }.getOrNull()
+
+                    if (imageSource != null)
+                        SubSampledImage(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .run {
+                                    if (model.fullscreen)
+                                        doubleClickCycleZoom(state, 2f)
+                                    else
+                                        combinedClickable(
+                                            onLongClick = {
+
+                                            }
+                                        ) {
+                                            model.fullscreen = true
+                                        }
+                                },
+                            imageSource = imageSource,
+                            state = state,
+                            onError = {
+                                model.error(index)
+                            }
+                        )
+                }
+            }
+        }
+    }
+}
+
+@ExperimentalFoundationApi
+fun LazyListScope.ReaderLazyListContent(
+    model: ReaderBaseViewModel,
+    listSize: Size,
+    imageSources: List<ImageSource?>,
+    imageSizes: List<Size?>,
+    readerOptions: ReaderOptions
+) {
+    when {
+        readerOptions.layout == ReaderOptions.Layout.SINGLE_PAGE ->
+            items(imageSources) { source ->
+                ReaderItem(model, readerOptions, listSize, listOf(source))
+            }
+        readerOptions.layout == ReaderOptions.Layout.DOUBLE_PAGE ->
+            items(imageSources.size/2 + (imageSources.size and 0x1)) { i ->
+                ReaderItem(model, readerOptions, listSize, imageSources.subList(2*i, 2*i+2))
+            }
+        else ->
+            items(imageSources) { source ->
+                ReaderItem(model, readerOptions, listSize, listOf(source))
+            }
+    }
+}
+
 @ExperimentalMaterialApi
 @ExperimentalFoundationApi
 @Composable
 fun ReaderBase(
     modifier: Modifier = Modifier,
-    model: ReaderBaseViewModel
+    model: ReaderBaseViewModel,
+    onScroll: (direction: Float) -> Unit = { }
 ) {
     val context = LocalContext.current
     val haptic = LocalHapticFeedback.current
@@ -265,18 +614,14 @@ fun ReaderBase(
 
     var scrollDirection by remember { mutableStateOf(0f) }
     val handleOffset by animateDpAsState(if (model.fullscreen || scrollDirection < 0f) (-36).dp else 0.dp)
-    
+
     val mainReaderOptions by remember {
         context.settingsDataStore.data.map { it.mainReaderOption }
     }.collectAsState(ReaderOptions.getDefaultInstance())
 
-    val nestedScrollConnection = remember { object: NestedScrollConnection {
-        override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
-            scrollDirection = available.y.sign
-
-            return Offset.Zero
-        }
-    } }
+    LaunchedEffect(scrollDirection) {
+        onScroll(scrollDirection)
+    }
 
     LaunchedEffect(model.fullscreen) {
         context.activity?.window?.let { window ->
@@ -305,247 +650,83 @@ fun ReaderBase(
         ModalTopSheetLayout(
             modifier = Modifier.offset(0.dp, handleOffset),
             drawerContent = {
-                CompositionLocalProvider(LocalTextStyle provides MaterialTheme.typography.h6) {
-                    Column(Modifier.padding(16.dp, 0.dp)) {
-                        val layout = mainReaderOptions.layout
-                        val snap = mainReaderOptions.snap
-                        val orientation = mainReaderOptions.orientation
-                        val padding = mainReaderOptions.padding
-
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Text("Layout")
-
-                            Row {
-                                listOf(
-                                    ReaderOptions.Layout.SINGLE_PAGE to SingleImage,
-                                    ReaderOptions.Layout.DOUBLE_PAGE to DoubleImage,
-                                    ReaderOptions.Layout.AUTO to Icons.Default.AutoFixHigh
-                                ).forEach { (option, icon) ->
-                                    IconButton(onClick = {
-                                        coroutineScope.launch {
-                                            context.settingsDataStore.updateData {
-                                                it.toBuilder().setMainReaderOption(
-                                                    it.mainReaderOption.toBuilder()
-                                                        .setLayout(option)
-                                                        .build()
-                                                ).build()
-                                            }
-                                        }
-                                    }) {
-                                        Icon(
-                                            icon,
-                                            contentDescription = null,
-                                            tint =
-                                                if (layout == option) MaterialTheme.colors.secondary
-                                                else LocalContentColor.current
-                                        )
-                                    }
-                                }
-                            }
+                ReaderOptionsSheet(mainReaderOptions) { readerOptionsBlock ->
+                    coroutineScope.launch {
+                        context.settingsDataStore.updateData {
+                            it.toBuilder().setMainReaderOption(
+                                mainReaderOptions.toBuilder().apply(readerOptionsBlock).build()
+                            ).build()
                         }
-
-                        val infiniteTransition = rememberInfiniteTransition()
-
-                        val isVertical =
-                            orientation == ReaderOptions.Orientation.VERTICAL_DOWN ||
-                            orientation == ReaderOptions.Orientation.VERTICAL_UP
-                        val isReverse =
-                            orientation == ReaderOptions.Orientation.VERTICAL_UP ||
-                            orientation == ReaderOptions.Orientation.HORIZONTAL_LEFT
-
-                        val animationOrientation = if (isReverse) -1f else 1f
-                        val animationSpacing by animateFloatAsState(if (padding) 48f else 32f)
-                        val animationOffset by infiniteTransition.animateFloat(
-                            initialValue = animationOrientation * (if (snap) 0f else animationSpacing/2),
-                            targetValue = animationOrientation * (if (snap) -animationSpacing else -animationSpacing/2),
-                            animationSpec = infiniteRepeatable(
-                                animation = tween(
-                                    durationMillis = 1000,
-                                    easing = if(snap) FastOutSlowInEasing else LinearEasing
-                                ),
-                                repeatMode = RepeatMode.Restart
-                            )
-                        )
-                        val animationRotation by animateFloatAsState(if (isVertical) 90f else 0f)
-
-                        val setOrientation: (Boolean, Boolean) -> Unit = { isVertical, isReverse ->
-                            val orientation = when {
-                                isVertical && !isReverse -> ReaderOptions.Orientation.VERTICAL_DOWN
-                                isVertical && isReverse -> ReaderOptions.Orientation.VERTICAL_UP
-                                !isVertical && !isReverse -> ReaderOptions.Orientation.HORIZONTAL_RIGHT
-                                !isVertical && isReverse -> ReaderOptions.Orientation.HORIZONTAL_LEFT
-                                else -> error("Invalid value")
-                            }
-
-                            coroutineScope.launch {
-                                context.settingsDataStore.updateData {
-                                    it.toBuilder().setMainReaderOption(
-                                        mainReaderOptions.toBuilder()
-                                            .setOrientation(orientation)
-                                            .build()
-                                    ).build()
-                                }
-                            }
-                        }
-
-                        Box(
-                            modifier = Modifier
-                                .size(48.dp)
-                                .clipToBounds()
-                                .rotate(animationRotation)
-                                .align(Alignment.CenterHorizontally)
-                        ) {
-                            for (i in 0..4)
-                                Icon(
-                                    SingleImage,
-                                    contentDescription = null,
-                                    modifier = Modifier
-                                        .size(48.dp)
-                                        .align(Alignment.CenterStart)
-                                        .offset((animationOffset + animationSpacing * (i - 2)).dp, 0.dp)
-                                )
-                        }
-
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Text("Orientation")
-
-                            CompositionLocalProvider(LocalTextStyle provides MaterialTheme.typography.caption) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Text("H")
-                                    Switch(checked = isVertical, onCheckedChange = {
-                                        setOrientation(!isVertical, isReverse)
-                                    })
-                                    Text("V")
-                                }
-                            }
-                        }
-
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Text("Reverse")
-                            Switch(checked = isReverse, onCheckedChange = {
-                                setOrientation(isVertical, !isReverse)
-                            })
-                        }
-
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Text("Snap")
-
-                            Switch(checked = snap, onCheckedChange = {
-                                coroutineScope.launch {
-                                    context.settingsDataStore.updateData {
-                                        it.toBuilder().setMainReaderOption(
-                                            mainReaderOptions.toBuilder()
-                                                .setSnap(!snap)
-                                                .build()
-                                        ).build()
-                                    }
-                                }
-                            })
-                        }
-
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Text("Padding")
-
-                            Switch(checked = padding, onCheckedChange = {
-                                coroutineScope.launch {
-                                    context.settingsDataStore.updateData {
-                                        it.toBuilder().setMainReaderOption(
-                                            mainReaderOptions.toBuilder()
-                                                .setPadding(!padding)
-                                                .build()
-                                        ).build()
-                                    }
-                                }
-                            })
-                        }
-
-                        Box(
-                            Modifier
-                                .fillMaxWidth()
-                                .height(8.dp))
                     }
                 }
             }
         ) {
-            LazyColumn(
-                Modifier
-                    .fillMaxSize()
-                    .align(Alignment.TopStart)
-                    .nestedScroll(nestedScrollConnection),
-                verticalArrangement = Arrangement.spacedBy(4.dp),
-                contentPadding = rememberInsetsPaddingValues(LocalWindowInsets.current.navigationBars)
-            ) {
-                itemsIndexed(model.imageList) { i, uri ->
-                    val state = rememberSubSampledImageState(ScaleTypes.FIT_WIDTH)
+            var listSize: Size? by remember { mutableStateOf(null) }
+            val listState = rememberLazyListState()
 
-                    Box(
-                        Modifier
-                            .wrapContentHeight(state, 500.dp)
-                            .fillMaxWidth()
-                            .border(1.dp, Color.Gray),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        val progress = model.progressList.getOrNull(i) ?: 0f
-
-                        if (progress == Float.NEGATIVE_INFINITY)
-                            Icon(Icons.Filled.BrokenImage, null, tint = Orange500)
-                        else if (progress.isFinite())
-                            Column(
-                                horizontalAlignment = Alignment.CenterHorizontally
-                            ) {
-                                LinearProgressIndicator(progress)
-                                Text((i + 1).toString())
-                            }
-                        else if (uri != null && progress == Float.POSITIVE_INFINITY) {
-                            val imageSource = kotlin.runCatching {
-                                rememberFileXImageSource(FileX(context, uri))
-                            }.getOrNull()
-
-                            if (imageSource != null)
-                                SubSampledImage(
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .run {
-                                            if (model.fullscreen)
-                                                doubleClickCycleZoom(state, 2f)
-                                            else
-                                                combinedClickable(
-                                                    onLongClick = {
-
-                                                    }
-                                                ) {
-                                                    model.fullscreen = true
-                                                }
-                                        },
-                                    imageSource = imageSource,
-                                    state = state,
-                                    onError = {
-                                        model.error(i)
-                                    }
-                                )
+            val nestedScrollConnection = remember { object: NestedScrollConnection {
+                override suspend fun onPreFling(available: Velocity): Velocity {
+                    return if (mainReaderOptions.snap) {
+                        val velocity = when (mainReaderOptions.orientation) {
+                            ReaderOptions.Orientation.VERTICAL_DOWN -> available.y
+                            ReaderOptions.Orientation.VERTICAL_UP -> -(available.y)
+                            ReaderOptions.Orientation.HORIZONTAL_RIGHT -> available.x
+                            ReaderOptions.Orientation.HORIZONTAL_LEFT -> -(available.x)
                         }
+
+                        val index = listState.firstVisibleItemIndex
+
+                        coroutineScope.launch {
+                            when {
+                                velocity < 0f -> listState.animateScrollToItem(index+1)
+                                else -> listState.animateScrollToItem(index)
+                            }
+                        }
+
+                        available
+                    } else Velocity.Zero
+
+                }
+            } }
+
+            val imageSources = remember { mutableStateListOf<ImageSource?>() }
+            val imageSizes = remember { mutableStateListOf<Size?>() }
+
+            LaunchedEffect(model.imageList.count { it != null }) {
+                if (imageSources.size != model.imageList.size)
+                    imageSources.addAll(List (model.imageList.size-imageSources.size) { null })
+
+                if (imageSizes.size != model.imageList.size)
+                    imageSizes.addAll(List (model.imageList.size-imageSources.size) { null })
+
+                coroutineScope.launch {
+                    model.imageList.forEachIndexed { i, uri ->
+                        if (imageSources[i] == null && uri != null)
+                            imageSources[i] = FileXImageSource(FileX(context, uri))
+
+                        if (imageSizes[i] == null)
+                            imageSources[i]?.let {
+                                imageSizes[i] = it.imageSize
+                            }
                     }
                 }
+            }
+
+            ReaderLazyList(
+                Modifier
+                    .onGloballyPositioned { listSize = it.size.toSize() }
+                    .nestedScroll(nestedScrollConnection),
+                listState,
+                mainReaderOptions.orientation,
+                onScroll = { scrollDirection = it },
+            ) {
+                ReaderLazyListContent(
+                    model,
+                    listSize ?: Size.Zero,
+                    imageSources,
+                    imageSizes,
+                    mainReaderOptions
+                )
             }
 
             if (model.progressList.any { it.isFinite() })
