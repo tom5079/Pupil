@@ -415,13 +415,6 @@ class Manatoki(app: Application) : Source(), DIAware {
         val listState = rememberLazyListState()
 
         var scrollDirection by remember { mutableStateOf(0f) }
-        val nestedScrollConnection = remember { object: NestedScrollConnection {
-            override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
-                scrollDirection = available.y.sign
-
-                return Offset.Zero
-            }
-        } }
 
         BackHandler {
             when {
@@ -572,8 +565,9 @@ class Manatoki(app: Application) : Source(), DIAware {
                 }
             ) { contentPadding ->
                 ReaderBase(
-                    Modifier.padding(contentPadding).nestedScroll(nestedScrollConnection),
-                    model
+                    Modifier.padding(contentPadding),
+                    model = model,
+                    onScroll = { scrollDirection = it }
                 )
             }
         }
