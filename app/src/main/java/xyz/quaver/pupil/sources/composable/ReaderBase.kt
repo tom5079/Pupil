@@ -511,7 +511,9 @@ fun ReaderItem(
         horizontalArrangement = Arrangement.Center
     ) {
         images.let { if (readerOptions.orientation.isReverse) it.reversed() else it }.forEach { (index, imageSize, imageSource) ->
-            val state = rememberSubSampledImageState()
+            val state = rememberSubSampledImageState().apply {
+                isGestureEnabled = true
+            }
 
             val modifier = when {
                 imageSize == null -> Modifier.weight(1f).height(heightDp)
@@ -527,7 +529,7 @@ fun ReaderItem(
                 val progress = model.progressList.getOrNull(index) ?: 0f
 
                 if (progress == Float.NEGATIVE_INFINITY)
-                    Icon(Icons.Filled.BrokenImage, null, tint = Orange500)
+                    Icon(Icons.Filled.BrokenImage, null)
                 else if (progress.isFinite())
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally
