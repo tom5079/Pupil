@@ -20,10 +20,14 @@ package xyz.quaver.pupil.sources.composable
 
 import android.app.Application
 import android.net.Uri
+import android.os.Parcelable
+import android.util.Log
+import android.view.MotionEvent
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.*
 import androidx.compose.material.*
@@ -34,16 +38,21 @@ import androidx.compose.material.icons.materialIcon
 import androidx.compose.material.icons.materialPath
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.composed
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.pointer.pointerInteropFilter
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -70,12 +79,15 @@ import kotlinx.coroutines.flow.takeWhile
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.parcelize.Parcelize
+import kotlinx.serialization.Serializable
 import org.kodein.di.DIAware
 import org.kodein.di.android.closestDI
 import org.kodein.di.instance
 import org.kodein.log.LoggerFactory
 import org.kodein.log.newLogger
 import xyz.quaver.graphics.subsampledimage.*
+import xyz.quaver.graphics.subsampledimage.ScaleTypes.CENTER_INSIDE
 import xyz.quaver.io.FileX
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.db.AppDatabase
@@ -472,25 +484,11 @@ fun BoxScope.ReaderLazyList(
     }
 }
 
-@Composable
-fun ReaderLayoutItem(
-    modifier: Modifier = Modifier,
-    isVertical: Boolean,
-    content: @Composable (Modifier) -> Unit
-) {
-    if (isVertical)
-        Row(
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            content(modifier.weight(1f))
-        }
-    else
-        Column(
-            modifier = Modifier.fillMaxHeight()
-        ) {
-            content(modifier.weight(1f))
-        }
-}
+data class ReaderItemData(
+    val index: Int,
+    val size: Size?,
+    val imageSource: ImageSource?
+)
 
 @ExperimentalFoundationApi
 @Composable
@@ -498,37 +496,35 @@ fun ReaderItem(
     model: ReaderBaseViewModel,
     readerOptions: ReaderOptions,
     listSize: Size,
-    imageSources: List<ImageSource?>,
+    images: List<ReaderItemData>,
+    onTap: () -> Unit = { }
 ) {
-    val context = LocalContext.current
-    val state = rememberSubSampledImageState(
-        when {
-            readerOptions.padding -> ScaleTypes.CENTER_INSIDE
-            readerOptions.orientation.isVertical -> ScaleTypes.FIT_WIDTH
-            else -> ScaleTypes.FIT_HEIGHT
-        }
-    )
+    val (widthDp, heightDp) = LocalDensity.current.run { listSize.width.toDp() to listSize.height.toDp() }
 
-    val listSizeDp = LocalDensity.current.run { listSize.width.toDp() to listSize.height.toDp() }
+    Row(
+        modifier = when {
+            readerOptions.padding -> Modifier.size(widthDp, heightDp)
+            readerOptions.orientation.isVertical -> Modifier.fillMaxWidth()
+            else -> Modifier.fillMaxHeight()
+        },
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Center
+    ) {
+        images.let { if (readerOptions.orientation.isReverse) it.reversed() else it }.forEach { (index, imageSize, imageSource) ->
+            val state = rememberSubSampledImageState()
 
-    val modifier = when {
-        readerOptions.padding -> Modifier.size(listSizeDp.first, listSizeDp.second)
-        readerOptions.orientation.isVertical -> Modifier
-            .wrapContentHeight(state, listSizeDp.second)
-            .fillMaxWidth()
-        else -> Modifier
-            .wrapContentWidth(state, listSizeDp.first)
-            .fillMaxHeight()
-    }
+            val modifier = when {
+                imageSize == null -> Modifier.weight(1f).height(heightDp)
+                readerOptions.padding -> Modifier.fillMaxHeight().widthIn(0.dp, widthDp/images.size).aspectRatio(imageSize.width/imageSize.height)
+                else -> Modifier.aspectRatio(imageSize.width/imageSize.height).weight(1f)
+            }
 
-    ReaderLayoutItem(modifier, readerOptions.orientation.isVertical) { modifier ->
-        indices.forEach { index ->
+
             Box(
-                modifier.border(1.dp, Color.Gray),
+                modifier,
                 contentAlignment = Alignment.Center
             ) {
                 val progress = model.progressList.getOrNull(index) ?: 0f
-                val uri = model.imageList.getOrNull(index)
 
                 if (progress == Float.NEGATIVE_INFINITY)
                     Icon(Icons.Filled.BrokenImage, null, tint = Orange500)
@@ -539,33 +535,28 @@ fun ReaderItem(
                         LinearProgressIndicator(progress)
                         Text((index + 1).toString())
                     }
-                else if (uri != null && progress == Float.POSITIVE_INFINITY) {
-                    val imageSource = kotlin.runCatching {
-                        rememberFileXImageSource(FileX(context, uri))
-                    }.getOrNull()
+                else if (progress == Float.POSITIVE_INFINITY) {
+                    SubSampledImage(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .run {
+                                if (model.fullscreen)
+                                    doubleClickCycleZoom(state, 2f, onTap = onTap)
+                                else
+                                    combinedClickable(
+                                        onLongClick = {
 
-                    if (imageSource != null)
-                        SubSampledImage(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .run {
-                                    if (model.fullscreen)
-                                        doubleClickCycleZoom(state, 2f)
-                                    else
-                                        combinedClickable(
-                                            onLongClick = {
-
-                                            }
-                                        ) {
-                                            model.fullscreen = true
                                         }
-                                },
-                            imageSource = imageSource,
-                            state = state,
-                            onError = {
-                                model.error(index)
-                            }
-                        )
+                                    ) {
+                                        model.fullscreen = true
+                                    }
+                            },
+                        imageSource = imageSource,
+                        state = state,
+                        onError = {
+                            model.error(index)
+                        }
+                    )
                 }
             }
         }
@@ -578,24 +569,51 @@ fun LazyListScope.ReaderLazyListContent(
     listSize: Size,
     imageSources: List<ImageSource?>,
     imageSizes: List<Size?>,
-    readerOptions: ReaderOptions
+    readerOptions: ReaderOptions,
+    onTap: () -> Unit = { }
 ) {
-    when {
-        readerOptions.layout == ReaderOptions.Layout.SINGLE_PAGE ->
-            items(imageSources) { source ->
-                ReaderItem(model, readerOptions, listSize, listOf(source))
+    when (readerOptions.layout) {
+        ReaderOptions.Layout.SINGLE_PAGE ->
+            itemsIndexed(imageSources) { index, source ->
+                ReaderItem(model, readerOptions, listSize, listOf(ReaderItemData(index, imageSizes[index], source)))
             }
-        readerOptions.layout == ReaderOptions.Layout.DOUBLE_PAGE ->
-            items(imageSources.size/2 + (imageSources.size and 0x1)) { i ->
-                ReaderItem(model, readerOptions, listSize, imageSources.subList(2*i, 2*i+2))
+        ReaderOptions.Layout.DOUBLE_PAGE ->
+            itemsIndexed(imageSources.chunked(2), key = { i, _ -> i*2 }) { chunkIndex, sourceList ->
+                ReaderItem(model, readerOptions, listSize, sourceList.mapIndexed { i, it ->
+                    val index = chunkIndex*2+i
+                    ReaderItemData(index, imageSizes[index], it)
+                }, onTap)
             }
-        else ->
-            items(imageSources) { source ->
-                ReaderItem(model, readerOptions, listSize, listOf(source))
+        ReaderOptions.Layout.AUTO -> {
+            val images = mutableListOf<List<Int>>()
+
+            var i = 0
+            while (i < imageSizes.size) {
+                val list = mutableListOf(i)
+
+                if (
+                    imageSizes[i] != null &&
+                    imageSizes.getOrNull(i+1) != null &&
+                    listSize != Size.Zero &&
+                    imageSizes[i]!!.width*listSize.height/imageSizes[i]!!.height +
+                    imageSizes[i+1]!!.width*listSize.height/imageSizes[i+1]!!.height < listSize.width
+                ) list.add(++i)
+
+                images.add(list)
+                i++
             }
+
+            items(images, key = { it.first() }) { images ->
+                ReaderItem(model, readerOptions, listSize, images.map { ReaderItemData(it, imageSizes[it], imageSources[it]) }, onTap)
+            }
+        }
+        else -> itemsIndexed(imageSources) { index, source ->
+            ReaderItem(model, readerOptions, listSize, listOf(ReaderItemData(index, imageSizes[index], source)), onTap)
+        }
     }
 }
 
+@ExperimentalComposeUiApi
 @ExperimentalMaterialApi
 @ExperimentalFoundationApi
 @Composable
@@ -666,7 +684,10 @@ fun ReaderBase(
 
             val nestedScrollConnection = remember { object: NestedScrollConnection {
                 override suspend fun onPreFling(available: Velocity): Velocity {
-                    return if (mainReaderOptions.snap) {
+                    return if (
+                        mainReaderOptions.snap &&
+                        listState.layoutInfo.visibleItemsInfo.size > 1
+                    ) {
                         val velocity = when (mainReaderOptions.orientation) {
                             ReaderOptions.Orientation.VERTICAL_DOWN -> available.y
                             ReaderOptions.Orientation.VERTICAL_UP -> -(available.y)
@@ -692,19 +713,23 @@ fun ReaderBase(
             val imageSources = remember { mutableStateListOf<ImageSource?>() }
             val imageSizes = remember { mutableStateListOf<Size?>() }
 
-            LaunchedEffect(model.imageList.count { it != null }) {
-                if (imageSources.size != model.imageList.size)
-                    imageSources.addAll(List (model.imageList.size-imageSources.size) { null })
+            LaunchedEffect(model.progressList.count { it.isFinite() }) {
+                val size = model.progressList.size
 
-                if (imageSizes.size != model.imageList.size)
-                    imageSizes.addAll(List (model.imageList.size-imageSources.size) { null })
+                if (imageSources.size != size)
+                    imageSources.addAll(List (size-imageSources.size) { null })
+
+                if (imageSizes.size != size)
+                    imageSizes.addAll(List (size-imageSizes.size) { null })
 
                 coroutineScope.launch {
-                    model.imageList.forEachIndexed { i, uri ->
+                    repeat(size) { i ->
+                        val uri = model.imageList[i]
+
                         if (imageSources[i] == null && uri != null)
                             imageSources[i] = FileXImageSource(FileX(context, uri))
 
-                        if (imageSizes[i] == null)
+                        if (imageSizes[i] == null && model.progressList[i] == Float.POSITIVE_INFINITY)
                             imageSources[i]?.let {
                                 imageSizes[i] = it.imageSize
                             }
@@ -726,7 +751,11 @@ fun ReaderBase(
                     imageSources,
                     imageSizes,
                     mainReaderOptions
-                )
+                ) {
+                    coroutineScope.launch {
+                        listState.scrollToItem(listState.firstVisibleItemIndex + 1)
+                    }
+                }
             }
 
             if (model.progressList.any { it.isFinite() })
@@ -744,5 +773,45 @@ fun ReaderBase(
                 modifier = Modifier.align(Alignment.BottomCenter)
             )
         }
+    }
+}
+
+fun Modifier.doubleClickCycleZoom(
+    state: SubSampledImageState,
+    scale: Float = 2f,
+    animationSpec: AnimationSpec<Rect> = spring(),
+    onTap: () -> Unit = { },
+) = composed {
+    val initialImageRect by produceState<Rect?>(null, state.canvasSize, state.imageSize) {
+        state.canvasSize?.let { canvasSize ->
+            state.imageSize?.let { imageSize ->
+                value = state.bound(state.scaleType(canvasSize, imageSize), canvasSize)
+            } }
+    }
+
+    val coroutineScope = rememberCoroutineScope()
+
+    pointerInput(Unit) {
+        detectTapGestures(
+            onTap = { onTap() },
+            onDoubleTap = { centroid ->
+                val imageRect = state.imageRect
+                coroutineScope.launch {
+                    if (imageRect == null || imageRect != initialImageRect)
+                        state.resetImageRect(animationSpec)
+                    else {
+                        state.setImageRectWithBound(
+                            Rect(
+                                Offset(
+                                    centroid.x - (centroid.x - imageRect.left) * scale,
+                                    centroid.y - (centroid.y - imageRect.top) * scale
+                                ),
+                                imageRect.size * scale
+                            ), animationSpec
+                        )
+                    }
+                }
+            }
+        )
     }
 }

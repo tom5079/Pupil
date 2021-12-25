@@ -32,6 +32,7 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -67,7 +68,7 @@ import xyz.quaver.pupil.sources.hitomi.lib.getReferer
 import xyz.quaver.pupil.sources.hitomi.lib.imageUrlFromImage
 import xyz.quaver.pupil.ui.theme.Orange500
 
-@OptIn(ExperimentalMaterialApi::class, ExperimentalFoundationApi::class)
+@OptIn(ExperimentalMaterialApi::class, ExperimentalFoundationApi::class, ExperimentalComposeUiApi::class)
 class Hitomi(app: Application) : Source(), DIAware {
     override val di by closestDI(app)
 
