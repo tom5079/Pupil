@@ -74,7 +74,6 @@ class Pupil : Application(), DIAware {
                     socketTimeoutMillis = HttpTimeout.INFINITE_TIMEOUT_MS
                     connectTimeoutMillis = HttpTimeout.INFINITE_TIMEOUT_MS
                 }
-                install(HttpCache)
 
                 BrowserUserAgent()
             }

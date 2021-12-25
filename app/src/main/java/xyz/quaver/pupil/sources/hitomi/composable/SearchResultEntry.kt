@@ -19,6 +19,7 @@
 package xyz.quaver.pupil.sources.hitomi.composable
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -107,7 +108,7 @@ fun DetailedSearchResult(
 
     Card(
         modifier = Modifier
-            .padding(8.dp, 0.dp)
+            .padding(8.dp)
             .fillMaxWidth()
             .clickable { onClick(result) },
         elevation = 4.dp

@@ -85,6 +85,7 @@ open class SearchBaseViewModel<T>(app: Application) : AndroidViewModel(app) {
     var query by mutableStateOf("")
 
     var loading by mutableStateOf(false)
+    var error by mutableStateOf(false)
 
     //region UI
     var isFabVisible by  mutableStateOf(true)
@@ -139,7 +140,7 @@ fun <T> SearchBase(
             )
         }
     ) { contentPadding ->
-        Box(Modifier.padding(contentPadding)) {
+        Box(Modifier.padding(contentPadding).fillMaxSize()) {
             OverscrollPager(
                 currentPage = model.currentPage,
                 prevPageAvailable = model.prevPageAvailable,
@@ -191,8 +192,9 @@ fun <T> SearchBase(
                     }
                 },
                 actions = actions,
+                onSearch = { onSearch(); focusManager.clearFocus() },
                 onTextFieldFocused = { navigationIconState = NavigationIconState.ARROW },
-                onTextFieldUnfocused = { navigationIconState = NavigationIconState.MENU; onSearch() }
+                onTextFieldUnfocused = { navigationIconState = NavigationIconState.MENU }
             )
         }
     }

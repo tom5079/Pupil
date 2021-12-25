@@ -18,7 +18,6 @@
 
 package xyz.quaver.pupil.sources.composable
 
-import android.util.Log
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.awaitFirstDown
@@ -41,17 +40,19 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.input.pointer.changedToUpIgnoreConsumed
 import androidx.compose.ui.input.pointer.consumePositionChange
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastFirstOrNull
-import com.google.accompanist.insets.LocalWindowInsets
-import com.google.accompanist.insets.rememberInsetsPaddingValues
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.ui.theme.LightBlue300
-import kotlin.math.*
+import kotlin.math.abs
+import kotlin.math.max
+import kotlin.math.min
+import kotlin.math.sign
 
 @Composable
 fun OverscrollPager(
@@ -68,8 +69,10 @@ fun OverscrollPager(
 
     var overscroll: Float? by remember { mutableStateOf(null) }
 
-    val topCircleRadius by animateFloatAsState(if (overscroll?.let { it >= pageTurnIndicatorHeight } == true) 1000f else 0f)
-    val bottomCircleRadius by animateFloatAsState(if (overscroll?.let { it <= -pageTurnIndicatorHeight } == true) 1000f else 0f)
+    val screenWidth = LocalConfiguration.current.screenWidthDp
+
+    val topCircleRadius by animateFloatAsState(if (overscroll?.let { it >= pageTurnIndicatorHeight } == true) screenWidth.toFloat() else 0f)
+    val bottomCircleRadius by animateFloatAsState(if (overscroll?.let { it <= -pageTurnIndicatorHeight } == true) screenWidth.toFloat() else 0f)
 
     val prevPageTurnIndicatorOffsetPx = LocalDensity.current.run { prevPageTurnIndicatorOffset.toPx() }
     val nextPageTurnIndicatorOffsetPx = LocalDensity.current.run { nextPageTurnIndicatorOffset.toPx() }

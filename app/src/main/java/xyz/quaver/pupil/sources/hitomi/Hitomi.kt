@@ -26,6 +26,9 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.GridCells
+import androidx.compose.foundation.lazy.LazyVerticalGrid
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -187,21 +190,26 @@ class Hitomi(app: Application) : Source(), DIAware {
             },
             onSearch = { model.search() }
         ) { contentPadding ->
-            ListSearchResult(model.searchResults, contentPadding = contentPadding) {
-                DetailedSearchResult(
-                    it,
-                    bookmarks = bookmarkSet,
-                    onBookmarkToggle = {
-                        coroutineScope.launch {
-                            if (it in bookmarkSet) bookmarkDao.delete(name, it)
-                            else bookmarkDao.insert(name, it)
+            LazyVerticalGrid(
+                cells = GridCells.Adaptive(minSize = 500.dp),
+                contentPadding = contentPadding
+            ) {
+                items(model.searchResults) {
+                    DetailedSearchResult(
+                        it,
+                        bookmarks = bookmarkSet,
+                        onBookmarkToggle = {
+                            coroutineScope.launch {
+                                if (it in bookmarkSet) bookmarkDao.delete(name, it)
+                                else bookmarkDao.insert(name, it)
+                            }
                         }
+                    ) { result ->
+                        logger.info {
+                            result.toString()
+                        }
+                        navController.navigate("hitomi.la/reader/${result.itemID}")
                     }
-                ) { result ->
-                    logger.info {
-                        result.toString()
-                    }
-                    navController.navigate("hitomi.la/reader/${result.itemID}")
                 }
             }
         }

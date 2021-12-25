@@ -18,8 +18,12 @@
 
 package xyz.quaver.pupil.sources.hitomi.lib
 
+import android.util.Log
 import io.ktor.client.*
+import io.ktor.client.call.*
 import io.ktor.client.request.*
+import io.ktor.client.statement.*
+import io.ktor.util.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.nio.ByteBuffer
@@ -36,8 +40,15 @@ const val max_node_size = 464
 const val B = 16
 const val compressed_nozomi_prefix = "n"
 
-var tag_index_version: String? = null
-var galleries_index_version: String? = null
+var _tag_index_version: String? = null
+suspend fun getTagIndexVersion(client: HttpClient): String = _tag_index_version ?: getIndexVersion(client, "tagindex").also {
+    _tag_index_version = it
+}
+
+var _galleries_index_version: String? = null
+suspend fun getGalleriesIndexVersion(client: HttpClient): String = _galleries_index_version ?: getIndexVersion(client, "galleriesindex").also {
+    _galleries_index_version = it
+}
 
 fun sha256(data: ByteArray) : ByteArray {
     return MessageDigest.getInstance("SHA-256").digest(data)
@@ -118,7 +129,7 @@ suspend fun getSuggestionsForQuery(client: HttpClient, query: String) : List<Sug
 
 data class Suggestion(val s: String, val t: Int, val u: String, val n: String)
 suspend fun getSuggestionsFromData(client: HttpClient, field: String, data: Pair<Long, Int>) : List<Suggestion> {
-    val url = "$protocol//$domain/$index_dir/$field.$tag_index_version.data"
+    val url = "$protocol//$domain/$index_dir/$field.${getTagIndexVersion(client)}.data"
     val (offset, length) = data
     if (length > 10000 || length <= 0)
         throw Exception("length $length is too long")
@@ -188,7 +199,7 @@ suspend fun getGalleryIDsFromNozomi(client: HttpClient, area: String?, tag: Stri
 }
 
 suspend fun getGalleryIDsFromData(client: HttpClient, data: Pair<Long, Int>) : Set<Int> {
-    val url = "$protocol//$domain/$galleries_index_dir/galleries.$galleries_index_version.data"
+    val url = "$protocol//$domain/$galleries_index_dir/galleries.${getGalleriesIndexVersion(client)}.data"
     val (offset, length) = data
     if (length > 100000000 || length <= 0)
         throw Exception("length $length is too long")
@@ -219,10 +230,10 @@ suspend fun getGalleryIDsFromData(client: HttpClient, data: Pair<Long, Int>) : S
 suspend fun getNodeAtAddress(client: HttpClient, field: String, address: Long) : Node? {
     val url =
         when(field) {
-            "galleries" -> "$protocol//$domain/$galleries_index_dir/galleries.$galleries_index_version.index"
-            "languages" -> "$protocol//$domain/$galleries_index_dir/languages.$galleries_index_version.index"
-            "nozomiurl" -> "$protocol//$domain/$galleries_index_dir/nozomiurl.$galleries_index_version.index"
-            else -> "$protocol//$domain/$index_dir/$field.$tag_index_version.index"
+            "galleries" -> "$protocol//$domain/$galleries_index_dir/galleries.${getGalleriesIndexVersion(client)}.index"
+            "languages" -> "$protocol//$domain/$galleries_index_dir/languages.${getGalleriesIndexVersion(client)}.index"
+            "nozomiurl" -> "$protocol//$domain/$galleries_index_dir/nozomiurl.${getGalleriesIndexVersion(client)}.index"
+            else -> "$protocol//$domain/$index_dir/$field.${getTagIndexVersion(client)}.index"
         }
 
     val nodedata = getURLAtRange(client, url, address.until(address+max_node_size))
@@ -233,7 +244,7 @@ suspend fun getNodeAtAddress(client: HttpClient, field: String, address: Long) :
 suspend fun getURLAtRange(client: HttpClient, url: String, range: LongRange) : ByteArray = withContext(Dispatchers.IO) {
     client.get(url) {
         headers {
-            append("Range", "bytes=${range.first}-${range.last}")
+            set("Range", "bytes=${range.first}-${range.last}")
         }
     }
 }
