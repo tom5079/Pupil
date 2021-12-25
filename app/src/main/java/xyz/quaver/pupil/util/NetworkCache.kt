@@ -123,39 +123,44 @@ class NetworkCache(context: Context) : DIAware {
 
                 requests[url] = networkScope.launch {
                     runCatching {
-                        cacheDir.mkdirs()
-                        file.createNewFile()
+                        if (file.exists()) {
+                            progressFlow.emit(Float.POSITIVE_INFINITY)
+                        } else {
+                            cacheDir.mkdirs()
+                            file.createNewFile()
 
-                        client.request<HttpStatement>(request).execute { httpResponse ->
-                            if (!httpResponse.status.isSuccess()) throw IOException("${request.url} failed with code ${httpResponse.status.value}")
-                            val responseChannel: ByteReadChannel = httpResponse.receive()
-                            val contentLength = httpResponse.contentLength() ?: -1
-                            var readBytes = 0f
+                            client.request<HttpStatement>(request).execute { httpResponse ->
+                                if (!httpResponse.status.isSuccess()) throw IOException("${request.url} failed with code ${httpResponse.status.value}")
+                                val responseChannel: ByteReadChannel = httpResponse.receive()
+                                val contentLength = httpResponse.contentLength() ?: -1
+                                var readBytes = 0f
 
-                            file.outputStream().use { outputStream ->
-                                outputStream.channel.truncate(0)
-                                while (!responseChannel.isClosedForRead) {
-                                    if (!isActive) {
-                                        file.delete()
-                                        break
-                                    }
-
-                                    val packet = responseChannel.readRemaining(DEFAULT_BUFFER_SIZE.toLong())
-                                    while (!packet.isEmpty) {
+                                file.outputStream().use { outputStream ->
+                                    outputStream.channel.truncate(0)
+                                    while (!responseChannel.isClosedForRead) {
                                         if (!isActive) {
                                             file.delete()
                                             break
                                         }
 
-                                        val bytes = packet.readBytes()
-                                        outputStream.write(bytes)
+                                        val packet =
+                                            responseChannel.readRemaining(DEFAULT_BUFFER_SIZE.toLong())
+                                        while (!packet.isEmpty) {
+                                            if (!isActive) {
+                                                file.delete()
+                                                break
+                                            }
 
-                                        readBytes += bytes.size
-                                        progressFlow.emit(readBytes / contentLength)
+                                            val bytes = packet.readBytes()
+                                            outputStream.write(bytes)
+
+                                            readBytes += bytes.size
+                                            progressFlow.emit(readBytes / contentLength)
+                                        }
                                     }
                                 }
+                                progressFlow.emit(Float.POSITIVE_INFINITY)
                             }
-                            progressFlow.emit(Float.POSITIVE_INFINITY)
                         }
                     }.onFailure {
                         logger.warning(it)
