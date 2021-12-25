@@ -137,7 +137,7 @@ dependencies {
     implementation("ru.noties.markwon:core:3.1.0")
 
     implementation("xyz.quaver:documentfilex:0.7.1")
-    implementation("xyz.quaver:subsampledimage:0.0.1-alpha14-SNAPSHOT-DEV01")
+    implementation("xyz.quaver:subsampledimage:0.0.1-alpha15-SNAPSHOT")
 
     implementation("com.google.guava:guava:31.0.1-jre")
 
