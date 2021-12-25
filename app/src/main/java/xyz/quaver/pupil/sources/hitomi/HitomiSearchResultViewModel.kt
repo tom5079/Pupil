@@ -19,6 +19,7 @@
 package xyz.quaver.pupil.sources.hitomi
 
 import android.app.Application
+import android.util.LruCache
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -39,6 +40,8 @@ import xyz.quaver.pupil.sources.hitomi.lib.GalleryBlock
 import xyz.quaver.pupil.sources.hitomi.lib.doSearch
 import xyz.quaver.pupil.sources.hitomi.lib.getGalleryBlock
 import kotlin.math.ceil
+import kotlin.math.max
+import kotlin.math.min
 
 class HitomiSearchResultViewModel(app: Application) : SearchBaseViewModel<HitomiSearchResult>(app), DIAware {
     override val di by closestDI(app)
@@ -54,6 +57,8 @@ class HitomiSearchResultViewModel(app: Application) : SearchBaseViewModel<Hitomi
     private var cachedSortByPopularity: Boolean? = null
     private val cache = mutableListOf<Int>()
 
+    private val galleryBlockCache = LruCache<Int, GalleryBlock>(100)
+
     var sortByPopularity by mutableStateOf(false)
 
     private var searchJob: Job? = null
@@ -66,6 +71,7 @@ class HitomiSearchResultViewModel(app: Application) : SearchBaseViewModel<Hitomi
             searchResults.clear()
             searchBarOffset = 0
             loading = true
+            error = false
 
             searchJob = launch {
                 if (cachedQuery != query || cachedSortByPopularity != sortByPopularity || cache.isEmpty()) {
@@ -74,21 +80,41 @@ class HitomiSearchResultViewModel(app: Application) : SearchBaseViewModel<Hitomi
 
                     yield()
 
-                    val result = doSearch(client, query, sortByPopularity)
+                    val result = runCatching {
+                        doSearch(client, query, sortByPopularity)
+                    }.onFailure {
+                        error = true
+                    }.getOrNull()
 
                     yield()
 
-                    cache.addAll(result)
+                    result?.let { cache.addAll(result) }
                     cachedQuery = query
-                    totalItems = result.size
-                    maxPage = ceil(result.size / resultsPerPage.toDouble()).toInt()
+                    totalItems = result?.size ?: 0
+                    maxPage =
+                        result?.let { ceil(result.size / resultsPerPage.toDouble()).toInt() }
+                            ?: 0
                 }
 
-                cache.slice((currentPage-1)*resultsPerPage until currentPage*resultsPerPage).forEach { galleryID ->
-                    yield()
-                    loading = false
-                    searchResults.add(transform(getGalleryBlock(client, galleryID)))
-                }
+                yield()
+
+                val range = max((currentPage-1)*resultsPerPage, 0) until min(currentPage*resultsPerPage, totalItems)
+
+                cache.slice(range)
+                    .forEach { galleryID ->
+                        yield()
+                        loading = false
+                        kotlin.runCatching {
+                            galleryBlockCache.get(galleryID) ?: getGalleryBlock(client, galleryID).also {
+                                galleryBlockCache.put(galleryID, it)
+                            }
+                        }.onFailure {
+                            error = true
+                        }.getOrNull()?.let {
+                            searchResults.add(transform(it))
+                        }
+
+                    }
             }
 
             viewModelScope.launch {

@@ -48,7 +48,7 @@ suspend fun fetchNozomi(
                 val startByte = start*4
                 val endByte = (start+count)*4-1
 
-                append("Range", "bytes=$startByte-$endByte")
+                set("Range", "bytes=$startByte-$endByte")
             }
         }
     }

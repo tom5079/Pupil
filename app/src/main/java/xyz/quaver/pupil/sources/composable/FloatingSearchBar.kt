@@ -50,6 +50,7 @@ fun FloatingSearchBar(
     onQueryChange: (String) -> Unit = { },
     navigationIcon: @Composable () -> Unit = { },
     actions: @Composable RowScope.() -> Unit = { },
+    onSearch: () -> Unit = { },
     onTextFieldFocused: () -> Unit = { },
     onTextFieldUnfocused: () -> Unit = { }
 ) {
@@ -100,9 +101,7 @@ fun FloatingSearchBar(
                 cursorBrush = SolidColor(MaterialTheme.colors.secondary),
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
                 keyboardActions = KeyboardActions(
-                    onSearch = {
-                        focusManager.clearFocus()
-                    }
+                    onSearch = { onSearch() }
                 ),
                 decorationBox = { innerTextField ->
                     Row(
