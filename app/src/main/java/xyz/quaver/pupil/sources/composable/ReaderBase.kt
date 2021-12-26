@@ -518,7 +518,8 @@ fun ReaderItem(
             val modifier = when {
                 imageSize == null -> Modifier.weight(1f).height(heightDp)
                 readerOptions.padding -> Modifier.fillMaxHeight().widthIn(0.dp, widthDp/images.size).aspectRatio(imageSize.width/imageSize.height)
-                else -> Modifier.aspectRatio(imageSize.width/imageSize.height).weight(1f)
+                readerOptions.orientation.isVertical -> Modifier.weight(1f).aspectRatio(imageSize.width/imageSize.height)
+                else -> Modifier.aspectRatio(imageSize.width/imageSize.height)
             }
 
 
