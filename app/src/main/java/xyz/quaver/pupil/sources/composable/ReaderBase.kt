@@ -242,11 +242,17 @@ open class ReaderBaseViewModel(app: Application) : AndroidViewModel(app), DIAwar
                                 }
 
                                 progressList[index] = flow.value
+                                totalProgressMutex.withLock {
+                                    totalProgress++
+                                }
                             }
                         }
                         "content" -> {
                             imageList[index] = Uri.parse(url)
                             progressList[index] = Float.POSITIVE_INFINITY
+                            totalProgressMutex.withLock {
+                                totalProgress++
+                            }
                         }
                         else -> throw IllegalArgumentException("Expected URL scheme 'http(s)' or 'content' but was '$scheme'")
                     }
@@ -274,9 +280,10 @@ val ReaderOptions.Orientation.isReverse: Boolean
         this == ReaderOptions.Orientation.VERTICAL_UP ||
         this == ReaderOptions.Orientation.HORIZONTAL_LEFT
 
+@ExperimentalMaterialApi
 @Composable
 fun ReaderOptionsSheet(readerOptions: ReaderOptions, onOptionsChange: (ReaderOptions.Builder.() -> Unit) -> Unit) {
-    CompositionLocalProvider(LocalTextStyle provides MaterialTheme.typography.h6) {
+    CompositionLocalProvider(LocalTextStyle provides MaterialTheme.typography.h6, LocalMinimumTouchTargetEnforcement provides false) {
         Column(Modifier.padding(16.dp, 0.dp)) {
             val layout = readerOptions.layout
             val snap = readerOptions.snap
@@ -296,18 +303,20 @@ fun ReaderOptionsSheet(readerOptions: ReaderOptions, onOptionsChange: (ReaderOpt
                         ReaderOptions.Layout.DOUBLE_PAGE to DoubleImage,
                         ReaderOptions.Layout.AUTO to Icons.Default.AutoFixHigh
                     ).forEach { (option, icon) ->
-                        IconButton(onClick = {
-                            onOptionsChange {
-                                setLayout(option)
-                            }
-                        }) {
-                            Icon(
-                                icon,
-                                contentDescription = null,
-                                tint =
+                        CompositionLocalProvider(LocalMinimumTouchTargetEnforcement provides true) {
+                            IconButton(onClick = {
+                                onOptionsChange {
+                                    setLayout(option)
+                                }
+                            }) {
+                                Icon(
+                                    icon,
+                                    contentDescription = null,
+                                    tint =
                                     if (layout == option) MaterialTheme.colors.secondary
                                     else LocalContentColor.current
-                            )
+                                )
+                            }
                         }
                     }
                 }
@@ -464,7 +473,6 @@ fun BoxScope.ReaderLazyList(
                     .align(Alignment.TopStart)
                     .nestedScroll(nestedScrollConnection),
                 state = state,
-                verticalArrangement = Arrangement.spacedBy(4.dp),
                 contentPadding = rememberInsetsPaddingValues(LocalWindowInsets.current.navigationBars),
                 reverseLayout = isReverse,
                 content = content
@@ -477,7 +485,6 @@ fun BoxScope.ReaderLazyList(
                     .align(Alignment.CenterStart)
                     .nestedScroll(nestedScrollConnection),
                 state = state,
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
                 reverseLayout = isReverse,
                 content = content
             )
@@ -716,7 +723,7 @@ fun ReaderBase(
             val imageSources = remember { mutableStateListOf<ImageSource?>() }
             val imageSizes = remember { mutableStateListOf<Size?>() }
 
-            LaunchedEffect(model.progressList.count { it.isFinite() }) {
+            LaunchedEffect(model.totalProgress) {
                 val size = model.progressList.size
 
                 if (imageSources.size != size)
@@ -734,7 +741,7 @@ fun ReaderBase(
 
                         if (imageSizes[i] == null && model.progressList[i] == Float.POSITIVE_INFINITY)
                             imageSources[i]?.let {
-                                imageSizes[i] = it.imageSize
+                                imageSizes[i] = runCatching { it.imageSize }.getOrNull()
                             }
                     }
                 }

@@ -97,6 +97,7 @@ private fun String.wordCapitalize() : String {
     return result.joinToString(" ")
 }
 
+@ExperimentalMaterialApi
 @Composable
 fun DetailedSearchResult(
     result: HitomiSearchResult,
@@ -178,7 +179,9 @@ fun DetailedSearchResult(
             Divider()
 
             Row(
-                modifier = Modifier.fillMaxWidth().padding(8.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(8.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
@@ -192,16 +195,18 @@ fun DetailedSearchResult(
                     if (result.itemID in bookmarks) Icons.Default.Star else Icons.Default.StarOutline,
                     contentDescription = null,
                     tint = Orange500,
-                    modifier = Modifier.size(24.dp).clickable {
-                        onBookmarkToggle(result.itemID)
-                    }
+                    modifier = Modifier
+                        .size(24.dp)
+                        .clickable {
+                            onBookmarkToggle(result.itemID)
+                        }
                 )
             }
         }
     }
 }
 
-@OptIn(ExperimentalMaterialApi::class)
+@ExperimentalMaterialApi
 @Composable
 fun TagGroup(
     tags: List<String>,
@@ -212,30 +217,33 @@ fun TagGroup(
 
     val bookmarkedTagsInList = bookmarks intersect tags.toSet()
 
-    FlowRow(Modifier.padding(0.dp, 16.dp)) {
-        tags.sortedBy { if (bookmarkedTagsInList.contains(it)) 0 else 1 }.let { (if (isFolded) it.take(10) else it) }.forEach { tag ->
-            TagChip(
-                tag = tag,
-                isFavorite = bookmarkedTagsInList.contains(tag),
-                onFavoriteClick = onBookmarkToggle
-            )
-        }
-
-        if (isFolded && tags.size > 10)
-            Surface(
-                modifier = Modifier.padding(2.dp),
-                color = MaterialTheme.colors.background,
-                shape = RoundedCornerShape(16.dp),
-                elevation = 2.dp,
-                onClick = { isFolded = false }
-            ) {
-                Text(
-                    "…",
-                    modifier = Modifier.padding(16.dp, 8.dp),
-                    color = MaterialTheme.colors.onBackground,
-                    style = MaterialTheme.typography.body2
+    CompositionLocalProvider(LocalMinimumTouchTargetEnforcement provides false) {
+        FlowRow(Modifier.padding(0.dp, 16.dp)) {
+            tags.sortedBy { if (bookmarkedTagsInList.contains(it)) 0 else 1 }
+                .let { (if (isFolded) it.take(10) else it) }.forEach { tag ->
+                TagChip(
+                    tag = tag,
+                    isFavorite = bookmarkedTagsInList.contains(tag),
+                    onFavoriteClick = onBookmarkToggle
                 )
             }
+
+            if (isFolded && tags.size > 10)
+                Surface(
+                    modifier = Modifier.padding(2.dp),
+                    color = MaterialTheme.colors.background,
+                    shape = RoundedCornerShape(16.dp),
+                    elevation = 2.dp,
+                    onClick = { isFolded = false }
+                ) {
+                    Text(
+                        "…",
+                        modifier = Modifier.padding(16.dp, 8.dp),
+                        color = MaterialTheme.colors.onBackground,
+                        style = MaterialTheme.typography.body2
+                    )
+                }
+        }
     }
 }
 

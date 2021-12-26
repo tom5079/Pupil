@@ -25,8 +25,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.Stop
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -35,12 +33,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.scale
-import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.tooling.preview.PreviewParameter
-import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
@@ -58,9 +51,9 @@ enum class FloatingActionButtonState(private val isExpanded: Boolean) {
 }
 
 data class SubFabItem(
-    val icon: Any, // ImageVector | Painter | ImageBitmap
     val label: String? = null,
-    val onClick: ((SubFabItem) -> Unit)? = null
+    val onClick: ((SubFabItem) -> Unit)? = null,
+    val icon: @Composable () -> Unit
 )
 
 @Composable
@@ -99,33 +92,15 @@ fun MiniFloatingActionButton(
                     .scale(buttonScale),
                 onClick = { onClick?.invoke(item) },
                 elevation = elevation,
-                interactionSource = interactionSource
-            ) {
-                when (item.icon) {
-                    is ImageVector ->
-                        Icon(item.icon, contentDescription = null)
-                    is Painter ->
-                        Icon(item.icon, contentDescription = null)
-                    is ImageBitmap ->
-                        Icon(item.icon, contentDescription = null)
-                    else -> error("Icon is not ImageVector | Painter | ImageBitmap")
-                }
-            }
+                interactionSource = interactionSource,
+                content = item.icon
+            )
     }
 }
 
-private class FloatingActionButtonItemProvider : PreviewParameterProvider<SubFabItem> {
-    override val values: Sequence<SubFabItem>
-        get() = sequenceOf(
-            SubFabItem(Icons.Default.PlayArrow, "Play"),
-            SubFabItem(Icons.Default.Stop, "Stop")
-        )
-}
-
-@Preview
 @Composable
 fun MultipleFloatingActionButton(
-    @PreviewParameter(provider = FloatingActionButtonItemProvider::class) items: List<SubFabItem>,
+    items: List<SubFabItem>,
     modifier: Modifier = Modifier,
     fabIcon: ImageVector = Icons.Default.Add,
     visible: Boolean = true,
