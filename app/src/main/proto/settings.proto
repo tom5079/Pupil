@@ -25,6 +25,6 @@ message ReaderOptions {
 
     optional Layout layout = 1;
     optional Orientation orientation = 2;
-    optional bool snap = 3;
-    optional bool padding = 4;
+    optional bool snap = 3 [default = true];
+    optional bool padding = 4 [default = true];
 }
