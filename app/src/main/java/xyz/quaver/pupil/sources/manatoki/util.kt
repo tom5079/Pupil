@@ -20,14 +20,14 @@ package xyz.quaver.pupil.sources.manatoki
 
 import android.os.Parcelable
 import androidx.collection.LruCache
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.Card
-import androidx.compose.material.ExperimentalMaterialApi
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Text
+import androidx.compose.material.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.google.common.util.concurrent.RateLimiter
 import io.ktor.client.*
@@ -90,13 +90,15 @@ data class ReaderInfo(
 @ExperimentalMaterialApi
 @Composable
 fun Chip(text: String, selected: Boolean = false, onClick: () -> Unit = { }) {
-    Card(
-        onClick = onClick,
-        backgroundColor = if (selected) MaterialTheme.colors.secondary else MaterialTheme.colors.surface,
-        shape = RoundedCornerShape(8.dp),
-        elevation = 4.dp
-    ) {
-        Text(text, modifier = Modifier.padding(4.dp))
+    CompositionLocalProvider(LocalMinimumTouchTargetEnforcement provides false) {
+        Card(
+            onClick = onClick,
+            backgroundColor = if (selected) MaterialTheme.colors.secondary else MaterialTheme.colors.surface,
+            shape = RoundedCornerShape(8.dp),
+            elevation = 4.dp
+        ) {
+            Text(text, modifier = Modifier.padding(4.dp))
+        }
     }
 }
 

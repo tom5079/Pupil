@@ -140,6 +140,8 @@ class SearchViewModel(app: Application) : AndroidViewModel(app), DIAware {
     var page by mutableStateOf(1)
     var maxPage by mutableStateOf(0)
 
+    val availableArtists = mutableStateListOf<String>()
+
     var loading by mutableStateOf(false)
         private set
 
@@ -154,6 +156,7 @@ class SearchViewModel(app: Application) : AndroidViewModel(app), DIAware {
 
         loading = true
         result.clear()
+        availableArtists.clear()
         if (resetPage) page = 1
 
         searchJob = launch {
@@ -178,6 +181,13 @@ class SearchViewModel(app: Application) : AndroidViewModel(app), DIAware {
                 val doc = Jsoup.parse(client.get(urlBuilder.toString()))
 
                 maxPage = doc.getElementsByClass("pagination").first()!!.getElementsByTag("a").maxOf { it.text().toIntOrNull() ?: 0 }
+
+                doc.select("select > option").forEach {
+                    val value = it.ownText()
+
+                    if (value.isNotEmpty())
+                        availableArtists.add(value)
+                }
 
                 doc.getElementsByClass("list-item").forEach {
                     val itemID =

@@ -18,6 +18,7 @@
 
 package xyz.quaver.pupil.sources.composable
 
+import android.util.Log
 import androidx.compose.animation.core.TweenSpec
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.Canvas
@@ -184,18 +185,13 @@ fun ModalTopSheetLayout(
                 available: Offset,
                 source: NestedScrollSource
             ): Offset {
-                return if (drawerState.offset.value < 0f && source == NestedScrollSource.Drag)
+                return if (source == NestedScrollSource.Drag)
                     Offset(0f, drawerState.performDrag(available.y))
                 else
                     Offset.Zero
             }
 
-            override suspend fun onPreFling(available: Velocity): Velocity {
-                val toFling = available.y
-                return if (toFling > 0 && drawerState.offset.value < 0f) {
-                    available
-                } else Velocity.Zero
-            }
+            override suspend fun onPreFling(available: Velocity): Velocity = Velocity.Zero
 
             override suspend fun onPostFling(consumed: Velocity, available: Velocity): Velocity {
                 drawerState.performFling(available.y)
