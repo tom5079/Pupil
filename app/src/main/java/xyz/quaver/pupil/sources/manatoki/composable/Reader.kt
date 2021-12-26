@@ -18,9 +18,7 @@
 
 package xyz.quaver.pupil.sources.manatoki.composable
 
-import android.util.Log
 import androidx.activity.compose.BackHandler
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -30,15 +28,11 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyListItemInfo
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.List
-import androidx.compose.material.icons.filled.NavigateBefore
-import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.filled.StarOutline
+import androidx.compose.material.icons.filled.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -115,7 +109,8 @@ fun Reader(navController: NavController) {
         ).calculateBottomPadding().toPx()
     }
 
-    val listState = rememberLazyListState()
+    val bottomSheetListState = rememberLazyListState()
+    val readerListState = rememberLazyListState()
 
     var scrollDirection by remember { mutableStateOf(0f) }
 
@@ -140,17 +135,10 @@ fun Reader(navController: NavController) {
                     mangaListingListSize = it
                 },
                 rippleInteractionSource = mangaListingRippleInteractionSource,
-                listState = listState
+                listState = bottomSheetListState
             ) {
-                coroutineScope.launch {
-                    client.getItem(
-                        it,
-                        onReader = {
-                            navController.navigate("manatoki.net/reader/${it.itemID}") {
-                                popUpTo("manatoki.net/")
-                            }
-                        }
-                    )
+                navController.navigate("manatoki.net/reader/$it") {
+                    popUpTo("manatoki.net/")
                 }
             }
         }
@@ -205,70 +193,96 @@ fun Reader(navController: NavController) {
                     )
             },
             floatingActionButton = {
-                val scale by animateFloatAsState(if (model.fullscreen || scrollDirection < 0f) 0f else 1f)
+                val showNextButton by derivedStateOf {
+                    (readerInfo?.nextItemID?.isNotEmpty() == true) && with (readerListState.layoutInfo) {
+                        visibleItemsInfo.lastOrNull()?.index == totalItemsCount-1
+                    }
+                }
+                val scale by animateFloatAsState(if (!showNextButton && (model.fullscreen || scrollDirection < 0f)) 0f else 1f)
 
                 if (scale > 0f)
                     FloatingActionButton(
-                        modifier = Modifier.navigationBarsPadding().scale(scale),
+                        modifier = Modifier
+                            .navigationBarsPadding()
+                            .scale(scale),
                         onClick = {
                             readerInfo?.let {
-                                coroutineScope.launch {
-                                    sheetState.show()
-                                }
+                                if (showNextButton) {
+                                    navController.navigate("manatoki.net/reader/${it.nextItemID}") {
+                                        popUpTo("manatoki.net/")
+                                    }
+                                } else {
+                                    coroutineScope.launch {
+                                        sheetState.show()
+                                    }
 
-                                coroutineScope.launch {
-                                    if (mangaListing?.itemID != it.listingItemID)
-                                        client.getItem(it.listingItemID, onListing = {
-                                            mangaListing = it
+                                    coroutineScope.launch {
+                                        if (mangaListing?.itemID != it.listingItemID)
+                                            client.getItem(it.listingItemID, onListing = {
+                                                mangaListing = it
 
-                                            mangaListingRippleInteractionSource.addAll(
-                                                List(max(it.entries.size - mangaListingRippleInteractionSource.size, 0)) {
-                                                    MutableInteractionSource()
-                                                }
-                                            )
-
-                                            coroutineScope.launch {
-                                                while (listState.layoutInfo.totalItemsCount != it.entries.size) {
-                                                    delay(100)
-                                                }
-
-                                                val targetIndex = it.entries.indexOfFirst { it.itemID == itemID }
-
-                                                listState.scrollToItem(targetIndex)
-
-                                                mangaListingListSize?.let { sheetSize ->
-                                                    val targetItem = listState.layoutInfo.visibleItemsInfo.first {
-                                                        it.key == itemID
-                                                    }
-
-                                                    if (targetItem.offset == 0) {
-                                                        listState.animateScrollBy(
-                                                            -(sheetSize.height - navigationBarsPadding - targetItem.size)
+                                                mangaListingRippleInteractionSource.addAll(
+                                                    List(
+                                                        max(
+                                                            it.entries.size - mangaListingRippleInteractionSource.size,
+                                                            0
                                                         )
+                                                    ) {
+                                                        MutableInteractionSource()
+                                                    }
+                                                )
+
+                                                coroutineScope.launch {
+                                                    while (bottomSheetListState.layoutInfo.totalItemsCount != it.entries.size) {
+                                                        delay(100)
                                                     }
 
-                                                    delay(200)
+                                                    val targetIndex =
+                                                        it.entries.indexOfFirst { it.itemID == itemID }
 
-                                                    with (mangaListingRippleInteractionSource[targetIndex]) {
-                                                        val interaction = PressInteraction.Press(
-                                                            Offset(sheetSize.width/2, targetItem.size/2f)
-                                                        )
+                                                    bottomSheetListState.scrollToItem(targetIndex)
+
+                                                    mangaListingListSize?.let { sheetSize ->
+                                                        val targetItem =
+                                                            bottomSheetListState.layoutInfo.visibleItemsInfo.first {
+                                                                it.key == itemID
+                                                            }
+
+                                                        if (targetItem.offset == 0) {
+                                                            bottomSheetListState.animateScrollBy(
+                                                                -(sheetSize.height - navigationBarsPadding - targetItem.size)
+                                                            )
+                                                        }
+
+                                                        delay(200)
+
+                                                        with(mangaListingRippleInteractionSource[targetIndex]) {
+                                                            val interaction =
+                                                                PressInteraction.Press(
+                                                                    Offset(
+                                                                        sheetSize.width / 2,
+                                                                        targetItem.size / 2f
+                                                                    )
+                                                                )
 
 
-                                                        emit(interaction)
-                                                        emit(PressInteraction.Release(interaction))
+                                                            emit(interaction)
+                                                            emit(
+                                                                PressInteraction.Release(
+                                                                    interaction
+                                                                )
+                                                            )
+                                                        }
                                                     }
                                                 }
-                                            }
-                                        })
+                                            })
+                                    }
                                 }
-
                             }
                         }
                     ) {
                         Icon(
-                            Icons.Default.List,
-
+                            if (showNextButton) Icons.Default.NavigateNext else Icons.Default.List,
                             contentDescription = null
                         )
                     }
@@ -277,6 +291,7 @@ fun Reader(navController: NavController) {
             ReaderBase(
                 Modifier.padding(contentPadding),
                 model = model,
+                listState = readerListState,
                 onScroll = { scrollDirection = it }
             )
         }

@@ -109,7 +109,7 @@ fun DetailedSearchResult(
 
     Card(
         modifier = Modifier
-            .padding(8.dp)
+            .padding(8.dp, 4.dp)
             .fillMaxWidth()
             .clickable { onClick(result) },
         elevation = 4.dp
