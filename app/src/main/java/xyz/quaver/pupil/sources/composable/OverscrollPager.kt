@@ -33,6 +33,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
@@ -40,12 +41,14 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.input.pointer.changedToUpIgnoreConsumed
 import androidx.compose.ui.input.pointer.consumePositionChange
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.toSize
 import androidx.compose.ui.util.fastFirstOrNull
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.ui.theme.LightBlue300
@@ -69,10 +72,11 @@ fun OverscrollPager(
 
     var overscroll: Float? by remember { mutableStateOf(null) }
 
-    val screenWidth = LocalConfiguration.current.screenWidthDp
+    var size: Size? by remember { mutableStateOf(null) }
+    val circleRadius = (size?.width ?: 0f) / 2
 
-    val topCircleRadius by animateFloatAsState(if (overscroll?.let { it >= pageTurnIndicatorHeight } == true) screenWidth.toFloat() else 0f)
-    val bottomCircleRadius by animateFloatAsState(if (overscroll?.let { it <= -pageTurnIndicatorHeight } == true) screenWidth.toFloat() else 0f)
+    val topCircleRadius by animateFloatAsState(if (overscroll?.let { it >= pageTurnIndicatorHeight } == true) circleRadius else 0f)
+    val bottomCircleRadius by animateFloatAsState(if (overscroll?.let { it <= -pageTurnIndicatorHeight } == true) circleRadius else 0f)
 
     val prevPageTurnIndicatorOffsetPx = LocalDensity.current.run { prevPageTurnIndicatorOffset.toPx() }
     val nextPageTurnIndicatorOffsetPx = LocalDensity.current.run { nextPageTurnIndicatorOffset.toPx() }
@@ -96,7 +100,11 @@ fun OverscrollPager(
         if (isOverscrollOverHeight) haptic.performHapticFeedback(HapticFeedbackType.LongPress)
     }
 
-    Box {
+    Box(
+        Modifier.onGloballyPositioned {
+            size = it.size.toSize()
+        }
+    ) {
         overscroll?.let { overscroll ->
             if (overscroll > 0f)
                 Row(

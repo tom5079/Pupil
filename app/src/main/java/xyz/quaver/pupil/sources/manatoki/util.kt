@@ -41,6 +41,8 @@ import kotlinx.serialization.Serializable
 import org.jsoup.Jsoup
 import java.util.concurrent.Executors
 
+val manatokiUrl = "https://manatoki118.net"
+
 private val rateLimitCoroutineDispatcher = Executors.newSingleThreadExecutor().asCoroutineDispatcher()
 private val rateLimiter = RateLimiter.create(10.0)
 
@@ -118,7 +120,7 @@ suspend fun HttpClient.getItem(
     } else {
         runCatching {
             waitForRateLimit()
-            val content: String = get("https://manatoki116.net/comic/$itemID")
+            val content: String = get("$manatokiUrl/comic/$itemID")
 
             val doc = Jsoup.parse(content)
 
