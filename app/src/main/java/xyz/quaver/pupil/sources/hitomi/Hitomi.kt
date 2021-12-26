@@ -126,17 +126,20 @@ class Hitomi(app: Application) : Source(), DIAware {
             model,
             fabSubMenu = listOf(
                 SubFabItem(
-                    painterResource(R.drawable.ic_jump),
                     stringResource(R.string.main_jump_title)
-                ),
+                ) {
+                  Icon(painterResource(R.drawable.ic_jump), contentDescription = null)
+                },
                 SubFabItem(
-                    Icons.Default.Shuffle,
                     stringResource(R.string.main_fab_random)
-                ),
+                ) {
+                  Icon(Icons.Default.Shuffle, contentDescription = null)
+                },
                 SubFabItem(
-                    painterResource(R.drawable.numeric),
                     stringResource(R.string.main_open_gallery_by_id)
-                )
+                ) {
+                    Icon(painterResource(R.drawable.numeric), contentDescription = null)
+                }
             ),
             actions = {
                 var expanded by remember { mutableStateOf(false) }
@@ -205,9 +208,6 @@ class Hitomi(app: Application) : Source(), DIAware {
                             }
                         }
                     ) { result ->
-                        logger.info {
-                            result.toString()
-                        }
                         navController.navigate("hitomi.la/reader/${result.itemID}")
                     }
                 }

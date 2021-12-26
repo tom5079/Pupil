@@ -100,7 +100,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app), DIAware {
                     val misoPostList = doc.select(".miso-post-list")
 
                     misoPostList[4]
-                        .select(".post-row > a").also { logger.info { it.size.toString() } }
+                        .select(".post-row > a")
                         .forEach { entry ->
                             yield()
                             val itemID = entry.attr("href").takeLastWhile { it != '/' }

@@ -25,6 +25,7 @@ import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
@@ -35,6 +36,7 @@ import org.kodein.di.compose.rememberInstance
 import xyz.quaver.pupil.sources.Source
 import xyz.quaver.pupil.sources.SourceEntries
 
+@ExperimentalMaterialApi
 @Composable
 fun SourceSelectDialog(navController: NavController, currentSource: String? = null, onDismissRequest: () -> Unit = { }) {
     SourceSelectDialog(currentSource = currentSource, onDismissRequest = onDismissRequest) {
@@ -45,42 +47,46 @@ fun SourceSelectDialog(navController: NavController, currentSource: String? = nu
     }
 }
 
+@ExperimentalMaterialApi
 @Composable
 fun SourceSelectDialogItem(source: Source, isSelected: Boolean, onSelected: (Source) -> Unit = { }) {
-    Row(
-        modifier = Modifier.padding(16.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        Image(
-            painter = painterResource(source.iconResID),
-            contentDescription = null,
-            modifier = Modifier.size(24.dp)
-        )
-
-        Text(
-            source.name,
-            modifier = Modifier.weight(1f)
-        )
-
-        Icon(
-            Icons.Default.Settings,
-            contentDescription = null,
-            tint = MaterialTheme.colors.onSurface.copy(alpha = 0.5f)
-        )
-
-        Button(
-            enabled = !isSelected,
-            onClick = {
-                onSelected(source)
-            }
+    CompositionLocalProvider(LocalMinimumTouchTargetEnforcement provides false) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Text("GO")
-        }
+            Image(
+                painter = painterResource(source.iconResID),
+                contentDescription = null,
+                modifier = Modifier.size(24.dp)
+            )
 
+            Text(
+                source.name,
+                modifier = Modifier.weight(1f)
+            )
+
+            Icon(
+                Icons.Default.Settings,
+                contentDescription = null,
+                tint = MaterialTheme.colors.onSurface.copy(alpha = 0.5f)
+            )
+
+            Button(
+                enabled = !isSelected,
+                onClick = {
+                    onSelected(source)
+                }
+            ) {
+                Text("GO")
+            }
+
+        }
     }
 }
 
+@ExperimentalMaterialApi
 @Composable
 fun SourceSelectDialog(currentSource: String? = null, onDismissRequest: () -> Unit = { }, onSelected: (Source) -> Unit = { }) {
     val sourceEntries: SourceEntries by rememberInstance()

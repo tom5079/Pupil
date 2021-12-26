@@ -22,6 +22,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.MaterialTheme
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -46,7 +47,7 @@ import xyz.quaver.pupil.sources.SourceEntries
 import xyz.quaver.pupil.sources.composable.SourceSelectDialog
 import xyz.quaver.pupil.ui.theme.PupilTheme
 
-
+@OptIn(ExperimentalAnimationApi::class, ExperimentalMaterialApi::class)
 class MainActivity : ComponentActivity(), DIAware {
     override val di by closestDI()
 
@@ -54,7 +55,6 @@ class MainActivity : ComponentActivity(), DIAware {
 
     private val logger = newLogger(LoggerFactory.default)
 
-    @OptIn(ExperimentalAnimationApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
