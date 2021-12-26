@@ -36,6 +36,7 @@ import org.kodein.di.instance
 import org.kodein.log.LoggerFactory
 import org.kodein.log.newLogger
 import xyz.quaver.pupil.sources.manatoki.composable.Thumbnail
+import xyz.quaver.pupil.sources.manatoki.manatokiUrl
 import xyz.quaver.pupil.sources.manatoki.waitForRateLimit
 
 @Serializable
@@ -68,7 +69,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app), DIAware {
             loadJob = launch {
                 runCatching {
                     waitForRateLimit()
-                    val doc = Jsoup.parse(client.get("https://manatoki116.net/"))
+                    val doc = Jsoup.parse(client.get(manatokiUrl))
 
                     yield()
 

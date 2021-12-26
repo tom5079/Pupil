@@ -469,6 +469,14 @@ class Manatoki(app: Application) : Source(), DIAware {
                                     overflow = TextOverflow.Ellipsis
                                 )
                             },
+                            navigationIcon = {
+                                IconButton(onClick = { navController.navigateUp() }) {
+                                    Icon(
+                                        Icons.Default.NavigateBefore,
+                                        contentDescription = null
+                                    )
+                                }
+                            },
                             actions = {
                                 IconButton({ }) {
                                     Image(
@@ -564,6 +572,7 @@ class Manatoki(app: Application) : Source(), DIAware {
                         ) {
                             Icon(
                                 Icons.Default.List,
+
                                 contentDescription = null
                             )
                         }
@@ -581,29 +590,104 @@ class Manatoki(app: Application) : Source(), DIAware {
 
     @Composable
     fun Recent(navController: NavController) {
-        Scaffold(
-            topBar = {
-                TopAppBar(
-                    title = {
-                        Text("최신 업데이트")
-                    },
-                    navigationIcon = {
-                        IconButton(onClick = { navController.navigateUp() }) {
-                            Icon(
-                                Icons.Default.NavigateBefore,
-                                contentDescription = null
-                            )
-                        }
-                    },
-                    contentPadding = rememberInsetsPaddingValues(
-                        LocalWindowInsets.current.statusBars,
-                        applyBottom = false
-                    )
-                )
-            }
-        ) { contentPadding ->
-            Box(Modifier.padding(contentPadding)) {
+        val model: RecentViewModel = viewModel()
+        val coroutineScope = rememberCoroutineScope()
 
+        var mangaListing: MangaListing? by rememberSaveable {mutableStateOf(null) }
+        val state = rememberModalBottomSheetState(ModalBottomSheetValue.Hidden)
+
+        LaunchedEffect(Unit) {
+            model.load()
+        }
+
+        BackHandler {
+            if (state.isVisible) coroutineScope.launch { state.hide() }
+            else navController.popBackStack()
+        }
+
+        ModalBottomSheetLayout(
+            sheetState = state,
+            sheetShape = RoundedCornerShape(32.dp, 32.dp, 0.dp, 0.dp),
+            sheetContent = {
+                MangaListingBottomSheet(mangaListing) {
+                    coroutineScope.launch {
+                        client.getItem(it, onReader = {
+                            launch {
+                                state.snapTo(ModalBottomSheetValue.Hidden)
+                                navController.navigate("manatoki.net/reader/${it.itemID}")
+                            }
+                        })
+                    }
+                }
+            }
+        ) {
+            Scaffold(
+                topBar = {
+                    TopAppBar(
+                        title = {
+                            Text("최신 업데이트")
+                        },
+                        navigationIcon = {
+                            IconButton(onClick = { navController.navigateUp() }) {
+                                Icon(
+                                    Icons.Default.NavigateBefore,
+                                    contentDescription = null
+                                )
+                            }
+                        },
+                        contentPadding = rememberInsetsPaddingValues(
+                            LocalWindowInsets.current.statusBars,
+                            applyBottom = false
+                        )
+                    )
+                }
+            ) { contentPadding ->
+                Box(Modifier.padding(contentPadding)) {
+                    OverscrollPager(
+                        currentPage = model.page,
+                        prevPageAvailable = model.page > 1,
+                        nextPageAvailable = model.page < 10,
+                        nextPageTurnIndicatorOffset = rememberInsetsPaddingValues(
+                            LocalWindowInsets.current.navigationBars
+                        ).calculateBottomPadding(),
+                        onPageTurn = {
+                            model.page = it
+                            model.load()
+                        }
+                    ) {
+                        Box(Modifier.fillMaxSize()) {
+                            LazyVerticalGrid(
+                                GridCells.Adaptive(minSize = 200.dp),
+                                contentPadding = rememberInsetsPaddingValues(
+                                    LocalWindowInsets.current.navigationBars
+                                )
+                            ) {
+                                items(model.result) {
+                                    Thumbnail(
+                                        it,
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .aspectRatio(3f / 4)
+                                            .padding(8.dp)
+                                    ) {
+                                        coroutineScope.launch {
+                                            mangaListing = null
+                                            state.show()
+                                        }
+                                        coroutineScope.launch {
+                                            client.getItem(it, onListing = {
+                                                mangaListing = it
+                                            })
+                                        }
+                                    }
+                                }
+                            }
+
+                            if (model.loading)
+                                CircularProgressIndicator(Modifier.align(Alignment.Center))
+                        }
+                    }
+                }
             }
         }
     }
@@ -666,7 +750,8 @@ class Manatoki(app: Application) : Source(), DIAware {
                                 modifier = Modifier
                                     .onFocusChanged {
                                         searchFocused = it.isFocused
-                                    }.fillMaxWidth(),
+                                    }
+                                    .fillMaxWidth(),
                                 onValueChange = { model.stx = it },
                                 placeholder = { Text("제목") },
                                 textStyle = MaterialTheme.typography.subtitle1,

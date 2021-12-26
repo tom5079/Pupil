@@ -37,6 +37,7 @@ import org.kodein.di.android.closestDI
 import org.kodein.di.instance
 import org.kodein.log.LoggerFactory
 import org.kodein.log.newLogger
+import xyz.quaver.pupil.sources.manatoki.manatokiUrl
 
 @Parcelize
 @Serializable
@@ -157,7 +158,7 @@ class SearchViewModel(app: Application) : AndroidViewModel(app), DIAware {
 
         searchJob = launch {
             runCatching {
-                val urlBuilder = StringBuilder("https://manatoki116.net/comic")
+                val urlBuilder = StringBuilder("$manatokiUrl/comic")
 
                 if (page != 1) urlBuilder.append("/p$page")
 
