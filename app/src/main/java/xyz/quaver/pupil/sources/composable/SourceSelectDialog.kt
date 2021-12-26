@@ -36,7 +36,6 @@ import org.kodein.di.compose.rememberInstance
 import xyz.quaver.pupil.sources.Source
 import xyz.quaver.pupil.sources.SourceEntries
 
-@ExperimentalMaterialApi
 @Composable
 fun SourceSelectDialog(navController: NavController, currentSource: String? = null, onDismissRequest: () -> Unit = { }) {
     SourceSelectDialog(currentSource = currentSource, onDismissRequest = onDismissRequest) {
@@ -47,46 +46,42 @@ fun SourceSelectDialog(navController: NavController, currentSource: String? = nu
     }
 }
 
-@ExperimentalMaterialApi
 @Composable
 fun SourceSelectDialogItem(source: Source, isSelected: Boolean, onSelected: (Source) -> Unit = { }) {
-    CompositionLocalProvider(LocalMinimumTouchTargetEnforcement provides false) {
-        Row(
-            modifier = Modifier.padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            Image(
-                painter = painterResource(source.iconResID),
-                contentDescription = null,
-                modifier = Modifier.size(24.dp)
-            )
+    Row(
+        modifier = Modifier.padding(16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        Image(
+            painter = painterResource(source.iconResID),
+            contentDescription = null,
+            modifier = Modifier.size(24.dp)
+        )
 
-            Text(
-                source.name,
-                modifier = Modifier.weight(1f)
-            )
+        Text(
+            source.name,
+            modifier = Modifier.weight(1f)
+        )
 
-            Icon(
-                Icons.Default.Settings,
-                contentDescription = null,
-                tint = MaterialTheme.colors.onSurface.copy(alpha = 0.5f)
-            )
+        Icon(
+            Icons.Default.Settings,
+            contentDescription = null,
+            tint = MaterialTheme.colors.onSurface.copy(alpha = 0.5f)
+        )
 
-            Button(
-                enabled = !isSelected,
-                onClick = {
-                    onSelected(source)
-                }
-            ) {
-                Text("GO")
+        Button(
+            enabled = !isSelected,
+            onClick = {
+                onSelected(source)
             }
-
+        ) {
+            Text("GO")
         }
+
     }
 }
 
-@ExperimentalMaterialApi
 @Composable
 fun SourceSelectDialog(currentSource: String? = null, onDismissRequest: () -> Unit = { }, onSelected: (Source) -> Unit = { }) {
     val sourceEntries: SourceEntries by rememberInstance()

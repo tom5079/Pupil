@@ -212,25 +212,7 @@ fun Search(navController: NavController) {
                             }.take(20)
 
                             Text("작가")
-                            ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = !expanded }) {
-                                TextField(
-                                    model.artist,
-                                    onValueChange = { model.artist = it },
-                                    trailingIcon = {
-                                        ExposedDropdownMenuDefaults.TrailingIcon(
-                                            expanded = expanded
-                                        )
-                                    }
-                                )
-
-                                ExposedDropdownMenu(expanded, onDismissRequest = { expanded = false }) {
-                                    suggestedArtists.forEach {
-                                        DropdownMenuItem(onClick = { model.artist = it; expanded = false }) {
-                                            Text(it)
-                                        }
-                                    }
-                                }
-                            }
+                            TextField(model.artist, onValueChange = { model.artist = it })
 
                             Text("발행")
                             FlowRow(mainAxisSpacing = 4.dp, crossAxisSpacing = 4.dp) {

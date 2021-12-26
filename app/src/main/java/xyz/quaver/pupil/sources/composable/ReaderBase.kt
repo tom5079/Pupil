@@ -280,10 +280,9 @@ val ReaderOptions.Orientation.isReverse: Boolean
         this == ReaderOptions.Orientation.VERTICAL_UP ||
         this == ReaderOptions.Orientation.HORIZONTAL_LEFT
 
-@ExperimentalMaterialApi
 @Composable
 fun ReaderOptionsSheet(readerOptions: ReaderOptions, onOptionsChange: (ReaderOptions.Builder.() -> Unit) -> Unit) {
-    CompositionLocalProvider(LocalTextStyle provides MaterialTheme.typography.h6, LocalMinimumTouchTargetEnforcement provides false) {
+    CompositionLocalProvider(LocalTextStyle provides MaterialTheme.typography.h6) {
         Column(Modifier.padding(16.dp, 0.dp)) {
             val layout = readerOptions.layout
             val snap = readerOptions.snap
@@ -303,20 +302,18 @@ fun ReaderOptionsSheet(readerOptions: ReaderOptions, onOptionsChange: (ReaderOpt
                         ReaderOptions.Layout.DOUBLE_PAGE to DoubleImage,
                         ReaderOptions.Layout.AUTO to Icons.Default.AutoFixHigh
                     ).forEach { (option, icon) ->
-                        CompositionLocalProvider(LocalMinimumTouchTargetEnforcement provides true) {
-                            IconButton(onClick = {
-                                onOptionsChange {
-                                    setLayout(option)
-                                }
-                            }) {
-                                Icon(
-                                    icon,
-                                    contentDescription = null,
-                                    tint =
-                                    if (layout == option) MaterialTheme.colors.secondary
-                                    else LocalContentColor.current
-                                )
+                        IconButton(onClick = {
+                            onOptionsChange {
+                                setLayout(option)
                             }
+                        }) {
+                            Icon(
+                                icon,
+                                contentDescription = null,
+                                tint =
+                                if (layout == option) MaterialTheme.colors.secondary
+                                else LocalContentColor.current
+                            )
                         }
                     }
                 }

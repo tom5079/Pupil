@@ -21,8 +21,7 @@ package xyz.quaver.pupil.sources.manatoki.composable
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
-import androidx.compose.animation.scaleIn
-import androidx.compose.animation.scaleOut
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.gestures.animateScrollBy
@@ -43,6 +42,7 @@ import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.platform.LocalDensity
@@ -203,13 +203,11 @@ fun Reader(navController: NavController) {
                     )
             },
             floatingActionButton = {
-                AnimatedVisibility(
-                    !(model.fullscreen || scrollDirection < 0f),
-                    enter = scaleIn(),
-                    exit = scaleOut()
-                ) {
+                val scale by animateFloatAsState(if (model.fullscreen || scrollDirection < 0f) 0f else 1f)
+
+                if (scale > 0f)
                     FloatingActionButton(
-                        modifier = Modifier.navigationBarsPadding(),
+                        modifier = Modifier.navigationBarsPadding().scale(scale),
                         onClick = {
                             readerInfo?.let {
                                 coroutineScope.launch {
@@ -271,7 +269,6 @@ fun Reader(navController: NavController) {
                             contentDescription = null
                         )
                     }
-                }
             }
         ) { contentPadding ->
             ReaderBase(

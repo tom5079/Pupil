@@ -19,6 +19,7 @@
 package xyz.quaver.pupil.sources.manatoki
 
 import android.os.Parcelable
+import android.util.Log
 import androidx.collection.LruCache
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.padding
@@ -90,15 +91,13 @@ data class ReaderInfo(
 @ExperimentalMaterialApi
 @Composable
 fun Chip(text: String, selected: Boolean = false, onClick: () -> Unit = { }) {
-    CompositionLocalProvider(LocalMinimumTouchTargetEnforcement provides false) {
-        Card(
-            onClick = onClick,
-            backgroundColor = if (selected) MaterialTheme.colors.secondary else MaterialTheme.colors.surface,
-            shape = RoundedCornerShape(8.dp),
-            elevation = 4.dp
-        ) {
-            Text(text, modifier = Modifier.padding(4.dp))
-        }
+    Card(
+        onClick = onClick,
+        backgroundColor = if (selected) MaterialTheme.colors.secondary else MaterialTheme.colors.surface,
+        shape = RoundedCornerShape(8.dp),
+        elevation = 4.dp
+    ) {
+        Text(text, modifier = Modifier.padding(4.dp))
     }
 }
 
