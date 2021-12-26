@@ -209,7 +209,7 @@ fun MangaListingBottomSheet(
                         state = listState,
                         contentPadding = rememberInsetsPaddingValues(LocalWindowInsets.current.navigationBars)
                     ) {
-                        itemsIndexed(mangaListing.entries) { index, entry ->
+                        itemsIndexed(mangaListing.entries, key = { _, entry -> entry.itemID }) { index, entry ->
                             Row(
                                 modifier = Modifier
                                     .clickable {
