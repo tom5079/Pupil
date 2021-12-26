@@ -520,9 +520,16 @@ fun ReaderItem(
             }
 
             val modifier = when {
-                imageSize == null -> Modifier.weight(1f).height(heightDp)
-                readerOptions.padding -> Modifier.fillMaxHeight().widthIn(0.dp, widthDp/images.size).aspectRatio(imageSize.width/imageSize.height)
-                readerOptions.orientation.isVertical -> Modifier.weight(1f).aspectRatio(imageSize.width/imageSize.height)
+                imageSize == null -> Modifier
+                    .weight(1f)
+                    .height(heightDp)
+                readerOptions.padding -> Modifier
+                    .fillMaxHeight()
+                    .widthIn(0.dp, widthDp / images.size)
+                    .aspectRatio(imageSize.width / imageSize.height)
+                readerOptions.orientation.isVertical -> Modifier
+                    .weight(1f)
+                    .aspectRatio(imageSize.width / imageSize.height)
                 else -> Modifier.aspectRatio(imageSize.width/imageSize.height)
             }
 
@@ -627,6 +634,7 @@ fun LazyListScope.ReaderLazyListContent(
 fun ReaderBase(
     modifier: Modifier = Modifier,
     model: ReaderBaseViewModel,
+    listState: LazyListState = rememberLazyListState(),
     onScroll: (direction: Float) -> Unit = { }
 ) {
     val context = LocalContext.current
@@ -687,7 +695,6 @@ fun ReaderBase(
             }
         ) {
             var listSize: Size? by remember { mutableStateOf(null) }
-            val listState = rememberLazyListState()
 
             val nestedScrollConnection = remember { object: NestedScrollConnection {
                 override suspend fun onPreFling(available: Velocity): Velocity {

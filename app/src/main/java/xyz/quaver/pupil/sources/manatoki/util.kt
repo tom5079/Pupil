@@ -85,7 +85,9 @@ data class ReaderInfo(
     val itemID: String,
     val title: String,
     val urls: List<String>,
-    val listingItemID: String
+    val listingItemID: String,
+    val prevItemID: String,
+    val nextItemID: String
 ): Parcelable
 
 @ExperimentalMaterialApi
@@ -142,7 +144,7 @@ suspend fun HttpClient.getItem(
                     }.toString()
 
                 val urls = Jsoup.parse(htmlData)
-                    .select("img[^data-]:not([style])")
+                    .select("img[^data-]:not([style]):not([src*=loading])").also { Log.d("PUPILD", it.size.toString()) }
                     .map {
                         it.attributes()
                             .first { it.key.startsWith("data-") }
@@ -154,11 +156,29 @@ suspend fun HttpClient.getItem(
                 val listingItemID = doc.select("a:contains(전체목록)").first()!!.attr("href")
                     .takeLastWhile { it != '/' }
 
+                val prevItemID = doc.getElementById("goPrevBtn")!!.attr("href")
+                    .let {
+                        if (it.contains('?'))
+                            it.dropLastWhile { it != '?' }.drop(1)
+                        else it
+                    }
+                    .takeLastWhile { it != '/' }
+
+                val nextItemID = doc.getElementById("goNextBtn")!!.attr("href")
+                    .let {
+                        if (it.contains('?'))
+                            it.dropLastWhile { it != '?' }.drop(1)
+                        else it
+                    }
+                    .takeLastWhile { it != '/' }
+
                 val readerInfo = ReaderInfo(
                     itemID,
                     title,
                     urls,
-                    listingItemID
+                    listingItemID,
+                    prevItemID,
+                    nextItemID
                 )
 
                 synchronized(cache) {
