@@ -18,6 +18,7 @@
 
 package xyz.quaver.pupil.sources.manatoki.composable
 
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -38,6 +39,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.SubcomposeLayout
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toSize
 import coil.compose.rememberImagePainter
@@ -98,6 +100,7 @@ fun MangaListingBottomSheetLayout(
     }
 }
 
+@ExperimentalMaterialApi
 @Composable
 fun MangaListingBottomSheet(
     mangaListing: MangaListing? = null,
@@ -138,16 +141,17 @@ fun MangaListingBottomSheet(
                     ) {
                         val painter = rememberImagePainter(mangaListing.thumbnail)
 
-                        Image(
-                            modifier = Modifier
-                                .width(150.dp)
-                                .aspectRatio(
-                                    with(painter.intrinsicSize) { if (this == Size.Unspecified) 1f else width / height },
-                                    true
-                                ),
-                            painter = painter,
-                            contentDescription = null
-                        )
+                        Box(Modifier.fillMaxHeight()) {
+                            Image(
+                                modifier = Modifier
+                                    .width(150.dp)
+                                    .aspectRatio(
+                                        with(painter.intrinsicSize) { if (this == Size.Unspecified) 1f else width / height }
+                                    ).align(Alignment.Center),
+                                painter = painter,
+                                contentDescription = null
+                            )
+                        }
 
                         Column(
                             modifier = Modifier
@@ -205,7 +209,7 @@ fun MangaListingBottomSheet(
                         state = listState,
                         contentPadding = rememberInsetsPaddingValues(LocalWindowInsets.current.navigationBars)
                     ) {
-                        itemsIndexed(mangaListing.entries, key = { _, entry -> entry.itemID }) { index, entry ->
+                        itemsIndexed(mangaListing.entries) { index, entry ->
                             Row(
                                 modifier = Modifier
                                     .clickable {

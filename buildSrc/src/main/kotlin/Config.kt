@@ -20,10 +20,10 @@ const val GROUP_ID = "xyz.quaver"
 const val VERSION = "6.0.0-alpha01"
 
 object Versions {
-    const val KOTLIN_VERSION = "1.6.0"
+    const val KOTLIN_VERSION = "1.5.31"
 
-    const val JETPACK_COMPOSE = "1.1.0-rc01"
-    const val ACCOMPANIST = "0.22.0-rc"
+    const val JETPACK_COMPOSE = "1.0.5"
+    const val ACCOMPANIST = "0.20.3"
 }
 
 object JetpackCompose {

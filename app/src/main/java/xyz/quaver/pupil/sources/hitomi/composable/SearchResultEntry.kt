@@ -217,33 +217,31 @@ fun TagGroup(
 
     val bookmarkedTagsInList = bookmarks intersect tags.toSet()
 
-    CompositionLocalProvider(LocalMinimumTouchTargetEnforcement provides false) {
-        FlowRow(Modifier.padding(0.dp, 16.dp)) {
-            tags.sortedBy { if (bookmarkedTagsInList.contains(it)) 0 else 1 }
-                .let { (if (isFolded) it.take(10) else it) }.forEach { tag ->
-                TagChip(
-                    tag = tag,
-                    isFavorite = bookmarkedTagsInList.contains(tag),
-                    onFavoriteClick = onBookmarkToggle
+    FlowRow(Modifier.padding(0.dp, 16.dp)) {
+        tags.sortedBy { if (bookmarkedTagsInList.contains(it)) 0 else 1 }
+            .let { (if (isFolded) it.take(10) else it) }.forEach { tag ->
+            TagChip(
+                tag = tag,
+                isFavorite = bookmarkedTagsInList.contains(tag),
+                onFavoriteClick = onBookmarkToggle
+            )
+        }
+
+        if (isFolded && tags.size > 10)
+            Surface(
+                modifier = Modifier.padding(2.dp),
+                color = MaterialTheme.colors.background,
+                shape = RoundedCornerShape(16.dp),
+                elevation = 2.dp,
+                onClick = { isFolded = false }
+            ) {
+                Text(
+                    "…",
+                    modifier = Modifier.padding(16.dp, 8.dp),
+                    color = MaterialTheme.colors.onBackground,
+                    style = MaterialTheme.typography.body2
                 )
             }
-
-            if (isFolded && tags.size > 10)
-                Surface(
-                    modifier = Modifier.padding(2.dp),
-                    color = MaterialTheme.colors.background,
-                    shape = RoundedCornerShape(16.dp),
-                    elevation = 2.dp,
-                    onClick = { isFolded = false }
-                ) {
-                    Text(
-                        "…",
-                        modifier = Modifier.padding(16.dp, 8.dp),
-                        color = MaterialTheme.colors.onBackground,
-                        style = MaterialTheme.typography.body2
-                    )
-                }
-        }
     }
 }
 
