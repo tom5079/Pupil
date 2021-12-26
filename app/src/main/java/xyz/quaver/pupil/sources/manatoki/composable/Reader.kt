@@ -18,6 +18,7 @@
 
 package xyz.quaver.pupil.sources.manatoki.composable
 
+import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
@@ -29,6 +30,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyListItemInfo
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
@@ -251,6 +253,7 @@ fun Reader(navController: NavController) {
                                                         val interaction = PressInteraction.Press(
                                                             Offset(sheetSize.width/2, targetItem.size/2f)
                                                         )
+
 
                                                         emit(interaction)
                                                         emit(PressInteraction.Release(interaction))

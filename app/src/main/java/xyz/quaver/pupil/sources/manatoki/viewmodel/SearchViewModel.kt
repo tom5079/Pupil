@@ -170,7 +170,7 @@ class SearchViewModel(app: Application) : AndroidViewModel(app), DIAware {
                 if (publish.isNotEmpty()) args.add("publish=$publish")
                 if (jaum.isNotEmpty()) args.add("jaum=$jaum")
                 if (tag.isNotEmpty()) args.add("tag=${tag.keys.joinToString(",")}")
-                if (sst.isNotEmpty()) args.add("sst=$sst")
+                if (sst.isNotEmpty()) args.add("sst=$sst&sod=desc")
                 if (stx.isNotEmpty()) args.add("stx=$stx")
                 if (artist.isNotEmpty()) args.add("artist=$artist")
 
