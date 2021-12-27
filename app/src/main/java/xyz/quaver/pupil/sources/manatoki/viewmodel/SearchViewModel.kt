@@ -23,6 +23,7 @@ import android.os.Parcelable
 import android.util.Log
 import androidx.compose.runtime.*
 import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import io.ktor.client.*
 import io.ktor.client.request.*
 import kotlinx.coroutines.Job
@@ -115,12 +116,10 @@ val availableSst = mapOf(
     "as_bookmark" to "북마크순"
 )
 
-class SearchViewModel(app: Application) : AndroidViewModel(app), DIAware {
-    override val di by closestDI(app)
-
+class SearchViewModel(
+    private val client: HttpClient
+) : ViewModel() {
     private val logger = newLogger(LoggerFactory.default)
-
-    private val client: HttpClient by instance()
 
     // 발행
     var publish by mutableStateOf("")

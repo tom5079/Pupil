@@ -20,12 +20,8 @@ package xyz.quaver.pupil.sources.composable
 
 import android.app.Application
 import android.net.Uri
-import android.os.Parcelable
-import android.util.Log
-import android.view.MotionEvent
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
@@ -46,13 +42,11 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.input.pointer.pointerInteropFilter
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -79,25 +73,22 @@ import kotlinx.coroutines.flow.takeWhile
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import kotlinx.parcelize.Parcelize
-import kotlinx.serialization.Serializable
 import org.kodein.di.DIAware
 import org.kodein.di.android.closestDI
 import org.kodein.di.instance
 import org.kodein.log.LoggerFactory
 import org.kodein.log.newLogger
-import xyz.quaver.graphics.subsampledimage.*
-import xyz.quaver.graphics.subsampledimage.ScaleTypes.CENTER_INSIDE
+import xyz.quaver.graphics.subsampledimage.ImageSource
+import xyz.quaver.graphics.subsampledimage.SubSampledImage
+import xyz.quaver.graphics.subsampledimage.SubSampledImageState
+import xyz.quaver.graphics.subsampledimage.rememberSubSampledImageState
 import xyz.quaver.io.FileX
 import xyz.quaver.pupil.R
-import xyz.quaver.pupil.db.AppDatabase
 import xyz.quaver.pupil.proto.ReaderOptions
 import xyz.quaver.pupil.proto.settingsDataStore
-import xyz.quaver.pupil.ui.theme.Orange500
 import xyz.quaver.pupil.util.FileXImageSource
 import xyz.quaver.pupil.util.NetworkCache
 import xyz.quaver.pupil.util.activity
-import xyz.quaver.pupil.util.rememberFileXImageSource
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.math.abs
 import kotlin.math.sign
@@ -188,8 +179,6 @@ open class ReaderBaseViewModel(app: Application) : AndroidViewModel(app), DIAwar
     private val cache: NetworkCache by instance()
 
     var fullscreen by mutableStateOf(false)
-
-    private val database: AppDatabase by instance()
 
     var error by mutableStateOf(false)
 

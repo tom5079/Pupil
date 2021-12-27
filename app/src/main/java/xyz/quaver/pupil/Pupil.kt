@@ -45,7 +45,6 @@ import okhttp3.Protocol
 import org.kodein.di.*
 import org.kodein.di.android.x.androidXModule
 import xyz.quaver.io.FileX
-import xyz.quaver.pupil.db.databaseModule
 import xyz.quaver.pupil.sources.sourceModule
 import xyz.quaver.pupil.util.*
 import java.util.*
@@ -54,7 +53,6 @@ class Pupil : Application(), DIAware {
 
     override val di: DI by DI.lazy {
         import(androidXModule(this@Pupil))
-        import(databaseModule)
         import(sourceModule)
 
         bind { singleton { NetworkCache(applicationContext) } }

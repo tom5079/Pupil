@@ -34,7 +34,6 @@ import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
@@ -57,10 +56,11 @@ import io.ktor.client.*
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.kodein.di.compose.rememberInstance
+import org.kodein.di.compose.rememberViewModel
 import xyz.quaver.pupil.R
-import xyz.quaver.pupil.db.AppDatabase
 import xyz.quaver.pupil.sources.composable.ReaderBase
 import xyz.quaver.pupil.sources.composable.ReaderBaseViewModel
+import xyz.quaver.pupil.sources.manatoki.ManatokiDatabase
 import xyz.quaver.pupil.sources.manatoki.MangaListing
 import xyz.quaver.pupil.sources.manatoki.ReaderInfo
 import xyz.quaver.pupil.sources.manatoki.getItem
@@ -79,8 +79,9 @@ fun Reader(navController: NavController) {
 
     val client: HttpClient by rememberInstance()
 
-    val database: AppDatabase by rememberInstance()
-    val bookmarkDao = database.bookmarkDao()
+    val database: ManatokiDatabase by rememberInstance()
+    val favoriteDao = remember { database.favoriteDao() }
+    val bookmarkDao = remember { database.bookmarkDao() }
 
     val coroutineScope = rememberCoroutineScope()
 
@@ -98,7 +99,7 @@ fun Reader(navController: NavController) {
         else model.error = true
     }
 
-    val bookmark by bookmarkDao.contains("manatoki.net", itemID ?: "").observeAsState(false)
+    val isFavorite by favoriteDao.contains(itemID ?: "").collectAsState(false)
 
     val sheetState = rememberModalBottomSheetState(ModalBottomSheetValue.Hidden)
     var mangaListing: MangaListing? by rememberSaveable { mutableStateOf(null) }
@@ -174,13 +175,13 @@ fun Reader(navController: NavController) {
                             IconButton(onClick = {
                                 itemID?.let {
                                     coroutineScope.launch {
-                                        if (bookmark) bookmarkDao.delete("manatoki.net", it)
-                                        else          bookmarkDao.insert("manatoki.net", it)
+                                        if (isFavorite) favoriteDao.delete(it)
+                                        else          favoriteDao.insert(it)
                                     }
                                 }
                             }) {
                                 Icon(
-                                    if (bookmark) Icons.Default.Star else Icons.Default.StarOutline,
+                                    if (isFavorite) Icons.Default.Star else Icons.Default.StarOutline,
                                     contentDescription = null,
                                     tint = Orange500
                                 )

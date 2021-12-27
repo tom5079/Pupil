@@ -32,16 +32,27 @@ import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
 import androidx.navigation.navigation
+import androidx.room.Room
 import org.kodein.di.DIAware
 import org.kodein.di.android.closestDI
+import org.kodein.di.android.subDI
+import org.kodein.di.bindProvider
+import org.kodein.di.bindSingleton
+import org.kodein.di.compose.withDI
+import org.kodein.di.instance
 import org.kodein.log.LoggerFactory
+import org.kodein.log.frontend.defaultLogFrontend
 import org.kodein.log.newLogger
+import org.kodein.log.withShortPackageKeepLast
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.sources.Source
 import xyz.quaver.pupil.sources.manatoki.composable.Main
 import xyz.quaver.pupil.sources.manatoki.composable.Reader
 import xyz.quaver.pupil.sources.manatoki.composable.Recent
 import xyz.quaver.pupil.sources.manatoki.composable.Search
+import xyz.quaver.pupil.sources.manatoki.viewmodel.MainViewModel
+import xyz.quaver.pupil.sources.manatoki.viewmodel.RecentViewModel
+import xyz.quaver.pupil.sources.manatoki.viewmodel.SearchViewModel
 
 @OptIn(
     ExperimentalMaterialApi::class,
@@ -50,19 +61,27 @@ import xyz.quaver.pupil.sources.manatoki.composable.Search
     ExperimentalComposeUiApi::class
 )
 class Manatoki(app: Application) : Source(), DIAware {
-    override val di by closestDI(app)
+    override val di by subDI(closestDI(app)) {
+        bindSingleton {
+            Room.databaseBuilder(
+                app, ManatokiDatabase::class.java, name
+            ).build()
+        }
 
-    private val logger = newLogger(LoggerFactory.default)
+        bindProvider { MainViewModel(instance()) }
+        bindProvider { RecentViewModel(instance()) }
+        bindProvider { SearchViewModel(instance()) }
+    }
 
     override val name = "manatoki.net"
     override val iconResID = R.drawable.manatoki
 
     override fun NavGraphBuilder.navGraph(navController: NavController) {
         navigation(route = name, startDestination = "manatoki.net/") {
-            composable("manatoki.net/") { Main(navController) }
-            composable("manatoki.net/reader/{itemID}") { Reader(navController) }
-            composable("manatoki.net/search") { Search(navController) }
-            composable("manatoki.net/recent") { Recent(navController) }
+            composable("manatoki.net/") { withDI(di) { Main(navController) } }
+            composable("manatoki.net/reader/{itemID}") { withDI(di) { Reader(navController) } }
+            composable("manatoki.net/search") { withDI(di) { Search(navController) } }
+            composable("manatoki.net/recent") { withDI(di) { Recent(navController) } }
         }
     }
 

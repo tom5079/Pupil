@@ -19,7 +19,6 @@
 package xyz.quaver.pupil.sources.hitomi.composable
 
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -101,8 +100,8 @@ private fun String.wordCapitalize() : String {
 @Composable
 fun DetailedSearchResult(
     result: HitomiSearchResult,
-    bookmarks: Set<String>,
-    onBookmarkToggle: (String) -> Unit = { },
+    favorites: Set<String>,
+    onFavoriteToggle: (String) -> Unit = { },
     onClick: (HitomiSearchResult) -> Unit = { }
 ) {
     val painter = rememberImagePainter(result.thumbnail)
@@ -169,8 +168,8 @@ fun DetailedSearchResult(
                     key(result.tags) {
                         TagGroup(
                             tags = result.tags,
-                            bookmarks,
-                            onBookmarkToggle = onBookmarkToggle
+                            favorites,
+                            onFavoriteToggle = onFavoriteToggle
                         )
                     }
                 }
@@ -192,13 +191,13 @@ fun DetailedSearchResult(
                 )
 
                 Icon(
-                    if (result.itemID in bookmarks) Icons.Default.Star else Icons.Default.StarOutline,
+                    if (result.itemID in favorites) Icons.Default.Star else Icons.Default.StarOutline,
                     contentDescription = null,
                     tint = Orange500,
                     modifier = Modifier
                         .size(24.dp)
                         .clickable {
-                            onBookmarkToggle(result.itemID)
+                            onFavoriteToggle(result.itemID)
                         }
                 )
             }
@@ -210,20 +209,20 @@ fun DetailedSearchResult(
 @Composable
 fun TagGroup(
     tags: List<String>,
-    bookmarks: Set<String>,
-    onBookmarkToggle: (String) -> Unit = { }
+    favorites: Set<String>,
+    onFavoriteToggle: (String) -> Unit = { }
 ) {
     var isFolded by remember { mutableStateOf(true) }
 
-    val bookmarkedTagsInList = bookmarks intersect tags.toSet()
+    val favoriteTagsInList = favorites intersect tags.toSet()
 
     FlowRow(Modifier.padding(0.dp, 16.dp)) {
-        tags.sortedBy { if (bookmarkedTagsInList.contains(it)) 0 else 1 }
+        tags.sortedBy { if (favoriteTagsInList.contains(it)) 0 else 1 }
             .let { (if (isFolded) it.take(10) else it) }.forEach { tag ->
             TagChip(
                 tag = tag,
-                isFavorite = bookmarkedTagsInList.contains(tag),
-                onFavoriteClick = onBookmarkToggle
+                isFavorite = favoriteTagsInList.contains(tag),
+                onFavoriteClick = onFavoriteToggle
             )
         }
 
