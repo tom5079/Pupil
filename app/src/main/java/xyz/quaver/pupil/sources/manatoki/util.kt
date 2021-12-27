@@ -144,7 +144,7 @@ suspend fun HttpClient.getItem(
                     }.toString()
 
                 val urls = Jsoup.parse(htmlData)
-                    .select("img[^data-]:not([style])")
+                    .select("img[^data-]:not([style]):not([^class])")
                     .map {
                         it.attributes()
                             .first { it.key.startsWith("data-") }
