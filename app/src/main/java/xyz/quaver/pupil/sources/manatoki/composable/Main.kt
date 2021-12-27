@@ -18,7 +18,6 @@
 
 package xyz.quaver.pupil.sources.manatoki.composable
 
-import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
@@ -40,7 +39,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.google.accompanist.insets.LocalWindowInsets
 import com.google.accompanist.insets.navigationBarsPadding
@@ -48,9 +46,9 @@ import com.google.accompanist.insets.rememberInsetsPaddingValues
 import com.google.accompanist.insets.ui.Scaffold
 import com.google.accompanist.insets.ui.TopAppBar
 import io.ktor.client.*
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.kodein.di.compose.rememberInstance
+import org.kodein.di.compose.rememberViewModel
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.proto.settingsDataStore
 import xyz.quaver.pupil.sources.composable.SourceSelectDialog
@@ -62,7 +60,7 @@ import xyz.quaver.pupil.sources.manatoki.viewmodel.MainViewModel
 @ExperimentalMaterialApi
 @Composable
 fun Main(navController: NavController) {
-    val model: MainViewModel = viewModel()
+    val model: MainViewModel by rememberViewModel()
 
     val client: HttpClient by rememberInstance()
 

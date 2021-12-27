@@ -39,7 +39,6 @@ import xyz.quaver.graphics.subsampledimage.ImageSource
 import xyz.quaver.graphics.subsampledimage.newBitmapRegionDecoder
 import xyz.quaver.io.FileX
 import xyz.quaver.io.util.inputStream
-import xyz.quaver.pupil.db.AppDatabase
 import xyz.quaver.pupil.sources.SourceEntries
 import java.security.MessageDigest
 
@@ -54,17 +53,6 @@ val JsonElement.content
 
 fun DIAware.source(source: String) = lazy { direct.source(source) }
 fun DirectDIAware.source(source: String) = instance<SourceEntries>().toMap()[source]!!
-
-fun DIAware.database() = lazy { direct.database() }
-fun DirectDIAware.database() = instance<AppDatabase>()
-
-fun View.hide() {
-    visibility = View.INVISIBLE
-}
-
-fun View.show() {
-    visibility = View.VISIBLE
-}
 
 class FileXImageSource(val file: FileX): ImageSource {
     private val decoder by lazy {

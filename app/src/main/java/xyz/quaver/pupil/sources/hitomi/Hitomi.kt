@@ -33,7 +33,6 @@ import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
@@ -47,20 +46,22 @@ import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.navigation
+import androidx.room.Room
 import com.google.accompanist.insets.LocalWindowInsets
 import com.google.accompanist.insets.rememberInsetsPaddingValues
 import com.google.accompanist.insets.ui.Scaffold
 import com.google.accompanist.insets.ui.TopAppBar
 import io.ktor.client.*
 import kotlinx.coroutines.launch
-import org.kodein.di.DIAware
+import org.kodein.di.*
 import org.kodein.di.android.closestDI
+import org.kodein.di.android.subDI
 import org.kodein.di.compose.rememberInstance
-import org.kodein.di.instance
+import org.kodein.di.compose.rememberViewModel
+import org.kodein.di.compose.withDI
 import org.kodein.log.LoggerFactory
 import org.kodein.log.newLogger
 import xyz.quaver.pupil.R
-import xyz.quaver.pupil.db.AppDatabase
 import xyz.quaver.pupil.proto.settingsDataStore
 import xyz.quaver.pupil.sources.Source
 import xyz.quaver.pupil.sources.composable.*
@@ -70,38 +71,42 @@ import xyz.quaver.pupil.sources.hitomi.lib.getGalleryInfo
 import xyz.quaver.pupil.sources.hitomi.lib.getReferer
 import xyz.quaver.pupil.sources.hitomi.lib.imageUrlFromImage
 import xyz.quaver.pupil.ui.theme.Orange500
+import java.util.*
 
 @OptIn(ExperimentalMaterialApi::class, ExperimentalFoundationApi::class, ExperimentalComposeUiApi::class)
 class Hitomi(app: Application) : Source(), DIAware {
-    override val di by closestDI(app)
+    override val di by subDI(closestDI(app)) {
+        bindSingleton {
+            Room.databaseBuilder(app, HitomiDatabase::class.java, name).build()
+        }
+
+        bindProvider { HitomiSearchResultViewModel(instance()) }
+    }
 
     private val client: HttpClient by instance()
 
     private val logger = newLogger(LoggerFactory.default)
-
-    private val database: AppDatabase by instance()
-    private val bookmarkDao = database.bookmarkDao()
 
     override val name: String = "hitomi.la"
     override val iconResID: Int = R.drawable.hitomi
 
     override fun NavGraphBuilder.navGraph(navController: NavController) {
         navigation(startDestination = "hitomi.la/search", route = name) {
-            composable("hitomi.la/search") { Search(navController) }
-            composable("hitomi.la/reader/{itemID}") { Reader(navController) }
+            composable("hitomi.la/search") { withDI(di) { Search(navController) } }
+            composable("hitomi.la/reader/{itemID}") { withDI(di) { Reader(navController) } }
         }
     }
 
     @Composable
     fun Search(navController: NavController) {
-        val model: HitomiSearchResultViewModel = viewModel()
-        val database: AppDatabase by rememberInstance()
-        val bookmarkDao = remember { database.bookmarkDao() }
+        val model: HitomiSearchResultViewModel by rememberViewModel()
+        val database: HitomiDatabase by rememberInstance()
+        val favoritesDao = remember { database.favoritesDao() }
         val coroutineScope = rememberCoroutineScope()
 
-        val bookmarks by bookmarkDao.getAll(name).observeAsState()
-        val bookmarkSet by derivedStateOf {
-            bookmarks?.toSet() ?: emptySet()
+        val favorites by favoritesDao.getAll().collectAsState(emptyList())
+        val favoritesSet by derivedStateOf {
+            Collections.unmodifiableSet(favorites.mapTo(mutableSetOf()) { it.item })
         }
 
         val context = LocalContext.current
@@ -200,11 +205,11 @@ class Hitomi(app: Application) : Source(), DIAware {
                 items(model.searchResults) {
                     DetailedSearchResult(
                         it,
-                        bookmarks = bookmarkSet,
-                        onBookmarkToggle = {
+                        favorites = favoritesSet,
+                        onFavoriteToggle = {
                             coroutineScope.launch {
-                                if (it in bookmarkSet) bookmarkDao.delete(name, it)
-                                else bookmarkDao.insert(name, it)
+                                if (it in favoritesSet) favoritesDao.delete(it)
+                                else favoritesDao.insert(it)
                             }
                         }
                     ) { result ->
@@ -219,8 +224,8 @@ class Hitomi(app: Application) : Source(), DIAware {
     fun Reader(navController: NavController) {
         val model: ReaderBaseViewModel = viewModel()
 
-        val database: AppDatabase by rememberInstance()
-        val bookmarkDao = database.bookmarkDao()
+        val database: HitomiDatabase by rememberInstance()
+        val favoritesDao = remember { database.favoritesDao() }
 
         val coroutineScope = rememberCoroutineScope()
 
@@ -228,7 +233,7 @@ class Hitomi(app: Application) : Source(), DIAware {
 
         if (itemID == null) model.error = true
 
-        val bookmark by bookmarkDao.contains(name, itemID ?: "").observeAsState(false)
+        val isFavorite by favoritesDao.contains(itemID ?: "").collectAsState(false)
         val galleryInfo by produceState<GalleryInfo?>(null) {
             runCatching {
                 val galleryID = itemID!!.toInt()
@@ -271,13 +276,13 @@ class Hitomi(app: Application) : Source(), DIAware {
                             IconButton(onClick = {
                                 itemID?.let {
                                     coroutineScope.launch {
-                                        if (bookmark) bookmarkDao.delete(name, it)
-                                        else          bookmarkDao.insert(name, it)
+                                        if (isFavorite) favoritesDao.delete(it)
+                                        else            favoritesDao.insert(it)
                                     }
                                 }
                             }) {
                                 Icon(
-                                    if (bookmark) Icons.Default.Star else Icons.Default.StarOutline,
+                                    if (isFavorite) Icons.Default.Star else Icons.Default.StarOutline,
                                     contentDescription = null,
                                     tint = Orange500
                                 )

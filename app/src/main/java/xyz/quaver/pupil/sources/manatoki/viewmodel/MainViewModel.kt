@@ -21,6 +21,7 @@ package xyz.quaver.pupil.sources.manatoki.viewmodel
 import android.app.Application
 import androidx.compose.runtime.mutableStateListOf
 import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.ktor.client.*
 import io.ktor.client.request.*
@@ -46,13 +47,9 @@ data class TopWeekly(
     val count: String
 )
 
-class MainViewModel(app: Application) : AndroidViewModel(app), DIAware {
-    override val di by closestDI(app)
-
-    private val logger = newLogger(LoggerFactory.default)
-
-    private val client: HttpClient by instance()
-
+class MainViewModel(
+    private val client: HttpClient
+) : ViewModel() {
     val recentUpload = mutableStateListOf<Thumbnail>()
     val mangaList = mutableStateListOf<Thumbnail>()
     val topWeekly = mutableStateListOf<TopWeekly>()
@@ -109,7 +106,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app), DIAware {
                             topWeekly.add(TopWeekly(itemID, title, count))
                         }
                 }.onFailure {
-                    logger.warning(it)
+                    TODO()
                 }
             }
         }

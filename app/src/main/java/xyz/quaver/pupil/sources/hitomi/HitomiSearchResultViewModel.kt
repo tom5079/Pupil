@@ -18,7 +18,6 @@
 
 package xyz.quaver.pupil.sources.hitomi
 
-import android.app.Application
 import android.util.LruCache
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -29,12 +28,6 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.yield
-import org.kodein.di.DIAware
-import org.kodein.di.android.closestDI
-import org.kodein.di.instance
-import org.kodein.log.LoggerFactory
-import org.kodein.log.newLogger
-import xyz.quaver.pupil.db.AppDatabase
 import xyz.quaver.pupil.sources.composable.SearchBaseViewModel
 import xyz.quaver.pupil.sources.hitomi.lib.GalleryBlock
 import xyz.quaver.pupil.sources.hitomi.lib.doSearch
@@ -43,16 +36,9 @@ import kotlin.math.ceil
 import kotlin.math.max
 import kotlin.math.min
 
-class HitomiSearchResultViewModel(app: Application) : SearchBaseViewModel<HitomiSearchResult>(app), DIAware {
-    override val di by closestDI(app)
-
-    private val logger = newLogger(LoggerFactory.default)
-
-    private val client: HttpClient by instance()
-
-    private val database: AppDatabase by instance()
-    private val bookmarkDao = database.bookmarkDao()
-
+class HitomiSearchResultViewModel(
+    private val client: HttpClient
+) : SearchBaseViewModel<HitomiSearchResult>() {
     private var cachedQuery: String? = null
     private var cachedSortByPopularity: Boolean? = null
     private val cache = mutableListOf<Int>()

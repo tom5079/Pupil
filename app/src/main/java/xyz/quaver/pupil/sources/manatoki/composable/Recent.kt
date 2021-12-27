@@ -42,6 +42,7 @@ import com.google.accompanist.insets.ui.TopAppBar
 import io.ktor.client.*
 import kotlinx.coroutines.launch
 import org.kodein.di.compose.rememberInstance
+import org.kodein.di.compose.rememberViewModel
 import xyz.quaver.pupil.sources.composable.OverscrollPager
 import xyz.quaver.pupil.sources.manatoki.MangaListing
 import xyz.quaver.pupil.sources.manatoki.getItem
@@ -51,7 +52,7 @@ import xyz.quaver.pupil.sources.manatoki.viewmodel.RecentViewModel
 @ExperimentalMaterialApi
 @Composable
 fun Recent(navController: NavController) {
-    val model: RecentViewModel = viewModel()
+    val model: RecentViewModel by rememberViewModel()
 
     val client: HttpClient by rememberInstance()
 

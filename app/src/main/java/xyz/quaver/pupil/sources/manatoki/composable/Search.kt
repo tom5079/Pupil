@@ -58,6 +58,7 @@ import com.google.accompanist.insets.ui.TopAppBar
 import io.ktor.client.*
 import kotlinx.coroutines.launch
 import org.kodein.di.compose.rememberInstance
+import org.kodein.di.compose.rememberViewModel
 import xyz.quaver.pupil.sources.composable.ModalTopSheetLayout
 import xyz.quaver.pupil.sources.composable.ModalTopSheetState
 import xyz.quaver.pupil.sources.composable.OverscrollPager
@@ -70,7 +71,7 @@ import xyz.quaver.pupil.sources.manatoki.viewmodel.*
 @ExperimentalMaterialApi
 @Composable
 fun Search(navController: NavController) {
-    val model: SearchViewModel = viewModel()
+    val model: SearchViewModel by rememberViewModel()
 
     val client: HttpClient by rememberInstance()
 

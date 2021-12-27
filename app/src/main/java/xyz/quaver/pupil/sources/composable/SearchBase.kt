@@ -51,6 +51,7 @@ import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastFirstOrNull
 import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.google.accompanist.drawablepainter.rememberDrawablePainter
 import com.google.accompanist.insets.LocalWindowInsets
@@ -67,7 +68,7 @@ private enum class NavigationIconState {
     ARROW
 }
 
-open class SearchBaseViewModel<T>(app: Application) : AndroidViewModel(app) {
+open class SearchBaseViewModel<T> : ViewModel() {
     val searchResults = mutableStateListOf<T>()
 
     var sortModeIndex by mutableStateOf(0)

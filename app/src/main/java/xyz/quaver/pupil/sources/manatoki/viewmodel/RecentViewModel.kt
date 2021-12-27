@@ -24,6 +24,7 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.ktor.client.*
 import io.ktor.client.request.*
@@ -37,11 +38,9 @@ import org.kodein.di.instance
 import xyz.quaver.pupil.sources.manatoki.composable.Thumbnail
 import xyz.quaver.pupil.sources.manatoki.manatokiUrl
 
-class RecentViewModel(app: Application): AndroidViewModel(app), DIAware {
-    override val di by closestDI(app)
-
-    private val client: HttpClient by instance()
-
+class RecentViewModel(
+    private val client: HttpClient
+): ViewModel() {
     var page by mutableStateOf(1)
 
     var loading by mutableStateOf(false)
