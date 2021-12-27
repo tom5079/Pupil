@@ -123,7 +123,7 @@ class NetworkCache(context: Context) : DIAware {
 
                 requests[url] = networkScope.launch {
                     runCatching {
-                        if (file.exists()) {
+                        if (!force && file.exists()) {
                             progressFlow.emit(Float.POSITIVE_INFINITY)
                         } else {
                             cacheDir.mkdirs()
