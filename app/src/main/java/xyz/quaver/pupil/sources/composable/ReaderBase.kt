@@ -243,7 +243,10 @@ open class ReaderBaseViewModel(app: Application) : AndroidViewModel(app), DIAwar
                                 totalProgress++
                             }
                         }
-                        else -> throw IllegalArgumentException("Expected URL scheme 'http(s)' or 'content' but was '$scheme'")
+                        else -> {
+                            logger.warning(IllegalArgumentException("Expected URL scheme 'http(s)' or 'content' but was '$scheme'"))
+                            progressList[index] = Float.NEGATIVE_INFINITY
+                        }
                     }
                 }
             }

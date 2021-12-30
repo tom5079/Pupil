@@ -22,12 +22,12 @@ import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.gestures.animateScrollBy
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.GridCells
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyVerticalGrid
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
@@ -42,8 +42,11 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
@@ -56,15 +59,14 @@ import com.google.accompanist.insets.rememberInsetsPaddingValues
 import com.google.accompanist.insets.ui.Scaffold
 import com.google.accompanist.insets.ui.TopAppBar
 import io.ktor.client.*
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.kodein.di.compose.rememberInstance
 import org.kodein.di.compose.rememberViewModel
 import xyz.quaver.pupil.sources.composable.ModalTopSheetLayout
 import xyz.quaver.pupil.sources.composable.ModalTopSheetState
 import xyz.quaver.pupil.sources.composable.OverscrollPager
-import xyz.quaver.pupil.sources.manatoki.Chip
-import xyz.quaver.pupil.sources.manatoki.MangaListing
-import xyz.quaver.pupil.sources.manatoki.getItem
+import xyz.quaver.pupil.sources.manatoki.*
 import xyz.quaver.pupil.sources.manatoki.viewmodel.*
 
 @ExperimentalFoundationApi
@@ -75,13 +77,14 @@ fun Search(navController: NavController) {
 
     val client: HttpClient by rememberInstance()
 
+    val database: ManatokiDatabase by rememberInstance()
+    val historyDao = remember { database.historyDao() }
+
     var searchFocused by remember { mutableStateOf(false) }
     val handleOffset by animateDpAsState(if (searchFocused) 0.dp else (-36).dp)
 
     val drawerState = rememberSwipeableState(ModalTopSheetState.Hidden)
     val sheetState = rememberModalBottomSheetState(ModalBottomSheetValue.Hidden)
-
-    var mangaListing: MangaListing? by rememberSaveable { mutableStateOf(null) }
 
     val coroutineScope = rememberCoroutineScope()
 
@@ -100,11 +103,28 @@ fun Search(navController: NavController) {
         }
     }
 
+    var mangaListing: MangaListing? by rememberSaveable { mutableStateOf(null) }
+    var recentItem: String? by rememberSaveable { mutableStateOf(null) }
+    val mangaListingListState = rememberLazyListState()
+    var mangaListingListSize: Size? by remember { mutableStateOf(null) }
+    val mangaListingInteractionSource = remember { mutableStateMapOf<String, MutableInteractionSource>() }
+    val navigationBarsPadding = LocalDensity.current.run {
+        rememberInsetsPaddingValues(
+            LocalWindowInsets.current.navigationBars
+        ).calculateBottomPadding().toPx()
+    }
+
     ModalBottomSheetLayout(
         sheetState = sheetState,
         sheetShape = RoundedCornerShape(32.dp, 32.dp, 0.dp, 0.dp),
         sheetContent = {
-            MangaListingBottomSheet(mangaListing) {
+            MangaListingBottomSheet(
+                mangaListing,
+                onListSize = { mangaListingListSize = it },
+                rippleInteractionSource = mangaListingInteractionSource,
+                listState = mangaListingListState,
+                recentItem = recentItem
+            ) {
                 coroutineScope.launch {
                     client.getItem(it, onReader = {
                         launch {
@@ -201,17 +221,6 @@ fun Search(navController: NavController) {
                                 .verticalScroll(rememberScrollState()),
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            var expanded by remember { mutableStateOf(false) }
-                            val suggestedArtists = remember(model.artist) {
-                                if (model.artist.isEmpty())
-                                    model.availableArtists
-                                else
-                                    model
-                                        .availableArtists
-                                        .filter { it.contains(model.artist) }
-                                        .sortedBy { if (it.startsWith(model.artist)) 0 else 1 }
-                            }.take(20)
-
                             Text("작가")
                             TextField(model.artist, onValueChange = { model.artist = it })
 
@@ -266,7 +275,10 @@ fun Search(navController: NavController) {
                                 }
                             }
 
-                            Box(Modifier.fillMaxWidth().height(8.dp))
+                            Box(
+                                Modifier
+                                    .fillMaxWidth()
+                                    .height(8.dp))
                         }
                     }
                 ) {
@@ -301,11 +313,58 @@ fun Search(navController: NavController) {
                                     ) {
                                         coroutineScope.launch {
                                             mangaListing = null
-                                            sheetState.show()
+                                            sheetState.animateTo(ModalBottomSheetValue.Expanded)
                                         }
                                         coroutineScope.launch {
                                             client.getItem(it, onListing = {
                                                 mangaListing = it
+
+                                                coroutineScope.launch {
+                                                    val recentItemID = historyDao.getAll(it.itemID).firstOrNull() ?: return@launch
+                                                    recentItem = recentItemID
+
+                                                    while (mangaListingListState.layoutInfo.totalItemsCount != it.entries.size) {
+                                                        delay(100)
+                                                    }
+
+                                                    val interactionSource = mangaListingInteractionSource.getOrPut(recentItemID) {
+                                                        MutableInteractionSource()
+                                                    }
+
+                                                    val targetIndex =
+                                                        it.entries.indexOfFirst { entry -> entry.itemID == recentItemID }
+
+                                                    mangaListingListState.scrollToItem(targetIndex)
+
+                                                    mangaListingListSize?.let { sheetSize ->
+                                                        val targetItem =
+                                                            mangaListingListState.layoutInfo.visibleItemsInfo.first {
+                                                                it.key == recentItemID
+                                                            }
+
+                                                        if (targetItem.offset == 0) {
+                                                            mangaListingListState.animateScrollBy(
+                                                                -(sheetSize.height - navigationBarsPadding - targetItem.size)
+                                                            )
+                                                        }
+
+                                                        delay(200)
+
+                                                        with(interactionSource) {
+                                                            val interaction =
+                                                                PressInteraction.Press(
+                                                                    Offset(
+                                                                        sheetSize.width / 2,
+                                                                        targetItem.size / 2f
+                                                                    )
+                                                                )
+
+
+                                                            emit(interaction)
+                                                            emit(PressInteraction.Release(interaction))
+                                                        }
+                                                    }
+                                                }
                                             })
                                         }
                                     }

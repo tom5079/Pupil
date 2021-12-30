@@ -18,14 +18,16 @@
 
 package xyz.quaver.pupil.sources.manatoki.composable
 
-import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.indication
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowRight
@@ -39,7 +41,6 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.SubcomposeLayout
 import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toSize
 import coil.compose.rememberImagePainter
@@ -50,7 +51,7 @@ import com.google.accompanist.insets.rememberInsetsPaddingValues
 import xyz.quaver.pupil.sources.manatoki.MangaListing
 
 private val FabSpacing = 8.dp
-private val HeightPercentage = 75 // take 60% of the available space
+private val HeightPercentage = 75 // take 75% of the available space
 private enum class MangaListingBottomSheetLayoutContent { Top, Bottom, Fab }
 
 @Composable
@@ -107,7 +108,9 @@ fun MangaListingBottomSheet(
     currentItemID: String? = null,
     onListSize: (Size) -> Unit = { },
     listState: LazyListState = rememberLazyListState(),
-    rippleInteractionSource: List<MutableInteractionSource> = emptyList(),
+    rippleInteractionSource: Map<String, MutableInteractionSource> = emptyMap(),
+    recentItem: String? = null,
+    nextItem: String? = null,
     onOpenItem: (String) -> Unit = { },
 ) {
     val coroutineScope = rememberCoroutineScope()
@@ -125,9 +128,19 @@ fun MangaListingBottomSheet(
             MangaListingBottomSheetLayout(
                 floatingActionButton = {
                     ExtendedFloatingActionButton(
-                        text = { Text("첫화보기") },
+                        text = { Text(
+                            when {
+                                mangaListing.entries.any { it.itemID == recentItem } -> "이어보기"
+                                mangaListing.entries.any { it.itemID == nextItem } -> "다음화보기"
+                                else -> "첫화보기"
+                            }
+                        ) },
                         onClick = {
-                            mangaListing.entries.lastOrNull()?.let { onOpenItem(it.itemID) }
+                            when {
+                                mangaListing.entries.any { it.itemID == recentItem } -> onOpenItem(recentItem!!)
+                                mangaListing.entries.any { it.itemID == nextItem } -> onOpenItem(nextItem!!)
+                                else -> mangaListing.entries.lastOrNull()?.let { onOpenItem(it.itemID) }
+                            }
                         }
                     )
                 },
@@ -216,11 +229,9 @@ fun MangaListingBottomSheet(
                                         onOpenItem(entry.itemID)
                                     }
                                     .run {
-                                        rippleInteractionSource
-                                            .getOrNull(index)
-                                            ?.let {
-                                                indication(it, rememberRipple())
-                                            } ?: this
+                                        rippleInteractionSource[entry.itemID]?.let {
+                                            indication(it, rememberRipple())
+                                        } ?: this
                                     }
                                     .padding(16.dp),
                                 verticalAlignment = Alignment.CenterVertically,

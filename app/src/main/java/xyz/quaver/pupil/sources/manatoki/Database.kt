@@ -20,6 +20,7 @@ package xyz.quaver.pupil.sources.manatoki
 
 import androidx.room.*
 import kotlinx.coroutines.flow.Flow
+import java.sql.Timestamp
 
 @Entity
 data class Favorite(
@@ -35,7 +36,9 @@ data class Bookmark(
 @Entity
 data class History(
     @PrimaryKey val itemID: String,
-    val page: Int
+    val parent: String,
+    val page: Int,
+    val timestamp: Long = System.currentTimeMillis()
 )
 
 @Dao
@@ -59,10 +62,21 @@ interface BookmarkDao {
 
 @Dao
 interface HistoryDao {
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insert(history: History)
+    suspend fun insert(itemID: String, parent: String, page: Int) = insert(History(itemID, parent, page))
 
+    @Query("DELETE FROM history WHERE itemID = :itemID")
+    suspend fun delete(itemID: String)
+
+    @Query("SELECT parent FROM (SELECT parent, max(timestamp) as t FROM history GROUP BY parent) ORDER BY t DESC")
+    fun getRecentManga(): Flow<List<String>>
+
+    @Query("SELECT itemID FROM history WHERE parent = :parent ORDER BY timestamp DESC")
+    suspend fun getAll(parent: String): List<String>
 }
 
-@Database(entities = [Favorite::class, Bookmark::class, History::class], version = 1)
+@Database(entities = [Favorite::class, Bookmark::class, History::class], version = 1, exportSchema = false)
 abstract class ManatokiDatabase: RoomDatabase() {
     abstract fun favoriteDao(): FavoriteDao
     abstract fun bookmarkDao(): BookmarkDao

@@ -19,6 +19,7 @@
 package xyz.quaver.pupil.sources.manatoki.viewmodel
 
 import android.app.Application
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableStateListOf
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
@@ -36,6 +37,7 @@ import org.kodein.di.android.closestDI
 import org.kodein.di.instance
 import org.kodein.log.LoggerFactory
 import org.kodein.log.newLogger
+import xyz.quaver.pupil.sources.manatoki.HistoryDao
 import xyz.quaver.pupil.sources.manatoki.composable.Thumbnail
 import xyz.quaver.pupil.sources.manatoki.manatokiUrl
 import xyz.quaver.pupil.sources.manatoki.waitForRateLimit
