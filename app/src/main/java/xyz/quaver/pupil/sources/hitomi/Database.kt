@@ -44,7 +44,7 @@ interface FavoritesDao {
     suspend fun delete(item: String) = delete(Favorite(item))
 }
 
-@Database(entities = [Favorite::class], version = 1)
+@Database(entities = [Favorite::class], version = 1, exportSchema = false)
 abstract class HitomiDatabase : RoomDatabase() {
     abstract fun favoritesDao(): FavoritesDao
 }

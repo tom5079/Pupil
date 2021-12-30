@@ -20,9 +20,13 @@ package xyz.quaver.pupil.sources.manatoki.composable
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.*
+import androidx.compose.foundation.gestures.animateScrollBy
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
@@ -33,8 +37,11 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -46,12 +53,15 @@ import com.google.accompanist.insets.rememberInsetsPaddingValues
 import com.google.accompanist.insets.ui.Scaffold
 import com.google.accompanist.insets.ui.TopAppBar
 import io.ktor.client.*
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import org.kodein.di.compose.rememberInstance
 import org.kodein.di.compose.rememberViewModel
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.proto.settingsDataStore
 import xyz.quaver.pupil.sources.composable.SourceSelectDialog
+import xyz.quaver.pupil.sources.manatoki.ManatokiDatabase
 import xyz.quaver.pupil.sources.manatoki.MangaListing
 import xyz.quaver.pupil.sources.manatoki.ReaderInfo
 import xyz.quaver.pupil.sources.manatoki.getItem
@@ -64,14 +74,27 @@ fun Main(navController: NavController) {
 
     val client: HttpClient by rememberInstance()
 
+    val database: ManatokiDatabase by rememberInstance()
+    val historyDao = remember { database.historyDao() }
+    val recent by remember { historyDao.getRecentManga() }.collectAsState(emptyList())
+    val recentManga = remember { mutableStateListOf<Thumbnail>() }
+
+    LaunchedEffect(recent) {
+        recentManga.clear()
+
+        recent.forEach {
+            if (isActive)
+                client.getItem(it, onListing = {
+                    recentManga.add(
+                        Thumbnail(it.itemID, it.title, it.thumbnail)
+                    )
+                })
+        }
+    }
+
     val sheetState = rememberModalBottomSheetState(ModalBottomSheetValue.Hidden)
-    var mangaListing: MangaListing? by rememberSaveable { mutableStateOf(null) }
 
     val coroutineScope = rememberCoroutineScope()
-
-    val onListing: (MangaListing) -> Unit = {
-        mangaListing = it
-    }
 
     val context = LocalContext.current
     LaunchedEffect(Unit) {
@@ -79,13 +102,6 @@ fun Main(navController: NavController) {
             it.toBuilder()
                 .setRecentSource("manatoki.net")
                 .build()
-        }
-    }
-
-    val onReader: (ReaderInfo) -> Unit = { readerInfo ->
-        coroutineScope.launch {
-            sheetState.snapTo(ModalBottomSheetValue.Hidden)
-            navController.navigate("manatoki.net/reader/${readerInfo.itemID}")
         }
     }
 
@@ -107,11 +123,86 @@ fun Main(navController: NavController) {
             }
     }
 
+    var mangaListing: MangaListing? by rememberSaveable { mutableStateOf(null) }
+    var recentItem: String? by rememberSaveable { mutableStateOf(null) }
+    val mangaListingListState = rememberLazyListState()
+    var mangaListingListSize: Size? by remember { mutableStateOf(null) }
+    val mangaListingInteractionSource = remember { mutableStateMapOf<String, MutableInteractionSource>() }
+    val navigationBarsPadding = LocalDensity.current.run {
+        rememberInsetsPaddingValues(
+            LocalWindowInsets.current.navigationBars
+        ).calculateBottomPadding().toPx()
+    }
+
+    val onListing: (MangaListing) -> Unit = {
+        mangaListing = it
+
+        coroutineScope.launch {
+            val recentItemID = historyDao.getAll(it.itemID).firstOrNull() ?: return@launch
+            recentItem = recentItemID
+
+            while (mangaListingListState.layoutInfo.totalItemsCount != it.entries.size) {
+                delay(100)
+            }
+
+            val interactionSource = mangaListingInteractionSource.getOrPut(recentItemID) {
+                MutableInteractionSource()
+            }
+
+            val targetIndex =
+                it.entries.indexOfFirst { entry -> entry.itemID == recentItemID }
+
+            mangaListingListState.scrollToItem(targetIndex)
+
+            mangaListingListSize?.let { sheetSize ->
+                val targetItem =
+                    mangaListingListState.layoutInfo.visibleItemsInfo.first {
+                        it.key == recentItemID
+                    }
+
+                if (targetItem.offset == 0) {
+                    mangaListingListState.animateScrollBy(
+                        -(sheetSize.height - navigationBarsPadding - targetItem.size)
+                    )
+                }
+
+                delay(200)
+
+                with(interactionSource) {
+                    val interaction =
+                        PressInteraction.Press(
+                            Offset(
+                                sheetSize.width / 2,
+                                targetItem.size / 2f
+                            )
+                        )
+
+
+                    emit(interaction)
+                    emit(PressInteraction.Release(interaction))
+                }
+            }
+        }
+    }
+
+    val onReader: (ReaderInfo) -> Unit = { readerInfo ->
+        coroutineScope.launch {
+            sheetState.snapTo(ModalBottomSheetValue.Hidden)
+            navController.navigate("manatoki.net/reader/${readerInfo.itemID}")
+        }
+    }
+
     ModalBottomSheetLayout(
         sheetState = sheetState,
         sheetShape = RoundedCornerShape(32.dp, 32.dp, 0.dp, 0.dp),
         sheetContent = {
-            MangaListingBottomSheet(mangaListing) {
+            MangaListingBottomSheet(
+                mangaListing,
+                onListSize = { mangaListingListSize = it },
+                rippleInteractionSource = mangaListingInteractionSource,
+                listState = mangaListingListState,
+                recentItem = recentItem
+            ) {
                 coroutineScope.launch {
                     client.getItem(it, onListing, onReader)
                 }
@@ -164,6 +255,50 @@ fun Main(navController: NavController) {
                         .verticalScroll(rememberScrollState()),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
+                    if (recentManga.isNotEmpty()) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                "이어 보기",
+                                style = MaterialTheme.typography.h5
+                            )
+
+                            IconButton(onClick = { navController.navigate("manatoki.net/recent") }) {
+                                Icon(
+                                    Icons.Default.Add,
+                                    contentDescription = null
+                                )
+                            }
+                        }
+
+                        LazyRow(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(210.dp),
+                            horizontalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            items(recentManga) { item ->
+                                Thumbnail(
+                                    item,
+                                    Modifier
+                                        .width(180.dp)
+                                        .aspectRatio(6 / 7f)
+                                ) {
+                                    coroutineScope.launch {
+                                        mangaListing = null
+                                        sheetState.animateTo(ModalBottomSheetValue.Expanded)
+                                    }
+                                    coroutineScope.launch {
+                                        client.getItem(it, onListing, onReader)
+                                    }
+                                }
+                            }
+                        }
+                    }
+
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,
@@ -195,7 +330,7 @@ fun Main(navController: NavController) {
                                     .aspectRatio(6 / 7f)) {
                                 coroutineScope.launch {
                                     mangaListing = null
-                                    sheetState.show()
+                                    sheetState.animateTo(ModalBottomSheetValue.Expanded)
                                 }
                                 coroutineScope.launch {
                                     client.getItem(it, onListing, onReader)
@@ -254,7 +389,7 @@ fun Main(navController: NavController) {
                                     .aspectRatio(6f / 7)) {
                                 coroutineScope.launch {
                                     mangaListing = null
-                                    sheetState.show()
+                                    sheetState.animateTo(ModalBottomSheetValue.Expanded)
                                 }
                                 coroutineScope.launch {
                                     client.getItem(it, onListing, onReader)
@@ -273,7 +408,7 @@ fun Main(navController: NavController) {
                                 modifier = Modifier.clickable {
                                     coroutineScope.launch {
                                         mangaListing = null
-                                        sheetState.show()
+                                        sheetState.animateTo(ModalBottomSheetValue.Expanded)
                                     }
 
                                     coroutineScope.launch {

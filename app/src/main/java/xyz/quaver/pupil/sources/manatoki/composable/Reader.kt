@@ -18,6 +18,7 @@
 
 package xyz.quaver.pupil.sources.manatoki.composable
 
+import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.core.animateFloatAsState
@@ -82,6 +83,7 @@ fun Reader(navController: NavController) {
     val database: ManatokiDatabase by rememberInstance()
     val favoriteDao = remember { database.favoriteDao() }
     val bookmarkDao = remember { database.bookmarkDao() }
+    val historyDao = remember { database.historyDao() }
 
     val coroutineScope = rememberCoroutineScope()
 
@@ -91,6 +93,9 @@ fun Reader(navController: NavController) {
     LaunchedEffect(Unit) {
         if (itemID != null)
             client.getItem(itemID, onReader = {
+                coroutineScope.launch {
+                    historyDao.insert(it.itemID, it.listingItemID, 1)
+                }
                 readerInfo = it
                 model.load(it.urls) {
                     set("User-Agent", imageUserAgent)
@@ -102,16 +107,23 @@ fun Reader(navController: NavController) {
     val isFavorite by favoriteDao.contains(itemID ?: "").collectAsState(false)
 
     val sheetState = rememberModalBottomSheetState(ModalBottomSheetValue.Hidden)
-    var mangaListing: MangaListing? by rememberSaveable { mutableStateOf(null) }
-    val mangaListingRippleInteractionSource = remember { mutableStateListOf<MutableInteractionSource>() }
     val navigationBarsPadding = LocalDensity.current.run {
         rememberInsetsPaddingValues(
             LocalWindowInsets.current.navigationBars
         ).calculateBottomPadding().toPx()
     }
 
-    val bottomSheetListState = rememberLazyListState()
     val readerListState = rememberLazyListState()
+
+    LaunchedEffect(readerListState.firstVisibleItemIndex) {
+        readerInfo?.let { readerInfo ->
+            historyDao.insert(
+                readerInfo.itemID,
+                readerInfo.listingItemID,
+                readerListState.firstVisibleItemIndex
+            )
+        }
+    }
 
     var scrollDirection by remember { mutableStateOf(0f) }
 
@@ -123,7 +135,10 @@ fun Reader(navController: NavController) {
         }
     }
 
+    var mangaListing: MangaListing? by rememberSaveable { mutableStateOf(null) }
+    val mangaListingListState = rememberLazyListState()
     var mangaListingListSize: Size? by remember { mutableStateOf(null) }
+    val mangaListingRippleInteractionSource = remember { MutableInteractionSource() }
 
     ModalBottomSheetLayout(
         sheetState = sheetState,
@@ -132,11 +147,10 @@ fun Reader(navController: NavController) {
             MangaListingBottomSheet(
                 mangaListing,
                 currentItemID = itemID,
-                onListSize = {
-                    mangaListingListSize = it
-                },
-                rippleInteractionSource = mangaListingRippleInteractionSource,
-                listState = bottomSheetListState
+                onListSize = { mangaListingListSize = it },
+                rippleInteractionSource = if (itemID == null) emptyMap() else mapOf(itemID to mangaListingRippleInteractionSource),
+                listState = mangaListingListState,
+                nextItem = readerInfo?.nextItemID
             ) {
                 navController.navigate("manatoki.net/reader/$it") {
                     popUpTo("manatoki.net/")
@@ -214,7 +228,7 @@ fun Reader(navController: NavController) {
                                     }
                                 } else {
                                     coroutineScope.launch {
-                                        sheetState.show()
+                                        sheetState.animateTo(ModalBottomSheetValue.Expanded)
                                     }
 
                                     coroutineScope.launch {
@@ -222,42 +236,31 @@ fun Reader(navController: NavController) {
                                             client.getItem(it.listingItemID, onListing = {
                                                 mangaListing = it
 
-                                                mangaListingRippleInteractionSource.addAll(
-                                                    List(
-                                                        max(
-                                                            it.entries.size - mangaListingRippleInteractionSource.size,
-                                                            0
-                                                        )
-                                                    ) {
-                                                        MutableInteractionSource()
-                                                    }
-                                                )
-
                                                 coroutineScope.launch {
-                                                    while (bottomSheetListState.layoutInfo.totalItemsCount != it.entries.size) {
+                                                    while (mangaListingListState.layoutInfo.totalItemsCount != it.entries.size) {
                                                         delay(100)
                                                     }
 
                                                     val targetIndex =
                                                         it.entries.indexOfFirst { it.itemID == itemID }
 
-                                                    bottomSheetListState.scrollToItem(targetIndex)
+                                                    mangaListingListState.scrollToItem(targetIndex)
 
                                                     mangaListingListSize?.let { sheetSize ->
                                                         val targetItem =
-                                                            bottomSheetListState.layoutInfo.visibleItemsInfo.first {
+                                                            mangaListingListState.layoutInfo.visibleItemsInfo.first {
                                                                 it.key == itemID
                                                             }
 
                                                         if (targetItem.offset == 0) {
-                                                            bottomSheetListState.animateScrollBy(
+                                                            mangaListingListState.animateScrollBy(
                                                                 -(sheetSize.height - navigationBarsPadding - targetItem.size)
                                                             )
                                                         }
 
                                                         delay(200)
 
-                                                        with(mangaListingRippleInteractionSource[targetIndex]) {
+                                                        with(mangaListingRippleInteractionSource) {
                                                             val interaction =
                                                                 PressInteraction.Press(
                                                                     Offset(

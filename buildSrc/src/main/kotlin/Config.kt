@@ -17,7 +17,7 @@
  */
 
 const val GROUP_ID = "xyz.quaver"
-const val VERSION = "6.0.0-alpha01"
+const val VERSION = "6.0.0-alpha02"
 
 object Versions {
     const val KOTLIN_VERSION = "1.5.31"

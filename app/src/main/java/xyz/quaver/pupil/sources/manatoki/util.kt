@@ -103,7 +103,7 @@ fun Chip(text: String, selected: Boolean = false, onClick: () -> Unit = { }) {
     }
 }
 
-private val cache = LruCache<String, Any>(50)
+private val cache = LruCache<String, Any>(100)
 suspend fun HttpClient.getItem(
     itemID: String,
     onListing: (MangaListing) -> Unit = { },
@@ -144,7 +144,7 @@ suspend fun HttpClient.getItem(
                     }.toString()
 
                 val urls = Jsoup.parse(htmlData)
-                    .select("img[^data-]:not([style]):not([^class])")
+                    .select("img[^data-]:not([style])")
                     .map {
                         it.attributes()
                             .first { it.key.startsWith("data-") }
