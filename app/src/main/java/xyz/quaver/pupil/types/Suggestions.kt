@@ -21,7 +21,7 @@ package xyz.quaver.pupil.types
 import kotlinx.parcelize.IgnoredOnParcel
 import kotlinx.parcelize.Parcelize
 import xyz.quaver.floatingsearchview.suggestions.model.SearchSuggestion
-import xyz.quaver.hitomi.Suggestion
+import xyz.quaver.pupil.hitomi.Suggestion
 import xyz.quaver.pupil.util.translations
 
 @Parcelize

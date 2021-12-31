@@ -32,11 +32,13 @@ import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import okhttp3.Request
-import xyz.quaver.hitomi.GalleryBlock
-import xyz.quaver.hitomi.GalleryInfo
 import xyz.quaver.io.FileX
 import xyz.quaver.io.util.*
 import xyz.quaver.pupil.client
+import xyz.quaver.pupil.hitomi.GalleryBlock
+import xyz.quaver.pupil.hitomi.GalleryInfo
+import xyz.quaver.pupil.hitomi.getGalleryBlock
+import xyz.quaver.pupil.hitomi.getGalleryInfo
 import java.io.File
 import java.io.IOException
 import java.util.concurrent.ConcurrentHashMap
@@ -155,7 +157,7 @@ class Cache private constructor(context: Context, val galleryID: Int) : ContextW
         return metadata.galleryBlock
             ?: withContext(Dispatchers.IO) {
                 try {
-                    xyz.quaver.hitomi.getGalleryBlock(galleryID).also {
+                    getGalleryBlock(galleryID).also {
                         setMetadata { metadata -> metadata.galleryBlock = it }
                     }
                 } catch (e: Exception) { return@withContext null }
@@ -187,7 +189,7 @@ class Cache private constructor(context: Context, val galleryID: Int) : ContextW
         return metadata.galleryInfo
             ?: withContext(Dispatchers.IO) {
                 try {
-                    xyz.quaver.hitomi.getGalleryInfo(galleryID).also {
+                    getGalleryInfo(galleryID).also {
                         setMetadata { metadata ->
                             metadata.galleryInfo = it
 

@@ -35,14 +35,13 @@ import com.daimajia.swipe.adapters.RecyclerSwipeAdapter
 import com.daimajia.swipe.interfaces.SwipeAdapterInterface
 import com.github.piasy.biv.loader.ImageLoader
 import kotlinx.coroutines.*
-import xyz.quaver.hitomi.getGallery
-import xyz.quaver.hitomi.getGalleryInfo
-import xyz.quaver.hitomi.getReader
 import xyz.quaver.io.util.getChild
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.databinding.GalleryblockItemBinding
 import xyz.quaver.pupil.favoriteTags
 import xyz.quaver.pupil.favorites
+import xyz.quaver.pupil.hitomi.getGallery
+import xyz.quaver.pupil.hitomi.getGalleryInfo
 import xyz.quaver.pupil.types.Tag
 import xyz.quaver.pupil.ui.view.ProgressCard
 import xyz.quaver.pupil.util.Preferences

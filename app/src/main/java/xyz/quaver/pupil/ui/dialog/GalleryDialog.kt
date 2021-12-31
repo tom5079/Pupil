@@ -35,8 +35,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import xyz.quaver.hitomi.Gallery
-import xyz.quaver.hitomi.getGallery
+import xyz.quaver.pupil.hitomi.Gallery
+import xyz.quaver.pupil.hitomi.getGallery
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.adapters.GalleryBlockAdapter
 import xyz.quaver.pupil.adapters.ThumbnailPageAdapter

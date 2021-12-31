@@ -26,21 +26,21 @@ package xyz.quaver.pupil
  * See [testing documentation](http://d.android.com/tools/testing).
  */
 
-import kotlinx.serialization.*
-import kotlinx.serialization.json.Json
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import org.junit.Assert.assertEquals
+import org.junit.Before
 import org.junit.Test
+import xyz.quaver.pupil.hitomi.getGalleryInfo
+import xyz.quaver.pupil.hitomi.imageUrlFromImage
 import java.lang.reflect.ParameterizedType
-import kotlin.reflect.KClass
-import kotlin.reflect.KType
-import kotlin.reflect.typeOf
+import java.util.concurrent.TimeUnit
 
 class ExampleUnitTest {
-
     @Test
     fun test() {
         val a = mutableSetOf<Int>()
 
         print(a::class.java.methods.firstOrNull { it.name == "add" }?.genericParameterTypes?.firstOrNull() as? ParameterizedType)
     }
-
 }

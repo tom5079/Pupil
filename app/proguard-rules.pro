@@ -33,3 +33,4 @@
 }
 -keep class xyz.quaver.pupil.ui.fragment.ManageFavoritesFragment
 -keep class xyz.quaver.pupil.ui.fragment.ManageStorageFragment
+-keep class com.hippo.quickjs.** { *; }

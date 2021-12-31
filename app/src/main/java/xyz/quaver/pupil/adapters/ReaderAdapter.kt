@@ -40,9 +40,9 @@ import com.github.piasy.biv.view.BigImageView
 import com.github.piasy.biv.view.ImageShownCallback
 import com.github.piasy.biv.view.ImageViewFactory
 import kotlinx.coroutines.*
-import xyz.quaver.hitomi.GalleryInfo
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.databinding.ReaderItemBinding
+import xyz.quaver.pupil.hitomi.GalleryInfo
 import xyz.quaver.pupil.ui.ReaderActivity
 import xyz.quaver.pupil.util.downloader.Cache
 import java.io.File
