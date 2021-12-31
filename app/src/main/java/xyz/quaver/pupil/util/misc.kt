@@ -22,10 +22,10 @@ import android.annotation.SuppressLint
 import kotlinx.serialization.json.*
 import okhttp3.OkHttpClient
 import okhttp3.Request
-import xyz.quaver.hitomi.GalleryBlock
-import xyz.quaver.hitomi.GalleryInfo
-import xyz.quaver.hitomi.getReferer
-import xyz.quaver.hitomi.imageUrlFromImage
+import xyz.quaver.pupil.hitomi.GalleryBlock
+import xyz.quaver.pupil.hitomi.GalleryInfo
+import xyz.quaver.pupil.hitomi.getReferer
+import xyz.quaver.pupil.hitomi.imageUrlFromImage
 import java.util.*
 import kotlin.collections.ArrayList
 

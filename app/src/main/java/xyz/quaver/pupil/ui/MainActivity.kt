@@ -44,9 +44,9 @@ import xyz.quaver.floatingsearchview.FloatingSearchView
 import xyz.quaver.floatingsearchview.suggestions.model.SearchSuggestion
 import xyz.quaver.floatingsearchview.util.view.MenuView
 import xyz.quaver.floatingsearchview.util.view.SearchInputView
-import xyz.quaver.hitomi.doSearch
-import xyz.quaver.hitomi.getGalleryIDsFromNozomi
-import xyz.quaver.hitomi.getSuggestionsForQuery
+import xyz.quaver.pupil.hitomi.doSearch
+import xyz.quaver.pupil.hitomi.getGalleryIDsFromNozomi
+import xyz.quaver.pupil.hitomi.getSuggestionsForQuery
 import xyz.quaver.pupil.*
 import xyz.quaver.pupil.adapters.GalleryBlockAdapter
 import xyz.quaver.pupil.databinding.MainActivityBinding
