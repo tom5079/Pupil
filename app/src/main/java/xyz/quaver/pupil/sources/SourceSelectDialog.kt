@@ -16,7 +16,7 @@
  *     along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package xyz.quaver.pupil.sources.composable
+package xyz.quaver.pupil.sources
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
@@ -25,42 +25,39 @@ import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavController
+import com.google.accompanist.drawablepainter.rememberDrawablePainter
 import org.kodein.di.compose.rememberInstance
-import xyz.quaver.pupil.sources.Source
-import xyz.quaver.pupil.sources.SourceEntries
 
 @Composable
 fun SourceSelectDialog(navController: NavController, currentSource: String? = null, onDismissRequest: () -> Unit = { }) {
     SourceSelectDialog(currentSource = currentSource, onDismissRequest = onDismissRequest) {
         onDismissRequest()
         navController.navigate(it.name) {
-            currentSource?.let { popUpTo(currentSource) { inclusive = true } }
+            currentSource?.let { popUpTo("main") }
         }
     }
 }
 
 @Composable
-fun SourceSelectDialogItem(source: Source, isSelected: Boolean, onSelected: (Source) -> Unit = { }) {
+fun SourceSelectDialogItem(sourceEntry: SourceEntry, isSelected: Boolean, onSelected: (Source) -> Unit = { }) {
     Row(
         modifier = Modifier.padding(16.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         Image(
-            painter = painterResource(source.iconResID),
+            painter = rememberDrawablePainter(sourceEntry.icon),
             contentDescription = null,
             modifier = Modifier.size(24.dp)
         )
 
         Text(
-            source.name,
+            sourceEntry.name,
             modifier = Modifier.weight(1f)
         )
 
@@ -73,7 +70,7 @@ fun SourceSelectDialogItem(source: Source, isSelected: Boolean, onSelected: (Sou
         Button(
             enabled = !isSelected,
             onClick = {
-                onSelected(source)
+                onSelected(sourceEntry.source)
             }
         ) {
             Text("GO")
@@ -92,7 +89,7 @@ fun SourceSelectDialog(currentSource: String? = null, onDismissRequest: () -> Un
             shape = RoundedCornerShape(12.dp)
         ) {
             Column() {
-                sourceEntries.forEach { SourceSelectDialogItem(it.second, it.first == currentSource, onSelected) }
+                sourceEntries.values.forEach { SourceSelectDialogItem(it, it.name == currentSource, onSelected) }
             }
         }
     }

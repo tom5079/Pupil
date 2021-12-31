@@ -27,8 +27,8 @@ import androidx.compose.material.MaterialTheme
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.core.view.WindowCompat
+import androidx.datastore.core.DataStore
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -36,15 +36,15 @@ import com.google.accompanist.insets.ProvideWindowInsets
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.runBlocking
 import org.kodein.di.DIAware
 import org.kodein.di.android.closestDI
+import org.kodein.di.compose.rememberInstance
 import org.kodein.di.instance
 import org.kodein.log.LoggerFactory
 import org.kodein.log.newLogger
-import xyz.quaver.pupil.proto.settingsDataStore
+import xyz.quaver.pupil.proto.Settings
 import xyz.quaver.pupil.sources.SourceEntries
-import xyz.quaver.pupil.sources.composable.SourceSelectDialog
+import xyz.quaver.pupil.sources.SourceSelectDialog
 import xyz.quaver.pupil.ui.theme.PupilTheme
 
 @OptIn(ExperimentalAnimationApi::class, ExperimentalMaterialApi::class)
@@ -78,7 +78,7 @@ class MainActivity : ComponentActivity(), DIAware {
                     NavHost(navController, startDestination = "main") {
                         composable("main") {
                             var launched by rememberSaveable { mutableStateOf(false) }
-                            val context = LocalContext.current
+                            val settingsDataStore: DataStore<Settings> by rememberInstance()
 
                             var sourceSelectDialog by remember { mutableStateOf(false) }
 
@@ -86,7 +86,9 @@ class MainActivity : ComponentActivity(), DIAware {
                                 SourceSelectDialog(navController, null)
 
                             LaunchedEffect(Unit) {
-                                val recentSource = context.settingsDataStore.data.map { it.recentSource }.first()
+                                val recentSource =
+                                    settingsDataStore.data.map { it.recentSource }
+                                        .first()
 
                                 if (recentSource.isEmpty()) {
                                     sourceSelectDialog = true
@@ -104,8 +106,8 @@ class MainActivity : ComponentActivity(), DIAware {
                         composable("settings") {
 
                         }
-                        sources.forEach {
-                            it.second.run {
+                        sources.values.forEach {
+                            it.source.run {
                                 navGraph(navController)
                             }
                         }

@@ -19,32 +19,76 @@
 package xyz.quaver.pupil.sources
 
 import android.app.Application
-import androidx.navigation.NavController
-import androidx.navigation.NavGraphBuilder
+import android.content.Context
+import android.content.pm.PackageInfo
+import android.content.pm.PackageManager
+import android.graphics.drawable.Drawable
+import android.util.Log
+import dalvik.system.DexClassLoader
+import dalvik.system.PathClassLoader
 import org.kodein.di.*
-import xyz.quaver.pupil.sources.hitomi.Hitomi
-import xyz.quaver.pupil.sources.manatoki.Manatoki
+import org.kodein.di.bindings.NoArgBindingDI
+import org.kodein.di.bindings.NoArgDIBinding
+import java.util.*
 
-abstract class Source {
-    abstract val name: String
-    abstract val iconResID: Int
+private const val SOURCES_FEATURE = "pupil.sources"
+private const val SOURCES_PACKAGE_PREFIX = "xyz.quaver.pupil.sources"
+private const val SOURCES_PATH = "pupil.sources.path"
 
-    open fun NavGraphBuilder.navGraph(navController: NavController) { }
+data class SourceEntry(
+    val name: String,
+    val source: Source,
+    val icon: Drawable
+)
+typealias SourceEntries = Map<String, SourceEntry>
+
+private val sources = mutableMapOf<String, SourceEntry>()
+
+val PackageInfo.isSourceFeatureEnabled
+    get() = this.reqFeatures.orEmpty().any { it.name == SOURCES_FEATURE }
+
+fun loadSource(app: Application, packageInfo: PackageInfo) {
+    val packageManager = app.packageManager
+    val applicationInfo = packageInfo.applicationInfo
+
+    val classLoader = PathClassLoader(applicationInfo.sourceDir, null, app.classLoader)
+    val packageName = packageInfo.packageName
+
+    val sourceName = packageManager.getApplicationLabel(applicationInfo).toString().substringAfter("[Pupil] ")
+
+    val icon = packageManager.getApplicationIcon(applicationInfo)
+
+    packageInfo
+        .applicationInfo
+        .metaData
+        .getString(SOURCES_PATH)
+        ?.split(';')
+        .orEmpty()
+        .forEach { sourcePath ->
+            sources[sourceName] = SourceEntry(
+                sourceName,
+                Class.forName("$packageName$sourcePath", false, classLoader)
+                    .getConstructor(Application::class.java)
+                    .newInstance(app) as Source,
+                icon
+            )
+        }
 }
 
-typealias SourceEntry = Pair<String, Source>
-typealias SourceEntries = Set<SourceEntry>
-val sourceModule = DI.Module(name = "source") {
-    bindSet<SourceEntry>()
+fun loadSources(app: Application) {
+    val packageManager = app.packageManager
 
-    listOf<(Application) -> (Source)>(
-        { Hitomi(it) },
-        //{ Hiyobi_io(it) },
-        { Manatoki(it) }
-    ).forEach { source ->
-        inSet { singleton { source(instance()).let { it.name to it } } }
-    }
+    val packages = packageManager.getInstalledPackages(
+        PackageManager.GET_CONFIGURATIONS or
+                PackageManager.GET_META_DATA
+    )
 
-    //bind { singleton { History(di) } }
-   // inSet { singleton { Downloads(di).let { it.name to it as Source } } }
+    val sources = packages.filter { it.isSourceFeatureEnabled }
+
+    sources.forEach { loadSource(app, it) }
+}
+
+fun sourceModule(app: Application) = DI.Module(name = "source") {
+    loadSources(app)
+    bindInstance { Collections.unmodifiableMap(sources) }
 }

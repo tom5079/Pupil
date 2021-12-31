@@ -52,7 +52,7 @@ val JsonElement.content
     get() = this.jsonPrimitive.contentOrNull
 
 fun DIAware.source(source: String) = lazy { direct.source(source) }
-fun DirectDIAware.source(source: String) = instance<SourceEntries>().toMap()[source]!!
+fun DirectDIAware.source(source: String) = instance<SourceEntries>()[source]!!
 
 class FileXImageSource(val file: FileX): ImageSource {
     private val decoder by lazy {
