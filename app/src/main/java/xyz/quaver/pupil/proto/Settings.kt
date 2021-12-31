@@ -18,6 +18,7 @@
 
 package xyz.quaver.pupil.proto
 
+import android.app.Application
 import android.content.Context
 import androidx.datastore.core.CorruptionException
 import androidx.datastore.core.DataStore
@@ -41,7 +42,7 @@ object SettingsSerializer : Serializer<Settings> {
     override suspend fun writeTo(t: Settings, output: OutputStream) = t.writeTo(output)
 }
 
-val Context.settingsDataStore: DataStore<Settings> by dataStore(
+val Application.settingsDataStore: DataStore<Settings> by dataStore(
     fileName = "settings.proto",
     serializer = SettingsSerializer
 )
