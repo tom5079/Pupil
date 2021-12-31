@@ -125,7 +125,7 @@ dependencies {
 
     implementation "ru.noties.markwon:core:3.1.0"
 
-    implementation "xyz.quaver:libpupil:2.1.14"
+    implementation "xyz.quaver:libpupil:2.1.15"
     implementation "xyz.quaver:documentfilex:0.7.1"
     implementation "xyz.quaver:floatingsearchview:1.1.7"
 
