@@ -38,7 +38,7 @@ android {
         minSdkVersion 16
         targetSdkVersion 30
         versionCode 69
-        versionName "5.1.28"
+        versionName "5.1.29"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
     }
@@ -127,6 +127,8 @@ dependencies {
 
     implementation "org.jsoup:jsoup:1.14.3"
     implementation "com.github.seven332:quickjs-android:0.1.0"
+
+    implementation "com.google.guava:guava:31.0.1-android"
 
     implementation "xyz.quaver:documentfilex:0.7.1"
     implementation "xyz.quaver:floatingsearchview:1.1.7"
