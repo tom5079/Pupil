@@ -46,8 +46,8 @@ import org.kodein.di.*
 import org.kodein.di.android.x.androidXModule
 import xyz.quaver.io.FileX
 import xyz.quaver.pupil.proto.settingsDataStore
+import xyz.quaver.pupil.sources.core.NetworkCache
 import xyz.quaver.pupil.sources.sourceModule
-import xyz.quaver.pupil.sources.util.NetworkCache
 import xyz.quaver.pupil.util.*
 import java.util.*
 
