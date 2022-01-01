@@ -28,6 +28,7 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.app.TaskStackBuilder
 import androidx.core.content.ContextCompat
+import com.google.common.util.concurrent.RateLimiter
 import com.google.firebase.crashlytics.FirebaseCrashlytics
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -167,9 +168,25 @@ class DownloadService : Service() {
         }
     }
 
+    private val rateLimiter = RateLimiter.create(2.0)
+    private val rateLimitHost = Regex("..?\\.hitomi.la")
+
     private val interceptor: PupilInterceptor = { chain ->
         val request = chain.request()
-        val response = chain.proceed(request)
+
+        if (rateLimitHost.matches(request.url().host()))
+            rateLimiter.acquire()
+
+        var response = chain.proceed(request)
+        var limit = 5
+
+        if (!response.isSuccessful && limit > 0) {
+            Thread.sleep(10000)
+            if (rateLimitHost.matches(request.url().host()))
+                rateLimiter.acquire()
+            response = chain.proceed(request)
+            limit -= 1
+        }
 
         response.newBuilder()
             .body(response.body()?.let {
