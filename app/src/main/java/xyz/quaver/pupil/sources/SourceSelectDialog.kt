@@ -32,6 +32,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavController
 import com.google.accompanist.drawablepainter.rememberDrawablePainter
 import org.kodein.di.compose.rememberInstance
+import xyz.quaver.pupil.sources.core.Source
 
 @Composable
 fun SourceSelectDialog(navController: NavController, currentSource: String? = null, onDismissRequest: () -> Unit = { }) {

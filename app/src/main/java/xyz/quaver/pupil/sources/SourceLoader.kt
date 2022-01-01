@@ -19,16 +19,12 @@
 package xyz.quaver.pupil.sources
 
 import android.app.Application
-import android.content.Context
 import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
 import android.graphics.drawable.Drawable
-import android.util.Log
-import dalvik.system.DexClassLoader
 import dalvik.system.PathClassLoader
 import org.kodein.di.*
-import org.kodein.di.bindings.NoArgBindingDI
-import org.kodein.di.bindings.NoArgDIBinding
+import xyz.quaver.pupil.sources.core.Source
 import java.util.*
 
 private const val SOURCES_FEATURE = "pupil.sources"
