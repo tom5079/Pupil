@@ -16,15 +16,15 @@
 
 package xyz.quaver.pupil.hitomi
 
+import android.annotation.SuppressLint
 import android.util.Log
-import com.hippo.quickjs.android.QuickJS
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
+import android.webkit.WebView
+import android.webkit.WebViewClient
+import kotlinx.coroutines.*
 import kotlinx.serialization.decodeFromString
 import xyz.quaver.json
+import xyz.quaver.pupil.Pupil
+import xyz.quaver.pupil.webView
 import xyz.quaver.readText
 import java.net.URL
 import java.nio.charset.Charset
@@ -44,6 +44,7 @@ const val galleryblockextension = ".html"
 const val galleryblockdir = "galleryblock"
 const val nozomiextension = ".nozomi"
 
+@SuppressLint("SetJavaScriptEnabled")
 interface gg {
     fun m(g: Int): Int
     val b: String
@@ -55,33 +56,51 @@ interface gg {
         fun getInstance(): gg =
             instance ?: synchronized(this) {
                 instance ?: object: gg {
-                    private val ggjs by lazy { URL("https://ltn.hitomi.la/gg.js").readText(Charset.defaultCharset()) }
-                    private val quickJS = QuickJS.Builder().build()
+                    override fun m(g: Int): Int {
+                        var result: Int? = null
 
-                    override fun m(g: Int): Int =
-                        quickJS.createJSRuntime().use { runtime ->
-                            runtime.createJSContext().use { context ->
-                                context.evaluate(ggjs, "gg.js")
-                                context.evaluate("gg.m($g)", "gg.js", Int::class.java)
+                        MainScope().launch {
+                            while (webView.progress != 100) delay(100)
+                            webView.evaluateJavascript("gg.m($g)") {
+                                result = it.toInt()
                             }
                         }
 
+                        while (result == null) Thread.sleep(100)
+
+                        return result!!
+                    }
+
                     override val b: String
-                        get() =
-                            quickJS.createJSRuntime().use { runtime ->
-                                runtime.createJSContext().use { context ->
-                                    context.evaluate(ggjs, "gg.js")
-                                    context.evaluate("gg.b", "gg.js", String::class.java)
+                        get() {
+                            var result: String? = null
+
+                            MainScope().launch {
+                                while (webView.progress != 100) delay(100)
+                                webView.evaluateJavascript("gg.b") {
+                                    result = it.replace("\"", "")
                                 }
                             }
 
-                    override fun s(h: String): String =
-                        quickJS.createJSRuntime().use { runtime ->
-                            runtime.createJSContext().use { context ->
-                                context.evaluate(ggjs, "gg.js")
-                                context.evaluate("gg.s('$h')", "gg.js", String::class.java)
+                            while (result == null) Thread.sleep(100)
+
+                            return result!!
+                        }
+
+                    override fun s(h: String): String {
+                        var result: String? = null
+
+                        MainScope().launch {
+                            while (webView.progress != 100) delay(100)
+                            webView.evaluateJavascript("gg.s('$h')") {
+                                result = it.replace("\"", "")
                             }
                         }
+
+                        while (result == null) Thread.sleep(100)
+
+                        return result!!
+                    }
                 }.also { instance = it }
             }
     }
