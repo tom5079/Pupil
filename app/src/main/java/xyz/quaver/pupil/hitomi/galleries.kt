@@ -37,7 +37,7 @@ data class Gallery(
     val tags: List<String>,
     val thumbnails: List<String>
 )
-fun getGallery(galleryID: Int) : Gallery {
+suspend fun getGallery(galleryID: Int) : Gallery {
     val url = Jsoup.parse(URL("https://hitomi.la/galleries/$galleryID.html").readText())
         .select("link").attr("href")
 

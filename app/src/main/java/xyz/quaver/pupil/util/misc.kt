@@ -97,18 +97,17 @@ fun GalleryBlock.formatDownloadFolderTest(format: String): String =
         }
     }.replace(Regex("""[*\\|"?><:/]"""), "").ellipsize(127)
 
-val GalleryInfo.requestBuilders: List<Request.Builder>
-    get() {
-        val galleryID = this.id ?: 0
-        val lowQuality = Preferences["low_quality", true]
+suspend fun GalleryInfo.getRequestBuilders(): List<Request.Builder> {
+    val galleryID = this.id ?: 0
+    val lowQuality = Preferences["low_quality", true]
 
-        return this.files.map {
-            Request.Builder()
-                .url(imageUrlFromImage(galleryID, it, !lowQuality))
-                .header("Referer", "https://hitomi.la/")
-                .header("User-Agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.45 Safari/537.36")
-        }
+    return this.files.map {
+        Request.Builder()
+            .url(imageUrlFromImage(galleryID, it, !lowQuality))
+            .header("Referer", "https://hitomi.la/")
+            .header("User-Agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.45 Safari/537.36")
     }
+}
 
 fun String.ellipsize(n: Int): String =
     if (this.length > n)
