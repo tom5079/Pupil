@@ -17,7 +17,12 @@
 package xyz.quaver.pupil.hitomi
 
 import android.util.Log
-import app.cash.zipline.QuickJs
+import com.hippo.quickjs.android.QuickJS
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.decodeFromString
 import xyz.quaver.json
 import xyz.quaver.readText
@@ -50,18 +55,33 @@ interface gg {
         fun getInstance(): gg =
             instance ?: synchronized(this) {
                 instance ?: object: gg {
-                    private val engine = QuickJs.create().also {
-                        it.evaluate(URL("https://ltn.hitomi.la/gg.js").readText(Charset.defaultCharset()).also {
-                            Log.d("PUPILD", it)
-                        })
-                    }
+                    private val ggjs by lazy { URL("https://ltn.hitomi.la/gg.js").readText(Charset.defaultCharset()) }
+                    private val quickJS = QuickJS.Builder().build()
 
-                    override fun m(g: Int): Int = engine.evaluate("gg.m($g)") as Int
+                    override fun m(g: Int): Int =
+                        quickJS.createJSRuntime().use { runtime ->
+                            runtime.createJSContext().use { context ->
+                                context.evaluate(ggjs, "gg.js")
+                                context.evaluate("gg.m($g)", "gg.js", Int::class.java)
+                            }
+                        }
 
                     override val b: String
-                        get() = engine.evaluate("gg.b") as String
+                        get() =
+                            quickJS.createJSRuntime().use { runtime ->
+                                runtime.createJSContext().use { context ->
+                                    context.evaluate(ggjs, "gg.js")
+                                    context.evaluate("gg.b", "gg.js", String::class.java)
+                                }
+                            }
 
-                    override fun s(h: String): String = engine.evaluate("gg.s('$h')") as String
+                    override fun s(h: String): String =
+                        quickJS.createJSRuntime().use { runtime ->
+                            runtime.createJSContext().use { context ->
+                                context.evaluate(ggjs, "gg.js")
+                                context.evaluate("gg.s('$h')", "gg.js", String::class.java)
+                            }
+                        }
                 }.also { instance = it }
             }
     }

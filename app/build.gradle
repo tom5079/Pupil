@@ -126,7 +126,7 @@ dependencies {
     implementation "ru.noties.markwon:core:3.1.0"
 
     implementation "org.jsoup:jsoup:1.14.3"
-    implementation "app.cash.zipline:zipline:1.0.0-SNAPSHOT"
+    implementation "com.github.seven332:quickjs-android:0.1.0"
 
     implementation "com.google.guava:guava:31.0.1-android"
 
