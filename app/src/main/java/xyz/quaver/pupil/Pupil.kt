@@ -18,6 +18,7 @@
 
 package xyz.quaver.pupil
 
+import android.annotation.SuppressLint
 import android.app.Application
 import android.app.Notification
 import android.app.NotificationChannel
@@ -26,6 +27,7 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
+import android.webkit.WebView
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.content.ContextCompat
 import androidx.preference.PreferenceManager
@@ -69,9 +71,26 @@ val client: OkHttpClient
         clientHolder = it
     }
 
+@SuppressLint("StaticFieldLeak")
+lateinit var webView: WebView
+
 class Pupil : Application() {
 
+    companion object {
+        lateinit var instance: Pupil
+            private set
+    }
+
+    @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate() {
+        instance = this
+
+        webView = WebView(this).apply {
+            settings.javaScriptEnabled = true
+
+            loadData("""<script src="https://ltn.hitomi.la/gg.js"></script>""", "text/html", null)
+        }
+
         AppCompatDelegate.setCompatVectorFromResourcesEnabled(true)
 
         preferences = PreferenceManager.getDefaultSharedPreferences(this)

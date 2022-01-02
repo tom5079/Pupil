@@ -20,8 +20,14 @@
 
 package xyz.quaver.pupil
 
+import android.util.Log
+import android.webkit.WebView
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -37,5 +43,17 @@ class ExampleInstrumentedTest {
     fun useAppContext() {
         // Context of the app under test.
         val appContext = InstrumentationRegistry.getInstrumentation().targetContext
+
+        runBlocking {
+            MainScope().launch {
+                val webView = WebView(appContext).apply {
+                    settings.javaScriptEnabled = true
+                }
+                webView.evaluateJavascript("3") {
+                    Log.d("PUPILD", it)
+                }
+                Log.d("PUPILD", "SYNC?")
+            }.join()
+        }
     }
 }
