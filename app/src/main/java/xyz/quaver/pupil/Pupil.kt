@@ -26,7 +26,6 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
-import android.util.Log
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.content.ContextCompat
 import androidx.preference.PreferenceManager
@@ -36,11 +35,6 @@ import com.google.android.gms.common.GooglePlayServicesNotAvailableException
 import com.google.android.gms.common.GooglePlayServicesRepairableException
 import com.google.android.gms.security.ProviderInstaller
 import com.google.firebase.crashlytics.FirebaseCrashlytics
-import com.hippo.quickjs.android.QuickJS
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.MainScope
-import kotlinx.coroutines.launch
 import okhttp3.Dispatcher
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
@@ -48,9 +42,7 @@ import okhttp3.Response
 import xyz.quaver.io.FileX
 import xyz.quaver.pupil.types.Tag
 import xyz.quaver.pupil.util.*
-import xyz.quaver.readText
 import java.io.File
-import java.net.URL
 import java.util.*
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
