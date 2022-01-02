@@ -149,7 +149,7 @@ class DownloadService : Service() {
 
         override fun source(): BufferedSource {
             if (bufferedSource == null)
-                bufferedSource = Okio.buffer(source(responseBody.source()))
+                bufferedSource = source(responseBody.source()).buffer()
 
             return bufferedSource!!
         }
@@ -174,8 +174,12 @@ class DownloadService : Service() {
     private val interceptor: PupilInterceptor = { chain ->
         val request = chain.request()
 
+        Log.d("PUPILD", "REQ")
+
         if (rateLimitHost.matches(request.url().host()))
             rateLimiter.acquire()
+
+        Log.d("PUPILD", "ACQ ${request.url()}")
 
         var response = chain.proceed(request)
         var limit = 5
