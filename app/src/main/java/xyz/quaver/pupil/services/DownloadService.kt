@@ -41,12 +41,9 @@ import okhttp3.ResponseBody
 import okio.*
 import xyz.quaver.pupil.*
 import xyz.quaver.pupil.ui.ReaderActivity
-import xyz.quaver.pupil.util.cleanCache
+import xyz.quaver.pupil.util.*
 import xyz.quaver.pupil.util.downloader.Cache
 import xyz.quaver.pupil.util.downloader.DownloadManager
-import xyz.quaver.pupil.util.ellipsize
-import xyz.quaver.pupil.util.normalizeID
-import xyz.quaver.pupil.util.requestBuilders
 import java.io.IOException
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.math.ceil
@@ -357,7 +354,7 @@ class DownloadService : Service() {
             }
         }
 
-        galleryInfo.requestBuilders.forEachIndexed { index, it ->
+        galleryInfo.getRequestBuilders().forEachIndexed { index, it ->
             if (progress[galleryID]?.get(index)?.isInfinite() == false) {
                 val request = it.tag(Tag(galleryID, index, startId)).build()
                 client.newCall(request).enqueue(callback)

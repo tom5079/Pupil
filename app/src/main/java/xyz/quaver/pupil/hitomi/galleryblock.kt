@@ -75,7 +75,7 @@ data class GalleryBlock(
     val relatedTags: List<String>
 )
 
-fun getGalleryBlock(galleryID: Int) : GalleryBlock {
+suspend fun getGalleryBlock(galleryID: Int) : GalleryBlock {
     val url = "$protocol//$domain/$galleryblockdir/$galleryID$extension"
 
     val doc = Jsoup.parse(rewriteTnPaths(URL(url).readText()))
@@ -102,4 +102,4 @@ fun getGalleryBlock(galleryID: Int) : GalleryBlock {
     return GalleryBlock(galleryID, galleryUrl, thumbnails, title, artists, series, type, language, relatedTags)
 }
 
-fun getGalleryBlockOrNull(galleryID: Int) = runCatching { getGalleryBlock(galleryID) }.getOrNull()
+suspend fun getGalleryBlockOrNull(galleryID: Int) = runCatching { getGalleryBlock(galleryID) }.getOrNull()

@@ -45,68 +45,57 @@ const val galleryblockdir = "galleryblock"
 const val nozomiextension = ".nozomi"
 
 @SuppressLint("SetJavaScriptEnabled")
-interface gg {
-    fun m(g: Int): Int
-    val b: String
-    fun s(h: String): String
+object gg {
+    suspend fun m(g: Int): Int = coroutineScope {
+        var result: Int? = null
 
-    companion object {
-        @Volatile private var instance: gg? = null
+        launch(Dispatchers.Main) {
+            while (webView.progress != 100) yield()
 
-        fun getInstance(): gg =
-            instance ?: synchronized(this) {
-                instance ?: object: gg {
-                    override fun m(g: Int): Int {
-                        var result: Int? = null
-
-                        MainScope().launch {
-                            while (webView.progress != 100) delay(100)
-                            webView.evaluateJavascript("gg.m($g)") {
-                                result = it.toInt()
-                            }
-                        }
-
-                        while (result == null) Thread.sleep(100)
-
-                        return result!!
-                    }
-
-                    override val b: String
-                        get() {
-                            var result: String? = null
-
-                            MainScope().launch {
-                                while (webView.progress != 100) delay(100)
-                                webView.evaluateJavascript("gg.b") {
-                                    result = it.replace("\"", "")
-                                }
-                            }
-
-                            while (result == null) Thread.sleep(100)
-
-                            return result!!
-                        }
-
-                    override fun s(h: String): String {
-                        var result: String? = null
-
-                        MainScope().launch {
-                            while (webView.progress != 100) delay(100)
-                            webView.evaluateJavascript("gg.s('$h')") {
-                                result = it.replace("\"", "")
-                            }
-                        }
-
-                        while (result == null) Thread.sleep(100)
-
-                        return result!!
-                    }
-                }.also { instance = it }
+            webView.evaluateJavascript("gg.m($g)") {
+                result = it.toInt()
             }
+        }
+
+        while (result == null) yield()
+
+        result!!
+    }
+
+    suspend fun b(): String = coroutineScope {
+        var result: String? = null
+
+        launch(Dispatchers.Main) {
+            while (webView.progress != 100) yield()
+
+            webView.evaluateJavascript("gg.b") {
+                result = it.replace("\"", "")
+            }
+        }
+
+        while (result == null) yield()
+
+        result!!
+    }
+
+    suspend fun s(h: String): String = coroutineScope {
+        var result: String? = null
+
+        launch(Dispatchers.Main) {
+            while (webView.progress != 100) yield()
+
+            webView.evaluateJavascript("gg.s('$h')") {
+                result = it.replace("\"", "")
+            }
+        }
+
+        while (result == null) yield()
+
+        result!!
     }
 }
 
-fun subdomainFromURL(url: String, base: String? = null) : String {
+suspend fun subdomainFromURL(url: String, base: String? = null) : String {
     var retval = "b"
 
     if (!base.isNullOrBlank())
@@ -120,41 +109,41 @@ fun subdomainFromURL(url: String, base: String? = null) : String {
     val g = m.groupValues.let { it[2]+it[1] }.toIntOrNull(b)
 
     if (g != null) {
-        retval = (97+ gg.getInstance().m(g)).toChar().toString() + retval
+        retval = (97+ gg.m(g)).toChar().toString() + retval
     }
 
     return retval
 }
 
-fun urlFromUrl(url: String, base: String? = null) : String {
+suspend fun urlFromUrl(url: String, base: String? = null) : String {
     return url.replace(Regex("""//..?\.hitomi\.la/"""), "//${subdomainFromURL(url, base)}.hitomi.la/")
 }
 
 
-fun fullPathFromHash(hash: String) : String =
-    "${gg.getInstance().b}${gg.getInstance().s(hash)}/$hash"
+suspend fun fullPathFromHash(hash: String) : String =
+    "${gg.b()}${gg.s(hash)}/$hash"
 
 fun realFullPathFromHash(hash: String): String =
     hash.replace(Regex("""^.*(..)(.)$"""), "$2/$1/$hash")
 
-fun urlFromHash(galleryID: Int, image: GalleryFiles, dir: String? = null, ext: String? = null) : String {
+suspend fun urlFromHash(galleryID: Int, image: GalleryFiles, dir: String? = null, ext: String? = null) : String {
     val ext = ext ?: dir ?: image.name.takeLastWhile { it != '.' }
     val dir = dir ?: "images"
     return "https://a.hitomi.la/$dir/${fullPathFromHash(image.hash)}.$ext"
 }
 
-fun urlFromUrlFromHash(galleryID: Int, image: GalleryFiles, dir: String? = null, ext: String? = null, base: String? = null) =
+suspend fun urlFromUrlFromHash(galleryID: Int, image: GalleryFiles, dir: String? = null, ext: String? = null, base: String? = null) =
     if (base == "tn")
         urlFromUrl("https://a.hitomi.la/$dir/${realFullPathFromHash(image.hash)}.$ext", base)
     else
         urlFromUrl(urlFromHash(galleryID, image, dir, ext), base)
 
-fun rewriteTnPaths(html: String) =
-    html.replace(Regex("""//tn\.hitomi\.la/[^/]+/[0-9a-f]/[0-9a-f]{2}/[0-9a-f]{64}""")) { url ->
-        urlFromUrl(url.value, "tn")
-    }
+suspend fun rewriteTnPaths(html: String) =
+    Regex("""//tn\.hitomi\.la/[^/]+/[0-9a-f]/[0-9a-f]{2}/[0-9a-f]{64}""").find(html)?.let { m ->
+        html.replaceRange(m.range, urlFromUrl(m.value, "tn"))
+    } ?: html
 
-fun imageUrlFromImage(galleryID: Int, image: GalleryFiles, noWebp: Boolean) : String {
+suspend fun imageUrlFromImage(galleryID: Int, image: GalleryFiles, noWebp: Boolean) : String {
     return when {
         noWebp ->
             urlFromUrlFromHash(galleryID, image)
