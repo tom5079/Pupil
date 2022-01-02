@@ -138,11 +138,9 @@ dependencies {
     implementation("xyz.quaver.pupil.sources:core:0.0.1-alpha01-DEV10")
 
     implementation("xyz.quaver:documentfilex:0.7.1")
-    implementation("xyz.quaver:subsampledimage:0.0.1-alpha18-SNAPSHOT")
+    implementation("xyz.quaver:subsampledimage:0.0.1-alpha19-SNAPSHOT")
 
     implementation("com.google.guava:guava:31.0.1-jre")
-
-    implementation("app.cash.zipline:zipline:1.0.0-SNAPSHOT")
 
     implementation("org.kodein.log:kodein-log:0.11.1")
     debugImplementation("com.squareup.leakcanary:leakcanary-android:2.7")
