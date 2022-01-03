@@ -5,7 +5,6 @@ var domain = (/^dev\./.test(document.location.hostname.toString()) ? 'dev' : 'lt
 var galleryblockextension = '.html';
 var galleryblockdir = 'galleryblock';
 var nozomiextension = '.nozomi';
-var gg = {};
 
 function subdomain_from_url(url, base) {
         var retval = 'b';
