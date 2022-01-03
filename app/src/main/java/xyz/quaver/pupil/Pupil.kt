@@ -27,7 +27,9 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
-import android.webkit.WebView
+import android.util.Log
+import android.webkit.*
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.content.ContextCompat
 import androidx.preference.PreferenceManager
@@ -36,16 +38,22 @@ import com.github.piasy.biv.loader.fresco.FrescoImageLoader
 import com.google.android.gms.common.GooglePlayServicesNotAvailableException
 import com.google.android.gms.common.GooglePlayServicesRepairableException
 import com.google.android.gms.security.ProviderInstaller
+import com.google.android.material.snackbar.Snackbar
 import com.google.firebase.crashlytics.FirebaseCrashlytics
-import okhttp3.Dispatcher
-import okhttp3.Interceptor
-import okhttp3.OkHttpClient
-import okhttp3.Response
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.channels.BufferOverflow
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.launch
+import okhttp3.*
 import xyz.quaver.io.FileX
 import xyz.quaver.pupil.types.Tag
 import xyz.quaver.pupil.util.*
 import java.io.File
+import java.net.URL
 import java.util.*
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import kotlin.reflect.KClass
@@ -73,6 +81,14 @@ val client: OkHttpClient
 
 @SuppressLint("StaticFieldLeak")
 lateinit var webView: WebView
+val _webViewFlow = MutableSharedFlow<Pair<String, String>>(
+    extraBufferCapacity = 2,
+    onBufferOverflow = BufferOverflow.DROP_OLDEST
+)
+val webViewFlow = _webViewFlow.asSharedFlow()
+var webViewReady = false
+
+private lateinit var userAgent: String
 
 class Pupil : Application() {
 
@@ -86,9 +102,39 @@ class Pupil : Application() {
         instance = this
 
         webView = WebView(this).apply {
-            settings.javaScriptEnabled = true
+            with (settings) {
+                javaScriptEnabled = true
+                domStorageEnabled = true
+            }
 
-            loadData("""<script src="https://ltn.hitomi.la/gg.js"></script>""", "text/html", null)
+            userAgent = settings.userAgentString
+
+            webViewClient = object: WebViewClient() {
+                override fun onPageFinished(view: WebView?, url: String?) {
+                    webViewReady = true
+                }
+            }
+
+            addJavascriptInterface(object {
+                @JavascriptInterface
+                fun onResult(uid: String, result: String) {
+                    _webViewFlow.tryEmit(uid to result)
+                }
+            }, "Callback")
+
+            CoroutineScope(Dispatchers.IO).launch {
+                val html = URL("https://tom5079.github.io/Pupil/hitomi.html").readText()
+
+                launch(Dispatchers.Main) {
+                    loadDataWithBaseURL(
+                        "https://hitomi.la/",
+                        html,
+                        "text/html",
+                        null,
+                        null
+                    )
+                }
+            }
         }
 
         AppCompatDelegate.setCompatVectorFromResourcesEnabled(true)
@@ -110,8 +156,7 @@ class Pupil : Application() {
             .proxyInfo(proxyInfo)
             .addInterceptor { chain ->
                 val request = chain.request().newBuilder()
-                    .header("User-Agent","Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) " +
-                            "Ubuntu Chromium/70.0.3538.77 Chrome/70.0.3538.77 Safari/537.36")
+                    .header("User-Agent", userAgent)
                     .build()
 
                 val tag = request.tag() ?: return@addInterceptor chain.proceed(request)

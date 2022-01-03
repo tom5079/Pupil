@@ -16,13 +16,10 @@
 
 package xyz.quaver.pupil.hitomi
 
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.*
 import java.util.*
 
-fun doSearch(query: String, sortByPopularity: Boolean = false) : Set<Int> {
+suspend fun doSearch(query: String, sortByPopularity: Boolean = false) : Set<Int> = coroutineScope {
     val terms = query
         .trim()
         .replace(Regex("""^\?"""), "")
@@ -43,16 +40,16 @@ fun doSearch(query: String, sortByPopularity: Boolean = false) : Set<Int> {
     }
 
     val positiveResults = positiveTerms.map {
-        CoroutineScope(Dispatchers.IO).async {
-            kotlin.runCatching {
+        async {
+            runCatching {
                 getGalleryIDsForQuery(it)
             }.getOrElse { emptySet() }
         }
     }
 
     val negativeResults = negativeTerms.map {
-        CoroutineScope(Dispatchers.IO).async {
-            kotlin.runCatching {
+        async {
+            runCatching {
                 getGalleryIDsForQuery(it)
             }.getOrElse { emptySet() }
         }
@@ -64,28 +61,26 @@ fun doSearch(query: String, sortByPopularity: Boolean = false) : Set<Int> {
         else -> emptySet()
     }
 
-    runBlocking {
-        @Synchronized fun filterPositive(newResults: Set<Int>) {
-            results = when {
-                results.isEmpty() -> newResults
-                else -> results intersect newResults
-            }
-        }
-
-        @Synchronized fun filterNegative(newResults: Set<Int>) {
-            results = results subtract newResults
-        }
-
-        //positive results
-        positiveResults.forEach {
-            filterPositive(it.await())
-        }
-
-        //negative results
-        negativeResults.forEach {
-            filterNegative(it.await())
+    fun filterPositive(newResults: Set<Int>) {
+        results = when {
+            results.isEmpty() -> newResults
+            else -> results intersect newResults
         }
     }
 
-    return results
+    fun filterNegative(newResults: Set<Int>) {
+        results = results subtract newResults
+    }
+
+    //positive results
+    positiveResults.forEach {
+        filterPositive(it.await())
+    }
+
+    //negative results
+    negativeResults.forEach {
+        filterNegative(it.await())
+    }
+
+    results
 }

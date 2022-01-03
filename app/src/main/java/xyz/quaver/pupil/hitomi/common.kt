@@ -21,127 +21,92 @@ import android.util.Log
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.transformWhile
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import xyz.quaver.json
 import xyz.quaver.pupil.Pupil
 import xyz.quaver.pupil.webView
+import xyz.quaver.pupil.webViewFlow
+import xyz.quaver.pupil.webViewReady
 import xyz.quaver.readText
 import java.net.URL
 import java.nio.charset.Charset
+import java.util.*
+import kotlin.coroutines.resume
+import kotlin.coroutines.suspendCoroutine
 
 const val protocol = "https:"
 
+suspend inline fun WebView.evaluate(script: String): String = withContext(Dispatchers.Main) {
+    while (!webViewReady) yield()
+
+    val result: String = suspendCoroutine { continuation ->
+        evaluateJavascript(script) {
+            continuation.resume(it)
+        }
+    }
+
+    result
+}
+
+@OptIn(ExperimentalCoroutinesApi::class)
+suspend inline fun WebView.evaluatePromise(script: String, then: String = ".then(result => Callback.onResult(%uid, JSON.stringify(result)))"): String = withContext(Dispatchers.Main) {
+    while (!webViewReady) yield()
+
+    val uid = UUID.randomUUID().toString()
+
+    evaluateJavascript((script+then).replace("%uid", "'$uid'"), null)
+
+    val flow: Flow<Pair<String, String>> = webViewFlow.transformWhile { (currentUid, result) ->
+        if (currentUid == uid) emit(currentUid to result)
+        currentUid != uid
+    }
+
+    flow.first().second
+}
+
 @Suppress("EXPERIMENTAL_API_USAGE")
-fun getGalleryInfo(galleryID: Int) =
-    json.decodeFromString<GalleryInfo>(
-        URL("$protocol//$domain/galleries/$galleryID.js").readText()
-            .replace("var galleryinfo = ", "")
+suspend fun getGalleryInfo(galleryID: Int): GalleryInfo {
+    val result = webView.evaluatePromise(
+        """
+        new Promise((resolve, reject) => {
+            $.getScript('https://$domain/galleries/$galleryID.js', () => {
+                resolve(galleryinfo)
+            });
+        })
+        """.trimIndent()
     )
+
+    return json.decodeFromString(result)
+}
 
 //common.js
 const val domain = "ltn.hitomi.la"
-const val galleryblockextension = ".html"
 const val galleryblockdir = "galleryblock"
 const val nozomiextension = ".nozomi"
 
-@SuppressLint("SetJavaScriptEnabled")
-object gg {
-    suspend fun m(g: Int): Int = coroutineScope {
-        var result: Int? = null
+val String?.js: String
+    get() = if (this == null) "null" else "'$this'"
 
-        launch(Dispatchers.Main) {
-            while (webView.progress != 100) yield()
+@OptIn(ExperimentalSerializationApi::class)
+suspend fun urlFromUrlFromHash(galleryID: Int, image: GalleryFiles, dir: String? = null, ext: String? = null, base: String? = null): String {
+    val result = webView.evaluate(
+        """
+        url_from_url_from_hash(
+            ${galleryID.toString().js},
+            ${Json.encodeToString(image)},
+            ${dir.js}, ${ext.js}, ${base.js}
+        )
+        """.trimIndent()
+    )
 
-            webView.evaluateJavascript("gg.m($g)") {
-                result = it.toInt()
-            }
-        }
-
-        while (result == null) yield()
-
-        result!!
-    }
-
-    suspend fun b(): String = coroutineScope {
-        var result: String? = null
-
-        launch(Dispatchers.Main) {
-            while (webView.progress != 100) yield()
-
-            webView.evaluateJavascript("gg.b") {
-                result = it.replace("\"", "")
-            }
-        }
-
-        while (result == null) yield()
-
-        result!!
-    }
-
-    suspend fun s(h: String): String = coroutineScope {
-        var result: String? = null
-
-        launch(Dispatchers.Main) {
-            while (webView.progress != 100) yield()
-
-            webView.evaluateJavascript("gg.s('$h')") {
-                result = it.replace("\"", "")
-            }
-        }
-
-        while (result == null) yield()
-
-        result!!
-    }
+    return Json.decodeFromString(result)
 }
-
-suspend fun subdomainFromURL(url: String, base: String? = null) : String {
-    var retval = "b"
-
-    if (!base.isNullOrBlank())
-        retval = base
-
-    val b = 16
-
-    val r = Regex("""/[0-9a-f]{61}([0-9a-f]{2})([0-9a-f])""")
-    val m = r.find(url) ?: return "a"
-
-    val g = m.groupValues.let { it[2]+it[1] }.toIntOrNull(b)
-
-    if (g != null) {
-        retval = (97+ gg.m(g)).toChar().toString() + retval
-    }
-
-    return retval
-}
-
-suspend fun urlFromUrl(url: String, base: String? = null) : String {
-    return url.replace(Regex("""//..?\.hitomi\.la/"""), "//${subdomainFromURL(url, base)}.hitomi.la/")
-}
-
-
-suspend fun fullPathFromHash(hash: String) : String =
-    "${gg.b()}${gg.s(hash)}/$hash"
-
-fun realFullPathFromHash(hash: String): String =
-    hash.replace(Regex("""^.*(..)(.)$"""), "$2/$1/$hash")
-
-suspend fun urlFromHash(galleryID: Int, image: GalleryFiles, dir: String? = null, ext: String? = null) : String {
-    val ext = ext ?: dir ?: image.name.takeLastWhile { it != '.' }
-    val dir = dir ?: "images"
-    return "https://a.hitomi.la/$dir/${fullPathFromHash(image.hash)}.$ext"
-}
-
-suspend fun urlFromUrlFromHash(galleryID: Int, image: GalleryFiles, dir: String? = null, ext: String? = null, base: String? = null) =
-    if (base == "tn")
-        urlFromUrl("https://a.hitomi.la/$dir/${realFullPathFromHash(image.hash)}.$ext", base)
-    else
-        urlFromUrl(urlFromHash(galleryID, image, dir, ext), base)
-
-suspend fun rewriteTnPaths(html: String) =
-    Regex("""//tn\.hitomi\.la/[^/]+/[0-9a-f]/[0-9a-f]{2}/[0-9a-f]{64}""").find(html)?.let { m ->
-        html.replaceRange(m.range, urlFromUrl(m.value, "tn"))
-    } ?: html
 
 suspend fun imageUrlFromImage(galleryID: Int, image: GalleryFiles, noWebp: Boolean) : String {
     return when {

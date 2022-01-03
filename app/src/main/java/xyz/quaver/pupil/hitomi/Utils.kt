@@ -54,12 +54,3 @@ fun URL.readText(settings: HeaderSetter? = null): String {
     
     return client.newCall(request).execute().also{ if (it.code() != 200) throw IOException() }.body()?.use { it.string() } ?: throw IOException()
 }
-
-fun URL.readBytes(settings: HeaderSetter? = null): ByteArray {
-    val request = Request.Builder()
-        .url(this).let {
-            settings?.invoke(it) ?: it
-        }.build()
-
-    return client.newCall(request).execute().also { if (it.code() != 200) throw IOException() }.body()?.use { it.bytes() } ?: throw IOException()
-}

@@ -25,6 +25,7 @@ import android.os.Build
 import android.os.Bundle
 import android.text.InputType
 import android.text.util.Linkify
+import android.util.Log
 import android.view.KeyEvent
 import android.view.MenuItem
 import android.view.View
