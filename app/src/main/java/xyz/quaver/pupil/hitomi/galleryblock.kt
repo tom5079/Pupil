@@ -18,6 +18,7 @@ package xyz.quaver.pupil.hitomi
 
 import kotlinx.serialization.Serializable
 import org.jsoup.Jsoup
+import xyz.quaver.pupil.webView
 import xyz.quaver.readText
 import java.net.URL
 import java.net.URLDecoder
@@ -25,42 +26,6 @@ import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.util.*
 import javax.net.ssl.HttpsURLConnection
-
-//galleryblock.js
-fun fetchNozomi(area: String? = null, tag: String = "index", language: String = "all", start: Int = -1, count: Int = -1) : Pair<List<Int>, Int> {
-    val url =
-            when(area) {
-                null -> "$protocol//$domain/$tag-$language$nozomiextension"
-                else -> "$protocol//$domain/$area/$tag-$language$nozomiextension"
-            }
-
-    with(URL(url).openConnection() as HttpsURLConnection) {
-        requestMethod = "GET"
-
-        if (start != -1 && count != -1) {
-            val startByte = start*4
-            val endByte = (start+count)*4-1
-
-            setRequestProperty("Range", "bytes=$startByte-$endByte")
-        }
-
-        connect()
-
-        val totalItems = getHeaderField("Content-Range")
-            .replace(Regex("^[Bb]ytes \\d+-\\d+/"), "").toInt() / 4
-
-        val nozomi = ArrayList<Int>()
-
-        val arrayBuffer = ByteBuffer
-            .wrap(inputStream.readBytes())
-            .order(ByteOrder.BIG_ENDIAN)
-
-        while (arrayBuffer.hasRemaining())
-            nozomi.add(arrayBuffer.int)
-
-        return Pair(nozomi, totalItems)
-    }
-}
 
 @Serializable
 data class GalleryBlock(
@@ -78,7 +43,18 @@ data class GalleryBlock(
 suspend fun getGalleryBlock(galleryID: Int) : GalleryBlock {
     val url = "$protocol//$domain/$galleryblockdir/$galleryID$extension"
 
-    val doc = Jsoup.parse(rewriteTnPaths(URL(url).readText()))
+    val html: String = webView.evaluatePromise(
+        """
+        $.get('$url').always(function(data, status) {
+            if (status === 'success') {
+                Callback.onResult(%uid, data);
+            }
+        }); 
+        """.trimIndent(),
+        then = ""
+    )
+
+    val doc = Jsoup.parse(html)
 
     val galleryUrl = doc.selectFirst("h1 > a")!!.attr("href")
 
@@ -101,5 +77,3 @@ suspend fun getGalleryBlock(galleryID: Int) : GalleryBlock {
 
     return GalleryBlock(galleryID, galleryUrl, thumbnails, title, artists, series, type, language, relatedTags)
 }
-
-suspend fun getGalleryBlockOrNull(galleryID: Int) = runCatching { getGalleryBlock(galleryID) }.getOrNull()

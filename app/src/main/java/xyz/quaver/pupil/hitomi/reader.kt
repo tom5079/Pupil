@@ -44,6 +44,6 @@ data class GalleryFiles(
 
 //Set header `Referer` to reader url to avoid 403 error
 @Deprecated("", replaceWith = ReplaceWith("getGalleryInfo"))
-fun getReader(galleryID: Int) : GalleryInfo {
+suspend fun getReader(galleryID: Int) : GalleryInfo {
    return getGalleryInfo(galleryID)
 }
