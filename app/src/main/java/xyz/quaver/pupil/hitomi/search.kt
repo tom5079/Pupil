@@ -16,8 +16,6 @@
 
 package xyz.quaver.pupil.hitomi
 
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
@@ -29,7 +27,7 @@ const val extension = ".html"
 
 @OptIn(ExperimentalSerializationApi::class)
 suspend fun getGalleryIDsForQuery(query: String) : Set<Int> {
-    val result = webView.evaluatePromise("get_galleryids_for_query('$query')")
+    val result = webView.evaluatePromise("get_galleryids_for_query('$query')") ?: return emptySet()
 
     return Json.decodeFromString(result)
 }
@@ -39,14 +37,14 @@ data class Suggestion(val s: String, val t: Int, val u: String, val n: String)
 
 @OptIn(ExperimentalSerializationApi::class)
 suspend fun getSuggestionsForQuery(query: String) : List<Suggestion> {
-    val result = webView.evaluatePromise("get_suggestions_for_query('$query')")
+    val result = webView.evaluatePromise("get_suggestions_for_query('$query')") ?: return emptyList()
 
-    return Json.decodeFromString<List<List<Suggestion>?>>(result)[0]!!
+    return Json.decodeFromString<List<List<Suggestion>?>>(result)[0] ?: return emptyList()
 }
 
 @OptIn(ExperimentalSerializationApi::class)
 suspend fun getGalleryIDsFromNozomi(area: String?, tag: String, language: String) : Set<Int> {
     val jsArea = if (area == null) "null" else "'$area'"
 
-    return Json.decodeFromString(webView.evaluatePromise("""get_galleryids_from_nozomi($jsArea, '$tag', '$language')"""))
+    return Json.decodeFromString(webView.evaluatePromise("""get_galleryids_from_nozomi($jsArea, '$tag', '$language')""") ?: return emptySet())
 }
