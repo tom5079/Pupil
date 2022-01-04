@@ -1,6 +1,6 @@
 function get_gallery_info(galleryID) {
     return new Promise((resolve, reject) => {
-        $.getScript(`https://ltn.hitomi.la/galleryblock/${galleryID}.html`, () => {
+        $.getScript(`https://ltn.hitomi.la/galleries/${galleryID}.js`, () => {
             resolve(galleryinfo);
         });
     });
