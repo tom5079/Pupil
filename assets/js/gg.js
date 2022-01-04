@@ -1,6 +1,6 @@
 'use strict';
 (function(){
-gg = { m: function(g) {
+const gg = { m: function(g) {
 var o = 0;
 switch (g) {
 case 3730:
