@@ -24,6 +24,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import android.webkit.MimeTypeMap
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
@@ -76,7 +77,7 @@ class UpdateBroadcastReceiver : BroadcastReceiver() {
                 val pendingIntent = PendingIntent.getActivity(context, 0, Intent(Intent.ACTION_VIEW).apply {
                     flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK
                     setDataAndType(uri, MimeTypeMap.getSingleton().getMimeTypeFromExtension("apk"))
-                }, 0)
+                }, if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) PendingIntent.FLAG_IMMUTABLE else 0)
 
                 val notification = NotificationCompat.Builder(context, "update")
                     .setSmallIcon(android.R.drawable.stat_sys_download_done)
