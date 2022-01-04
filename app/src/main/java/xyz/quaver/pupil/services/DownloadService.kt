@@ -23,6 +23,7 @@ import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
@@ -74,7 +75,7 @@ class DownloadService : Service() {
 
         val pendingIntent = TaskStackBuilder.create(this).run {
             addNextIntentWithParentStack(intent)
-            getPendingIntent(galleryID, PendingIntent.FLAG_UPDATE_CURRENT)
+            getPendingIntent(galleryID, PendingIntent.FLAG_UPDATE_CURRENT or if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) PendingIntent.FLAG_MUTABLE else 0)
         }
         val action =
             NotificationCompat.Action.Builder(0, getText(android.R.string.cancel),
@@ -84,7 +85,7 @@ class DownloadService : Service() {
                     Intent(this, DownloadService::class.java)
                         .putExtra(KEY_COMMAND, COMMAND_CANCEL)
                         .putExtra(KEY_ID, galleryID),
-                    PendingIntent.FLAG_UPDATE_CURRENT),
+                    PendingIntent.FLAG_UPDATE_CURRENT or if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) PendingIntent.FLAG_MUTABLE else 0),
             ).build()
 
         notification[galleryID] = NotificationCompat.Builder(this, "download").apply {
