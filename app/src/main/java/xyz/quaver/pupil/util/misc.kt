@@ -19,6 +19,7 @@
 package xyz.quaver.pupil.util
 
 import android.annotation.SuppressLint
+import com.google.firebase.crashlytics.FirebaseCrashlytics
 import kotlinx.serialization.json.*
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -103,7 +104,15 @@ suspend fun GalleryInfo.getRequestBuilders(): List<Request.Builder> {
 
     return this.files.map {
         Request.Builder()
-            .url(imageUrlFromImage(galleryID, it, !lowQuality))
+            .url(
+                runCatching {
+                    imageUrlFromImage(galleryID, it, !lowQuality)
+                }
+                .onFailure {
+                    FirebaseCrashlytics.getInstance().recordException(it)
+                }
+                .getOrDefault("https://a/")
+            )
             .header("Referer", "https://hitomi.la/")
             .header("User-Agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.45 Safari/537.36")
     }
