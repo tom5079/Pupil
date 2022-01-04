@@ -186,7 +186,22 @@ class Pupil : Application() {
                     request: WebResourceRequest?,
                     error: WebResourceError?
                 ) {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                        FirebaseCrashlytics.getInstance().log(
+                            "onReceivedError: ${error?.description}"
+                        )
+                    }
                     webViewFailed = true
+                }
+            }
+
+            webChromeClient = object: WebChromeClient() {
+                override fun onConsoleMessage(consoleMessage: ConsoleMessage?): Boolean {
+                    FirebaseCrashlytics.getInstance().log(
+                        "onConsoleMessage: $consoleMessage"
+                    )
+
+                    return super.onConsoleMessage(consoleMessage)
                 }
             }
 
