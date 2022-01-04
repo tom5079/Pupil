@@ -161,12 +161,10 @@ class ReaderActivity : BaseActivity() {
         }
     }
 
-    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+    override fun onCreateOptionsMenu(menu: Menu): Boolean {
         menuInflater.inflate(R.menu.reader, menu)
 
-        with(menu?.findItem(R.id.reader_menu_favorite)) {
-            this ?: return@with
-
+        with(menu.findItem(R.id.reader_menu_favorite)) {
             if (favorites.contains(galleryID))
                 (icon as Animatable).start()
         }
