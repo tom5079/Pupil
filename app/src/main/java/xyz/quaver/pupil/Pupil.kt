@@ -25,6 +25,7 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
 import android.content.Intent
+import android.content.pm.ApplicationInfo
 import android.net.Uri
 import android.os.Build
 import android.util.Log
@@ -40,14 +41,13 @@ import com.google.android.gms.common.GooglePlayServicesRepairableException
 import com.google.android.gms.security.ProviderInstaller
 import com.google.android.material.snackbar.Snackbar
 import com.google.firebase.crashlytics.FirebaseCrashlytics
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
-import kotlinx.coroutines.launch
 import okhttp3.*
 import xyz.quaver.io.FileX
+import xyz.quaver.pupil.hitomi.evaluations
 import xyz.quaver.pupil.types.Tag
 import xyz.quaver.pupil.util.*
 import java.io.File
@@ -81,13 +81,77 @@ val client: OkHttpClient
 
 @SuppressLint("StaticFieldLeak")
 lateinit var webView: WebView
-val _webViewFlow = MutableSharedFlow<Pair<String, String>>(
+val _webViewFlow = MutableSharedFlow<Pair<String, String?>>(
     extraBufferCapacity = 2,
     onBufferOverflow = BufferOverflow.DROP_OLDEST
 )
 val webViewFlow = _webViewFlow.asSharedFlow()
 var webViewReady = false
+    private set
+var webViewFailed = false
+    private set
+private var reloadJob: Job? = null
 
+fun reloadWebView() {
+    if (reloadJob?.isActive == true) return
+
+    reloadJob = CoroutineScope(Dispatchers.IO).launch {
+        if (evaluations.isEmpty()) {
+            webViewReady = false
+            webViewFailed = false
+
+            while (evaluations.isNotEmpty()) yield()
+
+            runCatching {
+                URL(
+                    if (isDebugBuild)
+                        "https://tom5079.github.io/Pupil/hitomi-dev.html"
+                    else
+                        "https://tom5079.github.io/Pupil/hitomi.html"
+                ).readText()
+            }.onFailure {
+                webViewFailed = true
+            }.getOrNull()?.let { html ->
+                launch(Dispatchers.Main) {
+                    webView.loadDataWithBaseURL(
+                        "https://hitomi.la/",
+                        html,
+                        "text/html",
+                        null,
+                        null
+                    )
+                }
+            }
+        }
+    }
+}
+
+private var htmlVersion: String = ""
+fun reloadWhenFailedOrUpdate() = CoroutineScope(Dispatchers.Default).launch {
+    while (true) {
+        if (
+            webViewFailed ||
+            runCatching {
+                URL(
+                    if (isDebugBuild)
+                        "https://tom5079.github.io/Pupil/hitomi-dev.html.ver"
+                    else
+                        "https://tom5079.github.io/Pupil/hitomi.html.ver"
+                ).readText()
+            }.getOrNull().let { version ->
+                (!version.isNullOrEmpty() && version != htmlVersion).also {
+                    if (it) htmlVersion = version!!
+                }
+            }
+        ) {
+            reloadWebView()
+        }
+
+        delay(if (webViewReady && !webViewFailed) 10000 else 1000)
+    }
+}
+
+var isDebugBuild: Boolean = false
 private lateinit var userAgent: String
 
 class Pupil : Application() {
@@ -100,6 +164,9 @@ class Pupil : Application() {
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate() {
         instance = this
+        isDebugBuild = applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE != 0
+
+        WebView.setWebContentsDebuggingEnabled(true)
 
         webView = WebView(this).apply {
             with (settings) {
@@ -113,6 +180,14 @@ class Pupil : Application() {
                 override fun onPageFinished(view: WebView?, url: String?) {
                     webViewReady = true
                 }
+
+                override fun onReceivedError(
+                    view: WebView?,
+                    request: WebResourceRequest?,
+                    error: WebResourceError?
+                ) {
+                    webViewFailed = true
+                }
             }
 
             addJavascriptInterface(object {
@@ -120,22 +195,18 @@ class Pupil : Application() {
                 fun onResult(uid: String, result: String) {
                     _webViewFlow.tryEmit(uid to result)
                 }
-            }, "Callback")
-
-            CoroutineScope(Dispatchers.IO).launch {
-                val html = URL("https://tom5079.github.io/Pupil/hitomi.html").readText()
-
-                launch(Dispatchers.Main) {
-                    loadDataWithBaseURL(
-                        "https://hitomi.la/",
-                        html,
-                        "text/html",
-                        null,
-                        null
+                @JavascriptInterface
+                fun onError(uid: String, message: String) {
+                    _webViewFlow.tryEmit(uid to null)
+                    Toast.makeText(this@Pupil, message, Toast.LENGTH_LONG).show()
+                    FirebaseCrashlytics.getInstance().recordException(
+                        Exception(message)
                     )
                 }
-            }
+            }, "Callback")
         }
+
+        reloadWhenFailedOrUpdate()
 
         AppCompatDelegate.setCompatVectorFromResourcesEnabled(true)
 

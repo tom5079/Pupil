@@ -16,37 +16,46 @@
 
 package xyz.quaver.pupil.hitomi
 
-import android.annotation.SuppressLint
-import android.util.Log
 import android.webkit.WebView
-import android.webkit.WebViewClient
-import kotlinx.coroutines.*
+import android.widget.Toast
+import com.google.common.collect.ConcurrentHashMultiset
+import com.google.firebase.crashlytics.FirebaseCrashlytics
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.transformWhile
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.yield
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import xyz.quaver.json
-import xyz.quaver.pupil.Pupil
-import xyz.quaver.pupil.webView
-import xyz.quaver.pupil.webViewFlow
-import xyz.quaver.pupil.webViewReady
-import xyz.quaver.readText
-import java.net.URL
-import java.nio.charset.Charset
+import xyz.quaver.pupil.*
 import java.util.*
+import java.util.concurrent.ConcurrentHashMap
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 
 const val protocol = "https:"
 
-suspend inline fun WebView.evaluate(script: String): String = withContext(Dispatchers.Main) {
-    while (!webViewReady) yield()
+val evaluations = Collections.newSetFromMap<String>(ConcurrentHashMap())
+
+suspend fun WebView.evaluate(script: String): String = withContext(Dispatchers.Main) {
+    if (webViewFailed) {
+        Toast.makeText(Pupil.instance, "Failed to load scripts. Please restart the app.", Toast.LENGTH_LONG).show()
+    }
+
+    while (webViewFailed || !webViewReady) yield()
+
+    val uid = UUID.randomUUID().toString()
+
+    evaluations.add(uid)
 
     val result: String = suspendCoroutine { continuation ->
         evaluateJavascript(script) {
+            evaluations.remove(uid)
             continuation.resume(it)
         }
     }
@@ -55,15 +64,24 @@ suspend inline fun WebView.evaluate(script: String): String = withContext(Dispat
 }
 
 @OptIn(ExperimentalCoroutinesApi::class)
-suspend inline fun WebView.evaluatePromise(script: String, then: String = ".then(result => Callback.onResult(%uid, JSON.stringify(result)))"): String = withContext(Dispatchers.Main) {
-    while (!webViewReady) yield()
+suspend fun WebView.evaluatePromise(script: String, then: String = ".then(result => Callback.onResult(%uid, JSON.stringify(result))).catch(err => Callback.onError(%uid, JSON.stringify(error)))"): String? = withContext(Dispatchers.Main) {
+    if (webViewFailed) {
+        Toast.makeText(Pupil.instance, "Failed to load the scripts. Please restart the app.", Toast.LENGTH_LONG).show()
+    }
+
+    while (webViewFailed || !webViewReady) yield()
 
     val uid = UUID.randomUUID().toString()
 
+    evaluations.add(uid)
+
     evaluateJavascript((script+then).replace("%uid", "'$uid'"), null)
 
-    val flow: Flow<Pair<String, String>> = webViewFlow.transformWhile { (currentUid, result) ->
-        if (currentUid == uid) emit(currentUid to result)
+    val flow: Flow<Pair<String, String?>> = webViewFlow.transformWhile { (currentUid, result) ->
+        if (currentUid == uid) {
+            evaluations.remove(uid)
+            emit(currentUid to result)
+        }
         currentUid != uid
     }
 
@@ -72,17 +90,9 @@ suspend inline fun WebView.evaluatePromise(script: String, then: String = ".then
 
 @Suppress("EXPERIMENTAL_API_USAGE")
 suspend fun getGalleryInfo(galleryID: Int): GalleryInfo {
-    val result = webView.evaluatePromise(
-        """
-        new Promise((resolve, reject) => {
-            $.getScript('https://$domain/galleries/$galleryID.js', () => {
-                resolve(galleryinfo)
-            });
-        })
-        """.trimIndent()
-    )
+    val result = webView.evaluatePromise("get_gallery_info($galleryID)")
 
-    return json.decodeFromString(result)
+    return json.decodeFromString(result!!)
 }
 
 //common.js
@@ -105,6 +115,16 @@ suspend fun urlFromUrlFromHash(galleryID: Int, image: GalleryFiles, dir: String?
         """.trimIndent()
     )
 
+
+    FirebaseCrashlytics.getInstance().log(
+        """
+        url_from_url_from_hash(
+            ${galleryID.toString().js},
+            ${Json.encodeToString(image)},
+            ${dir.js}, ${ext.js}, ${base.js}
+        )
+        """.trimIndent()
+    )
     return Json.decodeFromString(result)
 }
 
