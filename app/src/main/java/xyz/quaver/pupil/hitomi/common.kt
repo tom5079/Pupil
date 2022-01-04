@@ -43,10 +43,6 @@ const val protocol = "https:"
 val evaluations = Collections.newSetFromMap<String>(ConcurrentHashMap())
 
 suspend fun WebView.evaluate(script: String): String = withContext(Dispatchers.Main) {
-    if (webViewFailed) {
-        Toast.makeText(Pupil.instance, "Failed to load scripts. Please restart the app.", Toast.LENGTH_LONG).show()
-    }
-
     while (webViewFailed || !webViewReady) yield()
 
     val uid = UUID.randomUUID().toString()
@@ -65,10 +61,6 @@ suspend fun WebView.evaluate(script: String): String = withContext(Dispatchers.M
 
 @OptIn(ExperimentalCoroutinesApi::class)
 suspend fun WebView.evaluatePromise(script: String, then: String = ".then(result => Callback.onResult(%uid, JSON.stringify(result))).catch(err => Callback.onError(%uid, JSON.stringify(error)))"): String? = withContext(Dispatchers.Main) {
-    if (webViewFailed) {
-        Toast.makeText(Pupil.instance, "Failed to load the scripts. Please restart the app.", Toast.LENGTH_LONG).show()
-    }
-
     while (webViewFailed || !webViewReady) yield()
 
     val uid = UUID.randomUUID().toString()

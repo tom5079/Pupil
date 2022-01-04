@@ -198,7 +198,7 @@ class Pupil : Application() {
             webChromeClient = object: WebChromeClient() {
                 override fun onConsoleMessage(consoleMessage: ConsoleMessage?): Boolean {
                     FirebaseCrashlytics.getInstance().log(
-                        "onConsoleMessage: $consoleMessage"
+                        "onConsoleMessage: ${consoleMessage?.message()}"
                     )
 
                     return super.onConsoleMessage(consoleMessage)

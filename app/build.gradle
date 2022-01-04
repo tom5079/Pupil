@@ -38,7 +38,7 @@ android {
         minSdkVersion 16
         targetSdkVersion 30
         versionCode 69
-        versionName "5.2.3"
+        versionName "5.2.4"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
     }
@@ -129,7 +129,7 @@ dependencies {
 
     implementation "com.google.guava:guava:31.0.1-android"
 
-    implementation "xyz.quaver:documentfilex:0.7.1"
+    implementation "xyz.quaver:documentfilex:0.7.2-DEV"
     implementation "xyz.quaver:floatingsearchview:1.1.7"
 
     testImplementation "junit:junit:4.13.1"
