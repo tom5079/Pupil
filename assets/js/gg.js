@@ -1,5 +1,4 @@
 'use strict';
-(function(){
 const gg = { m: function(g) {
 var o = 0;
 switch (g) {
@@ -1995,4 +1994,3 @@ return o;
 s: function(h) { var m = /(..)(.)$/.exec(h); return parseInt(m[2]+m[1], 16).toString(10); },
 b: '1641304076/'
 };
-})();
