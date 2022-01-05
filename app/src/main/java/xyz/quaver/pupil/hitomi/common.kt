@@ -20,13 +20,10 @@ import android.webkit.WebView
 import android.widget.Toast
 import com.google.common.collect.ConcurrentHashMultiset
 import com.google.firebase.crashlytics.FirebaseCrashlytics
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.transformWhile
-import kotlinx.coroutines.withContext
-import kotlinx.coroutines.yield
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
@@ -43,16 +40,18 @@ const val protocol = "https:"
 val evaluations = Collections.newSetFromMap<String>(ConcurrentHashMap())
 
 suspend fun WebView.evaluate(script: String): String = withContext(Dispatchers.Main) {
-    while (webViewFailed || !webViewReady) yield()
+    val result: String = withTimeout(10000) {
+        while (webViewFailed || !webViewReady) yield()
 
-    val uid = UUID.randomUUID().toString()
+        val uid = UUID.randomUUID().toString()
 
-    evaluations.add(uid)
+        evaluations.add(uid)
 
-    val result: String = suspendCoroutine { continuation ->
-        evaluateJavascript(script) {
-            evaluations.remove(uid)
-            continuation.resume(it)
+        suspendCoroutine { continuation ->
+            evaluateJavascript(script) {
+                evaluations.remove(uid)
+                continuation.resume(it)
+            }
         }
     }
 
@@ -61,20 +60,22 @@ suspend fun WebView.evaluate(script: String): String = withContext(Dispatchers.M
 
 @OptIn(ExperimentalCoroutinesApi::class)
 suspend fun WebView.evaluatePromise(script: String, then: String = ".then(result => Callback.onResult(%uid, JSON.stringify(result))).catch(err => Callback.onError(%uid, JSON.stringify(error)))"): String? = withContext(Dispatchers.Main) {
-    while (webViewFailed || !webViewReady) yield()
+    val flow: Flow<Pair<String, String?>> = withTimeout(10000) {
+        while (webViewFailed || !webViewReady) yield()
 
-    val uid = UUID.randomUUID().toString()
+        val uid = UUID.randomUUID().toString()
 
-    evaluations.add(uid)
+        evaluations.add(uid)
 
-    evaluateJavascript((script+then).replace("%uid", "'$uid'"), null)
+        evaluateJavascript((script+then).replace("%uid", "'$uid'"), null)
 
-    val flow: Flow<Pair<String, String?>> = webViewFlow.transformWhile { (currentUid, result) ->
-        if (currentUid == uid) {
-            evaluations.remove(uid)
-            emit(currentUid to result)
+        webViewFlow.transformWhile { (currentUid, result) ->
+            if (currentUid == uid) {
+                evaluations.remove(uid)
+                emit(currentUid to result)
+            }
+            currentUid != uid
         }
-        currentUid != uid
     }
 
     flow.first().second
