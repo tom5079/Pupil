@@ -4097,9 +4097,6 @@ if (g === 522) { o = 0; }
 if (g === 1587) { o = 1; }
 if (g === 189) { o = 1; }
 if (g === 481) { o = 0; }
-if (!/Hitomi\.la/.test(document.title)) { return 4; }
-if (!document.location.hostname.endsWith('hitomi.la')) { return 4; }
-if (!document.documentElement.clientHeight) { return 4; }
 return o;
 },
 s: function(h) { var m = /(..)(.)$/.exec(h); return parseInt(m[2]+m[1], 16).toString(10); },
