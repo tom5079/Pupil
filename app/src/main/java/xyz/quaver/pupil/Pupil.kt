@@ -39,7 +39,6 @@ import com.github.piasy.biv.loader.fresco.FrescoImageLoader
 import com.google.android.gms.common.GooglePlayServicesNotAvailableException
 import com.google.android.gms.common.GooglePlayServicesRepairableException
 import com.google.android.gms.security.ProviderInstaller
-import com.google.android.material.snackbar.Snackbar
 import com.google.firebase.crashlytics.FirebaseCrashlytics
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.BufferOverflow
@@ -47,13 +46,12 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import okhttp3.*
 import xyz.quaver.io.FileX
-import xyz.quaver.pupil.hitomi.evaluations
+import xyz.quaver.pupil.hitomi.evaluationContext
 import xyz.quaver.pupil.types.Tag
 import xyz.quaver.pupil.util.*
 import java.io.File
 import java.net.URL
 import java.util.*
-import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import kotlin.reflect.KClass
@@ -96,31 +94,29 @@ fun reloadWebView() {
     if (reloadJob?.isActive == true) return
 
     reloadJob = CoroutineScope(Dispatchers.IO).launch {
-        if (evaluations.isEmpty()) {
-            webViewReady = false
-            webViewFailed = false
+        webViewReady = false
+        webViewFailed = false
 
-            while (evaluations.isNotEmpty()) yield()
+        evaluationContext.cancelChildren()
 
-            runCatching {
-                URL(
-                    if (isDebugBuild)
-                        "https://tom5079.github.io/Pupil/hitomi-dev.html"
-                    else
-                        "https://tom5079.github.io/Pupil/hitomi.html"
-                ).readText()
-            }.onFailure {
-                webViewFailed = true
-            }.getOrNull()?.let { html ->
-                launch(Dispatchers.Main) {
-                    webView.loadDataWithBaseURL(
-                        "https://hitomi.la/",
-                        html,
-                        "text/html",
-                        null,
-                        null
-                    )
-                }
+        runCatching {
+            URL(
+                if (isDebugBuild)
+                    "https://tom5079.github.io/Pupil/hitomi-dev.html"
+                else
+                    "https://tom5079.github.io/Pupil/hitomi.html"
+            ).readText()
+        }.onFailure {
+            webViewFailed = true
+        }.getOrNull()?.let { html ->
+            launch(Dispatchers.Main) {
+                webView.loadDataWithBaseURL(
+                    "https://hitomi.la/",
+                    html,
+                    "text/html",
+                    null,
+                    null
+                )
             }
         }
     }
@@ -191,7 +187,6 @@ class Pupil : Application() {
                             "onReceivedError: ${error?.description}"
                         )
                     }
-                    webViewFailed = true
                 }
             }
 

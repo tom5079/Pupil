@@ -16,6 +16,7 @@
 
 package xyz.quaver.pupil.hitomi
 
+import android.util.Log
 import android.webkit.WebView
 import android.widget.Toast
 import com.google.common.collect.ConcurrentHashMultiset
@@ -37,21 +38,25 @@ import kotlin.coroutines.suspendCoroutine
 
 const val protocol = "https:"
 
-val evaluations = Collections.newSetFromMap<String>(ConcurrentHashMap())
+val evaluationContext = Dispatchers.Main + Job()
 
-suspend fun WebView.evaluate(script: String): String = withContext(Dispatchers.Main) {
-    val result: String = withTimeout(10000) {
-        while (webViewFailed || !webViewReady) yield()
+suspend fun WebView.evaluate(script: String): String = coroutineScope {
+    var result: String? = null
 
-        val uid = UUID.randomUUID().toString()
+    while (result == null) {
+        try {
+            result = withContext(evaluationContext) {
+                while (webViewFailed || !webViewReady) yield()
 
-        evaluations.add(uid)
+                suspendCoroutine { continuation ->
+                    evaluateJavascript(script) {
+                        continuation.resume(it)
+                    }
+                }
 
-        suspendCoroutine { continuation ->
-            evaluateJavascript(script) {
-                evaluations.remove(uid)
-                continuation.resume(it)
             }
+        } catch (e: CancellationException) {
+            continue
         }
     }
 
@@ -59,26 +64,36 @@ suspend fun WebView.evaluate(script: String): String = withContext(Dispatchers.M
 }
 
 @OptIn(ExperimentalCoroutinesApi::class)
-suspend fun WebView.evaluatePromise(script: String, then: String = ".then(result => Callback.onResult(%uid, JSON.stringify(result))).catch(err => Callback.onError(%uid, JSON.stringify(error)))"): String? = withContext(Dispatchers.Main) {
-    val flow: Flow<Pair<String, String?>> = withTimeout(10000) {
-        while (webViewFailed || !webViewReady) yield()
+suspend fun WebView.evaluatePromise(
+    script: String,
+    then: String = ".then(result => Callback.onResult(%uid, JSON.stringify(result))).catch(err => Callback.onError(%uid, JSON.stringify(error)))"
+): String? = coroutineScope {
+    var result: String? = null
 
-        val uid = UUID.randomUUID().toString()
+    while (result == null) {
+        try {
+            result = withContext(evaluationContext) {
+                while (webViewFailed || !webViewReady) yield()
 
-        evaluations.add(uid)
+                val uid = UUID.randomUUID().toString()
 
-        evaluateJavascript((script+then).replace("%uid", "'$uid'"), null)
+                evaluateJavascript((script + then).replace("%uid", "'$uid'"), null)
 
-        webViewFlow.transformWhile { (currentUid, result) ->
-            if (currentUid == uid) {
-                evaluations.remove(uid)
-                emit(currentUid to result)
+                val flow: Flow<Pair<String, String?>> = webViewFlow.transformWhile { (currentUid, result) ->
+                    if (currentUid == uid) {
+                        emit(currentUid to result)
+                    }
+                    currentUid != uid
+                }
+
+                flow.first().second
             }
-            currentUid != uid
+        } catch (e: CancellationException) {
+            continue
         }
     }
 
-    flow.first().second
+    result
 }
 
 @Suppress("EXPERIMENTAL_API_USAGE")
@@ -108,16 +123,6 @@ suspend fun urlFromUrlFromHash(galleryID: Int, image: GalleryFiles, dir: String?
         """.trimIndent()
     )
 
-
-    FirebaseCrashlytics.getInstance().log(
-        """
-        url_from_url_from_hash(
-            ${galleryID.toString().js},
-            ${Json.encodeToString(image)},
-            ${dir.js}, ${ext.js}, ${base.js}
-        )
-        """.trimIndent()
-    )
     return Json.decodeFromString(result)
 }
 
