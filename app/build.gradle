@@ -38,7 +38,7 @@ android {
         minSdkVersion 16
         targetSdkVersion 31
         versionCode 69
-        versionName "5.2.9"
+        versionName "5.2.10"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
     }
@@ -111,6 +111,7 @@ dependencies {
     implementation 'com.github.piasy:BigImageViewer:1.8.1'
     implementation 'com.github.piasy:FrescoImageLoader:1.8.1'
     implementation 'com.github.piasy:FrescoImageViewFactory:1.8.1'
+    implementation 'com.facebook.fresco:imagepipeline-okhttp3:2.6.0'
 
     //noinspection GradleDependency
     implementation "com.squareup.okhttp3:okhttp:$okhttp_version"

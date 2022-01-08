@@ -16,6 +16,7 @@
 
 package xyz.quaver.pupil.hitomi
 
+import android.util.Log
 import kotlinx.coroutines.*
 import java.util.*
 
@@ -47,7 +48,7 @@ suspend fun doSearch(query: String, sortByPopularity: Boolean = false) : Set<Int
         }
     }
 
-    val negativeResults = negativeTerms.map {
+    val negativeResults = negativeTerms.mapIndexed { index, it ->
         async {
             runCatching {
                 getGalleryIDsForQuery(it)
@@ -55,21 +56,21 @@ suspend fun doSearch(query: String, sortByPopularity: Boolean = false) : Set<Int
         }
     }
 
-    var results = when {
+    val results = when {
         sortByPopularity -> getGalleryIDsFromNozomi(null, "popular", "all")
         positiveTerms.isEmpty() -> getGalleryIDsFromNozomi(null, "index", "all")
         else -> emptySet()
-    }
+    }.toMutableSet()
 
     fun filterPositive(newResults: Set<Int>) {
-        results = when {
-            results.isEmpty() -> newResults
-            else -> results intersect newResults
+        when {
+            results.isEmpty() -> results.addAll(newResults)
+            else -> results.retainAll(newResults)
         }
     }
 
     fun filterNegative(newResults: Set<Int>) {
-        results = results subtract newResults
+        results.removeAll(newResults)
     }
 
     //positive results
@@ -78,7 +79,7 @@ suspend fun doSearch(query: String, sortByPopularity: Boolean = false) : Set<Int
     }
 
     //negative results
-    negativeResults.forEach {
+    negativeResults.forEachIndexed { index, it ->
         filterNegative(it.await())
     }
 

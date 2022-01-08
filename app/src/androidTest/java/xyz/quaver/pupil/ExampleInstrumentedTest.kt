@@ -20,10 +20,13 @@
 
 package xyz.quaver.pupil
 
+import android.os.Build
 import android.util.Log
 import android.webkit.*
+import android.widget.Toast
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import com.google.firebase.crashlytics.FirebaseCrashlytics
 import kotlinx.coroutines.*
 import org.junit.Before
 import org.junit.Test
@@ -43,30 +46,48 @@ class ExampleInstrumentedTest {
 
         runBlocking {
             withContext(Dispatchers.Main) {
+                WebView.setWebContentsDebuggingEnabled(true)
+
                 webView = WebView(appContext).apply {
-                    settings.javaScriptEnabled = true
+                    with (settings) {
+                        javaScriptEnabled = true
+                        domStorageEnabled = true
+                    }
+
+                    userAgent = settings.userAgentString
+
+                    webViewClient = object: WebViewClient() {
+                        override fun onPageFinished(view: WebView?, url: String?) {
+                            webViewReady = true
+                        }
+
+                        override fun onReceivedError(
+                            view: WebView?,
+                            request: WebResourceRequest?,
+                            error: WebResourceError?
+                        ) {
+                        }
+                    }
+
+                    webChromeClient = object: WebChromeClient() {
+                        override fun onConsoleMessage(consoleMessage: ConsoleMessage?): Boolean {
+                            return super.onConsoleMessage(consoleMessage)
+                        }
+                    }
 
                     addJavascriptInterface(object {
                         @JavascriptInterface
                         fun onResult(uid: String, result: String) {
                             _webViewFlow.tryEmit(uid to result)
                         }
+                        @JavascriptInterface
+                        fun onError(uid: String, message: String) {
+                            _webViewFlow.tryEmit(uid to null)
+                        }
                     }, "Callback")
-
-                    loadDataWithBaseURL(
-                        "https://hitomi.la/",
-                        """
-                            <script src="https://ltn.hitomi.la/jquery.min.js"></script>
-                            <script src="https://ltn.hitomi.la/common.js"></script>
-                            <script src="https://ltn.hitomi.la/search.js"></script>
-                            <script src="https://ltn.hitomi.la/searchlib.js"></script>
-                            <script src="https://ltn.hitomi.la/results.js></script>
-                        """.trimIndent(),
-                        "text/html",
-                        null,
-                        null
-                    )
                 }
+
+                reloadWhenFailedOrUpdate()
             }
         }
     }
@@ -74,7 +95,7 @@ class ExampleInstrumentedTest {
     @Test
     fun test_getGalleryIDsFromNozomi() {
         runBlocking {
-            val result = getGalleryIDsFromNozomi(null, "index", "all")
+            val result = getGalleryIDsFromNozomi(null, "boten", "all")
 
             Log.d("PUPILD", "getGalleryIDsFromNozomi: ${result.size}")
         }

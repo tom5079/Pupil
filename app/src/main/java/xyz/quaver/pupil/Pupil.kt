@@ -34,6 +34,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.content.ContextCompat
 import androidx.preference.PreferenceManager
+import com.facebook.imagepipeline.backends.okhttp3.OkHttpImagePipelineConfigFactory
 import com.github.piasy.biv.BigImageViewer
 import com.github.piasy.biv.loader.fresco.FrescoImageLoader
 import com.google.android.gms.common.GooglePlayServicesNotAvailableException
@@ -79,15 +80,10 @@ val client: OkHttpClient
 
 @SuppressLint("StaticFieldLeak")
 lateinit var webView: WebView
-val _webViewFlow = MutableSharedFlow<Pair<String, String?>>(
-    extraBufferCapacity = 2,
-    onBufferOverflow = BufferOverflow.DROP_OLDEST
-)
+val _webViewFlow = MutableSharedFlow<Pair<String, String?>>()
 val webViewFlow = _webViewFlow.asSharedFlow()
 var webViewReady = false
-    private set
 var webViewFailed = false
-    private set
 private var reloadJob: Job? = null
 
 fun reloadWebView() {
@@ -203,11 +199,15 @@ class Pupil : Application() {
             addJavascriptInterface(object {
                 @JavascriptInterface
                 fun onResult(uid: String, result: String) {
-                    _webViewFlow.tryEmit(uid to result)
+                    CoroutineScope(Dispatchers.Unconfined).launch {
+                        _webViewFlow.emit(uid to result)
+                    }
                 }
                 @JavascriptInterface
                 fun onError(uid: String, message: String) {
-                    _webViewFlow.tryEmit(uid to null)
+                    CoroutineScope(Dispatchers.Unconfined).launch {
+                        _webViewFlow.emit(uid to null)
+                    }
                     Toast.makeText(this@Pupil, message, Toast.LENGTH_LONG).show()
                     FirebaseCrashlytics.getInstance().recordException(
                         Exception(message)
@@ -238,6 +238,7 @@ class Pupil : Application() {
             .addInterceptor { chain ->
                 val request = chain.request().newBuilder()
                     .header("User-Agent", userAgent)
+                    .header("Referer", "https://hitomi.la/")
                     .build()
 
                 val tag = request.tag() ?: return@addInterceptor chain.proceed(request)
@@ -291,7 +292,14 @@ class Pupil : Application() {
             e.printStackTrace()
         }
 
-        BigImageViewer.initialize(FrescoImageLoader.with(this))
+        BigImageViewer.initialize(
+            FrescoImageLoader.with(
+                this,
+                OkHttpImagePipelineConfigFactory
+                    .newBuilder(this, client)
+                    .build()
+            )
+        )
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
