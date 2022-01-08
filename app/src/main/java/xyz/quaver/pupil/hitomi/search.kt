@@ -46,5 +46,7 @@ suspend fun getSuggestionsForQuery(query: String) : List<Suggestion> {
 suspend fun getGalleryIDsFromNozomi(area: String?, tag: String, language: String) : Set<Int> {
     val jsArea = if (area == null) "null" else "'$area'"
 
-    return Json.decodeFromString(webView.evaluatePromise("""get_galleryids_from_nozomi($jsArea, '$tag', '$language')""") ?: return emptySet())
+    val json = webView.evaluatePromise("""get_galleryids_from_nozomi($jsArea, '$tag', '$language')""")
+
+    return Json.decodeFromString(json)
 }
