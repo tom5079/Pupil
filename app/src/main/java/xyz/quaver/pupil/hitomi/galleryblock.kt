@@ -52,7 +52,7 @@ suspend fun getGalleryBlock(galleryID: Int) : GalleryBlock {
         }); 
         """.trimIndent(),
         then = ""
-    )!!
+    )
 
     val doc = Jsoup.parse(html)
 

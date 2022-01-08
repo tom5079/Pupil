@@ -27,7 +27,7 @@ const val extension = ".html"
 
 @OptIn(ExperimentalSerializationApi::class)
 suspend fun getGalleryIDsForQuery(query: String) : Set<Int> {
-    val result = webView.evaluatePromise("get_galleryids_for_query('$query')") ?: return emptySet()
+    val result = webView.evaluatePromise("get_galleryids_for_query('$query')")
 
     return Json.decodeFromString(result)
 }
@@ -37,7 +37,7 @@ data class Suggestion(val s: String, val t: Int, val u: String, val n: String)
 
 @OptIn(ExperimentalSerializationApi::class)
 suspend fun getSuggestionsForQuery(query: String) : List<Suggestion> {
-    val result = webView.evaluatePromise("get_suggestions_for_query('$query')") ?: return emptyList()
+    val result = webView.evaluatePromise("get_suggestions_for_query('$query')")
 
     return Json.decodeFromString<List<List<Suggestion>?>>(result)[0] ?: return emptyList()
 }

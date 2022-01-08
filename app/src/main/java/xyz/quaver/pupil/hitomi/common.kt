@@ -77,13 +77,15 @@ suspend fun WebView.evaluatePromise(
 
                 val uid = UUID.randomUUID().toString()
 
-                evaluateJavascript((script + then).replace("%uid", "'$uid'"), null)
-
                 val flow: Flow<Pair<String, String?>> = webViewFlow.transformWhile { (currentUid, result) ->
                     if (currentUid == uid) {
                         emit(currentUid to result)
                     }
                     currentUid != uid
+                }
+
+                launch {
+                    evaluateJavascript((script + then).replace("%uid", "'$uid'"), null)
                 }
 
                 flow.first().second
@@ -100,7 +102,7 @@ suspend fun WebView.evaluatePromise(
 suspend fun getGalleryInfo(galleryID: Int): GalleryInfo {
     val result = webView.evaluatePromise("get_gallery_info($galleryID)")
 
-    return json.decodeFromString(result!!)
+    return json.decodeFromString(result)
 }
 
 //common.js
