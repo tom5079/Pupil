@@ -40,6 +40,7 @@ import xyz.quaver.pupil.hitomi.GalleryBlock
 import xyz.quaver.pupil.hitomi.GalleryInfo
 import xyz.quaver.pupil.hitomi.getGalleryBlock
 import xyz.quaver.pupil.hitomi.getGalleryInfo
+import xyz.quaver.pupil.userAgent
 import java.io.File
 import java.io.IOException
 import java.util.concurrent.ConcurrentHashMap
@@ -172,6 +173,7 @@ class Cache private constructor(context: Context, val galleryID: Int) : ContextW
                 kotlin.runCatching {
                     val request = Request.Builder()
                         .url(it)
+                        .header("Referer", "https://hitomi.la/")
                         .build()
 
                     client.newCall(request).execute().also { if (it.code() != 200) throw IOException() }.body()?.use { it.bytes() }

@@ -148,7 +148,7 @@ fun reloadWhenFailedOrUpdate() = CoroutineScope(Dispatchers.Default).launch {
 }
 
 var isDebugBuild: Boolean = false
-private lateinit var userAgent: String
+lateinit var userAgent: String
 
 class Pupil : Application() {
 
