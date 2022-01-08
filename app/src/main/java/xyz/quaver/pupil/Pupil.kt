@@ -252,10 +252,11 @@ class Pupil : Application() {
 
         try {
             Preferences.get<String>("download_folder").also {
-                contentResolver.takePersistableUriPermission(
-                    Uri.parse(it),
-                    Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
-                )
+                if (it.startsWith("content://"))
+                    contentResolver.takePersistableUriPermission(
+                        Uri.parse(it),
+                        Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+                    )
 
                 if (!FileX(this, it).canWrite())
                     throw Exception()
