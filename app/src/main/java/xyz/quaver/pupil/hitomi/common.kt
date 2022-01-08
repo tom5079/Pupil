@@ -67,7 +67,7 @@ suspend fun WebView.evaluate(script: String): String = coroutineScope {
 suspend fun WebView.evaluatePromise(
     script: String,
     then: String = ".then(result => Callback.onResult(%uid, JSON.stringify(result))).catch(err => Callback.onError(%uid, JSON.stringify(error)))"
-): String? = coroutineScope {
+): String = coroutineScope {
     var result: String? = null
 
     while (result == null) {

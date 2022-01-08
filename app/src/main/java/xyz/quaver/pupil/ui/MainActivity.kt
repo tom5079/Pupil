@@ -801,7 +801,6 @@ class MainActivity :
                         throw Exception("No result")
                 }
             } catch (e: Exception) {
-
                 if (e !is CancellationException)
                     FirebaseCrashlytics.getInstance().recordException(e)
 
