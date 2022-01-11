@@ -56,7 +56,7 @@ suspend fun WebView.evaluate(script: String): String = coroutineScope {
 
             }
         } catch (e: CancellationException) {
-            continue
+            if (e.message != "reload") result = "null"
         }
     }
 
@@ -91,7 +91,7 @@ suspend fun WebView.evaluatePromise(
                 flow.first().second
             }
         } catch (e: CancellationException) {
-            continue
+            if (e.message != "reload") result = "null"
         }
     }
 

@@ -16,6 +16,7 @@
 
 package xyz.quaver.pupil.hitomi
 
+import android.util.Log
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
@@ -37,9 +38,22 @@ data class Suggestion(val s: String, val t: Int, val u: String, val n: String)
 
 @OptIn(ExperimentalSerializationApi::class)
 suspend fun getSuggestionsForQuery(query: String) : List<Suggestion> {
-    val result = webView.evaluatePromise("get_suggestions_for_query('$query')")
+    val result = webView.evaluatePromise(
+        "get_suggestions_for_query('$query', ++search_serial)",
+        then = """
+            .then(r => {
+                let [results, results_serial] = r;
+                console.log(results_serial, r, search_serial);
+                if (search_serial !== results_serial) {
+                    Callback.onResult(%uid, '[]');
+                } else {
+                    Callback.onResult(%uid, JSON.stringify(results));
+                }
+            });
+        """.trimIndent()
+    )
 
-    return Json.decodeFromString<List<List<Suggestion>?>>(result)[0] ?: return emptyList()
+    return Json.decodeFromString(result) ?: return emptyList()
 }
 
 @OptIn(ExperimentalSerializationApi::class)

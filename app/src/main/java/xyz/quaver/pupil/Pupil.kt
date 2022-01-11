@@ -93,7 +93,7 @@ fun reloadWebView() {
         webViewReady = false
         webViewFailed = false
 
-        evaluationContext.cancelChildren()
+        evaluationContext.cancelChildren(CancellationException("reload"))
 
         runCatching {
             URL(
