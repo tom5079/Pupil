@@ -20,8 +20,9 @@ package xyz.quaver.pupil.util.downloader
 
 import android.content.Context
 import android.content.ContextWrapper
-import android.util.Log
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -96,16 +97,13 @@ class DownloadManager private constructor(context: Context) : ContextWrapper(con
     fun getDownloadFolder(galleryID: Int): FileX? =
         downloadFolderMap[galleryID]?.let { downloadFolder.getChild(it) }
 
-    @Synchronized
-    fun addDownloadFolder(galleryID: Int) {
-        val name = runBlocking {
-            Cache.getInstance(this@DownloadManager, galleryID).getGalleryBlock()
-        }?.formatDownloadFolder() ?: return
+    fun addDownloadFolder(galleryID: Int) = CoroutineScope(Dispatchers.IO).launch {
+        val name = Cache.getInstance(this@DownloadManager, galleryID).getGalleryBlock()
+            ?.formatDownloadFolder() ?: return@launch
 
         val folder = downloadFolder.getChild(name)
 
-        if (folder.exists())
-            return
+        if (folder.exists()) return@launch
 
         folder.mkdir()
 

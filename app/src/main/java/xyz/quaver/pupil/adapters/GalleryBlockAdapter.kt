@@ -104,167 +104,170 @@ class GalleryBlockAdapter(private val galleries: List<Int>) : RecyclerSwipeAdapt
 
             val cache = Cache.getInstance(itemView.context, galleryID)
 
-            val galleryBlock = runBlocking {
-                cache.getGalleryBlock()
-            } ?: return
-
-            val resources = itemView.context.resources
-            val languages = resources.getStringArray(R.array.languages).map {
-                it.split("|").let { split ->
-                    Pair(split[0], split[1])
-                }
-            }.toMap()
-
-            val artists = galleryBlock.artists
-            val series = galleryBlock.series
-
-            binding.galleryblockThumbnail.apply {
-                setOnClickListener {
-                    itemView.performClick()
-                }
-                setOnLongClickListener {
-                    itemView.performLongClick()
-                }
-                setFailureImage(ContextCompat.getDrawable(context, R.drawable.image_broken_variant))
-                setImageLoaderCallback(object: ImageLoader.Callback {
-                    override fun onFail(error: Exception?) {
-                        Cache.getInstance(context, galleryID).let { cache ->
-                            cache.cacheFolder.getChild(".thumbnail").let { if (it.exists()) it.delete() }
-                            cache.downloadFolder?.getChild(".thumbnail")?.let { if (it.exists()) it.delete() }
-                        }
-                    }
-
-                    override fun onCacheHit(imageType: Int, image: File?) {}
-                    override fun onCacheMiss(imageType: Int, image: File?) {}
-                    override fun onFinish() {}
-                    override fun onProgress(progress: Int) {}
-                    override fun onStart() {}
-                    override fun onSuccess(image: File?) {}
-                })
-                ssiv?.recycle()
-                CoroutineScope(Dispatchers.IO).launch {
-                    cache.getThumbnail().let { launch(Dispatchers.Main) {
-                        showImage(it)
-                    } }
-                }
-            }
-
-            binding.galleryblockTitle.text = galleryBlock.title
-            with(binding.galleryblockArtist) {
-                text = artists.joinToString { it.wordCapitalize() }
-                visibility = when {
-                    artists.isNotEmpty() -> View.VISIBLE
-                    else -> View.GONE
-                }
-
-                CoroutineScope(Dispatchers.IO).launch {
-                    val gallery = runCatching {
-                        getGallery(galleryID)
-                    }.getOrNull()
-
-                    if (gallery?.groups?.isNotEmpty() != true)
-                        return@launch
-
-                    launch(Dispatchers.Main) {
-                        text = context.getString(
-                            R.string.galleryblock_artist_with_group,
-                            artists.joinToString { it.wordCapitalize() },
-                            gallery.groups.joinToString { it.wordCapitalize() }
-                        )
-                    }
-                }
-            }
-            with(binding.galleryblockSeries) {
-                text =
-                    resources.getString(
-                        R.string.galleryblock_series,
-                        series.joinToString(", ") { it.wordCapitalize() })
-                visibility = when {
-                    series.isNotEmpty() -> View.VISIBLE
-                    else -> View.GONE
-                }
-            }
-            binding.galleryblockType.text = resources.getString(R.string.galleryblock_type, galleryBlock.type).wordCapitalize()
-            with(binding.galleryblockLanguage) {
-                text =
-                    resources.getString(R.string.galleryblock_language, languages[galleryBlock.language])
-                visibility = when {
-                    galleryBlock.language.isNotEmpty() -> View.VISIBLE
-                    else -> View.GONE
-                }
-            }
-
-            with(binding.galleryblockTagGroup) {
-                onClickListener = {
-                    onChipClickedHandler.forEach { callback ->
-                        callback.invoke(it)
-                    }
-                }
-
-                tags.clear()
-
-                CoroutineScope(Dispatchers.IO).launch {
-                    tags.addAll(
-                        galleryBlock.relatedTags.sortedBy {
-                            val tag = Tag.parse(it)
-
-                            if (favoriteTags.contains(tag))
-                                -1
-                            else
-                                when(Tag.parse(it).area) {
-                                    "female" -> 0
-                                    "male" -> 1
-                                    else -> 2
-                                }
-                        }.map {
-                            Tag.parse(it)
-                        }
-                    )
-
-                    launch(Dispatchers.Main) {
-                        refresh()
-                    }
-                }
-            }
-
-            binding.galleryblockId.text = galleryBlock.id.toString()
-            binding.galleryblockPagecount.text = "-"
             CoroutineScope(Dispatchers.IO).launch {
-                val pageCount = kotlin.runCatching {
-                    getGalleryInfo(galleryBlock.id).files.size
-                }.getOrNull() ?: return@launch
-                withContext(Dispatchers.Main) {
-                    binding.galleryblockPagecount.text = itemView.context.getString(R.string.galleryblock_pagecount, pageCount)
-                }
-            }
+                val galleryBlock = cache.getGalleryBlock() ?: return@launch
 
-            with(binding.galleryblockFavorite) {
-                setImageResource(if (favorites.contains(galleryBlock.id)) R.drawable.ic_star_filled else R.drawable.ic_star_empty)
-                setOnClickListener {
-                    when {
-                        favorites.contains(galleryBlock.id) -> {
-                            favorites.remove(galleryBlock.id)
-
-                            setImageResource(R.drawable.ic_star_empty)
+                launch(Dispatchers.Main) {
+                    val resources = itemView.context.resources
+                    val languages = resources.getStringArray(R.array.languages).map {
+                        it.split("|").let { split ->
+                            Pair(split[0], split[1])
                         }
-                        else -> {
-                            favorites.add(galleryBlock.id)
+                    }.toMap()
 
-                            setImageDrawable(AnimatedVectorDrawableCompat.create(context, R.drawable.avd_star).apply {
-                                this ?: return@apply
+                    val artists = galleryBlock.artists
+                    val series = galleryBlock.series
 
-                                registerAnimationCallback(object: Animatable2Compat.AnimationCallback() {
-                                    override fun onAnimationEnd(drawable: Drawable?) {
-                                        setImageResource(R.drawable.ic_star_filled)
-                                    }
-                                })
-                                start()
-                            })
+                    binding.galleryblockThumbnail.apply {
+                        setOnClickListener {
+                            itemView.performClick()
+                        }
+                        setOnLongClickListener {
+                            itemView.performLongClick()
+                        }
+                        setFailureImage(ContextCompat.getDrawable(context, R.drawable.image_broken_variant))
+                        setImageLoaderCallback(object: ImageLoader.Callback {
+                            override fun onFail(error: Exception?) {
+                                Cache.getInstance(context, galleryID).let { cache ->
+                                    cache.cacheFolder.getChild(".thumbnail").let { if (it.exists()) it.delete() }
+                                    cache.downloadFolder?.getChild(".thumbnail")?.let { if (it.exists()) it.delete() }
+                                }
+                            }
+
+                            override fun onCacheHit(imageType: Int, image: File?) {}
+                            override fun onCacheMiss(imageType: Int, image: File?) {}
+                            override fun onFinish() {}
+                            override fun onProgress(progress: Int) {}
+                            override fun onStart() {}
+                            override fun onSuccess(image: File?) {}
+                        })
+                        ssiv?.recycle()
+                        CoroutineScope(Dispatchers.IO).launch {
+                            cache.getThumbnail().let { launch(Dispatchers.Main) {
+                                showImage(it)
+                            } }
                         }
                     }
+
+                    binding.galleryblockTitle.text = galleryBlock.title
+                    with(binding.galleryblockArtist) {
+                        text = artists.joinToString { it.wordCapitalize() }
+                        visibility = when {
+                            artists.isNotEmpty() -> View.VISIBLE
+                            else -> View.GONE
+                        }
+
+                        CoroutineScope(Dispatchers.IO).launch {
+                            val gallery = runCatching {
+                                getGallery(galleryID)
+                            }.getOrNull()
+
+                            if (gallery?.groups?.isNotEmpty() != true)
+                                return@launch
+
+                            launch(Dispatchers.Main) {
+                                text = context.getString(
+                                    R.string.galleryblock_artist_with_group,
+                                    artists.joinToString { it.wordCapitalize() },
+                                    gallery.groups.joinToString { it.wordCapitalize() }
+                                )
+                            }
+                        }
+                    }
+                    with(binding.galleryblockSeries) {
+                        text =
+                            resources.getString(
+                                R.string.galleryblock_series,
+                                series.joinToString(", ") { it.wordCapitalize() })
+                        visibility = when {
+                            series.isNotEmpty() -> View.VISIBLE
+                            else -> View.GONE
+                        }
+                    }
+                    binding.galleryblockType.text = resources.getString(R.string.galleryblock_type, galleryBlock.type).wordCapitalize()
+                    with(binding.galleryblockLanguage) {
+                        text =
+                            resources.getString(R.string.galleryblock_language, languages[galleryBlock.language])
+                        visibility = when {
+                            galleryBlock.language.isNotEmpty() -> View.VISIBLE
+                            else -> View.GONE
+                        }
+                    }
+
+                    with(binding.galleryblockTagGroup) {
+                        onClickListener = {
+                            onChipClickedHandler.forEach { callback ->
+                                callback.invoke(it)
+                            }
+                        }
+
+                        tags.clear()
+
+                        CoroutineScope(Dispatchers.IO).launch {
+                            tags.addAll(
+                                galleryBlock.relatedTags.sortedBy {
+                                    val tag = Tag.parse(it)
+
+                                    if (favoriteTags.contains(tag))
+                                        -1
+                                    else
+                                        when(Tag.parse(it).area) {
+                                            "female" -> 0
+                                            "male" -> 1
+                                            else -> 2
+                                        }
+                                }.map {
+                                    Tag.parse(it)
+                                }
+                            )
+
+                            launch(Dispatchers.Main) {
+                                refresh()
+                            }
+                        }
+                    }
+
+                    binding.galleryblockId.text = galleryBlock.id.toString()
+                    binding.galleryblockPagecount.text = "-"
+                    CoroutineScope(Dispatchers.IO).launch {
+                        val pageCount = kotlin.runCatching {
+                            getGalleryInfo(galleryBlock.id).files.size
+                        }.getOrNull() ?: return@launch
+                        withContext(Dispatchers.Main) {
+                            binding.galleryblockPagecount.text = itemView.context.getString(R.string.galleryblock_pagecount, pageCount)
+                        }
+                    }
+
+                    with(binding.galleryblockFavorite) {
+                        setImageResource(if (favorites.contains(galleryBlock.id)) R.drawable.ic_star_filled else R.drawable.ic_star_empty)
+                        setOnClickListener {
+                            when {
+                                favorites.contains(galleryBlock.id) -> {
+                                    favorites.remove(galleryBlock.id)
+
+                                    setImageResource(R.drawable.ic_star_empty)
+                                }
+                                else -> {
+                                    favorites.add(galleryBlock.id)
+
+                                    setImageDrawable(AnimatedVectorDrawableCompat.create(context, R.drawable.avd_star).apply {
+                                        this ?: return@apply
+
+                                        registerAnimationCallback(object: Animatable2Compat.AnimationCallback() {
+                                            override fun onAnimationEnd(drawable: Drawable?) {
+                                                setImageResource(R.drawable.ic_star_filled)
+                                            }
+                                        })
+                                        start()
+                                    })
+                                }
+                            }
+                        }
+                    }
+
+
                 }
             }
-
 
             // Make some views invisible to make it thinner
             if (thin) {

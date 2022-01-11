@@ -24,7 +24,9 @@ import android.view.ViewGroup
 import androidx.core.widget.addTextChangedListener
 import androidx.fragment.app.DialogFragment
 import com.google.android.material.snackbar.Snackbar
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.databinding.DownloadFolderNameDialogBinding
 import xyz.quaver.pupil.util.Preferences
@@ -56,15 +58,16 @@ class DownloadFolderNameDialogFragment : DialogFragment() {
 
     private fun initView() {
         val galleryID = Cache.instances.let { if (it.size == 0) 1199708 else it.keys.elementAt((0 until it.size).random()) }
-        val galleryBlock = runBlocking {
-            Cache.getInstance(requireContext(), galleryID).getGalleryBlock()
+        CoroutineScope(Dispatchers.IO).launch {
+            val galleryBlock = Cache.getInstance(requireContext(), galleryID).getGalleryBlock()
+
+            binding.message.text = getString(R.string.settings_download_folder_name_message, formatMap.keys.toString(), galleryBlock?.formatDownloadFolder() ?: "")
+            binding.edittext.addTextChangedListener {
+                binding.message.text = requireContext().getString(R.string.settings_download_folder_name_message, formatMap.keys.toString(), galleryBlock?.formatDownloadFolderTest(it.toString()) ?: "")
+            }
         }
 
-        binding.message.text = getString(R.string.settings_download_folder_name_message, formatMap.keys.toString(), galleryBlock?.formatDownloadFolder() ?: "")
         binding.edittext.setText(Preferences["download_folder_name", "[-id-] -title-"])
-        binding.edittext.addTextChangedListener {
-            binding.message.text = requireContext().getString(R.string.settings_download_folder_name_message, formatMap.keys.toString(), galleryBlock?.formatDownloadFolderTest(it.toString()) ?: "")
-        }
         binding.okButton.setOnClickListener {
             val newValue = binding.edittext.text.toString()
 

@@ -16,21 +16,11 @@
 
 package xyz.quaver
 
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.modules.SerializersModule
-import kotlinx.serialization.modules.plus
-import kotlinx.serialization.modules.polymorphic
-import kotlinx.serialization.modules.subclass
-import okhttp3.OkHttpClient
 import okhttp3.Request
 import xyz.quaver.pupil.client
 import java.io.IOException
 import java.net.URL
-import java.util.concurrent.TimeUnit
-import kotlin.time.Duration
 
 /**
  * kotlinx.serialization.json.Json object for global use  
