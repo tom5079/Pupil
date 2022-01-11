@@ -16,8 +16,8 @@
 
 package xyz.quaver.pupil.hitomi
 
-import android.util.Log
-import kotlinx.coroutines.*
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import java.util.*
 
 suspend fun doSearch(query: String, sortByPopularity: Boolean = false) : Set<Int> = coroutineScope {
