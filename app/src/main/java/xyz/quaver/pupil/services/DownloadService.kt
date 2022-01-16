@@ -172,18 +172,16 @@ class DownloadService : Service() {
     private val interceptor: PupilInterceptor = { chain ->
         val request = chain.request()
 
-        if (rateLimitHost.matches(request.url().host()))
-            rateLimiter.acquire()
-
         var response = chain.proceed(request)
         var limit = 5
 
-        if (!response.isSuccessful && limit > 0) {
-            Thread.sleep(10000)
-            if (rateLimitHost.matches(request.url().host()))
-                rateLimiter.acquire()
+        while (!response.isSuccessful) {
+            if (response.code() == 503) {
+                Thread.sleep(200)
+            } else if (--limit > 0)
+                break
+
             response = chain.proceed(request)
-            limit -= 1
         }
 
         response.newBuilder()
@@ -247,6 +245,7 @@ class DownloadService : Service() {
                     }
                 }
             }.onFailure {
+                it.printStackTrace()
                 FirebaseCrashlytics.getInstance().recordException(it)
             }
         }
