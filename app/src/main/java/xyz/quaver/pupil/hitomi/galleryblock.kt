@@ -58,7 +58,7 @@ suspend fun getGalleryBlock(galleryID: Int) : GalleryBlock {
 
     val galleryUrl = doc.selectFirst("h1 > a")!!.attr("href")
 
-    val thumbnails = doc.select(".dj-img-cont img").map { protocol + it.attr("src") }
+    val thumbnails = doc.select(".dj-img-cont img").map { protocol + it.attr("data-src") }
 
     val title = doc.selectFirst("h1 > a")!!.text()
     val artists = doc.select(".artist-list a").map{ it.text() }
