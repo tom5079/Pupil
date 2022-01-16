@@ -128,10 +128,7 @@ class GalleryBlockAdapter(private val galleries: List<Int>) : RecyclerSwipeAdapt
                         setFailureImage(ContextCompat.getDrawable(context, R.drawable.image_broken_variant))
                         setImageLoaderCallback(object: ImageLoader.Callback {
                             override fun onFail(error: Exception?) {
-                                Cache.getInstance(context, galleryID).let { cache ->
-                                    cache.cacheFolder.getChild(".thumbnail").let { if (it.exists()) it.delete() }
-                                    cache.downloadFolder?.getChild(".thumbnail")?.let { if (it.exists()) it.delete() }
-                                }
+                                Cache.delete(context, galleryID)
                             }
 
                             override fun onCacheHit(imageType: Int, image: File?) {}
