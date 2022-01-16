@@ -87,7 +87,7 @@ class DownloadManager private constructor(context: Context) : ContextWrapper(con
 
     @Synchronized
     fun isDownloading(galleryID: Int): Boolean {
-        val isThisGallery: (Call) -> Boolean = { (it.request().tag() as? DownloadService.Tag)?.galleryID == galleryID }
+        val isThisGallery: (Call) -> Boolean = { !it.isCanceled && (it.request().tag() as? DownloadService.Tag)?.galleryID == galleryID }
 
         return downloadFolderMap.containsKey(galleryID)
                 && client.dispatcher().let { it.queuedCalls().any(isThisGallery) || it.runningCalls().any(isThisGallery) }
