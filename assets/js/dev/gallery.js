@@ -24,7 +24,7 @@ async function get_gallery(galleryid) {
 
     Array.from(doc.querySelectorAll('#lang-list a')).forEach(elm => lang_list[elm.innerText] = elm.getAttribute('href').slice(11, -5));
 
-    const cover = doc.querySelector('.cover img').src.replace('bigtn', 'webpbigtn').replace(/.jpg$/, '.webp');
+    const cover = replace_jpg_tn(doc.querySelector('.cover img').src);
 
     const title = doc.querySelector('.gallery h1 a').innerText;
     const artists = Array.from(doc.querySelectorAll('.gallery h2 a'), elm => elm.innerText);

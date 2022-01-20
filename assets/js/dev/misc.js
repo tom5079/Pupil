@@ -62,3 +62,9 @@ function do_search(query) {
         }
     });
 }
+
+function replace_jpg_tn(tn) {
+    if (tn.endsWith('jpg')) tn = tn.replace('bigtn', 'webpbigtn').replace(/jpg$/, 'webp');
+
+    return `https:${tn}`
+}
