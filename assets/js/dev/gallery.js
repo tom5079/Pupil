@@ -39,7 +39,7 @@ async function get_gallery(galleryid) {
     const tags = Array.from(doc.querySelectorAll('.gallery-info a[href^="/tag/"]'), elm => decodeURIComponent(elm.getAttribute('href')).slice(5, -9));
 
     const gallery_info = await get_gallery_info(galleryid);
-    const thumbnails = gallery_info.files.map(file => url_from_url_from_hash(galleryid, file, 'smalltn', 'jpg', 'tn'));
+    const thumbnails = gallery_info.files.map(file => url_from_url_from_hash(galleryid, file, 'webpsmallsmalltn', 'webp', 'tn'));
 
     return {
         related: related,
