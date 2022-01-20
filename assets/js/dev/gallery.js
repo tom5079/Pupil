@@ -22,7 +22,7 @@ async function get_gallery(galleryid) {
 
     const lang_list = Array.from(doc.querySelectorAll('#lang-list a'), elm => [elm.innerText, elm.getAttribute('href').slice(11, -5)]);
 
-    const cover = `https:${doc.querySelector('.cover img').getAttribute('src')}`;
+    const cover = doc.querySelector('.cover img').src;
 
     const title = doc.querySelector('.gallery h1 a').innerText;
     const artists = Array.from(doc.querySelectorAll('.gallery h2 a'), elm => elm.innerText);

@@ -8,10 +8,10 @@ async function get_gallery_block(galleryid) {
 
     const title_elm = doc.querySelector('h1 > a');
 
-    const gallery_url = title_elm.getAttribute('href');
+    const gallery_url = title_elm.href;
     const title = title_elm.textContent;
 
-    const thumbnails = Array.from(doc.querySelectorAll('.dj-img-cont img'), elm => elm.getAttribute('data-src'));
+    const thumbnails = Array.from(doc.querySelectorAll('.dj-img-cont img'), elm => `https:${elm.getAttribute('data-src')}`);
 
     const artists = Array.from(doc.querySelectorAll('.artist-list a'), elm => elm.innerText);
     const series = Array.from(doc.querySelectorAll('a[href^="/series/"]'), elm => elm.innerText);
