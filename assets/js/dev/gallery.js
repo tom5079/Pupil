@@ -20,7 +20,9 @@ async function get_gallery(galleryid) {
     //related
     eval(Array.from(doc.getElementsByTagName('script')).find(elm => elm.innerHTML.includes('var related')).innerHTML);
 
-    const lang_list = Array.from(doc.querySelectorAll('#lang-list a'), elm => [elm.innerText, elm.getAttribute('href').slice(11, -5)]);
+    const lang_list = {};
+
+    Array.from(doc.querySelectorAll('#lang-list a')).forEach(elm => lang_list[elm.innerText] = elm.getAttribute('href').slice(11, -5));
 
     const cover = doc.querySelector('.cover img').src;
 
