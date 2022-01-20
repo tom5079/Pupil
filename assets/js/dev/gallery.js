@@ -31,7 +31,7 @@ async function get_gallery(galleryid) {
 
     const language = doc.querySelector('.gallery-info a[href^="/index"][href$=".html"]').getAttribute('href').slice(7, -5);
 
-    const series = decodeURIComponent(doc.querySelector('.gallery-info a[href^="/series/"]').getAttribute('href')).slice(8, -9);
+    const series = Array.from(doc.querySelectorAll('.gallery-info a[href^="/series/"]'), elm => elm.innerText);
     const characters = Array.from(doc.querySelectorAll('.gallery-info a[href^="/character/"]'), elm => elm.innerText);
 
     const tags = Array.from(doc.querySelectorAll('.gallery-info a[href^="/tag/"]'), elm => decodeURIComponent(elm.getAttribute('href')).slice(5, -9));
