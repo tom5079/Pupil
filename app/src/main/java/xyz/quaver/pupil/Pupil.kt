@@ -192,7 +192,6 @@ fun initWebView(context: Context) {
                 CoroutineScope(Dispatchers.Unconfined).launch {
                     _webViewFlow.emit(uid to null)
                 }
-                Toast.makeText(context, message, Toast.LENGTH_LONG).show()
                 FirebaseCrashlytics.getInstance().log(
                     "onError: $message"
                 )
