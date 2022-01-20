@@ -43,7 +43,6 @@ suspend fun getSuggestionsForQuery(query: String) : List<Suggestion> {
         then = """
             .then(r => {
                 let [results, results_serial] = r;
-                console.log(results_serial, r, search_serial);
                 if (search_serial !== results_serial) {
                     Callback.onResult(%uid, '[]');
                 } else {

@@ -25,7 +25,6 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
 import android.content.Intent
-import android.content.pm.ApplicationInfo
 import android.net.Uri
 import android.os.Build
 import android.webkit.*
@@ -46,8 +45,6 @@ import kotlinx.coroutines.flow.asSharedFlow
 import okhttp3.*
 import xyz.quaver.io.FileX
 import xyz.quaver.pupil.hitomi.evaluationContext
-import xyz.quaver.pupil.types.JavascriptConsoleException
-import xyz.quaver.pupil.types.JavascriptOnErrorException
 import xyz.quaver.pupil.types.Tag
 import xyz.quaver.pupil.util.*
 import java.io.File
@@ -166,8 +163,8 @@ fun initWebView(context: Context) {
                 error: WebResourceError?
             ) {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                    FirebaseCrashlytics.getInstance().recordException(
-                        JavascriptOnErrorException("onReceivedError: ${error?.description}")
+                    FirebaseCrashlytics.getInstance().log(
+                        "onReceivedError: ${error?.description}"
                     )
                 }
             }
@@ -175,8 +172,8 @@ fun initWebView(context: Context) {
 
         webChromeClient = object: WebChromeClient() {
             override fun onConsoleMessage(consoleMessage: ConsoleMessage?): Boolean {
-                FirebaseCrashlytics.getInstance().recordException(
-                    JavascriptConsoleException("onConsoleMessage: ${consoleMessage?.message()} (${consoleMessage?.sourceId()}:${consoleMessage?.lineNumber()})")
+                FirebaseCrashlytics.getInstance().log(
+                    "onConsoleMessage: ${consoleMessage?.message()} (${consoleMessage?.sourceId()}:${consoleMessage?.lineNumber()})"
                 )
 
                 return super.onConsoleMessage(consoleMessage)
@@ -196,8 +193,8 @@ fun initWebView(context: Context) {
                     _webViewFlow.emit(uid to null)
                 }
                 Toast.makeText(context, message, Toast.LENGTH_LONG).show()
-                FirebaseCrashlytics.getInstance().recordException(
-                    JavascriptOnErrorException(message)
+                FirebaseCrashlytics.getInstance().log(
+                    "onError: $message"
                 )
             }
         }, "Callback")

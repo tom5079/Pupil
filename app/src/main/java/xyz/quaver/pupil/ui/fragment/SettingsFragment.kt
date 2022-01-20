@@ -26,6 +26,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.preference.*
 import com.google.android.gms.oss.licenses.OssLicensesMenuActivity
+import com.google.firebase.crashlytics.FirebaseCrashlytics
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -36,6 +37,7 @@ import xyz.quaver.pupil.R
 import xyz.quaver.pupil.client
 import xyz.quaver.pupil.clientBuilder
 import xyz.quaver.pupil.clientHolder
+import xyz.quaver.pupil.types.SendLogException
 import xyz.quaver.pupil.ui.LockActivity
 import xyz.quaver.pupil.ui.SettingsActivity
 import xyz.quaver.pupil.ui.dialog.*
@@ -107,6 +109,7 @@ class SettingsFragment :
                     ProxyDialogFragment().show(parentFragmentManager, "Proxy Dialog")
                 }
                 "user_id" -> {
+                    FirebaseCrashlytics.getInstance().recordException(SendLogException())
                     (context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager).setPrimaryClip(
                         ClipData.newPlainText("user_id", Preferences.get<String>("user_id"))
                     )

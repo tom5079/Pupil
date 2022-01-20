@@ -66,7 +66,7 @@ suspend fun WebView.evaluate(script: String): String = coroutineScope {
 @OptIn(ExperimentalCoroutinesApi::class)
 suspend fun WebView.evaluatePromise(
     script: String,
-    then: String = ".then(result => Callback.onResult(%uid, JSON.stringify(result))).catch(err => { console.err(err); Callback.onError(%uid, JSON.stringify(err)); })"
+    then: String = ".then(result => Callback.onResult(%uid, JSON.stringify(result))).catch(err => Callback.onError(%uid, JSON.stringify(err)))"
 ): String = coroutineScope {
     var result: String? = null
 
