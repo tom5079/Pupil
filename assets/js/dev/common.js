@@ -129,6 +129,18 @@ function retry(fn, retries, err) {
         });
 }
 
+function flip_lazy_images() {
+        const sources = document.querySelectorAll('source.picturelazyload');
+        sources.forEach(function(lazyEl) {
+                lazyEl.setAttribute("srcset", lazyEl.getAttribute("data-srcset"));
+        });
+
+        const imgs = document.querySelectorAll('img.lazyload');
+        imgs.forEach(function(lazyEl) {
+                lazyEl.setAttribute("src", lazyEl.getAttribute("data-src"));
+                //lazyEl.setAttribute("srcset", lazyEl.getAttribute("data-srcset")); //can't do this because the webp shim can't handle it
+        });
+}
 
 $(document).ready(function() {
         $("#lang").mouseenter(function() {
