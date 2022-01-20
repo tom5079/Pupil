@@ -222,31 +222,33 @@ class DownloadService : Service() {
             val (galleryID, index, startId) = call.request().tag() as Tag
             val ext = call.request().url().encodedPath().split('.').last()
 
-            kotlin.runCatching {
-                val image = response.also { if (it.code() != 200) throw IOException("$galleryID $index ${response.request().url()} CODE ${it.code()}") }.body()?.use { it.bytes() } ?: throw Exception("Response null")
-                val padding = ceil(progress[galleryID]?.size?.let { log10(it.toFloat()) } ?: 0F).toInt()
+            CoroutineScope(Dispatchers.IO).launch {
+                runCatching {
+                    response.also {
+                        if (it.code() != 200) throw IOException(
+                            "$galleryID $index ${response.request().url()} CODE ${it.code()}"
+                        )
+                    }.body()?.use {
+                        val padding = ceil(progress[galleryID]?.size?.let { log10(it.toFloat()) } ?: 0F).toInt()
 
-                CoroutineScope(Dispatchers.IO).launch {
-                    kotlin.runCatching {
-                        Cache.getInstance(this@DownloadService, galleryID).putImage(index, "${index.toString().padStart(padding, '0')}.$ext", image)
-                    }.onSuccess {
+                        Cache.getInstance(this@DownloadService, galleryID)
+                            .putImage(index, "${index.toString().padStart(padding, '0')}.$ext", it.byteStream())
+
                         progress[galleryID]?.set(index, Float.POSITIVE_INFINITY)
                         notify(galleryID)
 
                         if (isCompleted(galleryID)) {
                             if (DownloadManager.getInstance(this@DownloadService)
-                                    .getDownloadFolder(galleryID) != null)
+                                    .getDownloadFolder(galleryID) != null
+                            )
                                 Cache.getInstance(this@DownloadService, galleryID).moveToDownload()
 
                             startId?.let { stopSelf(it) }
                         }
-                    }.onFailure {
-                        FirebaseCrashlytics.getInstance().recordException(it)
-                    }
+                    } ?: throw Exception("Response null")
+                }.onFailure {
+                    FirebaseCrashlytics.getInstance().recordException(it)
                 }
-            }.onFailure {
-                it.printStackTrace()
-                FirebaseCrashlytics.getInstance().recordException(it)
             }
         }
     }

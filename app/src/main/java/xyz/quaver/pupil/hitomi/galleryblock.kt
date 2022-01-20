@@ -17,6 +17,8 @@
 package xyz.quaver.pupil.hitomi
 
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.json.Json
 import org.jsoup.Jsoup
 import xyz.quaver.pupil.webView
 import xyz.quaver.readText
@@ -41,39 +43,6 @@ data class GalleryBlock(
 )
 
 suspend fun getGalleryBlock(galleryID: Int) : GalleryBlock {
-    val url = "$protocol//$domain/$galleryblockdir/$galleryID$extension"
-
-    val html: String = webView.evaluatePromise(
-        """
-        $.get('$url').always(function(data, status) {
-            if (status === 'success') {
-                Callback.onResult(%uid, data);
-            }
-        }); 
-        """.trimIndent(),
-        then = ""
-    )
-
-    val doc = Jsoup.parse(html)
-
-    val galleryUrl = doc.selectFirst("h1 > a")!!.attr("href")
-
-    val thumbnails = doc.select(".dj-img-cont img").map { protocol + it.attr("data-src") }
-
-    val title = doc.selectFirst("h1 > a")!!.text()
-    val artists = doc.select(".artist-list a").map{ it.text() }
-    val series = doc.select(".dj-content a[href~=^/series/]").map { it.text() }
-    val type = doc.selectFirst("a[href~=^/type/]")!!.text()
-
-    val language = run {
-        val href = doc.select("a[href~=^/index.+\\.html\$]").attr("href")
-        Regex("""index-([^-]+)(-.+)?\.html""").find(href)?.groupValues?.getOrNull(1) ?: ""
-    }
-
-    val relatedTags = doc.select(".relatedtags a").map {
-        val href = URLDecoder.decode(it.attr("href"), "UTF-8")
-        href.slice(5 until href.indexOf("-all"))
-    }
-
-    return GalleryBlock(galleryID, galleryUrl, thumbnails, title, artists, series, type, language, relatedTags)
+    val result = webView.evaluatePromise("get_gallery_block($galleryID)")
+    return Json.decodeFromString(result)
 }
