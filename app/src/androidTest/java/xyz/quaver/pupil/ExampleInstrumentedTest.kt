@@ -46,48 +46,7 @@ class ExampleInstrumentedTest {
 
         runBlocking {
             withContext(Dispatchers.Main) {
-                WebView.setWebContentsDebuggingEnabled(true)
-
-                webView = WebView(appContext).apply {
-                    with (settings) {
-                        javaScriptEnabled = true
-                        domStorageEnabled = true
-                    }
-
-                    userAgent = settings.userAgentString
-
-                    webViewClient = object: WebViewClient() {
-                        override fun onPageFinished(view: WebView?, url: String?) {
-                            webViewReady = true
-                        }
-
-                        override fun onReceivedError(
-                            view: WebView?,
-                            request: WebResourceRequest?,
-                            error: WebResourceError?
-                        ) {
-                        }
-                    }
-
-                    webChromeClient = object: WebChromeClient() {
-                        override fun onConsoleMessage(consoleMessage: ConsoleMessage?): Boolean {
-                            return super.onConsoleMessage(consoleMessage)
-                        }
-                    }
-
-                    addJavascriptInterface(object {
-                        @JavascriptInterface
-                        fun onResult(uid: String, result: String) {
-                            _webViewFlow.tryEmit(uid to result)
-                        }
-                        @JavascriptInterface
-                        fun onError(uid: String, message: String) {
-                            _webViewFlow.tryEmit(uid to null)
-                        }
-                    }, "Callback")
-                }
-
-                reloadWhenFailedOrUpdate()
+                initWebView(appContext)
             }
         }
     }
@@ -142,9 +101,18 @@ class ExampleInstrumentedTest {
     }
 
     @Test
+    fun test_getGallery() {
+        runBlocking {
+            val gallery = getGallery(2109479)
+
+            Log.d("PUPILD", gallery.toString())
+        }
+    }
+
+    @Test
     fun test_getGalleryBlock() {
         runBlocking {
-            val block = getGalleryBlock(2102731)
+            val block = getGalleryBlock(2013877)
 
             Log.d("PUPILD", block.toString())
         }

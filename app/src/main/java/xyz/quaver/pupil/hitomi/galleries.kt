@@ -17,7 +17,10 @@
 package xyz.quaver.pupil.hitomi
 
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.json.Json
 import org.jsoup.Jsoup
+import xyz.quaver.pupil.webView
 import xyz.quaver.readText
 import java.net.URL
 import java.net.URLDecoder
@@ -25,7 +28,8 @@ import java.net.URLDecoder
 @Serializable
 data class Gallery(
     val related: List<Int>,
-    val langList: List<Pair<String, String>>,
+    val langList: Map<String, String>
+    ,
     val cover: String,
     val title: String,
     val artists: List<String>,
@@ -38,43 +42,6 @@ data class Gallery(
     val thumbnails: List<String>
 )
 suspend fun getGallery(galleryID: Int) : Gallery {
-    val url = Jsoup.parse(URL("https://hitomi.la/galleries/$galleryID.html").readText())
-        .select("link").attr("href")
-
-    val doc = Jsoup.parse(URL(url).readText())
-
-    val related = Regex("\\d+")
-        .findAll(doc.select("script").first()!!.html())
-        .map {
-            it.value.toInt()
-        }.toList()
-
-    val langList = doc.select("#lang-list a").map {
-            Pair(it.text(), "$protocol//hitomi.la${it.attr("href")}")
-        }
-
-    val cover = protocol + doc.selectFirst(".cover img")!!.attr("src")
-    val title = doc.selectFirst(".gallery h1 a")!!.text()
-    val artists = doc.select(".gallery h2 a").map { it.text() }
-    val groups = doc.select(".gallery-info a[href~=^/group/]").map { it.text() }
-    val type = doc.selectFirst(".gallery-info a[href~=^/type/]")!!.text()
-
-    val language = run {
-        val href = doc.select(".gallery-info a[href~=^/index.+\\.html\$]").attr("href")
-        Regex("""index-([^-]+)(-.+)?\.html""").find(href)?.groupValues?.getOrNull(1) ?: ""
-    }
-
-    val series = doc.select(".gallery-info a[href~=^/series/]").map { it.text() }
-    val characters = doc.select(".gallery-info a[href~=^/character/]").map { it.text() }
-
-    val tags = doc.select(".gallery-info a[href~=^/tag/]").map {
-        val href = URLDecoder.decode(it.attr("href"), "UTF-8")
-        href.slice(5 until href.indexOf('-'))
-    }
-
-    val thumbnails = getGalleryInfo(galleryID).files.map { galleryInfo ->
-        urlFromUrlFromHash(galleryID, galleryInfo, "smalltn", "jpg", "tn")
-    }
-
-    return Gallery(related, langList, cover, title, artists, groups, type, language, series, characters, tags, thumbnails)
+    val result = webView.evaluatePromise("get_gallery($galleryID)")
+    return Json.decodeFromString(result)
 }

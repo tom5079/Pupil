@@ -43,6 +43,7 @@ import xyz.quaver.pupil.hitomi.getGalleryInfo
 import xyz.quaver.pupil.userAgent
 import java.io.File
 import java.io.IOException
+import java.io.InputStream
 import java.util.concurrent.ConcurrentHashMap
 
 @Serializable
@@ -210,12 +211,14 @@ class Cache private constructor(context: Context, val galleryID: Int) : ContextW
         metadata.imageList?.getOrNull(index)?.let { findFile(it) }
 
     @Suppress("BlockingMethodInNonBlockingContext")
-    fun putImage(index: Int, fileName: String, data: ByteArray) {
+    fun putImage(index: Int, fileName: String, data: InputStream) {
         val file = cacheFolder.getChild(fileName)
 
         if (!file.exists())
             file.createNewFile()
-        file.writeBytes(data)
+        file.outputStream()?.use {
+            data.copyTo(it)
+        }
         setMetadata { metadata -> metadata.imageList!![index] = fileName }
     }
 

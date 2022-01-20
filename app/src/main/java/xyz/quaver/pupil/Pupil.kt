@@ -28,7 +28,6 @@ import android.content.Intent
 import android.content.pm.ApplicationInfo
 import android.net.Uri
 import android.os.Build
-import android.util.Log
 import android.webkit.*
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatDelegate
@@ -42,18 +41,18 @@ import com.google.android.gms.common.GooglePlayServicesRepairableException
 import com.google.android.gms.security.ProviderInstaller
 import com.google.firebase.crashlytics.FirebaseCrashlytics
 import kotlinx.coroutines.*
-import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import okhttp3.*
 import xyz.quaver.io.FileX
 import xyz.quaver.pupil.hitomi.evaluationContext
+import xyz.quaver.pupil.types.JavascriptConsoleException
+import xyz.quaver.pupil.types.JavascriptOnErrorException
 import xyz.quaver.pupil.types.Tag
 import xyz.quaver.pupil.util.*
 import java.io.File
 import java.net.URL
 import java.util.*
-import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import kotlin.reflect.KClass
@@ -98,7 +97,7 @@ fun reloadWebView() {
 
         runCatching {
             URL(
-                if (isDebugBuild)
+                if (BuildConfig.DEBUG)
                     "https://tom5079.github.io/Pupil/hitomi-dev.html"
                 else
                     "https://tom5079.github.io/Pupil/hitomi.html"
@@ -126,7 +125,7 @@ fun reloadWhenFailedOrUpdate() = CoroutineScope(Dispatchers.Default).launch {
             webViewFailed ||
             runCatching {
                 URL(
-                    if (isDebugBuild)
+                    if (BuildConfig.DEBUG)
                         "https://tom5079.github.io/Pupil/hitomi-dev.html.ver"
                     else
                         "https://tom5079.github.io/Pupil/hitomi.html.ver"
@@ -144,7 +143,69 @@ fun reloadWhenFailedOrUpdate() = CoroutineScope(Dispatchers.Default).launch {
     }
 }
 
-var isDebugBuild: Boolean = false
+@SuppressLint("SetJavaScriptEnabled")
+fun initWebView(context: Context) {
+    if (BuildConfig.DEBUG) WebView.setWebContentsDebuggingEnabled(true)
+
+    webView = WebView(context).apply {
+        with (settings) {
+            javaScriptEnabled = true
+            domStorageEnabled = true
+        }
+
+        userAgent = settings.userAgentString
+
+        webViewClient = object: WebViewClient() {
+            override fun onPageFinished(view: WebView?, url: String?) {
+                webViewReady = true
+            }
+
+            override fun onReceivedError(
+                view: WebView?,
+                request: WebResourceRequest?,
+                error: WebResourceError?
+            ) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    FirebaseCrashlytics.getInstance().recordException(
+                        JavascriptOnErrorException("onReceivedError: ${error?.description}")
+                    )
+                }
+            }
+        }
+
+        webChromeClient = object: WebChromeClient() {
+            override fun onConsoleMessage(consoleMessage: ConsoleMessage?): Boolean {
+                FirebaseCrashlytics.getInstance().recordException(
+                    JavascriptConsoleException("onConsoleMessage: ${consoleMessage?.message()} (${consoleMessage?.sourceId()}:${consoleMessage?.lineNumber()})")
+                )
+
+                return super.onConsoleMessage(consoleMessage)
+            }
+        }
+
+        addJavascriptInterface(object {
+            @JavascriptInterface
+            fun onResult(uid: String, result: String) {
+                CoroutineScope(Dispatchers.Unconfined).launch {
+                    _webViewFlow.emit(uid to result)
+                }
+            }
+            @JavascriptInterface
+            fun onError(uid: String, message: String) {
+                CoroutineScope(Dispatchers.Unconfined).launch {
+                    _webViewFlow.emit(uid to null)
+                }
+                Toast.makeText(context, message, Toast.LENGTH_LONG).show()
+                FirebaseCrashlytics.getInstance().recordException(
+                    JavascriptOnErrorException(message)
+                )
+            }
+        }, "Callback")
+    }
+
+    reloadWhenFailedOrUpdate()
+}
+
 lateinit var userAgent: String
 
 class Pupil : Application() {
@@ -157,67 +218,8 @@ class Pupil : Application() {
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate() {
         instance = this
-        isDebugBuild = applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE != 0
 
-        if (isDebugBuild) WebView.setWebContentsDebuggingEnabled(true)
-
-        webView = WebView(this).apply {
-            with (settings) {
-                javaScriptEnabled = true
-                domStorageEnabled = true
-            }
-
-            userAgent = settings.userAgentString
-
-            webViewClient = object: WebViewClient() {
-                override fun onPageFinished(view: WebView?, url: String?) {
-                    webViewReady = true
-                }
-
-                override fun onReceivedError(
-                    view: WebView?,
-                    request: WebResourceRequest?,
-                    error: WebResourceError?
-                ) {
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                        FirebaseCrashlytics.getInstance().log(
-                            "onReceivedError: ${error?.description}"
-                        )
-                    }
-                }
-            }
-
-            webChromeClient = object: WebChromeClient() {
-                override fun onConsoleMessage(consoleMessage: ConsoleMessage?): Boolean {
-                    FirebaseCrashlytics.getInstance().log(
-                        "onConsoleMessage: ${consoleMessage?.message()} (${consoleMessage?.sourceId()}:${consoleMessage?.lineNumber()})"
-                    )
-
-                    return super.onConsoleMessage(consoleMessage)
-                }
-            }
-
-            addJavascriptInterface(object {
-                @JavascriptInterface
-                fun onResult(uid: String, result: String) {
-                    CoroutineScope(Dispatchers.Unconfined).launch {
-                        _webViewFlow.emit(uid to result)
-                    }
-                }
-                @JavascriptInterface
-                fun onError(uid: String, message: String) {
-                    CoroutineScope(Dispatchers.Unconfined).launch {
-                        _webViewFlow.emit(uid to null)
-                    }
-                    Toast.makeText(this@Pupil, message, Toast.LENGTH_LONG).show()
-                    FirebaseCrashlytics.getInstance().recordException(
-                        Exception(message)
-                    )
-                }
-            }, "Callback")
-        }
-
-        reloadWhenFailedOrUpdate()
+        initWebView(this)
 
         AppCompatDelegate.setCompatVectorFromResourcesEnabled(true)
 
