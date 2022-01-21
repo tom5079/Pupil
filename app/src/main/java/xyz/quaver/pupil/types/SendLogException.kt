@@ -19,3 +19,4 @@
 package xyz.quaver.pupil.types
 
 class SendLogException : Exception()
+class JavascriptException(message: String?) : Exception(message)

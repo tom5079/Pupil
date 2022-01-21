@@ -27,18 +27,15 @@ import xyz.quaver.pupil.webView
 const val extension = ".html"
 
 @OptIn(ExperimentalSerializationApi::class)
-suspend fun getGalleryIDsForQuery(query: String) : Set<Int> {
-    val result = webView.evaluatePromise("get_galleryids_for_query('$query')")
-
-    return Json.decodeFromString(result)
-}
+suspend fun getGalleryIDsForQuery(query: String) : Set<Int> =
+    webView.evaluatePromise("get_galleryids_for_query('$query')")
 
 @Serializable
 data class Suggestion(val s: String, val t: Int, val u: String, val n: String)
 
 @OptIn(ExperimentalSerializationApi::class)
-suspend fun getSuggestionsForQuery(query: String) : List<Suggestion> {
-    val result = webView.evaluatePromise(
+suspend fun getSuggestionsForQuery(query: String) : List<Suggestion> =
+    webView.evaluatePromise(
         "get_suggestions_for_query('$query', ++search_serial)",
         then = """
             .then(r => {
@@ -52,14 +49,9 @@ suspend fun getSuggestionsForQuery(query: String) : List<Suggestion> {
         """.trimIndent()
     )
 
-    return Json.decodeFromString(result) ?: return emptyList()
-}
-
 @OptIn(ExperimentalSerializationApi::class)
 suspend fun getGalleryIDsFromNozomi(area: String?, tag: String, language: String) : Set<Int> {
     val jsArea = if (area == null) "null" else "'$area'"
 
-    val json = webView.evaluatePromise("""get_galleryids_from_nozomi($jsArea, '$tag', '$language')""")
-
-    return Json.decodeFromString(json)
+    return webView.evaluatePromise("""get_galleryids_from_nozomi($jsArea, '$tag', '$language')""")
 }

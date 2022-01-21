@@ -27,6 +27,7 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
+import android.util.Log
 import android.webkit.*
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatDelegate
@@ -45,6 +46,7 @@ import kotlinx.coroutines.flow.asSharedFlow
 import okhttp3.*
 import xyz.quaver.io.FileX
 import xyz.quaver.pupil.hitomi.evaluationContext
+import xyz.quaver.pupil.types.JavascriptException
 import xyz.quaver.pupil.types.Tag
 import xyz.quaver.pupil.util.*
 import java.io.File
@@ -95,9 +97,9 @@ fun reloadWebView() {
         runCatching {
             URL(
                 if (BuildConfig.DEBUG)
-                    "https://tom5079.github.io/Pupil/hitomi-dev.html"
+                    "https://tom5079.github.io/PupilSources/hitomi-dev.html"
                 else
-                    "https://tom5079.github.io/Pupil/hitomi.html"
+                    "https://tom5079.github.io/PupilSources/hitomi.html"
             ).readText()
         }.onFailure {
             webViewFailed = true
@@ -123,9 +125,9 @@ fun reloadWhenFailedOrUpdate() = CoroutineScope(Dispatchers.Default).launch {
             runCatching {
                 URL(
                     if (BuildConfig.DEBUG)
-                        "https://tom5079.github.io/Pupil/hitomi-dev.html.ver"
+                        "https://tom5079.github.io/PupilSources/hitomi-dev.html.ver"
                     else
-                        "https://tom5079.github.io/Pupil/hitomi.html.ver"
+                        "https://tom5079.github.io/PupilSources/hitomi.html.ver"
                 ).readText()
             }.getOrNull().let { version ->
                 (!version.isNullOrEmpty() && version != htmlVersion).also {
@@ -188,12 +190,13 @@ fun initWebView(context: Context) {
                 }
             }
             @JavascriptInterface
-            fun onError(uid: String, message: String) {
+            fun onError(uid: String, script: String, message: String, stack: String) {
                 CoroutineScope(Dispatchers.Unconfined).launch {
-                    _webViewFlow.emit(uid to null)
+                    _webViewFlow.emit(uid to "")
                 }
-                FirebaseCrashlytics.getInstance().log(
-                    "onError: $message"
+
+                FirebaseCrashlytics.getInstance().recordException(
+                    JavascriptException("onError script: $script\nmessage: $message\nstack: $stack")
                 )
             }
         }, "Callback")

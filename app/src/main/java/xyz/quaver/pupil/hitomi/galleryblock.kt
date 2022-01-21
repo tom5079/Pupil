@@ -17,17 +17,7 @@
 package xyz.quaver.pupil.hitomi
 
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.decodeFromString
-import kotlinx.serialization.json.Json
-import org.jsoup.Jsoup
 import xyz.quaver.pupil.webView
-import xyz.quaver.readText
-import java.net.URL
-import java.net.URLDecoder
-import java.nio.ByteBuffer
-import java.nio.ByteOrder
-import java.util.*
-import javax.net.ssl.HttpsURLConnection
 
 @Serializable
 data class GalleryBlock(
@@ -38,11 +28,9 @@ data class GalleryBlock(
     val artists: List<String>,
     val series: List<String>,
     val type: String,
-    val language: String,
+    val language: String?,
     val relatedTags: List<String>
 )
 
-suspend fun getGalleryBlock(galleryID: Int) : GalleryBlock {
-    val result = webView.evaluatePromise("get_gallery_block($galleryID)")
-    return Json.decodeFromString(result)
-}
+suspend fun getGalleryBlock(galleryID: Int) : GalleryBlock =
+    webView.evaluatePromise("get_gallery_block($galleryID)")

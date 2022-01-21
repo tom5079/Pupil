@@ -16,11 +16,7 @@
 
 package xyz.quaver.pupil.hitomi
 
-import android.util.Log
 import android.webkit.WebView
-import android.widget.Toast
-import com.google.common.collect.ConcurrentHashMultiset
-import com.google.firebase.crashlytics.FirebaseCrashlytics
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
@@ -29,10 +25,11 @@ import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import xyz.quaver.json
-import xyz.quaver.pupil.*
+import xyz.quaver.pupil.webView
+import xyz.quaver.pupil.webViewFailed
+import xyz.quaver.pupil.webViewFlow
+import xyz.quaver.pupil.webViewReady
 import java.util.*
-import java.util.concurrent.ConcurrentHashMap
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 
@@ -40,7 +37,20 @@ const val protocol = "https:"
 
 val evaluationContext = Dispatchers.Main + Job()
 
-suspend fun WebView.evaluate(script: String): String = coroutineScope {
+/**
+ * kotlinx.serialization.json.Json object for global use
+ * properties should not be changed
+ *
+ * @see [https://kotlin.github.io/kotlinx.serialization/kotlinx-serialization-core/kotlinx-serialization-core/kotlinx.serialization.json/-json/index.html]
+ */
+val json = Json {
+    isLenient = true
+    ignoreUnknownKeys = true
+    allowSpecialFloatingPointValues = true
+    useArrayPolymorphism = true
+}
+
+suspend inline fun <reified T> WebView.evaluate(script: String): T = coroutineScope {
     var result: String? = null
 
     while (result == null) {
@@ -60,14 +70,14 @@ suspend fun WebView.evaluate(script: String): String = coroutineScope {
         }
     }
 
-    result
+    json.decodeFromString(result)
 }
 
 @OptIn(ExperimentalCoroutinesApi::class)
-suspend fun WebView.evaluatePromise(
+suspend inline fun <reified T> WebView.evaluatePromise(
     script: String,
-    then: String = ".then(result => Callback.onResult(%uid, JSON.stringify(result))).catch(err => Callback.onError(%uid, JSON.stringify(err)))"
-): String = coroutineScope {
+    then: String = ".then(result => Callback.onResult(%uid, JSON.stringify(result))).catch(err => Callback.onError(%uid, String.raw`$script`, err.message, err.stack))"
+): T = coroutineScope {
     var result: String? = null
 
     while (result == null) {
@@ -95,27 +105,22 @@ suspend fun WebView.evaluatePromise(
         }
     }
 
-    result
+    json.decodeFromString(result)
 }
 
 @Suppress("EXPERIMENTAL_API_USAGE")
-suspend fun getGalleryInfo(galleryID: Int): GalleryInfo {
-    val result = webView.evaluatePromise("get_gallery_info($galleryID)")
-
-    return json.decodeFromString(result)
-}
+suspend fun getGalleryInfo(galleryID: Int): GalleryInfo =
+    webView.evaluatePromise("get_gallery_info($galleryID)")
 
 //common.js
 const val domain = "ltn.hitomi.la"
-const val galleryblockdir = "galleryblock"
-const val nozomiextension = ".nozomi"
 
 val String?.js: String
     get() = if (this == null) "null" else "'$this'"
 
 @OptIn(ExperimentalSerializationApi::class)
-suspend fun urlFromUrlFromHash(galleryID: Int, image: GalleryFiles, dir: String? = null, ext: String? = null, base: String? = null): String {
-    val result = webView.evaluate(
+suspend fun urlFromUrlFromHash(galleryID: Int, image: GalleryFiles, dir: String? = null, ext: String? = null, base: String? = null): String =
+    webView.evaluate(
         """
         url_from_url_from_hash(
             ${galleryID.toString().js},
@@ -124,9 +129,6 @@ suspend fun urlFromUrlFromHash(galleryID: Int, image: GalleryFiles, dir: String?
         )
         """.trimIndent()
     )
-
-    return Json.decodeFromString(result)
-}
 
 suspend fun imageUrlFromImage(galleryID: Int, image: GalleryFiles, noWebp: Boolean) : String {
     return when {

@@ -186,7 +186,7 @@ class GalleryBlockAdapter(private val galleries: List<Int>) : RecyclerSwipeAdapt
                         text =
                             resources.getString(R.string.galleryblock_language, languages[galleryBlock.language])
                         visibility = when {
-                            galleryBlock.language.isNotEmpty() -> View.VISIBLE
+                            !galleryBlock.language.isNullOrEmpty() -> View.VISIBLE
                             else -> View.GONE
                         }
                     }
