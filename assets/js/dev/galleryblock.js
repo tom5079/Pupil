@@ -17,7 +17,7 @@ async function get_gallery_block(galleryid) {
     const series = Array.from(doc.querySelectorAll('a[href^="/series/"]'), elm => elm.innerText);
     const type = doc.querySelector('a[href^="/type/"]').innerText;
 
-    const language = doc.querySelector('a[href^="/index"][href$=".html"]').getAttribute('href').slice(7, -5);
+    const language = doc.querySelector('a[href^="/index"][href$=".html"]')?.getAttribute('href').slice(7, -5);
 
     const related_tags = Array.from(doc.querySelectorAll('.relatedtags a'), elm => decodeURIComponent(elm.getAttribute('href')).slice(5, -9));
 
