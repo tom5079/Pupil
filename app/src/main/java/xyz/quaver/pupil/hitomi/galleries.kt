@@ -19,17 +19,12 @@ package xyz.quaver.pupil.hitomi
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
-import org.jsoup.Jsoup
 import xyz.quaver.pupil.webView
-import xyz.quaver.readText
-import java.net.URL
-import java.net.URLDecoder
 
 @Serializable
 data class Gallery(
     val related: List<Int>,
-    val langList: Map<String, String>
-    ,
+    val langList: Map<String, String>,
     val cover: String,
     val title: String,
     val artists: List<String>,
@@ -41,7 +36,5 @@ data class Gallery(
     val tags: List<String>,
     val thumbnails: List<String>
 )
-suspend fun getGallery(galleryID: Int) : Gallery {
-    val result = webView.evaluatePromise("get_gallery($galleryID)")
-    return Json.decodeFromString(result)
-}
+suspend fun getGallery(galleryID: Int) : Gallery =
+    webView.evaluatePromise("get_gallery($galleryID)")
