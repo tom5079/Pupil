@@ -25,8 +25,8 @@ allprojects {
         google()
         mavenCentral()
         mavenLocal()
-        maven { url = uri("https://oss.sonatype.org/content/repositories/snapshots") }
-        maven { url = uri("https://jitpack.io") }
+        maven { setUrl("https://oss.sonatype.org/content/repositories/snapshots") }
+        maven { setUrl("https://jitpack.io") }
     }
 }
 
