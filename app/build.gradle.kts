@@ -72,8 +72,8 @@ android {
 dependencies {
     implementation(fileTree(mapOf("dir" to "libs", "include" to listOf("*.aar"))))
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.5.2-native-mt")
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.3.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.3.2")
 
     implementation("androidx.activity:activity-compose:1.4.0")
     implementation("androidx.navigation:navigation-compose:2.4.0-rc01")
@@ -100,7 +100,7 @@ dependencies {
     implementation("io.ktor:ktor-client-okhttp:1.6.7")
     implementation("io.ktor:ktor-client-serialization:1.6.7")
 
-    implementation("androidx.appcompat:appcompat:1.4.0")
+    implementation("androidx.appcompat:appcompat:1.4.1")
     implementation("androidx.activity:activity-ktx:1.4.0")
     implementation("androidx.fragment:fragment-ktx:1.4.0")
     implementation("androidx.preference:preference-ktx:1.1.1")
@@ -110,17 +110,17 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.4.0")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.4.0")
 
-    implementation("androidx.room:room-runtime:2.4.0")
-    annotationProcessor("androidx.room:room-compiler:2.4.0")
-    kapt("androidx.room:room-compiler:2.4.0")
-    implementation("androidx.room:room-ktx:2.4.0")
+    implementation("androidx.room:room-runtime:2.4.1")
+    annotationProcessor("androidx.room:room-compiler:2.4.1")
+    kapt("androidx.room:room-compiler:2.4.1")
+    implementation("androidx.room:room-ktx:2.4.1")
 
     implementation("androidx.datastore:datastore:1.0.0")
     implementation("androidx.datastore:datastore-preferences:1.0.0")
 
     implementation("org.kodein.di:kodein-di-framework-compose:7.10.0")
 
-    implementation("com.google.android.material:material:1.4.0")
+    implementation("com.google.android.material:material:1.5.0")
 
     implementation(platform("com.google.firebase:firebase-bom:29.0.3"))
     implementation("com.google.firebase:firebase-analytics-ktx")
@@ -135,9 +135,9 @@ dependencies {
 
     implementation("ru.noties.markwon:core:3.1.0")
 
-    implementation("xyz.quaver.pupil.sources:core:0.0.1-alpha01-DEV10")
+    implementation("xyz.quaver.pupil.sources:core:0.0.1-alpha01-DEV16")
 
-    implementation("xyz.quaver:documentfilex:0.7.1")
+    implementation("xyz.quaver:documentfilex:0.7.2")
     implementation("xyz.quaver:subsampledimage:0.0.1-alpha19-SNAPSHOT")
 
     implementation("com.google.guava:guava:31.0.1-jre")

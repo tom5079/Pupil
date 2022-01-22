@@ -23,41 +23,31 @@ import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
-import android.content.Intent
-import android.net.Uri
 import android.os.Build
-import androidx.appcompat.app.AppCompatDelegate
-import androidx.preference.PreferenceManager
 import com.google.android.gms.common.GooglePlayServicesNotAvailableException
 import com.google.android.gms.common.GooglePlayServicesRepairableException
 import com.google.android.gms.security.ProviderInstaller
-import com.google.firebase.analytics.FirebaseAnalytics
-import com.google.firebase.analytics.ktx.analytics
-import com.google.firebase.crashlytics.FirebaseCrashlytics
-import com.google.firebase.ktx.Firebase
 import io.ktor.client.*
 import io.ktor.client.engine.okhttp.*
 import io.ktor.client.features.*
 import io.ktor.client.features.cache.*
 import io.ktor.client.features.json.*
 import io.ktor.client.features.json.serializer.*
+import io.ktor.http.*
 import okhttp3.Protocol
 import org.kodein.di.*
 import org.kodein.di.android.x.androidXModule
-import xyz.quaver.io.FileX
-import xyz.quaver.pupil.proto.settingsDataStore
 import xyz.quaver.pupil.sources.core.NetworkCache
-import xyz.quaver.pupil.sources.sourceModule
-import xyz.quaver.pupil.util.*
-import java.util.*
+import xyz.quaver.pupil.sources.core.settingsDataStore
+import xyz.quaver.pupil.util.ApkDownloadManager
 
 class Pupil : Application(), DIAware {
 
     override val di: DI by DI.lazy {
         import(androidXModule(this@Pupil))
-        import(sourceModule(this@Pupil))
 
-        bind { singleton { NetworkCache(applicationContext) } }
+        bind { singleton { NetworkCache(this@Pupil, instance()) } }
+        bindSingleton { ApkDownloadManager(this@Pupil, instance()) }
 
         bindSingleton { settingsDataStore }
 
@@ -70,6 +60,7 @@ class Pupil : Application(), DIAware {
                 }
                 install(JsonFeature) {
                     serializer = KotlinxSerializer()
+                    accept(ContentType("text", "plain"))
                 }
                 install(HttpTimeout) {
                     requestTimeoutMillis = HttpTimeout.INFINITE_TIMEOUT_MS
@@ -82,43 +73,8 @@ class Pupil : Application(), DIAware {
         } }
     }
 
-    private lateinit var firebaseAnalytics: FirebaseAnalytics
-
     override fun onCreate() {
-        AppCompatDelegate.setCompatVectorFromResourcesEnabled(true)
-
-        preferences = PreferenceManager.getDefaultSharedPreferences(this)
-
-        val userID = Preferences["user_id", ""].let {  userID ->
-            if (userID.isEmpty()) UUID.randomUUID().toString().also { Preferences["user_id"] = it }
-            else userID
-        }
-
-        firebaseAnalytics = Firebase.analytics
-        FirebaseCrashlytics.getInstance().setUserId(userID)
-
-        try {
-            Preferences.get<String>("download_folder").also {
-                if (it.startsWith("content"))
-                    contentResolver.takePersistableUriPermission(
-                        Uri.parse(it),
-                        Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
-                    )
-
-                if (!FileX(this, it).canWrite())
-                    throw Exception()
-            }
-        } catch (e: Exception) {
-            Preferences.remove("download_folder")
-        }
-
-        if (!Preferences["reset_secure", false]) {
-            Preferences["security_mode"] = false
-            Preferences["reset_secure"] = true
-        }
-
-        if (BuildConfig.DEBUG)
-            FirebaseAnalytics.getInstance(this).setAnalyticsCollectionEnabled(false)
+        super.onCreate()
 
         try {
             ProviderInstaller.installIfNeeded(this)
@@ -151,21 +107,7 @@ class Pupil : Application(), DIAware {
                 enableVibration(true)
                 lockscreenVisibility = Notification.VISIBILITY_SECRET
             })
-
-            manager.createNotificationChannel(NotificationChannel("import", getString(R.string.channel_update), NotificationManager.IMPORTANCE_LOW).apply {
-                description = getString(R.string.channel_update_description)
-                enableLights(false)
-                enableVibration(false)
-                lockscreenVisibility = Notification.VISIBILITY_SECRET
-            })
         }
-
-        AppCompatDelegate.setDefaultNightMode(when (Preferences.get<Boolean>("dark_mode")) {
-            true -> AppCompatDelegate.MODE_NIGHT_YES
-            false -> AppCompatDelegate.MODE_NIGHT_NO
-        })
-
-        super.onCreate()
     }
 
 }

@@ -22,69 +22,105 @@ import android.app.Application
 import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
 import android.graphics.drawable.Drawable
+import androidx.compose.runtime.*
+import androidx.compose.runtime.snapshots.SnapshotStateList
+import androidx.compose.runtime.snapshots.SnapshotStateMap
 import dalvik.system.PathClassLoader
-import org.kodein.di.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import org.kodein.di.DI
+import org.kodein.di.bindFactory
+import org.kodein.di.bindInstance
+import org.kodein.di.bindProvider
+import org.kodein.di.compose.rememberInstance
 import xyz.quaver.pupil.sources.core.Source
-import java.util.*
+import java.util.concurrent.ConcurrentHashMap
 
 private const val SOURCES_FEATURE = "pupil.sources"
 private const val SOURCES_PACKAGE_PREFIX = "xyz.quaver.pupil.sources"
 private const val SOURCES_PATH = "pupil.sources.path"
 
 data class SourceEntry(
-    val name: String,
-    val source: Source,
-    val icon: Drawable
+    val packageName: String,
+    val packagePath: String,
+    val sourceName: String,
+    val sourcePath: String,
+    val sourceDir: String,
+    val icon: Drawable,
+    val version: String
 )
 typealias SourceEntries = Map<String, SourceEntry>
-
-private val sources = mutableMapOf<String, SourceEntry>()
 
 val PackageInfo.isSourceFeatureEnabled
     get() = this.reqFeatures.orEmpty().any { it.name == SOURCES_FEATURE }
 
-fun loadSource(app: Application, packageInfo: PackageInfo) {
+fun loadSource(app: Application, packageInfo: PackageInfo): List<SourceEntry> {
     val packageManager = app.packageManager
+
     val applicationInfo = packageInfo.applicationInfo
 
-    val classLoader = PathClassLoader(applicationInfo.sourceDir, null, app.classLoader)
-    val packageName = packageInfo.packageName
-
-    val sourceName = packageManager.getApplicationLabel(applicationInfo).toString().substringAfter("[Pupil] ")
+    val packageName = packageManager.getApplicationLabel(applicationInfo).toString().substringAfter("[Pupil] ")
+    val packagePath = packageInfo.packageName
 
     val icon = packageManager.getApplicationIcon(applicationInfo)
 
-    packageInfo
+    val version = packageInfo.versionName
+
+    return packageInfo
         .applicationInfo
         .metaData
-        .getString(SOURCES_PATH)
+        ?.getString(SOURCES_PATH)
         ?.split(';')
-        .orEmpty()
-        .forEach { sourcePath ->
-            sources[sourceName] = SourceEntry(
+        ?.map { source ->
+            val (sourceName, sourcePath) = source.split(':', limit = 2)
+            SourceEntry(
+                packageName,
+                packagePath,
                 sourceName,
-                Class.forName("$packageName$sourcePath", false, classLoader)
-                    .getConstructor(Application::class.java)
-                    .newInstance(app) as Source,
-                icon
+                sourcePath,
+                applicationInfo.sourceDir,
+                icon,
+                version
             )
-        }
+        }.orEmpty()
 }
 
-fun loadSources(app: Application) {
+fun loadSource(app: Application, sourceEntry: SourceEntry): Source {
+    val classLoader = PathClassLoader(sourceEntry.sourceDir, null, app.classLoader)
+
+    return Class.forName("${sourceEntry.packagePath}${sourceEntry.sourcePath}", false, classLoader)
+        .getConstructor(Application::class.java)
+        .newInstance(app) as Source
+}
+
+fun updateSources(app: Application): List<SourceEntry> {
     val packageManager = app.packageManager
 
     val packages = packageManager.getInstalledPackages(
-        PackageManager.GET_CONFIGURATIONS or
-                PackageManager.GET_META_DATA
+        PackageManager.GET_CONFIGURATIONS or PackageManager.GET_META_DATA
     )
 
-    val sources = packages.filter { it.isSourceFeatureEnabled }
-
-    sources.forEach { loadSource(app, it) }
+    return packages.flatMap { packageInfo ->
+        if (packageInfo.isSourceFeatureEnabled)
+            loadSource(app, packageInfo)
+        else
+            emptyList()
+    }
 }
 
-fun sourceModule(app: Application) = DI.Module(name = "source") {
-    loadSources(app)
-    bindInstance { Collections.unmodifiableMap(sources) }
+@Composable
+fun rememberSources(): State<List<SourceEntry>> {
+    val app: Application by rememberInstance()
+    val sources = remember { mutableStateOf<List<SourceEntry>>(emptyList()) }
+
+    LaunchedEffect(Unit) {
+        while (true) {
+            sources.value = updateSources(app)
+            delay(1000)
+        }
+    }
+
+    return sources
 }

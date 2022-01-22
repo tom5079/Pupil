@@ -20,38 +20,35 @@ package xyz.quaver.pupil.ui
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.MaterialTheme
 import androidx.compose.runtime.*
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.graphics.Color
 import androidx.core.view.WindowCompat
-import androidx.datastore.core.DataStore
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.createGraph
 import com.google.accompanist.insets.ProvideWindowInsets
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
 import org.kodein.di.DIAware
 import org.kodein.di.android.closestDI
-import org.kodein.di.compose.rememberInstance
 import org.kodein.di.instance
 import org.kodein.log.LoggerFactory
 import org.kodein.log.newLogger
-import xyz.quaver.pupil.proto.Settings
 import xyz.quaver.pupil.sources.SourceEntries
-import xyz.quaver.pupil.sources.SourceSelectDialog
+import xyz.quaver.pupil.sources.SourceEntry
+import xyz.quaver.pupil.sources.core.Source
+import xyz.quaver.pupil.sources.loadSource
 import xyz.quaver.pupil.ui.theme.PupilTheme
 
 @OptIn(ExperimentalAnimationApi::class, ExperimentalMaterialApi::class)
 class MainActivity : ComponentActivity(), DIAware {
     override val di by closestDI()
-
-    private val sources: SourceEntries by instance()
 
     private val logger = newLogger(LoggerFactory.default)
 
@@ -68,6 +65,8 @@ class MainActivity : ComponentActivity(), DIAware {
                     val systemUiController = rememberSystemUiController()
                     val useDarkIcons = MaterialTheme.colors.isLight
 
+                    val coroutineScope = rememberCoroutineScope()
+
                     SideEffect {
                         systemUiController.setSystemBarsColor(
                             color = Color.Transparent,
@@ -75,41 +74,28 @@ class MainActivity : ComponentActivity(), DIAware {
                         )
                     }
 
-                    NavHost(navController, startDestination = "main") {
-                        composable("main") {
-                            var launched by rememberSaveable { mutableStateOf(false) }
-                            val settingsDataStore: DataStore<Settings> by rememberInstance()
+                    NavHost(navController, "source") {
+                        composable("source") {
+                            var source by remember { mutableStateOf<Source?>(null) }
 
-                            var sourceSelectDialog by remember { mutableStateOf(false) }
+                            BackHandler(
+                                enabled = source != null
+                            ) {
+                                source = null
+                            }
 
-                            if (sourceSelectDialog)
-                                SourceSelectDialog(navController, null)
-
-                            LaunchedEffect(Unit) {
-                                val recentSource =
-                                    settingsDataStore.data.map { it.recentSource }
-                                        .first()
-
-                                if (recentSource.isEmpty()) {
-                                    sourceSelectDialog = true
-                                    launched = true
-                                } else {
-                                    if (!launched) {
-                                        navController.navigate(recentSource)
-                                        launched = true
-                                    } else {
-                                        onBackPressed()
+                            if (source == null)
+                                SourceSelector {
+                                    coroutineScope.launch {
+                                        source = loadSource(application, it)
                                     }
                                 }
+                            else {
+                                source!!.Entry()
                             }
                         }
                         composable("settings") {
 
-                        }
-                        sources.values.forEach {
-                            it.source.run {
-                                navGraph(navController)
-                            }
                         }
                     }
                 }
