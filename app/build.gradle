@@ -128,8 +128,6 @@ dependencies {
 
     implementation "org.jsoup:jsoup:1.14.3"
 
-    implementation "com.google.guava:guava:31.0.1-android"
-
     implementation "xyz.quaver:documentfilex:0.7.2"
     implementation "xyz.quaver:floatingsearchview:1.1.7"
 
