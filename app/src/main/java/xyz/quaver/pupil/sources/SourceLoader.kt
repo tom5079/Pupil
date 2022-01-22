@@ -51,7 +51,6 @@ data class SourceEntry(
     val icon: Drawable,
     val version: String
 )
-typealias SourceEntries = Map<String, SourceEntry>
 
 val PackageInfo.isSourceFeatureEnabled
     get() = this.reqFeatures.orEmpty().any { it.name == SOURCES_FEATURE }

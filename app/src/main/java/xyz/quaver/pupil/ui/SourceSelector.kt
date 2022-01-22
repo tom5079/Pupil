@@ -21,7 +21,6 @@ package xyz.quaver.pupil.ui
 import android.content.Intent
 import android.net.Uri
 import android.provider.Settings
-import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -31,7 +30,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.DownloadDone
 import androidx.compose.material.icons.filled.Explore
-import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -43,7 +41,6 @@ import androidx.compose.ui.text.capitalize
 import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.navigation.NavController
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
@@ -67,7 +64,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import org.kodein.di.compose.rememberInstance
-import xyz.quaver.pupil.sources.SourceEntries
 import xyz.quaver.pupil.sources.SourceEntry
 import xyz.quaver.pupil.sources.rememberSources
 import xyz.quaver.pupil.util.ApkDownloadManager
@@ -255,7 +251,7 @@ fun SourceSelector(onSource: (SourceEntry) -> Unit) {
         topBar = {
             TopAppBar(
                 title = {
-                    Text("Sources")
+                    Text("Pupil")
                 },
                 contentPadding = rememberInsetsPaddingValues(LocalWindowInsets.current.statusBars)
             )
