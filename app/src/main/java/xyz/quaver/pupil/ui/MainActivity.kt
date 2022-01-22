@@ -31,17 +31,13 @@ import androidx.core.view.WindowCompat
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import androidx.navigation.createGraph
 import com.google.accompanist.insets.ProvideWindowInsets
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import kotlinx.coroutines.launch
 import org.kodein.di.DIAware
 import org.kodein.di.android.closestDI
-import org.kodein.di.instance
 import org.kodein.log.LoggerFactory
 import org.kodein.log.newLogger
-import xyz.quaver.pupil.sources.SourceEntries
-import xyz.quaver.pupil.sources.SourceEntry
 import xyz.quaver.pupil.sources.core.Source
 import xyz.quaver.pupil.sources.loadSource
 import xyz.quaver.pupil.ui.theme.PupilTheme
@@ -74,8 +70,8 @@ class MainActivity : ComponentActivity(), DIAware {
                         )
                     }
 
-                    NavHost(navController, "source") {
-                        composable("source") {
+                    NavHost(navController, "main") {
+                        composable("main") {
                             var source by remember { mutableStateOf<Source?>(null) }
 
                             BackHandler(
