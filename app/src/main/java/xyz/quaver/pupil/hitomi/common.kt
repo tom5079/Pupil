@@ -53,7 +53,7 @@ suspend inline fun <reified T> WebView.evaluate(script: String): T = coroutineSc
 
     while (result == null) {
         try {
-            while (!oldWebView && !(webViewReady && !webViewFailed)) yield()
+            while (!oldWebView && !(webViewReady && !webViewFailed)) delay(100)
 
             result = if (oldWebView)
                 "null"
@@ -82,7 +82,7 @@ suspend inline fun <reified T> WebView.evaluatePromise(
 
     while (result == null) {
         try {
-            while (!oldWebView && !(webViewReady && !webViewFailed)) yield()
+            while (!oldWebView && !(webViewReady && !webViewFailed)) delay(100)
 
             result = if (oldWebView)
                 "null"
