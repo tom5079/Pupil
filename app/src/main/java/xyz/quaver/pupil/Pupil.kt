@@ -160,19 +160,20 @@ fun initWebView(context: Context) {
 
         webViewClient = object: WebViewClient() {
             override fun onPageFinished(view: WebView?, url: String?) {
+                webViewReady = true
+
                 webView.evaluateJavascript(
                     """
-                        try {
-                            new Function('(x => x?.y ?? z)');
-                            true;
-                        } catch (err) {
-                            false;
-                        }
-                    """.trimIndent()
+                    try {
+                        new Function('(x => x?.y ?? z)');
+                        true;
+                    } catch (err) {
+                        false;
+                    }
+                """.trimIndent()
                 ) {
                     val es2020: Boolean = Json.decodeFromString(it)
 
-                    webViewReady = es2020
                     oldWebView = !es2020
                 }
             }
