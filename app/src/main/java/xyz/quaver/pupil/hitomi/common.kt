@@ -16,6 +16,7 @@
 
 package xyz.quaver.pupil.hitomi
 
+import android.util.Log
 import android.webkit.WebView
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.Flow
@@ -25,10 +26,7 @@ import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import xyz.quaver.pupil.webView
-import xyz.quaver.pupil.webViewFailed
-import xyz.quaver.pupil.webViewFlow
-import xyz.quaver.pupil.webViewReady
+import xyz.quaver.pupil.*
 import java.util.*
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
@@ -55,9 +53,11 @@ suspend inline fun <reified T> WebView.evaluate(script: String): T = coroutineSc
 
     while (result == null) {
         try {
-            result = withContext(evaluationContext) {
-                while (webViewFailed || !webViewReady) yield()
+            while (!oldWebView && !(webViewReady && !webViewFailed)) yield()
 
+            result = if (oldWebView)
+                "null"
+            else withContext(evaluationContext) {
                 suspendCoroutine { continuation ->
                     evaluateJavascript(script) {
                         continuation.resume(it)
@@ -82,9 +82,11 @@ suspend inline fun <reified T> WebView.evaluatePromise(
 
     while (result == null) {
         try {
-            result = withContext(evaluationContext) {
-                while (webViewFailed || !webViewReady) yield()
+            while (!oldWebView && !(webViewReady && !webViewFailed)) yield()
 
+            result = if (oldWebView)
+                "null"
+            else withContext(evaluationContext) {
                 val uid = UUID.randomUUID().toString()
 
                 val flow: Flow<Pair<String, String?>> = webViewFlow.transformWhile { (currentUid, result) ->

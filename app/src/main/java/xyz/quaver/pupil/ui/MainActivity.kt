@@ -19,6 +19,7 @@
 package xyz.quaver.pupil.ui
 
 import android.annotation.SuppressLint
+import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
@@ -37,6 +38,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.view.GravityCompat
 import androidx.core.view.ViewCompat
 import androidx.recyclerview.widget.RecyclerView
+import androidx.webkit.WebViewCompat
 import com.google.android.material.navigation.NavigationView
 import com.google.android.material.snackbar.Snackbar
 import com.google.firebase.crashlytics.FirebaseCrashlytics
@@ -105,6 +107,8 @@ class MainActivity :
 
     private lateinit var binding: MainActivityBinding
 
+    private var oldWebViewJob: Job? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = MainActivityBinding.inflate(layoutInflater)
@@ -125,9 +129,40 @@ class MainActivity :
         if (Preferences["download_folder", ""].isEmpty())
             DownloadLocationDialogFragment().show(supportFragmentManager, "Download Location Dialog")
 
+        oldWebViewJob = CoroutineScope(Dispatchers.Unconfined).launch {
+            do {
+                delay(1000)
+                if (oldWebView) {
+                    AlertDialog.Builder(this@MainActivity)
+                        .setTitle(android.R.string.dialog_alert_title)
+                        .setMessage(R.string.old_webview)
+                        .setCancelable(false)
+                        .setPositiveButton(android.R.string.ok) { _, _ ->
+                            WebViewCompat.getCurrentWebViewPackage(this@MainActivity)?.packageName?.let { packageName ->
+                                try {
+                                    startActivity(
+                                        Intent(
+                                            Intent.ACTION_VIEW,
+                                            Uri.parse("market://details?id=$packageName")
+                                        )
+                                    )
+                                } catch (e: ActivityNotFoundException) {
+                                    startActivity(
+                                        Intent(
+                                            Intent.ACTION_VIEW,
+                                            Uri.parse("https://play.google.com/store/apps/details?id=$packageName")
+                                        )
+                                    )
+                                }
+                            }
+                        }
+                        .show()
+                    break
+                }
+            } while (isActive)
+        }
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R &&
-            !Preferences["download_folder_ignore_warning", false] &&
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && !Preferences["download_folder_ignore_warning", false] &&
             ContextCompat.getExternalFilesDirs(this, null).filterNotNull().map { Uri.fromFile(it).toString() }
                 .contains(Preferences["download_folder", ""])
         ) {
@@ -168,6 +203,8 @@ class MainActivity :
 
     override fun onDestroy() {
         super.onDestroy()
+
+        oldWebViewJob?.cancel()
 
         (binding.contents.recyclerview.adapter as? GalleryBlockAdapter)?.updateAll = false
     }

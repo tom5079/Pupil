@@ -29,10 +29,10 @@ import android.net.Uri
 import android.os.Build
 import android.util.Log
 import android.webkit.*
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.content.ContextCompat
 import androidx.preference.PreferenceManager
+import androidx.webkit.WebViewCompat
 import com.facebook.imagepipeline.backends.okhttp3.OkHttpImagePipelineConfigFactory
 import com.github.piasy.biv.BigImageViewer
 import com.github.piasy.biv.loader.fresco.FrescoImageLoader
@@ -43,6 +43,8 @@ import com.google.firebase.crashlytics.FirebaseCrashlytics
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.json.Json
 import okhttp3.*
 import xyz.quaver.io.FileX
 import xyz.quaver.pupil.hitomi.evaluationContext
@@ -83,6 +85,7 @@ val _webViewFlow = MutableSharedFlow<Pair<String, String?>>()
 val webViewFlow = _webViewFlow.asSharedFlow()
 var webViewReady = false
 var webViewFailed = false
+var oldWebView = false
 private var reloadJob: Job? = null
 
 fun reloadWebView() {
@@ -91,6 +94,7 @@ fun reloadWebView() {
     reloadJob = CoroutineScope(Dispatchers.IO).launch {
         webViewReady = false
         webViewFailed = false
+        oldWebView = false
 
         evaluationContext.cancelChildren(CancellationException("reload"))
 
@@ -156,7 +160,21 @@ fun initWebView(context: Context) {
 
         webViewClient = object: WebViewClient() {
             override fun onPageFinished(view: WebView?, url: String?) {
-                webViewReady = true
+                webView.evaluateJavascript(
+                    """
+                        try {
+                            new Function('(x => x?.y ?? z)');
+                            true;
+                        } catch (err) {
+                            false;
+                        }
+                    """.trimIndent()
+                ) {
+                    val es2020: Boolean = Json.decodeFromString(it)
+
+                    webViewReady = es2020
+                    oldWebView = !es2020
+                }
             }
 
             override fun onReceivedError(

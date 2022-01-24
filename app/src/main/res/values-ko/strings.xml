@@ -157,4 +157,5 @@
     <string name="settings_max_concurrent_download">병렬 다운로드</string>
     <string name="unaccessible_download_folder">안드로이드 11 이상에서는 외부에서 현재 다운로드 폴더에 접근할 수 없습니다. 변경하시겠습니까?</string>
     <string name="settings_networking">네트워크</string>
+    <string name="old_webview">WebView 업데이트가 필요합니다</string>
 </resources>
