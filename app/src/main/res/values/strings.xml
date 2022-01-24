@@ -51,6 +51,8 @@
 
     <string name="unaccessible_download_folder">From Android 11 and above, current Download folder cannot be accessed by outside apps. Would you like to change the download folder?</string>
 
+    <string name="old_webview">You are using an old version of WebView. Please update it on PlayStore</string>
+
     <string name="main_drawer_home">Home</string>
     <string name="main_drawer_history">History</string>
     <string name="main_drawer_downloads">Downloads</string>

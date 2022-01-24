@@ -38,7 +38,7 @@ android {
         minSdkVersion 16
         targetSdkVersion 31
         versionCode 69
-        versionName "5.2.19"
+        versionName "5.2.20"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
     }
@@ -91,6 +91,7 @@ dependencies {
     implementation "androidx.gridlayout:gridlayout:1.0.0"
     implementation "androidx.biometric:biometric:1.1.0"
     implementation "androidx.work:work-runtime-ktx:2.7.1"
+    implementation 'androidx.webkit:webkit:1.4.0'
 
     implementation "com.daimajia.swipelayout:library:1.2.0@aar"
 
