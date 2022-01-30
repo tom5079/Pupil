@@ -125,7 +125,7 @@ private var htmlVersion: String = ""
 fun reloadWhenFailedOrUpdate() = CoroutineScope(Dispatchers.Default).launch {
     while (true) {
         if (
-            webViewFailed ||
+            (webViewFailed && !oldWebView) ||
             runCatching {
                 URL(
                     if (BuildConfig.DEBUG)
@@ -160,21 +160,12 @@ fun initWebView(context: Context) {
 
         webViewClient = object: WebViewClient() {
             override fun onPageFinished(view: WebView?, url: String?) {
-                webViewReady = true
+                webView.evaluateJavascript("self_test()") {
+                    val result: String = Json.decodeFromString(it)
 
-                webView.evaluateJavascript(
-                    """
-                    try {
-                        new Function('(x => x?.y ?? z)');
-                        true;
-                    } catch (err) {
-                        false;
-                    }
-                """.trimIndent()
-                ) {
-                    val es2020: Boolean = Json.decodeFromString(it)
-
-                    oldWebView = !es2020
+                    oldWebView = result == "es2020_unsupported";
+                    webViewReady = result == "OK";
+                    webViewFailed = result != "OK";
                 }
             }
 

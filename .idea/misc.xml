@@ -5,6 +5,8 @@
       <map>
         <entry key="../../../../layout/custom_preview.xml" value="0.2564814814814815" />
         <entry key="app/src/main/res/layout/reader_activity.xml" value="0.14351851851851852" />
+        <entry key="app/src/main/res/xml/lock_preferences.xml" value="0.5119791666666667" />
+        <entry key="app/src/main/res/xml/root_preferences.xml" value="0.5119791666666667" />
       </map>
     </option>
   </component>
