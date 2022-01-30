@@ -162,7 +162,7 @@ fun checkUpdate(context: Context, force: Boolean = false) {
             setNegativeButton(if (force) android.R.string.cancel else R.string.ignore) { _, _ ->
                 if (!force)
                     preferences.edit()
-                        .putLong("ignore_update_until", System.currentTimeMillis() + 604800000)
+                        .putLong("ignore_update_until", System.currentTimeMillis() + 86400000)
                         .apply()
             }
         }

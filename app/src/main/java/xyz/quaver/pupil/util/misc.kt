@@ -27,6 +27,7 @@ import xyz.quaver.pupil.hitomi.GalleryBlock
 import xyz.quaver.pupil.hitomi.GalleryInfo
 import xyz.quaver.pupil.hitomi.getReferer
 import xyz.quaver.pupil.hitomi.imageUrlFromImage
+import xyz.quaver.pupil.userAgent
 import java.util.*
 import kotlin.collections.ArrayList
 
@@ -114,7 +115,7 @@ suspend fun GalleryInfo.getRequestBuilders(): List<Request.Builder> {
                 .getOrDefault("https://a/")
             )
             .header("Referer", "https://hitomi.la/")
-            .header("User-Agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.45 Safari/537.36")
+            .header("User-Agent", userAgent)
     }
 }
 
