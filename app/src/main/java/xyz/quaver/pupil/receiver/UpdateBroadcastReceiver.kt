@@ -60,8 +60,10 @@ class UpdateBroadcastReceiver : BroadcastReceiver() {
 
                             when (uri.scheme) {
                                 "file" ->
-                                    FileProvider.getUriForFile(context, context.applicationContext.packageName + ".provider", File(uri.path!!)
-                                    )
+                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N)
+                                        FileProvider.getUriForFile(context, context.applicationContext.packageName + ".provider", File(uri.path!!))
+                                    else
+                                        uri
                                 "content" -> uri
                                 else -> null
                             }
@@ -74,7 +76,7 @@ class UpdateBroadcastReceiver : BroadcastReceiver() {
 
                 val notificationManager = NotificationManagerCompat.from(context)
 
-                val pendingIntent = PendingIntent.getActivity(context, 0, Intent(Intent.ACTION_VIEW).apply {
+                val pendingIntent = PendingIntent.getActivity(context, System.currentTimeMillis().toInt(), Intent(Intent.ACTION_VIEW).apply {
                     flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK
                     setDataAndType(uri, MimeTypeMap.getSingleton().getMimeTypeFromExtension("apk"))
                 }, if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) PendingIntent.FLAG_IMMUTABLE else 0)
