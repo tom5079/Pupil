@@ -152,6 +152,7 @@
     <string name="settings_storage_usage_loading">Calculating storage usage…</string>
     <string name="settings_clear_cache">Clear cache</string>
     <string name="settings_clear_cache_alert_message">Deleting cache can affect image loading speed. Do you want to continue?</string>
+    <string name="settings_recover_downloads">Reconstruct download database</string>
     <string name="settings_clear_downloads">Clear downloads</string>
     <string name="settings_clear_downloads_alert_message">Delete all downloaded galleries.\nDo you want to continue?</string>
     <string name="settings_clear_history">Clear history</string>

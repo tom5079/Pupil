@@ -48,14 +48,12 @@ class DownloadManager private constructor(context: Context) : ContextWrapper(con
     val defaultDownloadFolder = FileX(this, getExternalFilesDir(null)!!)
 
     val downloadFolder: FileX
-        get() = {
-            kotlin.runCatching {
-                FileX(this, Preferences.get<String>("download_folder"))
-            }.getOrElse {
-                Preferences["download_folder"] = defaultDownloadFolder.uri.toString()
-                defaultDownloadFolder
-            }
-        }.invoke()
+        get() = kotlin.runCatching {
+            FileX(this, Preferences.get<String>("download_folder"))
+        }.getOrElse {
+            Preferences["download_folder"] = defaultDownloadFolder.uri.toString()
+            defaultDownloadFolder
+        }
 
     private var prevDownloadFolder: FileX? = null
     private var downloadFolderMapInstance: MutableMap<Int, String>? = null
@@ -64,21 +62,19 @@ class DownloadManager private constructor(context: Context) : ContextWrapper(con
         get() {
             if (prevDownloadFolder != downloadFolder) {
                 prevDownloadFolder = downloadFolder
-                downloadFolderMapInstance = {
+                downloadFolderMapInstance = run {
                     val file = downloadFolder.getChild(".download")
-
                     val data = if (file.exists())
                         kotlin.runCatching {
-                            file.readText()?.let { Json.decodeFromString<MutableMap<Int, String>>(it) }
+                            file.readText()?.let{ Json.decodeFromString<MutableMap<Int, String>>(it) }
                         }.onFailure { file.delete() }.getOrNull()
                     else
                         null
-
-                    data ?: {
+                    data ?: run {
                         file.createNewFile()
-                        mutableMapOf<Int, String>()
-                    }.invoke()
-                }.invoke()
+                        mutableMapOf()
+                    }
+                }
             }
 
             return downloadFolderMapInstance ?: mutableMapOf()
@@ -103,14 +99,13 @@ class DownloadManager private constructor(context: Context) : ContextWrapper(con
 
         val folder = downloadFolder.getChild(name)
 
-        if (folder.exists()) return@launch
-
-        folder.mkdir()
-
-        downloadFolderMap[galleryID] = folder.name
+        downloadFolderMap[galleryID] = name
 
         downloadFolder.getChild(".download").let { if (!it.exists()) it.createNewFile() }
         downloadFolder.getChild(".download").writeText(Json.encodeToString(downloadFolderMap))
+
+        if (folder.exists()) return@launch
+        folder.mkdir()
     }
 
     @Synchronized
