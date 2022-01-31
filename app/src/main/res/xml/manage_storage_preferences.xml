@@ -28,6 +28,11 @@
         app:title="@string/settings_clear_downloads"/>
 
     <Preference
+        app:key="recover_downloads"
+        app:title="@string/settings_recover_downloads"
+        app:iconSpaceReserved="true"/>
+
+    <Preference
         app:key="clear_history"
         app:title="@string/settings_clear_history"/>
 

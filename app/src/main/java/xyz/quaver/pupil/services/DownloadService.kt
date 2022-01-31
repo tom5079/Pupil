@@ -329,9 +329,8 @@ class DownloadService : Service() {
         }
 
         if (isCompleted(galleryID)) {
-            if (DownloadManager.getInstance(this@DownloadService)
-                    .getDownloadFolder(galleryID) != null )
-                Cache.getInstance(this@DownloadService, galleryID).moveToDownload()
+            DownloadManager.getInstance(this@DownloadService).addDownloadFolder(galleryID)
+            Cache.getInstance(this@DownloadService, galleryID).moveToDownload()
 
             notificationManager.cancel(galleryID)
             startId?.let { stopSelf(it) }

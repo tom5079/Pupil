@@ -84,7 +84,6 @@ lateinit var webView: WebView
 val _webViewFlow = MutableSharedFlow<Pair<String, String?>>()
 val webViewFlow = _webViewFlow.asSharedFlow()
 var webViewReady = false
-var webViewFailed = false
 var oldWebView = false
 private var reloadJob: Job? = null
 
@@ -93,7 +92,6 @@ fun reloadWebView() {
 
     reloadJob = CoroutineScope(Dispatchers.IO).launch {
         webViewReady = false
-        webViewFailed = false
         oldWebView = false
 
         evaluationContext.cancelChildren(CancellationException("reload"))
@@ -105,8 +103,6 @@ fun reloadWebView() {
                 else
                     "https://tom5079.github.io/PupilSources/hitomi.html"
             ).readText()
-        }.onFailure {
-            webViewFailed = true
         }.getOrNull()?.let { html ->
             launch(Dispatchers.Main) {
                 webView.loadDataWithBaseURL(
@@ -125,7 +121,7 @@ private var htmlVersion: String = ""
 fun reloadWhenFailedOrUpdate() = CoroutineScope(Dispatchers.Default).launch {
     while (true) {
         if (
-            (webViewFailed && !oldWebView) ||
+            (!webViewReady && !oldWebView) ||
             runCatching {
                 URL(
                     if (BuildConfig.DEBUG)
@@ -142,7 +138,7 @@ fun reloadWhenFailedOrUpdate() = CoroutineScope(Dispatchers.Default).launch {
             reloadWebView()
         }
 
-        delay(if (webViewReady && !webViewFailed) 10000 else 1000)
+        delay(if (webViewReady) 10000 else 1000)
     }
 }
 
@@ -160,12 +156,11 @@ fun initWebView(context: Context) {
 
         webViewClient = object: WebViewClient() {
             override fun onPageFinished(view: WebView?, url: String?) {
-                webView.evaluateJavascript("self_test()") {
+                webView.evaluateJavascript("try { self_test() } catch (err) { 'err' }") {
                     val result: String = Json.decodeFromString(it)
 
                     oldWebView = result == "es2020_unsupported";
                     webViewReady = result == "OK";
-                    webViewFailed = result != "OK";
                 }
             }
 

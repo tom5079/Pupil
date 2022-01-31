@@ -48,12 +48,12 @@ val json = Json {
     useArrayPolymorphism = true
 }
 
-suspend inline fun <reified T> WebView.evaluate(script: String): T = coroutineScope {
+suspend inline fun <reified T> WebView.evaluate(script: String): T = coroutineScope { withTimeout(60000) {
     var result: String? = null
 
     while (result == null) {
         try {
-            while (!oldWebView && !(webViewReady && !webViewFailed)) delay(100)
+            while (!oldWebView && !webViewReady) delay(1000)
 
             result = if (oldWebView)
                 "null"
@@ -71,18 +71,18 @@ suspend inline fun <reified T> WebView.evaluate(script: String): T = coroutineSc
     }
 
     json.decodeFromString(result)
-}
+} }
 
 @OptIn(ExperimentalCoroutinesApi::class)
 suspend inline fun <reified T> WebView.evaluatePromise(
     script: String,
     then: String = ".then(result => Callback.onResult(%uid, JSON.stringify(result))).catch(err => Callback.onError(%uid, String.raw`$script`, err.message, err.stack))"
-): T = coroutineScope {
+): T = coroutineScope { withTimeout(60000) {
     var result: String? = null
 
     while (result == null) {
         try {
-            while (!oldWebView && !(webViewReady && !webViewFailed)) delay(100)
+            while (!oldWebView && !webViewReady) delay(1000)
 
             result = if (oldWebView)
                 "null"
@@ -108,7 +108,7 @@ suspend inline fun <reified T> WebView.evaluatePromise(
     }
 
     json.decodeFromString(result)
-}
+} }
 
 @Suppress("EXPERIMENTAL_API_USAGE")
 suspend fun getGalleryInfo(galleryID: Int): GalleryInfo =

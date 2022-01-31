@@ -21,7 +21,6 @@ package xyz.quaver.pupil.util.downloader
 import android.content.Context
 import android.content.ContextWrapper
 import android.net.Uri
-import android.util.Log
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -40,7 +39,6 @@ import xyz.quaver.pupil.hitomi.GalleryBlock
 import xyz.quaver.pupil.hitomi.GalleryInfo
 import xyz.quaver.pupil.hitomi.getGalleryBlock
 import xyz.quaver.pupil.hitomi.getGalleryInfo
-import xyz.quaver.pupil.userAgent
 import java.io.File
 import java.io.IOException
 import java.io.InputStream
@@ -231,6 +229,9 @@ class Cache private constructor(context: Context, val galleryID: Int) : ContextW
             return@launch
 
         (lock[galleryID] ?: Mutex().also { lock[galleryID] = it }).withLock {
+            if (downloadFolder.exists()) downloadFolder.deleteRecursively()
+            downloadFolder.mkdir()
+
             val cacheMetadata = cacheFolder.getChild(".metadata")
             val downloadMetadata = downloadFolder.getChild(".metadata")
 

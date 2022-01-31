@@ -18,22 +18,37 @@
 
 package xyz.quaver.pupil.ui.fragment
 
+import android.graphics.ColorFilter
+import android.graphics.PorterDuff
+import android.graphics.PorterDuffColorFilter
 import android.os.Bundle
+import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
+import androidx.core.content.ContextCompat
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
+import androidx.swiperefreshlayout.widget.CircularProgressDrawable
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import xyz.quaver.io.FileX
+import xyz.quaver.io.SAFileX
 import xyz.quaver.io.util.deleteRecursively
+import xyz.quaver.io.util.getChild
+import xyz.quaver.io.util.readText
+import xyz.quaver.io.util.writeText
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.histories
 import xyz.quaver.pupil.util.byteToString
 import xyz.quaver.pupil.util.downloader.Cache
 import xyz.quaver.pupil.util.downloader.DownloadManager
+import xyz.quaver.pupil.util.downloader.Metadata
 import java.io.File
+import kotlin.math.roundToInt
 
 class ManageStorageFragment : PreferenceFragmentCompat(), Preference.OnPreferenceClickListener {
 
@@ -79,6 +94,46 @@ class ManageStorageFragment : PreferenceFragmentCompat(), Preference.OnPreferenc
                         }
                         setNegativeButton(android.R.string.cancel) { _, _ -> }
                     }.show()
+                }
+                "recover_downloads" -> {
+                    val density = context.resources.displayMetrics.density
+                    this.icon = object: CircularProgressDrawable(context) {
+                        override fun getIntrinsicHeight() = (24*density).roundToInt()
+                        override fun getIntrinsicWidth() = (24*density).roundToInt()
+                    }.apply {
+                        setStyle(CircularProgressDrawable.DEFAULT)
+                        colorFilter = PorterDuffColorFilter(ContextCompat.getColor(context, R.color.colorAccent), PorterDuff.Mode.SRC_IN)
+                        start()
+                    }
+
+                    val downloadManager = DownloadManager.getInstance(context)
+
+                    val downloadFolderMap = downloadManager.downloadFolderMap
+
+                    downloadFolderMap.clear()
+
+                    downloadManager.downloadFolder.listFiles { file -> file.isDirectory }?.forEach { folder ->
+                        val metadataFile = FileX(context, folder, ".metadata")
+
+                        if (!metadataFile.exists()) return@forEach
+
+                        val metadata = metadataFile.readText()?.let {
+                            Json.decodeFromString<Metadata>(it)
+                        } ?: return@forEach
+
+                        val galleryID = metadata.galleryBlock?.id ?: metadata.galleryInfo?.id ?: return@forEach
+
+                        downloadFolderMap[galleryID] = folder.name
+                    }
+
+                    downloadManager.downloadFolderMap.putAll(downloadFolderMap)
+                    val downloads = FileX(context, downloadManager.downloadFolder, ".download")
+
+                    if (!downloads.exists()) downloads.createNewFile()
+                    downloads.writeText(Json.encodeToString(downloadFolderMap))
+
+                    this.icon = null
+                    Toast.makeText(context, android.R.string.ok, Toast.LENGTH_SHORT).show()
                 }
                 "delete_downloads" -> {
                     val dir = DownloadManager.getInstance(context).downloadFolder
@@ -188,6 +243,12 @@ class ManageStorageFragment : PreferenceFragmentCompat(), Preference.OnPreferenc
             this ?: return@with
 
             summary = context.getString(R.string.settings_clear_history_summary, histories.size)
+
+            onPreferenceClickListener = this@ManageStorageFragment
+        }
+
+        with(findPreference<Preference>("recover_downloads")) {
+            this ?: return@with
 
             onPreferenceClickListener = this@ManageStorageFragment
         }
