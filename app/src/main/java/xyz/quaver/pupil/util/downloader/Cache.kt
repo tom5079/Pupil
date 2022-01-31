@@ -229,8 +229,10 @@ class Cache private constructor(context: Context, val galleryID: Int) : ContextW
             return@launch
 
         (lock[galleryID] ?: Mutex().also { lock[galleryID] = it }).withLock {
-            if (downloadFolder.exists()) downloadFolder.deleteRecursively()
-            downloadFolder.mkdir()
+            if (downloadFolder.exists() && downloadFolder.list().isNullOrEmpty()) {
+                downloadFolder.deleteRecursively()
+                downloadFolder.mkdir()
+            }
 
             val cacheMetadata = cacheFolder.getChild(".metadata")
             val downloadMetadata = downloadFolder.getChild(".metadata")
