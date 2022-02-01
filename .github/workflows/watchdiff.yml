@@ -20,4 +20,4 @@ jobs:
         run: |
             git config --global user.name 'Watchdiff bot'
             git config --global user.email 'tom5079@naver.com'
-            { git add . && git commit -m "File update" && git push; } | tail -1 | grep -q "nothing to commit"
+            { git add . && git commit -m "File update" && git push; } | tail -1 | grep -q "nothing to commit" || curl -i -H "Accept: application/json" -H "Content-Type:application/json" -X POST --data "{\"content\": \"<@&938174944305610792> :bell: :bell: :bell: :bell: :bell: :bell: :bell: :bell: \`\`\`$(git diff HEAD^ HEAD --stat | sed -z 's/\n/\\n/g')\`\`\`\"}" ${{ secrets.DISCORD_WEBHOOK }} && $(exit 1)
