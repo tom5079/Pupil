@@ -16,31 +16,81 @@
 
 package xyz.quaver.pupil.hitomi
 
-import android.util.Log
-import android.webkit.WebView
-import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.transformWhile
-import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import xyz.quaver.pupil.*
-import java.util.*
-import kotlin.coroutines.resume
-import kotlin.coroutines.suspendCoroutine
+import okhttp3.Request
+import xyz.quaver.pupil.client
+import xyz.quaver.pupil.runtime
+import java.io.IOException
+import java.net.URL
+import java.util.concurrent.Executors
 
 const val protocol = "https:"
 
-val evaluationContext = Dispatchers.Main + Job()
+@Serializable
+data class Artist(
+    val artist: String,
+    val url: String
+)
 
-/**
- * kotlinx.serialization.json.Json object for global use
- * properties should not be changed
- *
- * @see [https://kotlin.github.io/kotlinx.serialization/kotlinx-serialization-core/kotlinx-serialization-core/kotlinx.serialization.json/-json/index.html]
- */
+@Serializable
+data class Group(
+    val group: String,
+    val url: String
+)
+
+@Serializable
+data class Parody(
+    val parody: String,
+    val url: String
+)
+
+@Serializable
+data class Character(
+    val character: String,
+    val url: String
+)
+
+@Serializable
+data class Tag(
+    val tag: String,
+    val url: String,
+    val female: String? = null,
+    val male: String? = null
+)
+
+@Serializable
+data class Language(
+    val galleryid: String,
+    val url: String,
+    val language_localname: String,
+    val name: String
+)
+
+@Serializable
+data class GalleryInfo(
+    val id: String,
+    val title: String,
+    val japanese_title: String? = null,
+    val language: String? = null,
+    val type: String,
+    val date: String,
+    val artists: List<Artist>? = null,
+    val groups: List<Group>? = null,
+    val parodys: List<Parody>? = null,
+    val tags: List<Tag>? = null,
+    val related: List<Int>,
+    val languages: List<Language>,
+    val characters: List<Character>? = null,
+    val scene_indexes: List<Int>,
+    val files: List<GalleryFiles>
+)
+
 val json = Json {
     isLenient = true
     ignoreUnknownKeys = true
@@ -48,89 +98,103 @@ val json = Json {
     useArrayPolymorphism = true
 }
 
-suspend inline fun <reified T> WebView.evaluate(script: String): T = coroutineScope { withTimeout(60000) {
-    var result: String? = null
+typealias HeaderSetter = (Request.Builder) -> Request.Builder
+fun URL.readText(settings: HeaderSetter? = null): String {
+    val request = Request.Builder()
+        .url(this).let {
+            settings?.invoke(it) ?: it
+        }.build()
 
-    while (result == null) {
-        try {
-            while (!oldWebView && !webViewReady) delay(1000)
+    return client.newCall(request).execute().also{ if (it.code() != 200) throw IOException("CODE ${it.code()}") }.body()?.use { it.string() } ?: throw IOException()
+}
 
-            result = if (oldWebView)
-                "null"
-            else withContext(evaluationContext) {
-                suspendCoroutine { continuation ->
-                    evaluateJavascript(script) {
-                        continuation.resume(it)
-                    }
-                }
+fun URL.readBytes(settings: HeaderSetter? = null): ByteArray {
+    val request = Request.Builder()
+        .url(this).let {
+            settings?.invoke(it) ?: it
+        }.build()
 
-            }
-        } catch (e: CancellationException) {
-            if (e.message != "reload") result = "null"
-        }
-    }
-
-    json.decodeFromString(result)
-} }
-
-@OptIn(ExperimentalCoroutinesApi::class)
-suspend inline fun <reified T> WebView.evaluatePromise(
-    script: String,
-    then: String = ".then(result => Callback.onResult(%uid, JSON.stringify(result))).catch(err => Callback.onError(%uid, String.raw`$script`, err.message, err.stack))"
-): T = coroutineScope { withTimeout(60000) {
-    var result: String? = null
-
-    while (result == null) {
-        try {
-            while (!oldWebView && !webViewReady) delay(1000)
-
-            result = if (oldWebView)
-                "null"
-            else withContext(evaluationContext) {
-                val uid = UUID.randomUUID().toString()
-
-                val flow: Flow<Pair<String, String?>> = webViewFlow.transformWhile { (currentUid, result) ->
-                    if (currentUid == uid) {
-                        emit(currentUid to result)
-                    }
-                    currentUid != uid
-                }
-
-                launch {
-                    evaluateJavascript((script + then).replace("%uid", "'$uid'"), null)
-                }
-
-                flow.first().second
-            }
-        } catch (e: CancellationException) {
-            if (e.message != "reload") result = "null"
-        }
-    }
-
-    json.decodeFromString(result)
-} }
+    return client.newCall(request).execute().also { if (it.code() != 200) throw IOException("CODE ${it.code()}") }.body()?.use { it.bytes() } ?: throw IOException()
+}
 
 @Suppress("EXPERIMENTAL_API_USAGE")
-suspend fun getGalleryInfo(galleryID: Int): GalleryInfo =
-    webView.evaluatePromise("get_gallery_info($galleryID)")
+fun getGalleryInfo(galleryID: Int) =
+    json.decodeFromString<GalleryInfo>(
+        URL("$protocol//$domain/galleries/$galleryID.js").readText()
+            .replace("var galleryinfo = ", "")
+    )
 
 //common.js
 const val domain = "ltn.hitomi.la"
+const val galleryblockextension = ".html"
+const val galleryblockdir = "galleryblock"
+const val nozomiextension = ".nozomi"
 
-val String?.js: String
-    get() = if (this == null) "null" else "'$this'"
+val evaluationContext = Executors.newSingleThreadExecutor().asCoroutineDispatcher() + Job()
 
-@OptIn(ExperimentalSerializationApi::class)
-suspend fun urlFromUrlFromHash(galleryID: Int, image: GalleryFiles, dir: String? = null, ext: String? = null, base: String? = null): String =
-    webView.evaluate(
-        """
-        url_from_url_from_hash(
-            ${galleryID.toString().js},
-            ${Json.encodeToString(image)},
-            ${dir.js}, ${ext.js}, ${base.js}
-        )
-        """.trimIndent()
-    )
+object gg {
+
+    suspend fun m(g: Int): Int = withContext(evaluationContext) {
+        runtime.evaluate("gg.m($g)").toString().toInt()
+    }
+    suspend fun b(): String = withContext(evaluationContext) {
+        runtime.evaluate("gg.b").toString()
+    }
+
+    suspend fun s(h: String): String = withContext(evaluationContext) {
+        runtime.evaluate("gg.s('$h')").toString()
+    }
+}
+
+suspend fun subdomainFromURL(url: String, base: String? = null) : String {
+    var retval = "b"
+
+    if (!base.isNullOrBlank())
+        retval = base
+
+    val b = 16
+
+    val r = Regex("""/[0-9a-f]{61}([0-9a-f]{2})([0-9a-f])""")
+    val m = r.find(url) ?: return "a"
+
+    val g = m.groupValues.let { it[2]+it[1] }.toIntOrNull(b)
+
+    if (g != null) {
+        retval = (97+ gg.m(g)).toChar().toString() + retval
+    }
+
+    return retval
+}
+
+suspend fun urlFromUrl(url: String, base: String? = null) : String {
+    return url.replace(Regex("""//..?\.hitomi\.la/"""), "//${subdomainFromURL(url, base)}.hitomi.la/")
+}
+
+suspend fun fullPathFromHash(hash: String) : String =
+    "${gg.b()}${gg.s(hash)}/$hash"
+
+fun realFullPathFromHash(hash: String): String =
+    hash.replace(Regex("""^.*(..)(.)$"""), "$2/$1/$hash")
+
+suspend fun urlFromHash(galleryID: Int, image: GalleryFiles, dir: String? = null, ext: String? = null) : String {
+    val ext = ext ?: dir ?: image.name.takeLastWhile { it != '.' }
+    val dir = dir ?: "images"
+    return "https://a.hitomi.la/$dir/${fullPathFromHash(image.hash)}.$ext"
+}
+
+suspend fun urlFromUrlFromHash(galleryID: Int, image: GalleryFiles, dir: String? = null, ext: String? = null, base: String? = null) =
+    if (base == "tn")
+        urlFromUrl("https://a.hitomi.la/$dir/${realFullPathFromHash(image.hash)}.$ext", base)
+    else
+        urlFromUrl(urlFromHash(galleryID, image, dir, ext), base)
+
+suspend fun rewriteTnPaths(html: String) {
+    html.replace(Regex("""//tn\.hitomi\.la/[^/]+/[0-9a-f]/[0-9a-f]{2}/[0-9a-f]{64}""")) { url ->
+        runBlocking {
+            urlFromUrl(url.value, "tn")
+        }
+    }
+}
 
 suspend fun imageUrlFromImage(galleryID: Int, image: GalleryFiles, noWebp: Boolean) : String {
     return when {

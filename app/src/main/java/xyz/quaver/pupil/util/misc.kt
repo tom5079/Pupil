@@ -25,9 +25,7 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import xyz.quaver.pupil.hitomi.GalleryBlock
 import xyz.quaver.pupil.hitomi.GalleryInfo
-import xyz.quaver.pupil.hitomi.getReferer
 import xyz.quaver.pupil.hitomi.imageUrlFromImage
-import xyz.quaver.pupil.userAgent
 import java.util.*
 import kotlin.collections.ArrayList
 
@@ -79,7 +77,8 @@ fun OkHttpClient.Builder.proxyInfo(proxyInfo: ProxyInfo) = this.apply {
 val formatMap = mapOf<String, GalleryBlock.() -> (String)>(
     "-id-" to { id.toString() },
     "-title-" to { title },
-    "-artist-" to { artists.joinToString() }
+    "-artist-" to { artists.joinToString() },
+    "-group-" to { groups.joinToString() }
     // TODO
 )
 /**
@@ -100,7 +99,7 @@ fun GalleryBlock.formatDownloadFolderTest(format: String): String =
     }.replace(Regex("""[*\\|"?><:/]"""), "").ellipsize(127)
 
 suspend fun GalleryInfo.getRequestBuilders(): List<Request.Builder> {
-    val galleryID = this.id ?: 0
+    val galleryID = this.id.toIntOrNull() ?: 0
     val lowQuality = Preferences["low_quality", true]
 
     return this.files.map {
@@ -115,7 +114,6 @@ suspend fun GalleryInfo.getRequestBuilders(): List<Request.Builder> {
                 .getOrDefault("https://a/")
             )
             .header("Referer", "https://hitomi.la/")
-            .header("User-Agent", userAgent)
     }
 }
 

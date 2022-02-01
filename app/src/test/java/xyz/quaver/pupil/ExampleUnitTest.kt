@@ -26,15 +26,8 @@ package xyz.quaver.pupil
  * See [testing documentation](http://d.android.com/tools/testing).
  */
 
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import org.junit.Assert.assertEquals
-import org.junit.Before
 import org.junit.Test
-import xyz.quaver.pupil.hitomi.getGalleryInfo
-import xyz.quaver.pupil.hitomi.imageUrlFromImage
 import java.lang.reflect.ParameterizedType
-import java.util.concurrent.TimeUnit
 
 class ExampleUnitTest {
     @Test

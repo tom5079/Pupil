@@ -38,7 +38,7 @@ android {
         minSdkVersion 16
         targetSdkVersion 31
         versionCode 69
-        versionName "5.2.25"
+        versionName "5.3.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
     }
@@ -67,12 +67,12 @@ android {
         viewBinding true
     }
     kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_1_8.toString()
+        jvmTarget = JavaVersion.VERSION_11.toString()
         freeCompilerArgs += "-Xuse-experimental=kotlin.Experimental"
     }
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
     }
 }
 
@@ -91,7 +91,6 @@ dependencies {
     implementation "androidx.gridlayout:gridlayout:1.0.0"
     implementation "androidx.biometric:biometric:1.1.0"
     implementation "androidx.work:work-runtime-ktx:2.7.1"
-    implementation 'androidx.webkit:webkit:1.4.0'
 
     implementation "com.daimajia.swipelayout:library:1.2.0@aar"
 
@@ -128,6 +127,10 @@ dependencies {
     implementation "ru.noties.markwon:core:3.1.0"
 
     implementation "org.jsoup:jsoup:1.14.3"
+
+    implementation ("app.cash.zipline:zipline:1.0.0-SNAPSHOT") {
+        exclude group: "com.squareup.okio", module: "okio"
+    }
 
     implementation "xyz.quaver:documentfilex:0.7.2"
     implementation "xyz.quaver:floatingsearchview:1.1.7"

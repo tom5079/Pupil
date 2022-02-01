@@ -59,37 +59,11 @@ data class OldGalleryBlock(
 )
 
 @Serializable
-data class OldReader(val code: String, val galleryInfo: GalleryInfo)
-
-@Serializable
-data class OldMetadata(
-    var galleryBlock: OldGalleryBlock? = null,
-    var reader: OldReader? = null,
-    var imageList: MutableList<String?>? = null
-) {
-    fun copy(): OldMetadata = OldMetadata(galleryBlock, reader, imageList?.let { MutableList(it.size) { i -> it[i] } })
-}
-
-@Serializable
 data class Metadata(
     var galleryBlock: GalleryBlock? = null,
     var galleryInfo: GalleryInfo? = null,
     var imageList: MutableList<String?>? = null
 ) {
-    constructor(old: OldMetadata) : this(old.galleryBlock?.let { galleryBlock -> GalleryBlock(
-        galleryBlock.id,
-        galleryBlock.galleryUrl,
-        galleryBlock.thumbnails,
-        galleryBlock.title,
-        galleryBlock.artists,
-        galleryBlock.series,
-        galleryBlock.type,
-        galleryBlock.language,
-        galleryBlock.relatedTags) },
-        old.reader?.galleryInfo,
-        old.imageList
-    )
-
     fun copy(): Metadata = Metadata(galleryBlock, galleryInfo, imageList?.let { MutableList(it.size) { i -> it[i] } })
 }
 
@@ -116,11 +90,7 @@ class Cache private constructor(context: Context, val galleryID: Int) : ContextW
 
     var metadata = kotlin.runCatching {
         findFile(".metadata")?.readText()?.let { metadata ->
-            kotlin.runCatching {
-                Json.decodeFromString<Metadata>(metadata)
-            }.getOrElse {
-                Metadata(Json.decodeFromString<OldMetadata>(metadata))
-            }
+            Json.decodeFromString<Metadata>(metadata)
         }
     }.getOrNull() ?: Metadata()
 

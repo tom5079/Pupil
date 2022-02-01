@@ -17,14 +17,11 @@
 package xyz.quaver.pupil.hitomi
 
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.decodeFromString
-import kotlinx.serialization.json.Json
-import xyz.quaver.pupil.webView
 
 @Serializable
 data class Gallery(
     val related: List<Int>,
-    val langList: Map<String, String>,
+    val langList: List<Pair<String, String>>,
     val cover: String,
     val title: String,
     val artists: List<String>,
@@ -36,5 +33,22 @@ data class Gallery(
     val tags: List<String>,
     val thumbnails: List<String>
 )
-suspend fun getGallery(galleryID: Int) : Gallery =
-    webView.evaluatePromise("get_gallery($galleryID)")
+
+suspend fun getGallery(galleryID: Int) : Gallery {
+    val info = getGalleryInfo(galleryID)
+
+    return Gallery(
+        info.related,
+        info.languages.map { it.name to it.galleryid },
+        urlFromUrlFromHash(galleryID, info.files.first(), "webpbigtn", "webp", "tn"),
+        info.title,
+        info.artists?.map { it.artist }.orEmpty(),
+        info.groups?.map { it.group }.orEmpty(),
+        info.type,
+        info.language.orEmpty(),
+        info.parodys?.map { it.parody }.orEmpty(),
+        info.characters?.map { it.character }.orEmpty(),
+        info.tags?.map { "${if (it.female.isNullOrEmpty()) "" else "female:"}${if (it.male.isNullOrEmpty()) "" else "male:"}${it.tag}" }.orEmpty(),
+        info.files.map { urlFromUrlFromHash(galleryID, it, "webpsmalltn", "webp", "tn") }
+    )
+}

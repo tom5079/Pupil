@@ -20,18 +20,18 @@
 
 package xyz.quaver.pupil
 
-import android.os.Build
 import android.util.Log
-import android.webkit.*
-import android.widget.Toast
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.test.platform.app.InstrumentationRegistry
-import com.google.firebase.crashlytics.FirebaseCrashlytics
-import kotlinx.coroutines.*
+import kotlinx.coroutines.runBlocking
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import xyz.quaver.pupil.hitomi.*
+import java.util.*
+import java.util.concurrent.TimeUnit
 
 /**
  * Instrumented test, which will execute on an Android device.
@@ -40,81 +40,142 @@ import xyz.quaver.pupil.hitomi.*
  */
 @RunWith(AndroidJUnit4::class)
 class ExampleInstrumentedTest {
+//    @Before
+//    fun init() {
+//        val appContext = InstrumentationRegistry.getInstrumentation().targetContext
+//    }
+
     @Before
     fun init() {
-        val appContext = InstrumentationRegistry.getInstrumentation().targetContext
+        clientBuilder = OkHttpClient.Builder()
+            .readTimeout(0, TimeUnit.SECONDS)
+            .writeTimeout(0, TimeUnit.SECONDS)
+            .callTimeout(0, TimeUnit.SECONDS)
+            .connectTimeout(0, TimeUnit.SECONDS)
+            .addInterceptor { chain ->
+                val request = chain.request().newBuilder()
+                    .header("Referer", "https://hitomi.la/")
+                    .build()
 
-        runBlocking {
-            withContext(Dispatchers.Main) {
-                initWebView(appContext)
+                chain.proceed(request)
             }
-        }
     }
 
     @Test
-    fun test_getGalleryIDsFromNozomi() {
-        runBlocking {
-            val result = getGalleryIDsFromNozomi(null, "boten", "all")
+    fun test_empty() {
+        print(
+            "".trim()
+                .replace(Regex("""^\?"""), "")
+                .lowercase(Locale.getDefault())
+                .split(Regex("\\s+"))
+                .map {
+                    it.replace('_', ' ')
+                })
+    }
+    @Test
+    fun test_nozomi() {
+        val nozomi = getGalleryIDsFromNozomi(null, "index", "all")
 
-            Log.d("PUPILD", "getGalleryIDsFromNozomi: ${result.size}")
-        }
+        Log.d("PUPILD", nozomi.size.toString())
     }
 
     @Test
-    fun test_getGalleryIDsForQuery() {
-        runBlocking {
-            val result = getGalleryIDsForQuery("female:crotch tattoo")
+    fun test_search() {
+        val ids = getGalleryIDsForQuery("language:korean").reversed()
 
-            Log.d("PUPILD", "getGalleryIDsForQuery: ${result.size}")
-        }
+        print(ids.size)
     }
 
     @Test
-    fun test_getSuggestionsForQuery() {
-        runBlocking {
-            val result = getSuggestionsForQuery("fem")
+    fun test_suggestions() {
+        val suggestions = getSuggestionsForQuery("language:g")
 
-            Log.d("PUPILD", "getSuggestionsForQuery: ${result.size}")
+        print(suggestions)
+    }
+
+    @Test
+    fun test_doSearch() {
+        val r = runBlocking {
+            doSearch("language:korean")
+        }
+
+        Log.d("PUPILD", r.take(10).toString())
+    }
+
+    @Test
+    fun test_getBlock() {
+        val galleryBlock = getGalleryBlock(2097576)
+
+        print(galleryBlock)
+    }
+
+    @Test
+    fun test_getGallery() {
+        val gallery = getGallery(2097751)
+
+        print(gallery)
+    }
+
+    @Test
+    fun test_getGalleryInfo() {
+        val info = getGalleryInfo(1469394)
+
+        print(info)
+    }
+
+    @Test
+    fun test_getReader() {
+        val reader = getGalleryInfo(1722144)
+
+        print(reader)
+    }
+
+    @Test
+    fun test_getImages() {
+        val galleryID = 2099306
+
+        val images = getGalleryInfo(galleryID).files.map {
+            imageUrlFromImage(galleryID, it,false)
+        }
+
+        images.forEachIndexed { index, image ->
+            println("Testing $index/${images.size}: $image")
+            val response = client.newCall(
+                Request.Builder()
+                    .url(image)
+                    .header("Referer", "https://hitomi.la/")
+                    .build()
+            ).execute()
+
+            assertEquals(200, response.code())
+
+            println("$index/${images.size} Passed")
         }
     }
 
     @Test
     fun test_urlFromUrlFromHash() {
-        runBlocking {
-            val galleryInfo = getGalleryInfo(2102416)
+        val url = urlFromUrlFromHash(1531795, GalleryFiles(
+            212, "719d46a7556be0d0021c5105878507129b5b3308b02cf67f18901b69dbb3b5ef", 1, "00.jpg", 300
+        ), "webp")
 
-            val result = galleryInfo.files.map {
-                imageUrlFromImage(2102416, it, false)
-            }
-
-            Log.d("PUPILD", result.toString())
-        }
+        print(url)
     }
 
-    @Test
-    fun test_getGalleryInfo() {
-        runBlocking {
-            val galleryInfo = getGalleryInfo(2102416)
+//    @Test
+//    suspend fun test_doSearch_extreme() {
+//        val query = "language:korean -tag:sample -female:humiliation -female:diaper -female:strap-on -female:squirting -female:lizard_girl -female:voyeurism -type:artistcg -female:blood -female:ryona -male:blood -male:ryona -female:crotch_tattoo -male:urethra_insertion -female:living_clothes -male:tentacles -female:slave -female:gag -male:gag -female:wooden_horse -male:exhibitionism -male:miniguy -female:mind_break -male:mind_break -male:unbirth -tag:scanmark -tag:no_penetration -tag:nudity_only -female:enema -female:brain_fuck -female:navel_fuck -tag:novel -tag:mosaic_censorship -tag:webtoon -male:rape -female:rape -female:yuri -male:anal -female:anal -female:futanari -female:huge_breasts -female:big_areolae -male:torture -male:stuck_in_wall -female:stuck_in_wall -female:torture -female:birth -female:pregnant -female:drugs -female:bdsm -female:body_writing -female:cbt -male:dark_skin -male:insect -female:insect -male:vore -female:vore -female:vomit -female:urination -female:urethra_insertion -tag:mmf_threesome -female:sex_toys -female:double_penetration -female:eggs -female:prolapse -male:smell -male:bestiality -female:bestiality -female:big_ass -female:milf -female:mother -male:dilf -male:netorare -female:netorare -female:cosplaying -female:filming -female:armpit_sex -female:armpit_licking -female:tickling -female:lactation -male:skinsuit -female:skinsuit -male:bbm -female:prostitution -female:double_penetration -female:females_only -male:males_only -female:tentacles -female:tentacles -female:stomach_deformation -female:hairy_armpits -female:large_insertions -female:mind_control -male:orc -female:dark_skin -male:yandere -female:yandere -female:scat -female:toddlercon -female:bbw -female:hairy -male:cuntboy -male:lactation -male:drugs -female:body_modification -female:monoeye -female:chikan -female:long_tongue -female:harness -female:fisting -female:glory_hole -female:latex -male:latex -female:unbirth -female:giantess -female:sole_dickgirl -female:robot -female:doll_joints -female:machine -tag:artbook -male:cbt -female:farting -male:farting -male:midget -female:midget -female:exhibitionism  -male:monster -female:big_nipples -female:big_clit -female:gyaru -female:piercing -female:necrophilia -female:snuff -female:smell -male:cheating -female:cheating -male:snuff -female:harem -male:harem"
+//        print(doSearch(query).size)
+//    }
 
-            Log.d("PUPILD", galleryInfo.toString())
-        }
-    }
-
-    @Test
-    fun test_getGallery() {
-        runBlocking {
-            val gallery = getGallery(2109479)
-
-            Log.d("PUPILD", gallery.toString())
-        }
-    }
+//    @Test
+//    suspend fun test_parse() {
+//        print(doSearch("-male:yaoi -female:yaoi -female:loli").size)
+//    }
 
     @Test
-    fun test_getGalleryBlock() {
-        runBlocking {
-            val block = getGalleryBlock(2119310)
-
-            Log.d("PUPILD", block.toString())
-        }
+    fun test_subdomainFromUrl() {
+        val galleryInfo = getGalleryInfo(1929109).files[2]
+        print(urlFromUrlFromHash(1929109, galleryInfo, "webp", null, "a"))
     }
 }
