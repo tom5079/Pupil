@@ -71,7 +71,7 @@ data class GalleryBlock(
     val type: String,
     val language: String,
     val relatedTags: List<String>,
-    val groups: List<String>
+    val groups: List<String> = emptyList()
 )
 
 suspend fun getGalleryBlock(galleryID: Int) : GalleryBlock {

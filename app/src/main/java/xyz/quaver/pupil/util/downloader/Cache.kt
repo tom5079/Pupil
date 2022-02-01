@@ -21,12 +21,9 @@ package xyz.quaver.pupil.util.downloader
 import android.content.Context
 import android.content.ContextWrapper
 import android.net.Uri
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
@@ -35,28 +32,42 @@ import okhttp3.Request
 import xyz.quaver.io.FileX
 import xyz.quaver.io.util.*
 import xyz.quaver.pupil.client
-import xyz.quaver.pupil.hitomi.GalleryBlock
-import xyz.quaver.pupil.hitomi.GalleryInfo
-import xyz.quaver.pupil.hitomi.getGalleryBlock
-import xyz.quaver.pupil.hitomi.getGalleryInfo
+import xyz.quaver.pupil.hitomi.*
 import java.io.File
 import java.io.IOException
 import java.io.InputStream
 import java.util.concurrent.ConcurrentHashMap
 
 @Serializable
-data class OldGalleryBlock(
-    val code: String,
-    val id: Int,
-    val galleryUrl: String,
-    val thumbnails: List<String>,
-    val title: String,
-    val artists: List<String>,
-    val series: List<String>,
-    val type: String,
-    val language: String,
-    val relatedTags: List<String>
+data class OldGalleryInfo(
+    val language_localname: String? = null,
+    val language: String? = null,
+    val date: String? = null,
+    val files: List<OldGalleryFiles>,
+    val id: Int? = null,
+    val type: String? = null,
+    val title: String? = null
 )
+
+@Serializable
+data class OldGalleryFiles(
+    val width: Int,
+    val hash: String,
+    val haswebp: Int = 0,
+    val name: String,
+    val height: Int,
+    val hasavif: Int = 0,
+    val hasavifsmalltn: Int? = 0
+)
+
+@Serializable
+data class OldMetadata(
+    var galleryBlock: GalleryBlock? = null,
+    var reader: OldGalleryInfo? = null,
+    var imageList: MutableList<String?>? = null
+) {
+    fun copy(): OldMetadata = OldMetadata(galleryBlock, reader, imageList?.let { MutableList(it.size) { i -> it[i] } })
+}
 
 @Serializable
 data class Metadata(
@@ -64,6 +75,7 @@ data class Metadata(
     var galleryInfo: GalleryInfo? = null,
     var imageList: MutableList<String?>? = null
 ) {
+    constructor(old: OldMetadata) : this(old.galleryBlock, getGalleryInfo(old.galleryBlock?.id ?: throw Exception()), old.imageList)
     fun copy(): Metadata = Metadata(galleryBlock, galleryInfo, imageList?.let { MutableList(it.size) { i -> it[i] } })
 }
 
@@ -90,9 +102,13 @@ class Cache private constructor(context: Context, val galleryID: Int) : ContextW
 
     var metadata = kotlin.runCatching {
         findFile(".metadata")?.readText()?.let { metadata ->
-            Json.decodeFromString<Metadata>(metadata)
+            kotlin.runCatching {
+                json.decodeFromString<Metadata>(metadata)
+            }.getOrElse {
+                Metadata(json.decodeFromString<OldMetadata>(metadata))
+            }
         }
-    }.getOrNull() ?: Metadata()
+    }.onFailure { it.printStackTrace() }.getOrNull() ?: Metadata()
 
     val downloadFolder: FileX?
         get() = DownloadManager.getInstance(this).getDownloadFolder(galleryID)
@@ -179,14 +195,11 @@ class Cache private constructor(context: Context, val galleryID: Int) : ContextW
         metadata.imageList?.getOrNull(index)?.let { findFile(it) }
 
     @Suppress("BlockingMethodInNonBlockingContext")
-    fun putImage(index: Int, fileName: String, data: InputStream) {
+    suspend fun putImage(index: Int, fileName: String, data: ByteArray) = coroutineScope {
         val file = cacheFolder.getChild(fileName)
 
         if (!file.exists())
             file.createNewFile()
-        file.outputStream()?.use {
-            data.copyTo(it)
-        }
         setMetadata { metadata -> metadata.imageList!![index] = fileName }
     }
 

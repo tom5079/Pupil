@@ -43,6 +43,7 @@ import xyz.quaver.io.util.readText
 import xyz.quaver.io.util.writeText
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.histories
+import xyz.quaver.pupil.hitomi.json
 import xyz.quaver.pupil.util.byteToString
 import xyz.quaver.pupil.util.downloader.Cache
 import xyz.quaver.pupil.util.downloader.DownloadManager
@@ -118,7 +119,7 @@ class ManageStorageFragment : PreferenceFragmentCompat(), Preference.OnPreferenc
                         if (!metadataFile.exists()) return@forEach
 
                         val metadata = metadataFile.readText()?.let {
-                            Json.decodeFromString<Metadata>(it)
+                            json.decodeFromString<Metadata>(it)
                         } ?: return@forEach
 
                         val galleryID = metadata.galleryBlock?.id ?: metadata.galleryInfo?.id?.toIntOrNull() ?: return@forEach

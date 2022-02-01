@@ -84,7 +84,6 @@ lateinit var runtime: QuickJs
     private set
 
 class Pupil : Application() {
-
     companion object {
         lateinit var instance: Pupil
             private set

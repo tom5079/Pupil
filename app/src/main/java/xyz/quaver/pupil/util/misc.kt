@@ -77,8 +77,8 @@ fun OkHttpClient.Builder.proxyInfo(proxyInfo: ProxyInfo) = this.apply {
 val formatMap = mapOf<String, GalleryBlock.() -> (String)>(
     "-id-" to { id.toString() },
     "-title-" to { title },
-    "-artist-" to { artists.joinToString() },
-    "-group-" to { groups.joinToString() }
+    "-artist-" to { if (artists.isNotEmpty()) artists.joinToString() else "N/A" },
+    "-group-" to { if (groups.isNotEmpty()) groups.joinToString() else "N/A" }
     // TODO
 )
 /**
