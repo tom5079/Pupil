@@ -100,13 +100,11 @@ fun GalleryBlock.formatDownloadFolderTest(format: String): String =
 
 suspend fun GalleryInfo.getRequestBuilders(): List<Request.Builder> {
     val galleryID = this.id.toIntOrNull() ?: 0
-    val lowQuality = Preferences["low_quality", true]
-
     return this.files.map {
         Request.Builder()
             .url(
                 runCatching {
-                    imageUrlFromImage(galleryID, it, !lowQuality)
+                    imageUrlFromImage(galleryID, it, false)
                 }
                 .onFailure {
                     FirebaseCrashlytics.getInstance().recordException(it)

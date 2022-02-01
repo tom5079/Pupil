@@ -200,6 +200,8 @@ class Cache private constructor(context: Context, val galleryID: Int) : ContextW
 
         if (!file.exists())
             file.createNewFile()
+
+        file.writeBytes(data)
         setMetadata { metadata -> metadata.imageList!![index] = fileName }
     }
 
