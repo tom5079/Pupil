@@ -17,7 +17,48 @@
 package xyz.quaver.pupil.hitomi
 
 import kotlinx.serialization.Serializable
-import xyz.quaver.pupil.webView
+import org.jsoup.Jsoup
+import java.net.URL
+import java.net.URLDecoder
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
+import javax.net.ssl.HttpsURLConnection
+import kotlin.io.readText
+
+//galleryblock.js
+fun fetchNozomi(area: String? = null, tag: String = "index", language: String = "all", start: Int = -1, count: Int = -1) : Pair<List<Int>, Int> {
+    val url = when(area) {
+        null -> "$protocol//$domain/$tag-$language$nozomiextension"
+        else -> "$protocol//$domain/$area/$tag-$language$nozomiextension"
+    }
+
+    with(URL(url).openConnection() as HttpsURLConnection) {
+        requestMethod = "GET"
+
+        if (start != -1 && count != -1) {
+            val startByte = start*4
+            val endByte = (start+count)*4-1
+
+            setRequestProperty("Range", "bytes=$startByte-$endByte")
+        }
+
+        connect()
+
+        val totalItems = getHeaderField("Content-Range")
+            .replace(Regex("^[Bb]ytes \\d+-\\d+/"), "").toInt() / 4
+
+        val nozomi = ArrayList<Int>()
+
+        val arrayBuffer = ByteBuffer
+            .wrap(inputStream.readBytes())
+            .order(ByteOrder.BIG_ENDIAN)
+
+        while (arrayBuffer.hasRemaining())
+            nozomi.add(arrayBuffer.int)
+
+        return Pair(nozomi, totalItems)
+    }
+}
 
 @Serializable
 data class GalleryBlock(
@@ -28,9 +69,24 @@ data class GalleryBlock(
     val artists: List<String>,
     val series: List<String>,
     val type: String,
-    val language: String?,
-    val relatedTags: List<String>
+    val language: String,
+    val relatedTags: List<String>,
+    val groups: List<String>
 )
 
-suspend fun getGalleryBlock(galleryID: Int) : GalleryBlock =
-    webView.evaluatePromise("get_gallery_block($galleryID)")
+suspend fun getGalleryBlock(galleryID: Int) : GalleryBlock {
+    val info = getGalleryInfo(galleryID)
+
+    return GalleryBlock(
+        galleryID,
+        "",
+        listOf(urlFromUrlFromHash(galleryID, info.files.first(), "webpbigtn", "webp", "tn")),
+        info.title,
+        info.artists?.map { it.artist }.orEmpty(),
+        info.parodys?.map { it.parody }.orEmpty(),
+        info.type,
+        info.language.orEmpty(),
+        info.tags?.map { "${if (it.female.isNullOrEmpty()) "" else "female:"}${if (it.male.isNullOrEmpty()) "" else "male:"}${it.tag}" }.orEmpty(),
+        info.groups?.map { it.group }.orEmpty()
+    )
+}

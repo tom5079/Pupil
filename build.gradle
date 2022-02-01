@@ -26,6 +26,7 @@ allprojects {
         jcenter()
         maven { url "https://jitpack.io" }
         maven { url "https://guardian.github.io/maven/repo-releases/" }
+        maven { url "https://oss.sonatype.org/content/repositories/snapshots/" }
     }
 }
 

@@ -121,7 +121,7 @@ class ManageStorageFragment : PreferenceFragmentCompat(), Preference.OnPreferenc
                             Json.decodeFromString<Metadata>(it)
                         } ?: return@forEach
 
-                        val galleryID = metadata.galleryBlock?.id ?: metadata.galleryInfo?.id ?: return@forEach
+                        val galleryID = metadata.galleryBlock?.id ?: metadata.galleryInfo?.id?.toIntOrNull() ?: return@forEach
 
                         downloadFolderMap[galleryID] = folder.name
                     }

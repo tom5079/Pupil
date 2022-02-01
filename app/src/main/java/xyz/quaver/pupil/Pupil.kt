@@ -18,7 +18,6 @@
 
 package xyz.quaver.pupil
 
-import android.annotation.SuppressLint
 import android.app.Application
 import android.app.Notification
 import android.app.NotificationChannel
@@ -28,27 +27,26 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.util.Log
-import android.webkit.*
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.content.ContextCompat
 import androidx.preference.PreferenceManager
-import androidx.webkit.WebViewCompat
+import app.cash.zipline.QuickJs
 import com.facebook.imagepipeline.backends.okhttp3.OkHttpImagePipelineConfigFactory
 import com.github.piasy.biv.BigImageViewer
 import com.github.piasy.biv.loader.fresco.FrescoImageLoader
 import com.google.android.gms.common.GooglePlayServicesNotAvailableException
 import com.google.android.gms.common.GooglePlayServicesRepairableException
 import com.google.android.gms.security.ProviderInstaller
+import com.google.firebase.FirebaseApp
 import com.google.firebase.crashlytics.FirebaseCrashlytics
 import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.asSharedFlow
-import kotlinx.serialization.decodeFromString
-import kotlinx.serialization.json.Json
-import okhttp3.*
+import okhttp3.Dispatcher
+import okhttp3.Interceptor
+import okhttp3.OkHttpClient
+import okhttp3.Response
 import xyz.quaver.io.FileX
 import xyz.quaver.pupil.hitomi.evaluationContext
-import xyz.quaver.pupil.types.JavascriptException
+import xyz.quaver.pupil.hitomi.readText
 import xyz.quaver.pupil.types.Tag
 import xyz.quaver.pupil.util.*
 import java.io.File
@@ -79,138 +77,11 @@ val client: OkHttpClient
         clientHolder = it
     }
 
-@SuppressLint("StaticFieldLeak")
-lateinit var webView: WebView
-val _webViewFlow = MutableSharedFlow<Pair<String, String?>>()
-val webViewFlow = _webViewFlow.asSharedFlow()
-var webViewReady = false
-var oldWebView = false
-private var reloadJob: Job? = null
-
-fun reloadWebView() {
-    if (reloadJob?.isActive == true) return
-
-    reloadJob = CoroutineScope(Dispatchers.IO).launch {
-        webViewReady = false
-        oldWebView = false
-
-        evaluationContext.cancelChildren(CancellationException("reload"))
-
-        runCatching {
-            URL(
-                if (BuildConfig.DEBUG)
-                    "https://tom5079.github.io/PupilSources/hitomi-dev.html"
-                else
-                    "https://tom5079.github.io/PupilSources/hitomi.html"
-            ).readText()
-        }.getOrNull()?.let { html ->
-            launch(Dispatchers.Main) {
-                webView.loadDataWithBaseURL(
-                    "https://hitomi.la/",
-                    html,
-                    "text/html",
-                    null,
-                    null
-                )
-            }
-        }
-    }
-}
-
-private var htmlVersion: String = ""
-fun reloadWhenFailedOrUpdate() = CoroutineScope(Dispatchers.Default).launch {
-    while (true) {
-        if (
-            (!webViewReady && !oldWebView) ||
-            runCatching {
-                URL(
-                    if (BuildConfig.DEBUG)
-                        "https://tom5079.github.io/PupilSources/hitomi-dev.html.ver"
-                    else
-                        "https://tom5079.github.io/PupilSources/hitomi.html.ver"
-                ).readText()
-            }.getOrNull().let { version ->
-                (!version.isNullOrEmpty() && version != htmlVersion).also {
-                    if (it) htmlVersion = version!!
-                }
-            }
-        ) {
-            reloadWebView()
-        }
-
-        delay(if (webViewReady) 10000 else 1000)
-    }
-}
-
-@SuppressLint("SetJavaScriptEnabled")
-fun initWebView(context: Context) {
-    if (BuildConfig.DEBUG) WebView.setWebContentsDebuggingEnabled(true)
-
-    webView = WebView(context).apply {
-        with (settings) {
-            javaScriptEnabled = true
-            domStorageEnabled = true
-        }
-
-        userAgent = settings.userAgentString
-
-        webViewClient = object: WebViewClient() {
-            override fun onPageFinished(view: WebView?, url: String?) {
-                webView.evaluateJavascript("try { self_test() } catch (err) { 'err' }") {
-                    val result: String = Json.decodeFromString(it)
-
-                    oldWebView = result == "es2020_unsupported";
-                    webViewReady = result == "OK";
-                }
-            }
-
-            override fun onReceivedError(
-                view: WebView?,
-                request: WebResourceRequest?,
-                error: WebResourceError?
-            ) {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                    FirebaseCrashlytics.getInstance().log(
-                        "onReceivedError: ${error?.description}"
-                    )
-                }
-            }
-        }
-
-        webChromeClient = object: WebChromeClient() {
-            override fun onConsoleMessage(consoleMessage: ConsoleMessage?): Boolean {
-                FirebaseCrashlytics.getInstance().log(
-                    "onConsoleMessage: ${consoleMessage?.message()} (${consoleMessage?.sourceId()}:${consoleMessage?.lineNumber()})"
-                )
-
-                return super.onConsoleMessage(consoleMessage)
-            }
-        }
-
-        addJavascriptInterface(object {
-            @JavascriptInterface
-            fun onResult(uid: String, result: String) {
-                CoroutineScope(Dispatchers.Unconfined).launch {
-                    _webViewFlow.emit(uid to result)
-                }
-            }
-            @JavascriptInterface
-            fun onError(uid: String, script: String, message: String, stack: String) {
-                CoroutineScope(Dispatchers.Unconfined).launch {
-                    _webViewFlow.emit(uid to "")
-                }
-
-                FirebaseCrashlytics.getInstance().recordException(
-                    JavascriptException("onError script: $script\nmessage: $message\nstack: $stack")
-                )
-            }
-        }, "Callback")
-    }
-
-    reloadWhenFailedOrUpdate()
-}
-
-lateinit var userAgent: String
+private var version = ""
+var runtimeReady = false
+    private set
+lateinit var runtime: QuickJs
+    private set
 
 class Pupil : Application() {
 
@@ -219,11 +90,34 @@ class Pupil : Application() {
             private set
     }
 
-    @SuppressLint("SetJavaScriptEnabled")
+    init {
+        CoroutineScope(Dispatchers.IO).launch {
+            withContext(evaluationContext) {
+                runtime = QuickJs.create()
+            }
+            while (true) {
+                kotlin.runCatching {
+                    val newVersion = URL("https://tom5079.github.io/PupilSources/hitomi.html.ver").readText()
+
+                    if (version != newVersion) {
+                        runtimeReady = false
+                        version = newVersion
+                        evaluationContext.cancelChildren()
+                        withContext(evaluationContext) {
+                            Log.d("PUPILD", "UPDATE!")
+                            runtime.evaluate(URL("https://tom5079.github.io/PupilSources/assets/js/gg.js").readText())
+                            runtimeReady = true
+                        }
+                    }
+                }
+
+                delay(10000)
+            }
+        }
+    }
+
     override fun onCreate() {
         instance = this
-
-        initWebView(this)
 
         AppCompatDelegate.setCompatVectorFromResourcesEnabled(true)
 
@@ -234,6 +128,7 @@ class Pupil : Application() {
             else userID
         }
 
+        FirebaseApp.initializeApp(this)
         FirebaseCrashlytics.getInstance().setUserId(userID)
 
         val proxyInfo = getProxyInfo()
@@ -244,7 +139,7 @@ class Pupil : Application() {
             .proxyInfo(proxyInfo)
             .addInterceptor { chain ->
                 val request = chain.request().newBuilder()
-                    .header("User-Agent", userAgent)
+                    .addHeader("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/94.0.4606.81 Safari/537.36")
                     .header("Referer", "https://hitomi.la/")
                     .build()
 
