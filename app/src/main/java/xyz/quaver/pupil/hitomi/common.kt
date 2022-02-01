@@ -128,7 +128,7 @@ const val galleryblockextension = ".html"
 const val galleryblockdir = "galleryblock"
 const val nozomiextension = ".nozomi"
 
-val evaluationContext = Executors.newSingleThreadExecutor().asCoroutineDispatcher() + Job()
+val evaluationContext = Dispatchers.Main + Job()
 
 object gg {
 
@@ -198,14 +198,15 @@ suspend fun rewriteTnPaths(html: String) {
 }
 
 suspend fun imageUrlFromImage(galleryID: Int, image: GalleryFiles, noWebp: Boolean) : String {
-    return when {
-        noWebp ->
-            urlFromUrlFromHash(galleryID, image)
-//        image.hasavif != 0 ->
-//            urlFromUrlFromHash(galleryID, image, "avif", null, "a")
-        image.haswebp != 0 ->
-            urlFromUrlFromHash(galleryID, image, "webp", null, "a")
-        else ->
-            urlFromUrlFromHash(galleryID, image)
-    }
+    return urlFromUrlFromHash(galleryID, image, "webp", null, "a")
+//    return when {
+//        noWebp ->
+//            urlFromUrlFromHash(galleryID, image)
+////        image.hasavif != 0 ->
+////            urlFromUrlFromHash(galleryID, image, "avif", null, "a")
+//        image.haswebp != 0 ->
+//            urlFromUrlFromHash(galleryID, image, "webp", null, "a")
+//        else ->
+//            urlFromUrlFromHash(galleryID, image)
+//    }
 }

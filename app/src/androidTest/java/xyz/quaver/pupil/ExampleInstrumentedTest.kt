@@ -102,19 +102,19 @@ class ExampleInstrumentedTest {
         Log.d("PUPILD", r.take(10).toString())
     }
 
-    @Test
-    fun test_getBlock() {
-        val galleryBlock = getGalleryBlock(2097576)
-
-        print(galleryBlock)
-    }
-
-    @Test
-    fun test_getGallery() {
-        val gallery = getGallery(2097751)
-
-        print(gallery)
-    }
+//    @Test
+//    fun test_getBlock() {
+//        val galleryBlock = getGalleryBlock(2097576)
+//
+//        print(galleryBlock)
+//    }
+//
+//    @Test
+//    fun test_getGallery() {
+//        val gallery = getGallery(2097751)
+//
+//        print(gallery)
+//    }
 
     @Test
     fun test_getGalleryInfo() {
@@ -125,42 +125,44 @@ class ExampleInstrumentedTest {
 
     @Test
     fun test_getReader() {
-        val reader = getGalleryInfo(1722144)
+        val reader = getGalleryInfo(2128654)
 
-        print(reader)
+        Log.d("PUPILD", reader.toString())
     }
 
     @Test
-    fun test_getImages() {
-        val galleryID = 2099306
+    fun test_getImages() { runBlocking {
+        val galleryID = 2128654
 
         val images = getGalleryInfo(galleryID).files.map {
             imageUrlFromImage(galleryID, it,false)
         }
 
-        images.forEachIndexed { index, image ->
-            println("Testing $index/${images.size}: $image")
-            val response = client.newCall(
-                Request.Builder()
-                    .url(image)
-                    .header("Referer", "https://hitomi.la/")
-                    .build()
-            ).execute()
+        Log.d("PUPILD", images.toString())
 
-            assertEquals(200, response.code())
+//        images.forEachIndexed { index, image ->
+//            println("Testing $index/${images.size}: $image")
+//            val response = client.newCall(
+//                Request.Builder()
+//                    .url(image)
+//                    .header("Referer", "https://hitomi.la/")
+//                    .build()
+//            ).execute()
+//
+//            assertEquals(200, response.code())
+//
+//            println("$index/${images.size} Passed")
+//        }
+    } }
 
-            println("$index/${images.size} Passed")
-        }
-    }
-
-    @Test
-    fun test_urlFromUrlFromHash() {
-        val url = urlFromUrlFromHash(1531795, GalleryFiles(
-            212, "719d46a7556be0d0021c5105878507129b5b3308b02cf67f18901b69dbb3b5ef", 1, "00.jpg", 300
-        ), "webp")
-
-        print(url)
-    }
+//    @Test
+//    fun test_urlFromUrlFromHash() {
+//        val url = urlFromUrlFromHash(1531795, GalleryFiles(
+//            212, "719d46a7556be0d0021c5105878507129b5b3308b02cf67f18901b69dbb3b5ef", 1, "00.jpg", 300
+//        ), "webp")
+//
+//        print(url)
+//    }
 
 //    @Test
 //    suspend fun test_doSearch_extreme() {
@@ -173,9 +175,9 @@ class ExampleInstrumentedTest {
 //        print(doSearch("-male:yaoi -female:yaoi -female:loli").size)
 //    }
 
-    @Test
-    fun test_subdomainFromUrl() {
-        val galleryInfo = getGalleryInfo(1929109).files[2]
-        print(urlFromUrlFromHash(1929109, galleryInfo, "webp", null, "a"))
-    }
+//    @Test
+//    fun test_subdomainFromUrl() {
+//        val galleryInfo = getGalleryInfo(1929109).files[2]
+//        print(urlFromUrlFromHash(1929109, galleryInfo, "webp", null, "a"))
+//    }
 }
