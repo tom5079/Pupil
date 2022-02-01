@@ -220,28 +220,23 @@ class DownloadService : Service() {
 
             CoroutineScope(Dispatchers.IO).launch {
                 runCatching {
-                    response.also {
-                        if (it.code() != 200) throw IOException(
-                            "$galleryID $index ${response.request().url()} CODE ${it.code()}"
+                    val image = response.also { if (it.code() != 200) throw IOException( "$galleryID $index ${response.request().url()} CODE ${it.code()}" ) }.body()?.use { it.bytes() } ?: throw Exception("Response null")
+                    val padding = ceil(progress[galleryID]?.size?.let { log10(it.toFloat()) } ?: 0F).toInt()
+
+                    Cache.getInstance(this@DownloadService, galleryID)
+                        .putImage(index, "${index.toString().padStart(padding, '0')}.$ext", image)
+
+                    progress[galleryID]?.set(index, Float.POSITIVE_INFINITY)
+                    notify(galleryID)
+
+                    if (isCompleted(galleryID)) {
+                        if (DownloadManager.getInstance(this@DownloadService)
+                                .getDownloadFolder(galleryID) != null
                         )
-                    }.body()?.use {
-                        val padding = ceil(progress[galleryID]?.size?.let { log10(it.toFloat()) } ?: 0F).toInt()
+                            Cache.getInstance(this@DownloadService, galleryID).moveToDownload()
 
-                        Cache.getInstance(this@DownloadService, galleryID)
-                            .putImage(index, "${index.toString().padStart(padding, '0')}.$ext", it.byteStream())
-
-                        progress[galleryID]?.set(index, Float.POSITIVE_INFINITY)
-                        notify(galleryID)
-
-                        if (isCompleted(galleryID)) {
-                            if (DownloadManager.getInstance(this@DownloadService)
-                                    .getDownloadFolder(galleryID) != null
-                            )
-                                Cache.getInstance(this@DownloadService, galleryID).moveToDownload()
-
-                            startId?.let { stopSelf(it) }
-                        }
-                    } ?: throw Exception("Response null")
+                        startId?.let { stopSelf(it) }
+                    }
                 }.onFailure {
                     FirebaseCrashlytics.getInstance().recordException(it)
                 }
@@ -329,7 +324,8 @@ class DownloadService : Service() {
         }
 
         if (isCompleted(galleryID)) {
-            Cache.getInstance(this@DownloadService, galleryID).moveToDownload()
+            if (DownloadManager.getInstance(this@DownloadService).getDownloadFolder(galleryID) != null)
+                Cache.getInstance(this@DownloadService, galleryID).moveToDownload()
 
             notificationManager.cancel(galleryID)
             startId?.let { stopSelf(it) }

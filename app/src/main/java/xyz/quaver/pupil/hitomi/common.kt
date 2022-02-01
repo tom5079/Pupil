@@ -16,16 +16,14 @@
 
 package xyz.quaver.pupil.hitomi
 
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.asCoroutineDispatcher
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.*
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import okhttp3.Request
 import xyz.quaver.pupil.client
 import xyz.quaver.pupil.runtime
+import xyz.quaver.pupil.runtimeReady
 import java.io.IOException
 import java.net.URL
 import java.util.concurrent.Executors
@@ -84,11 +82,11 @@ data class GalleryInfo(
     val groups: List<Group>? = null,
     val parodys: List<Parody>? = null,
     val tags: List<Tag>? = null,
-    val related: List<Int>,
-    val languages: List<Language>,
+    val related: List<Int> = emptyList(),
+    val languages: List<Language> = emptyList(),
     val characters: List<Character>? = null,
-    val scene_indexes: List<Int>,
-    val files: List<GalleryFiles>
+    val scene_indexes: List<Int>? = emptyList(),
+    val files: List<GalleryFiles> = emptyList()
 )
 
 val json = Json {
@@ -135,13 +133,16 @@ val evaluationContext = Executors.newSingleThreadExecutor().asCoroutineDispatche
 object gg {
 
     suspend fun m(g: Int): Int = withContext(evaluationContext) {
+        while (!runtimeReady) delay(1000)
         runtime.evaluate("gg.m($g)").toString().toInt()
     }
     suspend fun b(): String = withContext(evaluationContext) {
+        while (!runtimeReady) delay(1000)
         runtime.evaluate("gg.b").toString()
     }
 
     suspend fun s(h: String): String = withContext(evaluationContext) {
+        while (!runtimeReady) delay(1000)
         runtime.evaluate("gg.s('$h')").toString()
     }
 }
