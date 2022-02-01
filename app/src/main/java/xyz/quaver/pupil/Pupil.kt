@@ -81,7 +81,6 @@ private var version = ""
 var runtimeReady = false
     private set
 lateinit var runtime: QuickJs
-    private set
 
 class Pupil : Application() {
     companion object {
@@ -91,7 +90,7 @@ class Pupil : Application() {
 
     init {
         CoroutineScope(Dispatchers.IO).launch {
-            withContext(evaluationContext) {
+            withContext(Dispatchers.Main) {
                 runtime = QuickJs.create()
             }
             while (true) {
@@ -100,11 +99,15 @@ class Pupil : Application() {
 
                     if (version != newVersion) {
                         runtimeReady = false
-                        version = newVersion
                         evaluationContext.cancelChildren()
-                        withContext(evaluationContext) {
-                            runtime.evaluate(URL("https://tom5079.github.io/PupilSources/assets/js/gg.js").readText())
-                            runtimeReady = true
+                        kotlin.runCatching {
+                            URL("https://tom5079.github.io/PupilSources/assets/js/gg.js").readText()
+                        }.getOrNull()?.also { gg ->
+                            withContext(Dispatchers.Main) {
+                                runtime.evaluate(gg)
+                                version = newVersion
+                                runtimeReady = true
+                            }
                         }
                     }
                 }
