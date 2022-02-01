@@ -104,7 +104,6 @@ class Pupil : Application() {
                         version = newVersion
                         evaluationContext.cancelChildren()
                         withContext(evaluationContext) {
-                            Log.d("PUPILD", "UPDATE!")
                             runtime.evaluate(URL("https://tom5079.github.io/PupilSources/assets/js/gg.js").readText())
                             runtimeReady = true
                         }
