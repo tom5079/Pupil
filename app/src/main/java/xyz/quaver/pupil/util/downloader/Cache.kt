@@ -35,8 +35,13 @@ import xyz.quaver.pupil.client
 import xyz.quaver.pupil.hitomi.*
 import java.io.File
 import java.io.IOException
-import java.io.InputStream
 import java.util.concurrent.ConcurrentHashMap
+
+@Serializable
+data class OldReader(
+    val code: String,
+    val galleryInfo: OldGalleryInfo
+)
 
 @Serializable
 data class OldGalleryInfo(
@@ -63,7 +68,7 @@ data class OldGalleryFiles(
 @Serializable
 data class OldMetadata(
     var galleryBlock: GalleryBlock? = null,
-    var reader: OldGalleryInfo? = null,
+    var reader: OldReader? = null,
     var imageList: MutableList<String?>? = null
 ) {
     fun copy(): OldMetadata = OldMetadata(galleryBlock, reader, imageList?.let { MutableList(it.size) { i -> it[i] } })
@@ -75,12 +80,36 @@ data class Metadata(
     var galleryInfo: GalleryInfo? = null,
     var imageList: MutableList<String?>? = null
 ) {
-    constructor(old: OldMetadata) : this(old.galleryBlock, getGalleryInfo(old.galleryBlock?.id ?: throw Exception()), old.imageList)
+    constructor(old: OldMetadata) : this(
+        old.galleryBlock,
+        old.reader?.galleryInfo?.let { oldGalleryInfo ->
+            GalleryInfo(
+                oldGalleryInfo.id.toString(),
+                oldGalleryInfo.title ?: "",
+                null,
+                oldGalleryInfo.language,
+                oldGalleryInfo.type ?: "",
+                oldGalleryInfo.date ?: "",
+                files = oldGalleryInfo.files.map {
+                    GalleryFiles(
+                        it.width,
+                        it.hash,
+                        it.haswebp,
+                        it.name,
+                        it.height,
+                        it.hasavif,
+                        it.hasavifsmalltn
+                    )
+                }
+            )
+        },
+        old.imageList
+    )
+
     fun copy(): Metadata = Metadata(galleryBlock, galleryInfo, imageList?.let { MutableList(it.size) { i -> it[i] } })
 }
 
 class Cache private constructor(context: Context, val galleryID: Int) : ContextWrapper(context) {
-
     companion object {
         val instances = ConcurrentHashMap<Int, Cache>()
 
@@ -103,7 +132,7 @@ class Cache private constructor(context: Context, val galleryID: Int) : ContextW
     var metadata = kotlin.runCatching {
         findFile(".metadata")?.readText()?.let { metadata ->
             kotlin.runCatching {
-                json.decodeFromString<Metadata>(metadata)
+                Json.decodeFromString<Metadata>(metadata)
             }.getOrElse {
                 Metadata(json.decodeFromString<OldMetadata>(metadata))
             }
