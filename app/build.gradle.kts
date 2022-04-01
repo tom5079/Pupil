@@ -15,6 +15,7 @@ plugins {
 
 android {
     compileSdk = 31
+
     defaultConfig {
         applicationId = "xyz.quaver.pupil"
         minSdk = 21
@@ -23,6 +24,7 @@ android {
         versionName = VERSION
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
+
     buildTypes {
         getByName("debug") {
             isDebuggable = true
@@ -45,20 +47,34 @@ android {
             signingConfig = signingConfigs.getByName("debug")
         }
     }
+
+    signingConfigs {
+        create("release") {
+            storeFile = File("/tmp/keystore.jks")
+            storePassword = System.getenv("SIGNING_STORE_PASSWORD")
+            keyAlias = System.getenv("SIGNING_KEY_ALIAS")
+            keyPassword = System.getenv("SIGNING_KEY_PASSWORD")
+        }
+    }
+
     buildFeatures {
         compose = true
     }
+
     composeOptions {
         kotlinCompilerExtensionVersion = Versions.JETPACK_COMPOSE
     }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_1_8
         targetCompatibility = JavaVersion.VERSION_1_8
     }
+
     kotlinOptions {
         jvmTarget = "1.8"
         freeCompilerArgs += "-Xopt-in=kotlin.RequiresOptIn"
     }
+
     packagingOptions {
         resources.excludes.addAll(
             listOf(
