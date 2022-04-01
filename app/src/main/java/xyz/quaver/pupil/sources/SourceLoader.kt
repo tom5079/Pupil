@@ -19,12 +19,14 @@
 package xyz.quaver.pupil.sources
 
 import android.app.Application
+import android.content.Context
 import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
 import android.graphics.drawable.Drawable
 import androidx.compose.runtime.*
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.runtime.snapshots.SnapshotStateMap
+import androidx.compose.ui.platform.LocalContext
 import dalvik.system.PathClassLoader
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -35,6 +37,7 @@ import org.kodein.di.bindFactory
 import org.kodein.di.bindInstance
 import org.kodein.di.bindProvider
 import org.kodein.di.compose.rememberInstance
+import xyz.quaver.pupil.Pupil
 import xyz.quaver.pupil.sources.core.Source
 import java.util.concurrent.ConcurrentHashMap
 
@@ -55,8 +58,8 @@ data class SourceEntry(
 val PackageInfo.isSourceFeatureEnabled
     get() = this.reqFeatures.orEmpty().any { it.name == SOURCES_FEATURE }
 
-fun loadSource(app: Application, packageInfo: PackageInfo): List<SourceEntry> {
-    val packageManager = app.packageManager
+fun loadSource(context: Context, packageInfo: PackageInfo): List<SourceEntry> {
+    val packageManager = context.packageManager
 
     val applicationInfo = packageInfo.applicationInfo
 
@@ -86,16 +89,16 @@ fun loadSource(app: Application, packageInfo: PackageInfo): List<SourceEntry> {
         }.orEmpty()
 }
 
-fun loadSource(app: Application, sourceEntry: SourceEntry): Source {
-    val classLoader = PathClassLoader(sourceEntry.sourceDir, null, app.classLoader)
+fun loadSource(context: Context, sourceEntry: SourceEntry): Source {
+    val classLoader = PathClassLoader(sourceEntry.sourceDir, null, context.classLoader)
 
     return Class.forName("${sourceEntry.packagePath}${sourceEntry.sourcePath}", false, classLoader)
         .getConstructor(Application::class.java)
-        .newInstance(app) as Source
+        .newInstance(context.applicationContext) as Source
 }
 
-fun updateSources(app: Application): List<SourceEntry> {
-    val packageManager = app.packageManager
+fun updateSources(context: Context): List<SourceEntry> {
+    val packageManager = context.packageManager
 
     val packages = packageManager.getInstalledPackages(
         PackageManager.GET_CONFIGURATIONS or PackageManager.GET_META_DATA
@@ -103,7 +106,7 @@ fun updateSources(app: Application): List<SourceEntry> {
 
     return packages.flatMap { packageInfo ->
         if (packageInfo.isSourceFeatureEnabled)
-            loadSource(app, packageInfo)
+            loadSource(context, packageInfo)
         else
             emptyList()
     }
@@ -111,12 +114,12 @@ fun updateSources(app: Application): List<SourceEntry> {
 
 @Composable
 fun rememberSources(): State<List<SourceEntry>> {
-    val app: Application by rememberInstance()
     val sources = remember { mutableStateOf<List<SourceEntry>>(emptyList()) }
+    val context = LocalContext.current
 
     LaunchedEffect(Unit) {
         while (true) {
-            sources.value = updateSources(app)
+            sources.value = updateSources(context)
             delay(1000)
         }
     }

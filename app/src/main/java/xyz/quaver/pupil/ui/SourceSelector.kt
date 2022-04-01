@@ -51,6 +51,7 @@ import coil.compose.rememberImagePainter
 import com.google.accompanist.drawablepainter.rememberDrawablePainter
 import com.google.accompanist.insets.LocalWindowInsets
 import com.google.accompanist.insets.rememberInsetsPaddingValues
+import com.google.accompanist.insets.systemBarsPadding
 import com.google.accompanist.insets.ui.BottomNavigation
 import com.google.accompanist.insets.ui.Scaffold
 import com.google.accompanist.insets.ui.TopAppBar
@@ -282,7 +283,7 @@ fun SourceSelector(onSource: (SourceEntry) -> Unit) {
             }
         }
     ) { contentPadding ->
-        NavHost(bottomNavController, startDestination = "local", modifier = Modifier.padding(contentPadding)) {
+        NavHost(bottomNavController, startDestination = "local", modifier = Modifier.systemBarsPadding(top = false, bottom = false).padding(contentPadding)) {
             composable(SourceSelectorScreen.Local.route) { Local(onSource) }
             composable(SourceSelectorScreen.Explore.route) { Explore() }
         }

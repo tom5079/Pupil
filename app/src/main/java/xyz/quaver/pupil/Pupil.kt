@@ -46,29 +46,17 @@ class Pupil : Application(), DIAware {
     override val di: DI by DI.lazy {
         import(androidXModule(this@Pupil))
 
-        bind { singleton { NetworkCache(this@Pupil, instance()) } }
+        bind { singleton { NetworkCache(this@Pupil) } }
         bindSingleton { ApkDownloadManager(this@Pupil, instance()) }
 
         bindSingleton { settingsDataStore }
 
         bind { singleton {
             HttpClient(OkHttp) {
-                engine {
-                    config {
-                        protocols(listOf(Protocol.HTTP_1_1))
-                    }
-                }
                 install(JsonFeature) {
                     serializer = KotlinxSerializer()
                     accept(ContentType("text", "plain"))
                 }
-                install(HttpTimeout) {
-                    requestTimeoutMillis = HttpTimeout.INFINITE_TIMEOUT_MS
-                    socketTimeoutMillis = HttpTimeout.INFINITE_TIMEOUT_MS
-                    connectTimeoutMillis = HttpTimeout.INFINITE_TIMEOUT_MS
-                }
-
-                BrowserUserAgent()
             }
         } }
     }
@@ -109,5 +97,4 @@ class Pupil : Application(), DIAware {
             })
         }
     }
-
 }

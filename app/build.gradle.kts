@@ -35,8 +35,8 @@ android {
             extra.set("alwaysUpdateBuildId", false)
         }
         getByName("release") {
-            isMinifyEnabled = true
-            isShrinkResources = true
+//            isMinifyEnabled = true
+//            isShrinkResources = true
             applicationIdSuffix = ".beta"
 
             isCrunchPngs = false
@@ -76,7 +76,7 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.3.2")
 
     implementation("androidx.activity:activity-compose:1.4.0")
-    implementation("androidx.navigation:navigation-compose:2.4.0-rc01")
+    implementation("androidx.navigation:navigation-compose:2.5.0-alpha03")
 
     implementation(JetpackCompose.FOUNDATION)
     implementation(JetpackCompose.UI)
@@ -96,29 +96,25 @@ dependencies {
 
     implementation("io.coil-kt:coil-compose:1.4.0")
 
-    implementation("io.ktor:ktor-client-core:1.6.7")
-    implementation("io.ktor:ktor-client-okhttp:1.6.7")
-    implementation("io.ktor:ktor-client-serialization:1.6.7")
+    implementation("io.ktor:ktor-client-core:1.6.8")
+    implementation("io.ktor:ktor-client-okhttp:1.6.8")
+    implementation("io.ktor:ktor-client-serialization:1.6.8")
 
     implementation("androidx.appcompat:appcompat:1.4.1")
     implementation("androidx.activity:activity-ktx:1.4.0")
-    implementation("androidx.fragment:fragment-ktx:1.4.0")
-    implementation("androidx.preference:preference-ktx:1.1.1")
     implementation("androidx.recyclerview:recyclerview:1.2.1")
     implementation("androidx.biometric:biometric:1.1.0")
     implementation("androidx.work:work-runtime-ktx:2.7.1")
-    implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.4.0")
-    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.4.0")
 
-    implementation("androidx.room:room-runtime:2.4.1")
-    annotationProcessor("androidx.room:room-compiler:2.4.1")
-    kapt("androidx.room:room-compiler:2.4.1")
-    implementation("androidx.room:room-ktx:2.4.1")
+    implementation("androidx.room:room-runtime:2.4.2")
+    annotationProcessor("androidx.room:room-compiler:2.4.2")
+    kapt("androidx.room:room-compiler:2.4.2")
+    implementation("androidx.room:room-ktx:2.4.2")
 
     implementation("androidx.datastore:datastore:1.0.0")
     implementation("androidx.datastore:datastore-preferences:1.0.0")
 
-    implementation("org.kodein.di:kodein-di-framework-compose:7.10.0")
+    implementation("org.kodein.di:kodein-di-framework-compose:7.11.0")
 
     implementation("com.google.android.material:material:1.5.0")
 
@@ -135,25 +131,25 @@ dependencies {
 
     implementation("ru.noties.markwon:core:3.1.0")
 
-    implementation("xyz.quaver.pupil.sources:core:0.0.1-alpha01-DEV16")
+    implementation("xyz.quaver.pupil.sources:core:0.0.1-alpha01-DEV25")
 
     implementation("xyz.quaver:documentfilex:0.7.2")
     implementation("xyz.quaver:subsampledimage:0.0.1-alpha19-SNAPSHOT")
 
-    implementation("com.google.guava:guava:31.0.1-jre")
+    implementation("com.google.guava:guava:31.1-jre")
 
-    implementation("org.kodein.log:kodein-log:0.11.1")
-    debugImplementation("com.squareup.leakcanary:leakcanary-android:2.7")
+    implementation("org.kodein.log:kodein-log:0.12.0")
+//    debugImplementation("com.squareup.leakcanary:leakcanary-android:2.8.1")
 
     testImplementation("junit:junit:4.13.2")
-    testImplementation("org.mockito:mockito-inline:4.2.0")
+    testImplementation("org.mockito:mockito-inline:4.4.0")
 
     androidTestImplementation("androidx.test.ext:junit:1.1.3")
     androidTestImplementation("androidx.test:rules:1.4.0")
     androidTestImplementation("androidx.test:runner:1.4.0")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.4.0")
 
-    androidTestImplementation("androidx.compose.ui:ui-test-junit4:1.0.5")
+    androidTestImplementation("androidx.compose.ui:ui-test-junit4:1.1.1")
 }
 
 protobuf {
