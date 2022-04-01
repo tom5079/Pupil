@@ -18,11 +18,14 @@
 
 package xyz.quaver.pupil.ui
 
+import android.annotation.SuppressLint
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
+import androidx.compose.animation.Crossfade
 import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.animation.core.tween
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.MaterialTheme
 import androidx.compose.runtime.*
@@ -48,6 +51,7 @@ class MainActivity : ComponentActivity(), DIAware {
 
     private val logger = newLogger(LoggerFactory.default)
 
+    @SuppressLint("UnusedCrossfadeTargetStateParameter")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -80,14 +84,16 @@ class MainActivity : ComponentActivity(), DIAware {
                                 source = null
                             }
 
-                            if (source == null)
-                                SourceSelector {
-                                    coroutineScope.launch {
-                                        source = loadSource(application, it)
+                            Crossfade(source) { _source ->
+                                if (_source == null)
+                                    SourceSelector {
+                                        coroutineScope.launch {
+                                            source = loadSource(application, it)
+                                        }
                                     }
+                                else {
+                                    _source.Entry()
                                 }
-                            else {
-                                source!!.Entry()
                             }
                         }
                         composable("settings") {
