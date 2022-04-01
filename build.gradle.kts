@@ -6,7 +6,7 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath("com.android.tools.build:gradle:7.1.1")
+        classpath("com.android.tools.build:gradle:7.1.2")
         classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:${Versions.KOTLIN_VERSION}")
         classpath("org.jetbrains.kotlin:kotlin-android-extensions:${Versions.KOTLIN_VERSION}")
         classpath("org.jetbrains.kotlin:kotlin-serialization:${Versions.KOTLIN_VERSION}")
@@ -15,7 +15,7 @@ buildscript {
         // in the individual module build.gradle files
         classpath("com.google.firebase:firebase-crashlytics-gradle:2.8.1")
         classpath("com.google.firebase:perf-plugin:1.4.1")
-        classpath("com.google.android.gms:oss-licenses-plugin:0.10.4")
+        classpath("com.google.android.gms:oss-licenses-plugin:0.10.5")
         classpath("com.google.protobuf:protobuf-gradle-plugin:0.8.18")
     }
 }
