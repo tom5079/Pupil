@@ -37,14 +37,12 @@ android {
             extra.set("alwaysUpdateBuildId", false)
         }
         getByName("release") {
-//            isMinifyEnabled = true
-//            isShrinkResources = true
+            isMinifyEnabled = false
             applicationIdSuffix = ".beta"
 
             isCrunchPngs = false
 
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-            signingConfig = signingConfigs.getByName("debug")
         }
     }
 
@@ -92,7 +90,7 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.3.2")
 
     implementation("androidx.activity:activity-compose:1.4.0")
-    implementation("androidx.navigation:navigation-compose:2.5.0-alpha03")
+    implementation("androidx.navigation:navigation-compose:2.4.1")
 
     implementation(JetpackCompose.FOUNDATION)
     implementation(JetpackCompose.UI)
@@ -116,12 +114,6 @@ dependencies {
     implementation("io.ktor:ktor-client-okhttp:1.6.8")
     implementation("io.ktor:ktor-client-serialization:1.6.8")
 
-    implementation("androidx.appcompat:appcompat:1.4.1")
-    implementation("androidx.activity:activity-ktx:1.4.0")
-    implementation("androidx.recyclerview:recyclerview:1.2.1")
-    implementation("androidx.biometric:biometric:1.1.0")
-    implementation("androidx.work:work-runtime-ktx:2.7.1")
-
     implementation("androidx.room:room-runtime:2.4.2")
     annotationProcessor("androidx.room:room-compiler:2.4.2")
     kapt("androidx.room:room-compiler:2.4.2")
@@ -131,8 +123,6 @@ dependencies {
     implementation("androidx.datastore:datastore-preferences:1.0.0")
 
     implementation("org.kodein.di:kodein-di-framework-compose:7.11.0")
-
-    implementation("com.google.android.material:material:1.5.0")
 
     implementation(platform("com.google.firebase:firebase-bom:29.0.3"))
     implementation("com.google.firebase:firebase-analytics-ktx")
@@ -151,8 +141,6 @@ dependencies {
 
     implementation("xyz.quaver:documentfilex:0.7.2")
     implementation("xyz.quaver:subsampledimage:0.0.1-alpha19-SNAPSHOT")
-
-    implementation("com.google.guava:guava:31.1-jre")
 
     implementation("org.kodein.log:kodein-log:0.12.0")
 //    debugImplementation("com.squareup.leakcanary:leakcanary-android:2.8.1")

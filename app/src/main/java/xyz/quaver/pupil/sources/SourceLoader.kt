@@ -24,22 +24,10 @@ import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
 import android.graphics.drawable.Drawable
 import androidx.compose.runtime.*
-import androidx.compose.runtime.snapshots.SnapshotStateList
-import androidx.compose.runtime.snapshots.SnapshotStateMap
 import androidx.compose.ui.platform.LocalContext
 import dalvik.system.PathClassLoader
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-import org.kodein.di.DI
-import org.kodein.di.bindFactory
-import org.kodein.di.bindInstance
-import org.kodein.di.bindProvider
-import org.kodein.di.compose.rememberInstance
-import xyz.quaver.pupil.Pupil
 import xyz.quaver.pupil.sources.core.Source
-import java.util.concurrent.ConcurrentHashMap
 
 private const val SOURCES_FEATURE = "pupil.sources"
 private const val SOURCES_PACKAGE_PREFIX = "xyz.quaver.pupil.sources"
