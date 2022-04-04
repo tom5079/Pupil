@@ -26,8 +26,12 @@ import android.graphics.drawable.Drawable
 import androidx.compose.runtime.*
 import androidx.compose.ui.platform.LocalContext
 import dalvik.system.PathClassLoader
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import xyz.quaver.pupil.sources.core.Source
+import java.util.concurrent.ConcurrentHashMap
 
 private const val SOURCES_FEATURE = "pupil.sources"
 private const val SOURCES_PACKAGE_PREFIX = "xyz.quaver.pupil.sources"
@@ -77,12 +81,19 @@ fun loadSource(context: Context, packageInfo: PackageInfo): List<SourceEntry> {
         }.orEmpty()
 }
 
-fun loadSource(context: Context, sourceEntry: SourceEntry): Source {
-    val classLoader = PathClassLoader(sourceEntry.sourceDir, null, context.classLoader)
+private val sourceCacheMutex = Mutex()
+private val sourceCache = mutableMapOf<String, Source>()
 
-    return Class.forName("${sourceEntry.packagePath}${sourceEntry.sourcePath}", false, classLoader)
-        .getConstructor(Application::class.java)
-        .newInstance(context.applicationContext) as Source
+suspend fun loadSource(context: Context, sourceEntry: SourceEntry): Source = coroutineScope {
+    sourceCacheMutex.withLock {
+        sourceCache[sourceEntry.packageName] ?: run {
+            val classLoader = PathClassLoader(sourceEntry.sourceDir, null, context.classLoader)
+
+            Class.forName("${sourceEntry.packagePath}${sourceEntry.sourcePath}", false, classLoader)
+                .getConstructor(Application::class.java)
+                .newInstance(context.applicationContext) as Source
+        }.also { sourceCache[sourceEntry.packageName] = it }
+    }
 }
 
 fun updateSources(context: Context): List<SourceEntry> {
