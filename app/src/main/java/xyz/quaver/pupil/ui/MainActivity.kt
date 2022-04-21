@@ -118,7 +118,7 @@ class MainActivity :
                     onFailure = {
                         Snackbar.make(binding.contents.recyclerview, R.string.settings_backup_failed, Snackbar.LENGTH_LONG).show()
                     }, onSuccess = {
-                        Snackbar.make(binding.contents.recyclerview, getString(R.string.settings_restore_success, it.size), Snackbar.LENGTH_LONG).show()
+                        Snackbar.make(binding.contents.recyclerview, getString(R.string.settings_restore_success, it), Snackbar.LENGTH_LONG).show()
                     }
                 )
             }
