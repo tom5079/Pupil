@@ -80,10 +80,8 @@ class SettingsFragment :
         }
     }
 
-    override fun onPreferenceClick(preference: Preference?): Boolean {
+    override fun onPreferenceClick(preference: Preference): Boolean {
         with (preference) {
-            this ?: return false
-
             when (key) {
                 "app_version" -> {
                     checkUpdate(activity as SettingsActivity, true)
@@ -122,10 +120,8 @@ class SettingsFragment :
         return true
     }
 
-    override fun onPreferenceChange(preference: Preference?, newValue: Any?): Boolean {
+    override fun onPreferenceChange(preference: Preference, newValue: Any?): Boolean {
         with (preference) {
-            this ?: return false
-
             when (key) {
                 "tag_translation" -> {
                     updateTranslations()
@@ -163,7 +159,7 @@ class SettingsFragment :
 
             when (key) {
                 "proxy" -> {
-                    summary = context?.let { getProxyInfo().type.name }
+                    summary = context.let { getProxyInfo().type.name }
                 }
                 "download_folder" -> {
                     summary = FileX(context, Preferences.get<String>("download_folder")).canonicalPath
@@ -300,7 +296,7 @@ class SettingsFragment :
                         }
                         "oss" -> {
                             setOnPreferenceClickListener {
-                                context?.startActivity(Intent(context, OssLicensesMenuActivity::class.java))
+                                context.startActivity(Intent(context, OssLicensesMenuActivity::class.java))
                                 true
                             }
                         }

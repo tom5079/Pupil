@@ -61,12 +61,10 @@ class ManageStorageFragment : PreferenceFragmentCompat(), Preference.OnPreferenc
         initPreferences()
     }
 
-    override fun onPreferenceClick(preference: Preference?): Boolean {
+    override fun onPreferenceClick(preference: Preference): Boolean {
         val context = context ?: return false
 
         with(preference) {
-            this ?: return false
-
             when (key) {
                 "delete_cache" -> {
                     val dir = File(context.cacheDir, "imageCache")
