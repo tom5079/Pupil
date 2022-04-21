@@ -27,10 +27,11 @@ import androidx.core.content.ContextCompat
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
 import com.google.android.material.snackbar.Snackbar
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.buildJsonObject
 import okhttp3.*
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.client
-import xyz.quaver.pupil.favorites
 import xyz.quaver.pupil.util.restore
 import java.io.File
 import java.io.IOException
@@ -47,11 +48,25 @@ class ManageFavoritesFragment : PreferenceFragmentCompat() {
         val context = context ?: return
 
         findPreference<Preference>("backup")?.setOnPreferenceClickListener {
+            val favorites = runCatching {
+                Json.parseToJsonElement(File(ContextCompat.getDataDir(context), "favorites.json").readText())
+            }.getOrNull()
+            val favoriteTags = kotlin.runCatching {
+                Json.parseToJsonElement(File(ContextCompat.getDataDir(context), "favorites_tags.json").readText())
+            }.getOrNull()
+
             val request = Request.Builder()
                 .url(context.getString(R.string.backup_url))
                 .post(
                     FormBody.Builder()
-                        .add("f:1", File(ContextCompat.getDataDir(context), "favorites.json").readText())
+                        .add("f:1", buildJsonObject {
+                            favorites?.let {
+                                put("favorites", it)
+                            }
+                            favoriteTags?.let {
+                                put("favorite_tags", it)
+                            }
+                        }.toString())
                         .build()
                 ).build()
 
@@ -93,7 +108,7 @@ class ManageFavoritesFragment : PreferenceFragmentCompat() {
                             Snackbar.make(view, R.string.settings_restore_failed, Snackbar.LENGTH_LONG).show()
                         }, onSuccess = onSuccess@{
                             val view = view ?: return@onSuccess
-                            Snackbar.make(view, context.getString(R.string.settings_restore_success, it.size), Snackbar.LENGTH_LONG).show()
+                            Snackbar.make(view, context.getString(R.string.settings_restore_success, it), Snackbar.LENGTH_LONG).show()
                         })
                 }.setNegativeButton(android.R.string.cancel) { _, _ ->
                     // Do Nothing
