@@ -30,7 +30,6 @@ import android.util.Log
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.content.ContextCompat
 import androidx.preference.PreferenceManager
-import app.cash.zipline.QuickJs
 import com.facebook.imagepipeline.backends.okhttp3.OkHttpImagePipelineConfigFactory
 import com.github.piasy.biv.BigImageViewer
 import com.github.piasy.biv.loader.fresco.FrescoImageLoader
@@ -77,44 +76,10 @@ val client: OkHttpClient
         clientHolder = it
     }
 
-private var version = ""
-var runtimeReady = false
-    private set
-lateinit var runtime: QuickJs
-
 class Pupil : Application() {
     companion object {
         lateinit var instance: Pupil
             private set
-    }
-
-    init {
-        CoroutineScope(Dispatchers.IO).launch {
-            withContext(Dispatchers.Main) {
-                runtime = QuickJs.create()
-            }
-            while (true) {
-                kotlin.runCatching {
-                    val newVersion = URL("https://tom5079.github.io/PupilSources/hitomi.html.ver").readText()
-
-                    if (version != newVersion) {
-                        runtimeReady = false
-                        evaluationContext.cancelChildren()
-                        kotlin.runCatching {
-                            URL("https://tom5079.github.io/PupilSources/assets/js/gg.js").readText()
-                        }.getOrNull()?.also { gg ->
-                            withContext(Dispatchers.Main) {
-                                runtime.evaluate(gg)
-                                version = newVersion
-                                runtimeReady = true
-                            }
-                        }
-                    }
-                }
-
-                delay(10000)
-            }
-        }
     }
 
     override fun onCreate() {

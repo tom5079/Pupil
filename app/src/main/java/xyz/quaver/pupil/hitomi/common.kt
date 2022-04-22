@@ -17,16 +17,24 @@
 package xyz.quaver.pupil.hitomi
 
 import kotlinx.coroutines.*
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import kotlinx.datetime.Clock.System.now
+import kotlinx.datetime.Instant
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
+import okhttp3.Call
+import okhttp3.Callback
 import okhttp3.Request
+import okhttp3.Response
 import xyz.quaver.pupil.client
-import xyz.quaver.pupil.runtime
-import xyz.quaver.pupil.runtimeReady
 import java.io.IOException
 import java.net.URL
 import java.util.concurrent.Executors
+import kotlin.coroutines.resumeWithException
+import kotlin.time.Duration.Companion.minutes
+import kotlin.time.ExperimentalTime
 
 const val protocol = "https:"
 
@@ -131,19 +139,73 @@ const val nozomiextension = ".nozomi"
 val evaluationContext = Dispatchers.Main + Job()
 
 object gg {
+    private var lastRetrieval: Instant? = null
 
-    suspend fun m(g: Int): Int = withContext(evaluationContext) {
-        while (!runtimeReady) delay(1000)
-        runtime.evaluate("gg.m($g)").toString().toInt()
-    }
-    suspend fun b(): String = withContext(evaluationContext) {
-        while (!runtimeReady) delay(1000)
-        runtime.evaluate("gg.b").toString()
+    private val mutex = Mutex()
+
+    private var mDefault = 0
+    private val mMap = mutableMapOf<Int, Int>()
+
+    private var b = ""
+
+    @OptIn(ExperimentalTime::class, ExperimentalCoroutinesApi::class)
+    private suspend fun refresh() = withContext(Dispatchers.IO) {
+        mutex.withLock {
+            if (lastRetrieval == null || (lastRetrieval!! + 1.minutes) < now()) {
+                val ggjs: String = suspendCancellableCoroutine { continuation ->
+                    val call = client.newCall(Request.Builder().url("https://ltn.hitomi.la/gg.js").build())
+
+                    call.enqueue(object: Callback {
+                        override fun onFailure(call: Call, e: IOException) {
+                            if (continuation.isCancelled) return
+                            continuation.resumeWithException(e)
+                        }
+
+                        override fun onResponse(call: Call, response: Response) {
+                            if (!call.isCanceled) {
+                                response.body()?.use {
+                                    continuation.resume(it.string()) {
+                                        call.cancel()
+                                    }
+                                }
+                            }
+                        }
+                    })
+
+                    continuation.invokeOnCancellation {
+                        call.cancel()
+                    }
+                }
+
+                mDefault = Regex("var o = (\\d)").find(ggjs)!!.groupValues[1].toInt()
+                val o = Regex("o = (\\d); break;").find(ggjs)!!.groupValues[1].toInt()
+
+                mMap.clear()
+                Regex("case (\\d+):").findAll(ggjs).forEach {
+                    val case = it.groupValues[1].toInt()
+                    mMap[case] = o
+                }
+
+                b = Regex("b: '(.+)'").find(ggjs)!!.groupValues[1]
+
+                lastRetrieval = now()
+            }
+        }
     }
 
-    suspend fun s(h: String): String = withContext(evaluationContext) {
-        while (!runtimeReady) delay(1000)
-        runtime.evaluate("gg.s('$h')").toString()
+    suspend fun m(g: Int): Int {
+        refresh()
+
+        return mMap[g] ?: mDefault
+    }
+
+    suspend fun b(): String {
+        refresh()
+        return b
+    }
+    fun s(h: String): String {
+        val m = Regex("(..)(.)$").find(h)
+        return m!!.groupValues.let { it[2]+it[1] }.toInt(16).toString(10)
     }
 }
 
