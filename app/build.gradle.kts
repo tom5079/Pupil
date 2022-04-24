@@ -86,11 +86,11 @@ android {
 dependencies {
     implementation(fileTree(mapOf("dir" to "libs", "include" to listOf("*.aar"))))
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.1")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.3.2")
 
     implementation("androidx.activity:activity-compose:1.4.0")
-    implementation("androidx.navigation:navigation-compose:2.4.1")
+    implementation("androidx.navigation:navigation-compose:2.4.2")
 
     implementation(JetpackCompose.FOUNDATION)
     implementation(JetpackCompose.UI)
@@ -110,9 +110,10 @@ dependencies {
 
     implementation("io.coil-kt:coil-compose:1.4.0")
 
-    implementation("io.ktor:ktor-client-core:1.6.8")
-    implementation("io.ktor:ktor-client-okhttp:1.6.8")
-    implementation("io.ktor:ktor-client-serialization:1.6.8")
+    implementation("io.ktor:ktor-client-core:2.0.0")
+    implementation("io.ktor:ktor-client-okhttp:2.0.0")
+    implementation("io.ktor:ktor-client-content-negotiation:2.0.0")
+    implementation("io.ktor:ktor-serialization-kotlinx-json:2.0.0")
 
     implementation("androidx.room:room-runtime:2.4.2")
     annotationProcessor("androidx.room:room-compiler:2.4.2")
@@ -137,7 +138,7 @@ dependencies {
 
     implementation("ru.noties.markwon:core:3.1.0")
 
-    implementation("xyz.quaver.pupil.sources:core:0.0.1-alpha01-DEV25")
+    implementation("xyz.quaver.pupil.sources:core:0.0.1-alpha01-DEV26")
 
     implementation("xyz.quaver:documentfilex:0.7.2")
     implementation("xyz.quaver:subsampledimage:0.0.1-alpha19-SNAPSHOT")
