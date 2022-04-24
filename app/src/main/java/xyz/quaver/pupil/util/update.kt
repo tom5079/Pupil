@@ -27,17 +27,14 @@ import androidx.preference.PreferenceManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.*
 import okhttp3.Call
 import okhttp3.Callback
 import okhttp3.Request
 import okhttp3.Response
 import ru.noties.markwon.Markwon
-import xyz.quaver.pupil.BuildConfig
-import xyz.quaver.pupil.R
-import xyz.quaver.pupil.client
-import xyz.quaver.pupil.favorites
+import xyz.quaver.pupil.*
+import xyz.quaver.pupil.types.Tag
 import java.io.File
 import java.io.IOException
 import java.net.URL
@@ -173,7 +170,7 @@ fun checkUpdate(context: Context, force: Boolean = false) {
     }
 }
 
-fun restore(url: String, onFailure: ((Throwable) -> Unit)? = null, onSuccess: ((List<Int>) -> Unit)? = null) {
+fun restore(url: String, onFailure: ((Throwable) -> Unit)? = null, onSuccess: ((Int) -> Unit)? = null) {
     if (!URLUtil.isValidUrl(url)) {
         onFailure?.invoke(IllegalArgumentException())
         return
@@ -191,9 +188,20 @@ fun restore(url: String, onFailure: ((Throwable) -> Unit)? = null, onSuccess: ((
 
         override fun onResponse(call: Call, response: Response) {
             kotlin.runCatching {
-                Json.decodeFromString<List<Int>>(response.also { if (it.code() != 200) throw IOException() }.body().use { it?.string() } ?: "[]").let {
-                    favorites.addAll(it)
-                    onSuccess?.invoke(it)
+                val data = Json.parseToJsonElement(response.also { if (it.code() != 200) throw IOException() }.body().use { it?.string() } ?: "[]")
+
+                when (data) {
+                    is JsonArray -> favorites.addAll(data.map { it.jsonPrimitive.int })
+                    is JsonObject -> {
+                        val newFavorites = data["favorites"]?.let { Json.decodeFromJsonElement<List<Int>>(it) }.orEmpty()
+                        val newFavoriteTags = data["favorite_tags"]?.let { Json.decodeFromJsonElement<List<Tag>>(it) }.orEmpty()
+
+                        favorites.addAll(newFavorites)
+                        favoriteTags.addAll(newFavoriteTags)
+
+                        onSuccess?.invoke(favorites.size + favoriteTags.size)
+                    }
+                    else -> error("data is neither JsonArray or JsonObject")
                 }
             }.onFailure { onFailure?.invoke(it) }
         }
