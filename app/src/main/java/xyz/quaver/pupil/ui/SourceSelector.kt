@@ -56,6 +56,7 @@ import com.google.accompanist.insets.ui.BottomNavigation
 import com.google.accompanist.insets.ui.Scaffold
 import com.google.accompanist.insets.ui.TopAppBar
 import io.ktor.client.*
+import io.ktor.client.call.*
 import io.ktor.client.request.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -181,7 +182,7 @@ fun Explore() {
         while (true) {
             delay(1000)
             value = withContext(Dispatchers.IO) {
-                client.get<Map<String, RemoteSourceInfo>>("https://raw.githubusercontent.com/tom5079/PupilSources/master/versions.json")
+                client.get("https://raw.githubusercontent.com/tom5079/PupilSources/master/versions.json").body()
             }
         }
     }

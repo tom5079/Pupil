@@ -29,12 +29,7 @@ import com.google.android.gms.common.GooglePlayServicesRepairableException
 import com.google.android.gms.security.ProviderInstaller
 import io.ktor.client.*
 import io.ktor.client.engine.okhttp.*
-import io.ktor.client.features.*
-import io.ktor.client.features.cache.*
-import io.ktor.client.features.json.*
-import io.ktor.client.features.json.serializer.*
-import io.ktor.http.*
-import okhttp3.Protocol
+import io.ktor.client.plugins.contentnegotiation.*
 import org.kodein.di.*
 import org.kodein.di.android.x.androidXModule
 import xyz.quaver.pupil.sources.core.NetworkCache
@@ -53,10 +48,7 @@ class Pupil : Application(), DIAware {
 
         bind { singleton {
             HttpClient(OkHttp) {
-                install(JsonFeature) {
-                    serializer = KotlinxSerializer()
-                    accept(ContentType("text", "plain"))
-                }
+                install(ContentNegotiation)
             }
         } }
     }

@@ -20,23 +20,16 @@ package xyz.quaver.pupil.util
 
 import android.content.Context
 import android.content.Intent
-import android.util.Log
 import android.webkit.MimeTypeMap
 import androidx.core.content.FileProvider
 import io.ktor.client.*
-import io.ktor.client.call.*
-import io.ktor.client.features.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
-import io.ktor.util.cio.*
-import io.ktor.utils.io.*
 import io.ktor.utils.io.core.*
-import io.ktor.utils.io.jvm.javaio.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
-import kotlinx.coroutines.withContext
 import java.io.File
 import kotlin.io.use
 
@@ -49,8 +42,8 @@ class ApkDownloadManager(private val context: Context, private val client: HttpC
             it.delete()
         }
 
-        client.get<HttpStatement>(url).execute { response ->
-            val channel: ByteReadChannel = response.receive()
+        client.prepareGet(url).execute { response ->
+            val channel = response.bodyAsChannel()
             val contentLength = response.contentLength() ?: -1
             var readBytes = 0f
 
