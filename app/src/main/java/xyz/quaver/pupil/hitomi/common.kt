@@ -20,7 +20,6 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.datetime.Clock.System.now
-import kotlinx.datetime.Instant
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
@@ -139,7 +138,7 @@ const val nozomiextension = ".nozomi"
 val evaluationContext = Dispatchers.Main + Job()
 
 object gg {
-    private var lastRetrieval: Instant? = null
+    private var lastRetrieval: Long? = null
 
     private val mutex = Mutex()
 
@@ -151,7 +150,7 @@ object gg {
     @OptIn(ExperimentalTime::class, ExperimentalCoroutinesApi::class)
     private suspend fun refresh() = withContext(Dispatchers.IO) {
         mutex.withLock {
-            if (lastRetrieval == null || (lastRetrieval!! + 1.minutes) < now()) {
+            if (lastRetrieval == null || (lastRetrieval!! + 60000) < System.currentTimeMillis()) {
                 val ggjs: String = suspendCancellableCoroutine { continuation ->
                     val call = client.newCall(Request.Builder().url("https://ltn.hitomi.la/gg.js").build())
 
@@ -188,7 +187,7 @@ object gg {
 
                 b = Regex("b: '(.+)'").find(ggjs)!!.groupValues[1]
 
-                lastRetrieval = now()
+                lastRetrieval = System.currentTimeMillis()
             }
         }
     }
