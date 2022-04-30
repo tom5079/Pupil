@@ -52,8 +52,6 @@ import xyz.quaver.pupil.ui.theme.PupilTheme
 class MainActivity : ComponentActivity(), DIAware {
     override val di by closestDI()
 
-    private val logger = newLogger(LoggerFactory.default)
-
     @SuppressLint("UnusedCrossfadeTargetStateParameter")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

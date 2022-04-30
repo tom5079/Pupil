@@ -18,6 +18,7 @@
 
 package xyz.quaver.pupil.ui
 
+import android.app.Application
 import android.content.Intent
 import android.net.Uri
 import android.provider.Settings
@@ -34,7 +35,6 @@ import androidx.compose.material.icons.outlined.Info
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.capitalize
@@ -55,20 +55,23 @@ import com.google.accompanist.insets.systemBarsPadding
 import com.google.accompanist.insets.ui.BottomNavigation
 import com.google.accompanist.insets.ui.Scaffold
 import com.google.accompanist.insets.ui.TopAppBar
-import io.ktor.client.*
-import io.ktor.client.call.*
-import io.ktor.client.request.*
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.onCompletion
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import kotlinx.serialization.Serializable
+import org.kodein.di.*
+import org.kodein.di.compose.localDI
 import org.kodein.di.compose.rememberInstance
 import xyz.quaver.pupil.sources.SourceEntry
-import xyz.quaver.pupil.sources.rememberSources
-import xyz.quaver.pupil.util.ApkDownloadManager
+import xyz.quaver.pupil.sources.rememberLocalSourceList
+import xyz.quaver.pupil.sources.rememberRemoteSourceList
+import xyz.quaver.pupil.util.PupilHttpClient
+import xyz.quaver.pupil.util.RemoteSourceInfo
+import xyz.quaver.pupil.util.launchApkInstaller
+import java.io.File
+import kotlin.collections.associateBy
+import kotlin.collections.contains
+import kotlin.collections.forEach
+import kotlin.collections.listOf
+import kotlin.collections.orEmpty
 
 private sealed class SourceSelectorScreen(val route: String, val icon: ImageVector) {
     object Local: SourceSelectorScreen("local", Icons.Default.DownloadDone)
@@ -80,8 +83,53 @@ private val sourceSelectorScreens = listOf(
     SourceSelectorScreen.Explore
 )
 
+class DownloadApkActionState(override val di: DI) : DIAware {
+    private val app: Application by instance()
+    private val client: PupilHttpClient by instance()
+
+    var progress by mutableStateOf<Float?>(null)
+        private set
+
+    suspend fun download(sourceInfo: RemoteSourceInfo): File {
+        val file = File(app.cacheDir, "apks/${sourceInfo.name}-${sourceInfo.version}.apk").also {
+            it.parentFile?.mkdirs()
+        }
+
+        client.downloadApk(sourceInfo, file).collect { progress = it }
+
+        require(progress == Float.POSITIVE_INFINITY)
+
+        progress = null
+        return file
+    }
+}
+
 @Composable
-fun SourceListItem(icon: Painter, name: String, version: String, actions: @Composable () -> Unit = { }) {
+fun rememberDownloadApkActionState(di: DI = localDI()) = remember { DownloadApkActionState(di) }
+
+@Composable
+fun DownloadApkAction(
+    state: DownloadApkActionState = rememberDownloadApkActionState(),
+    content: @Composable () -> Unit
+) {
+    state.progress?.let { progress ->
+        Box(
+            Modifier.padding(12.dp, 0.dp)
+        ) {
+            when {
+                progress.isFinite() ->
+                    CircularProgressIndicator(progress, modifier = Modifier.size(24.dp))
+                else ->
+                    CircularProgressIndicator(modifier = Modifier.size(24.dp))
+            }
+        }
+
+        true
+    } ?: content()
+}
+
+@Composable
+fun SourceListItem(icon: @Composable (Modifier) -> Unit = { }, name: String, version: String, actions: @Composable () -> Unit = { }) {
     Card(
         modifier = Modifier.padding(8.dp),
         elevation = 4.dp
@@ -91,18 +139,12 @@ fun SourceListItem(icon: Painter, name: String, version: String, actions: @Compo
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Image(
-                icon,
-                contentDescription = "source icon",
-                modifier = Modifier.size(48.dp)
-            )
+            icon(Modifier.size(48.dp))
 
             Column(
                 Modifier.weight(1f)
             ) {
-                Text(
-                    name.capitalize(Locale.current)
-                )
+                Text(name.capitalize(Locale.current))
 
                 CompositionLocalProvider(LocalContentAlpha provides 0.5f) {
                     Text(
@@ -119,9 +161,13 @@ fun SourceListItem(icon: Painter, name: String, version: String, actions: @Compo
 
 @Composable
 fun Local(onSource: (SourceEntry) -> Unit) {
-    val sources by rememberSources()
+    val coroutineScope = rememberCoroutineScope()
+    val context = LocalContext.current
 
-    if (sources.isEmpty()) {
+    val localSourceList by rememberLocalSourceList()
+    val remoteSourceList by rememberRemoteSourceList()
+
+    if (localSourceList.isEmpty()) {
         Box(Modifier.fillMaxSize()) {
             Column(
                 Modifier.align(Alignment.Center),
@@ -136,16 +182,38 @@ fun Local(onSource: (SourceEntry) -> Unit) {
         }
     } else {
         LazyColumn {
-            items(sources) { source ->
+            items(localSourceList) { source ->
+                val actionState = rememberDownloadApkActionState()
+
                 SourceListItem(
-                    rememberDrawablePainter(source.icon),
+                    icon = { modifier ->
+                        Image(
+                            rememberDrawablePainter(source.icon),
+                            contentDescription = "source icon",
+                            modifier = modifier
+                        )
+                    },
                     source.sourceName,
                     source.version
                 ) {
-                    TextButton(
-                        onClick = { onSource(source) }
-                    ) {
-                        Text("GO")
+                    DownloadApkAction(actionState) {
+                        val remoteSource = remoteSourceList?.get(source.packageName)
+                        if (remoteSource != null && remoteSource.version != source.version) {
+                            TextButton(onClick = {
+                                coroutineScope.launch {
+                                    val file = actionState.download(remoteSource)
+                                    context.launchApkInstaller(file)
+                                }
+                            }) {
+                                Text("UPDATE")
+                            }
+                        } else {
+                            TextButton(
+                                onClick = { onSource(source) }
+                            ) {
+                                Text("GO")
+                            }
+                        }
                     }
                 }
             }
@@ -153,39 +221,20 @@ fun Local(onSource: (SourceEntry) -> Unit) {
     }
 }
 
-@Serializable
-private data class RemoteSourceInfo(
-    val projectName: String,
-    val name: String,
-    val version: String
-)
-
 @Composable
 fun Explore() {
-    val sources by rememberSources()
+    val localSourceList by rememberLocalSourceList()
     val localSources by derivedStateOf {
-        sources.map {
-            it.packageName to it
-        }.toMap()
+        localSourceList.associateBy {
+            it.packageName
+        }
     }
-
-    val client: HttpClient by rememberInstance()
-
-    val downloadManager: ApkDownloadManager by rememberInstance()
-    val progresses = remember { mutableStateMapOf<String, Float>() }
 
     val context = LocalContext.current
 
     val coroutineScope = rememberCoroutineScope()
 
-    val remoteSources by produceState<Map<String, RemoteSourceInfo>?>(null) {
-        while (true) {
-            delay(1000)
-            value = withContext(Dispatchers.IO) {
-                client.get("https://raw.githubusercontent.com/tom5079/PupilSources/master/versions.json").body()
-            }
-        }
-    }
+    val remoteSources by rememberRemoteSourceList()
 
     Box(
         Modifier.fillMaxSize()
@@ -194,49 +243,39 @@ fun Explore() {
             CircularProgressIndicator(Modifier.align(Alignment.Center))
         else
             LazyColumn {
-                items(remoteSources?.values?.toList() ?: emptyList()) { source ->
+                items(remoteSources?.values?.toList().orEmpty()) { sourceInfo ->
+                    val actionState = rememberDownloadApkActionState()
+
                     SourceListItem(
-                        rememberImagePainter("https://raw.githubusercontent.com/tom5079/PupilSources/master/${source.projectName}/src/main/res/mipmap-xxxhdpi/ic_launcher.png"),
-                        source.name,
-                        source.version
+                        icon = { modifier ->
+                            Image(
+                                rememberImagePainter("https://raw.githubusercontent.com/tom5079/PupilSources/master/${sourceInfo.projectName}/src/main/res/mipmap-xxxhdpi/ic_launcher.png"),
+                                contentDescription = "source icon",
+                                modifier = modifier
+                            )
+                        },
+                        sourceInfo.name,
+                        sourceInfo.version
                     ) {
-                        if (source.name !in progresses)
+                        DownloadApkAction(actionState) {
                             IconButton(onClick = {
-                                if (source.name in localSources) {
+                                if (sourceInfo.name in localSources) {
                                     context.startActivity(
                                         Intent(
                                             Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
-                                            Uri.fromParts("package", localSources[source.name]!!.packagePath, null)
+                                            Uri.fromParts("package", localSources[sourceInfo.name]!!.packagePath, null)
                                         )
                                     )
                                 } else coroutineScope.launch {
-                                    progresses[source.name] = 0f
-                                    downloadManager.download(source.projectName, source.name, source.version)
-                                        .onCompletion {
-                                            progresses.remove(source.name)
-                                        }.collectLatest {
-                                            progresses[source.name] = it
-                                        }
+                                    val file = actionState.download(sourceInfo)
+                                    context.launchApkInstaller(file)
                                 }
                             }) {
                                 Icon(
-                                    if (source.name !in localSources) Icons.Default.Download
-                                    else                              Icons.Outlined.Info,
+                                    if (sourceInfo.name !in localSources) Icons.Default.Download
+                                    else                                  Icons.Outlined.Info,
                                     contentDescription = "download"
                                 )
-                            }
-                        else {
-                            val progress = progresses[source.name]
-
-                            Box(
-                                Modifier.padding(12.dp, 0.dp)
-                            ) {
-                                when {
-                                    progress?.isFinite() == true ->
-                                        CircularProgressIndicator(progress, modifier = Modifier.size(24.dp))
-                                    else ->
-                                        CircularProgressIndicator(modifier = Modifier.size(24.dp))
-                                }
                             }
                         }
                     }
@@ -284,7 +323,9 @@ fun SourceSelector(onSource: (SourceEntry) -> Unit) {
             }
         }
     ) { contentPadding ->
-        NavHost(bottomNavController, startDestination = "local", modifier = Modifier.systemBarsPadding(top = false, bottom = false).padding(contentPadding)) {
+        NavHost(bottomNavController, startDestination = "local", modifier = Modifier
+            .systemBarsPadding(top = false, bottom = false)
+            .padding(contentPadding)) {
             composable(SourceSelectorScreen.Local.route) { Local(onSource) }
             composable(SourceSelectorScreen.Explore.route) { Explore() }
         }

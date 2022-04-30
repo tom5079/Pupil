@@ -22,7 +22,6 @@ import android.app.Application
 import android.content.Context
 import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
-import android.graphics.drawable.Drawable
 import androidx.compose.runtime.*
 import androidx.compose.ui.platform.LocalContext
 import dalvik.system.PathClassLoader
@@ -31,26 +30,35 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import xyz.quaver.pupil.sources.core.Source
-import java.util.concurrent.ConcurrentHashMap
+
+@Composable
+fun rememberLocalSourceList(context: Context = LocalContext.current): State<List<SourceEntry>> = produceState(emptyList()) {
+    while (true) {
+        value = loadSourceList(context)
+        delay(1000)
+    }
+}
+
+suspend fun loadSource(context: Context, sourceEntry: SourceEntry): Source = coroutineScope {
+    sourceCacheMutex.withLock {
+        sourceCache[sourceEntry.packageName] ?: run {
+            val classLoader = PathClassLoader(sourceEntry.sourceDir, null, context.classLoader)
+
+            Class.forName("${sourceEntry.packagePath}${sourceEntry.sourcePath}", false, classLoader)
+                .getConstructor(Application::class.java)
+                .newInstance(context.applicationContext) as Source
+        }.also { sourceCache[sourceEntry.packageName] = it }
+    }
+}
 
 private const val SOURCES_FEATURE = "pupil.sources"
 private const val SOURCES_PACKAGE_PREFIX = "xyz.quaver.pupil.sources"
 private const val SOURCES_PATH = "pupil.sources.path"
 
-data class SourceEntry(
-    val packageName: String,
-    val packagePath: String,
-    val sourceName: String,
-    val sourcePath: String,
-    val sourceDir: String,
-    val icon: Drawable,
-    val version: String
-)
-
-val PackageInfo.isSourceFeatureEnabled
+private val PackageInfo.isSourceFeatureEnabled
     get() = this.reqFeatures.orEmpty().any { it.name == SOURCES_FEATURE }
 
-fun loadSource(context: Context, packageInfo: PackageInfo): List<SourceEntry> {
+private fun loadSource(context: Context, packageInfo: PackageInfo): List<SourceEntry> {
     val packageManager = context.packageManager
 
     val applicationInfo = packageInfo.applicationInfo
@@ -84,19 +92,7 @@ fun loadSource(context: Context, packageInfo: PackageInfo): List<SourceEntry> {
 private val sourceCacheMutex = Mutex()
 private val sourceCache = mutableMapOf<String, Source>()
 
-suspend fun loadSource(context: Context, sourceEntry: SourceEntry): Source = coroutineScope {
-    sourceCacheMutex.withLock {
-        sourceCache[sourceEntry.packageName] ?: run {
-            val classLoader = PathClassLoader(sourceEntry.sourceDir, null, context.classLoader)
-
-            Class.forName("${sourceEntry.packagePath}${sourceEntry.sourcePath}", false, classLoader)
-                .getConstructor(Application::class.java)
-                .newInstance(context.applicationContext) as Source
-        }.also { sourceCache[sourceEntry.packageName] = it }
-    }
-}
-
-fun updateSources(context: Context): List<SourceEntry> {
+private fun loadSourceList(context: Context): List<SourceEntry> {
     val packageManager = context.packageManager
 
     val packages = packageManager.getInstalledPackages(
@@ -109,19 +105,4 @@ fun updateSources(context: Context): List<SourceEntry> {
         else
             emptyList()
     }
-}
-
-@Composable
-fun rememberSources(): State<List<SourceEntry>> {
-    val sources = remember { mutableStateOf<List<SourceEntry>>(emptyList()) }
-    val context = LocalContext.current
-
-    LaunchedEffect(Unit) {
-        while (true) {
-            sources.value = updateSources(context)
-            delay(1000)
-        }
-    }
-
-    return sources
 }
