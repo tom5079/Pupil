@@ -1,6 +1,6 @@
 /*
  *     Pupil, Hitomi.la viewer for Android
- *     Copyright (C) 2021  tom5079
+ *     Copyright (C) 2022  tom5079
  *
  *     This program is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
@@ -16,10 +16,16 @@
  *     along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package xyz.quaver.pupil.migrate
+package xyz.quaver.pupil.sources
 
-class Migrate001 {
+import android.graphics.drawable.Drawable
 
-    
-
-}
+data class SourceEntry(
+    val packageName: String,
+    val packagePath: String,
+    val sourceName: String,
+    val sourcePath: String,
+    val sourceDir: String,
+    val icon: Drawable,
+    val version: String
+)

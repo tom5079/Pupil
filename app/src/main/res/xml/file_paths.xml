@@ -19,5 +19,5 @@
 
 <paths>
     <cache-path name="cached_image" path="networkcache/" />
-    <external-cache-path name="apks" path="apks/" />
+    <cache-path name="apks" path="apks/" />
 </paths>

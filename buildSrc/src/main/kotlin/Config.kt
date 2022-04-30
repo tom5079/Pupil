@@ -20,10 +20,20 @@ const val GROUP_ID = "xyz.quaver"
 const val VERSION = "6.0.0-alpha02"
 
 object Versions {
-    const val KOTLIN_VERSION = "1.6.10"
+    const val KOTLIN = "1.6.10"
+    const val COROUTINE = "1.6.1"
+    const val SERIALIZATION = "1.3.2"
 
     const val JETPACK_COMPOSE = "1.1.1"
     const val ACCOMPANIST = "0.23.1"
+
+    const val KTOR = "2.0.0"
+}
+
+object Kotlin {
+    const val SERIALIZATION = "org.jetbrains.kotlinx:kotlinx-serialization-json:${Versions.SERIALIZATION}"
+    const val COROUTINE = "org.jetbrains.kotlinx:kotlinx-coroutines-android:${Versions.COROUTINE}"
+    const val COROUTINE_TEST = "org.jetbrains.kotlinx:kotlinx-coroutines-test:${Versions.COROUTINE}"
 }
 
 object JetpackCompose {
@@ -44,4 +54,13 @@ object Accompanist {
     const val INSETS_UI = "com.google.accompanist:accompanist-insets-ui:${Versions.ACCOMPANIST}"
     const val DRAWABLE_PAINTER = "com.google.accompanist:accompanist-drawablepainter:${Versions.ACCOMPANIST}"
     const val SYSTEM_UI_CONTROLLER = "com.google.accompanist:accompanist-systemuicontroller:${Versions.ACCOMPANIST}"
+}
+
+object KtorClient {
+    const val CORE = "io.ktor:ktor-client-core:${Versions.KTOR}"
+    const val OKHTTP = "io.ktor:ktor-client-okhttp:${Versions.KTOR}"
+    const val CONTENT_NEGOTIATION = "io.ktor:ktor-client-content-negotiation:${Versions.KTOR}"
+    const val SERIALIZATION = "io.ktor:ktor-serialization-kotlinx-json:${Versions.KTOR}"
+
+    const val TEST = "io.ktor:ktor-client-mock:${Versions.KTOR}"
 }

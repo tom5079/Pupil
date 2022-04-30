@@ -30,11 +30,12 @@ import com.google.android.gms.security.ProviderInstaller
 import io.ktor.client.*
 import io.ktor.client.engine.okhttp.*
 import io.ktor.client.plugins.contentnegotiation.*
+import io.ktor.serialization.kotlinx.json.*
 import org.kodein.di.*
 import org.kodein.di.android.x.androidXModule
 import xyz.quaver.pupil.sources.core.NetworkCache
 import xyz.quaver.pupil.sources.core.settingsDataStore
-import xyz.quaver.pupil.util.ApkDownloadManager
+import xyz.quaver.pupil.util.PupilHttpClient
 
 class Pupil : Application(), DIAware {
 
@@ -42,15 +43,10 @@ class Pupil : Application(), DIAware {
         import(androidXModule(this@Pupil))
 
         bind { singleton { NetworkCache(this@Pupil) } }
-        bindSingleton { ApkDownloadManager(this@Pupil, instance()) }
 
         bindSingleton { settingsDataStore }
 
-        bind { singleton {
-            HttpClient(OkHttp) {
-                install(ContentNegotiation)
-            }
-        } }
+        bind { singleton { PupilHttpClient(OkHttp.create()) } }
     }
 
     override fun onCreate() {

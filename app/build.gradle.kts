@@ -86,8 +86,8 @@ android {
 dependencies {
     implementation(fileTree(mapOf("dir" to "libs", "include" to listOf("*.aar"))))
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.1")
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.3.2")
+    implementation(Kotlin.SERIALIZATION)
+    implementation(Kotlin.COROUTINE)
 
     implementation("androidx.activity:activity-compose:1.4.0")
     implementation("androidx.navigation:navigation-compose:2.4.2")
@@ -110,10 +110,10 @@ dependencies {
 
     implementation("io.coil-kt:coil-compose:1.4.0")
 
-    implementation("io.ktor:ktor-client-core:2.0.0")
-    implementation("io.ktor:ktor-client-okhttp:2.0.0")
-    implementation("io.ktor:ktor-client-content-negotiation:2.0.0")
-    implementation("io.ktor:ktor-serialization-kotlinx-json:2.0.0")
+    implementation(KtorClient.CORE)
+    implementation(KtorClient.OKHTTP)
+    implementation(KtorClient.CONTENT_NEGOTIATION)
+    implementation(KtorClient.SERIALIZATION)
 
     implementation("androidx.room:room-runtime:2.4.2")
     annotationProcessor("androidx.room:room-compiler:2.4.2")
@@ -144,15 +144,18 @@ dependencies {
     implementation("xyz.quaver:subsampledimage:0.0.1-alpha19-SNAPSHOT")
 
     implementation("org.kodein.log:kodein-log:0.12.0")
-//    debugImplementation("com.squareup.leakcanary:leakcanary-android:2.8.1")
+    debugImplementation("com.squareup.leakcanary:leakcanary-android:2.8.1")
 
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.mockito:mockito-inline:4.4.0")
+    testImplementation(KtorClient.TEST)
+    testImplementation(Kotlin.COROUTINE_TEST)
 
     androidTestImplementation("androidx.test.ext:junit:1.1.3")
     androidTestImplementation("androidx.test:rules:1.4.0")
     androidTestImplementation("androidx.test:runner:1.4.0")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.4.0")
+    androidTestImplementation(KtorClient.TEST)
 
     androidTestImplementation("androidx.compose.ui:ui-test-junit4:1.1.1")
 }

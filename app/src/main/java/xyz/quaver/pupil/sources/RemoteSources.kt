@@ -1,6 +1,6 @@
 /*
  *     Pupil, Hitomi.la viewer for Android
- *     Copyright (C) 2019  tom5079
+ *     Copyright (C) 2022  tom5079
  *
  *     This program is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
@@ -16,26 +16,21 @@
  *     along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-@file:Suppress("UNUSED_VARIABLE", "IncorrectScope")
+package xyz.quaver.pupil.sources
 
-package xyz.quaver.pupil
+import androidx.compose.runtime.*
+import kotlinx.coroutines.delay
+import org.kodein.di.compose.localDI
+import org.kodein.di.compose.rememberInstance
+import org.kodein.di.direct
+import org.kodein.di.instance
+import xyz.quaver.pupil.util.PupilHttpClient
+import xyz.quaver.pupil.util.RemoteSourceInfo
 
-import io.ktor.client.*
-import kotlinx.coroutines.runBlocking
-import org.junit.Test
-import xyz.quaver.pupil.sources.manatoki.getItem
-import org.junit.Assert.*;
-
-/**
- * Example local unit test, which will execute on the development machine (host).
- *
- * See [testing documentation](http://d.android.com/tools/testing).
- */
-
-class ExampleUnitTest {
-
-    @Test
-    fun test() {
+@Composable
+fun rememberRemoteSourceList(client: PupilHttpClient = localDI().direct.instance()) = produceState<Map<String, RemoteSourceInfo>?>(null) {
+    while (true) {
+        value = client.getRemoteSourceList()
+        delay(1000)
     }
-
 }
