@@ -22,18 +22,15 @@ import io.ktor.client.engine.mock.*
 import io.ktor.http.*
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
-import org.junit.Before
 import org.junit.Test
 import xyz.quaver.pupil.util.PupilHttpClient
 import xyz.quaver.pupil.util.RemoteSourceInfo
 import java.io.File
-import kotlin.math.exp
 import kotlin.random.Random
 
 @OptIn(ExperimentalCoroutinesApi::class)

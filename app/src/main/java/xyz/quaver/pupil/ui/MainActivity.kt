@@ -18,22 +18,15 @@
 
 package xyz.quaver.pupil.ui
 
-import android.annotation.SuppressLint
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.compose.animation.Crossfade
-import androidx.compose.animation.ExperimentalAnimationApi
-import androidx.compose.animation.core.tween
-import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.MaterialTheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.graphics.Color
 import androidx.core.view.WindowCompat
-import androidx.fragment.app.Fragment
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -42,17 +35,13 @@ import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import kotlinx.coroutines.launch
 import org.kodein.di.DIAware
 import org.kodein.di.android.closestDI
-import org.kodein.log.LoggerFactory
-import org.kodein.log.newLogger
 import xyz.quaver.pupil.sources.core.Source
 import xyz.quaver.pupil.sources.loadSource
 import xyz.quaver.pupil.ui.theme.PupilTheme
 
-@OptIn(ExperimentalAnimationApi::class, ExperimentalMaterialApi::class)
 class MainActivity : ComponentActivity(), DIAware {
     override val di by closestDI()
 
-    @SuppressLint("UnusedCrossfadeTargetStateParameter")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
