@@ -260,24 +260,35 @@ fun Explore() {
                         sourceInfo.version
                     ) {
                         DownloadApkAction(actionState) {
-                            IconButton(onClick = {
-                                if (sourceInfo.name in localSources) {
-                                    context.startActivity(
-                                        Intent(
-                                            Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
-                                            Uri.fromParts("package", localSources[sourceInfo.name]!!.packagePath, null)
-                                        )
-                                    )
-                                } else coroutineScope.launch {
-                                    val file = actionState.download(sourceInfo)
-                                    context.launchApkInstaller(file)
+                            if (localSources[sourceInfo.name]?.version != sourceInfo.version) {
+                                TextButton(onClick = {
+                                    coroutineScope.launch {
+                                        val file = actionState.download(sourceInfo)
+                                        context.launchApkInstaller(file)
+                                    }
+                                }) {
+                                    Text("UPDATE")
                                 }
-                            }) {
-                                Icon(
-                                    if (sourceInfo.name !in localSources) Icons.Default.Download
-                                    else                                  Icons.Outlined.Info,
-                                    contentDescription = "download"
-                                )
+                            } else {
+                                IconButton(onClick = {
+                                    if (sourceInfo.name in localSources) {
+                                        context.startActivity(
+                                            Intent(
+                                                Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                                                Uri.fromParts("package", localSources[sourceInfo.name]!!.packagePath, null)
+                                            )
+                                        )
+                                    } else coroutineScope.launch {
+                                        val file = actionState.download(sourceInfo)
+                                        context.launchApkInstaller(file)
+                                    }
+                                }) {
+                                    Icon(
+                                        if (sourceInfo.name !in localSources) Icons.Default.Download
+                                        else                                  Icons.Outlined.Info,
+                                        contentDescription = "download"
+                                    )
+                                }
                             }
                         }
                     }
