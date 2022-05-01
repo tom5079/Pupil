@@ -91,6 +91,8 @@ class DownloadApkActionState(override val di: DI) : DIAware {
         private set
 
     suspend fun download(sourceInfo: RemoteSourceInfo): File {
+        progress = 0f
+
         val file = File(app.cacheDir, "apks/${sourceInfo.name}-${sourceInfo.version}.apk").also {
             it.parentFile?.mkdirs()
         }
@@ -117,7 +119,7 @@ fun DownloadApkAction(
             Modifier.padding(12.dp, 0.dp)
         ) {
             when {
-                progress.isFinite() ->
+                progress.isFinite() && progress > 0f ->
                     CircularProgressIndicator(progress, modifier = Modifier.size(24.dp))
                 else ->
                     CircularProgressIndicator(modifier = Modifier.size(24.dp))
