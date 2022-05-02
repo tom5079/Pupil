@@ -83,6 +83,10 @@ private val sourceSelectorScreens = listOf(
     SourceSelectorScreen.Explore
 )
 
+private val RemoteSourceInfo.apkUrl: String
+    get() = "https://github.com/tom5079/PupilSources/releases/download/$name-$version/$projectName-release.apk"
+
+
 class DownloadApkActionState(override val di: DI) : DIAware {
     private val app: Application by instance()
     private val client: PupilHttpClient by instance()
@@ -97,7 +101,7 @@ class DownloadApkActionState(override val di: DI) : DIAware {
             it.parentFile?.mkdirs()
         }
 
-        client.downloadApk(sourceInfo, file).collect { progress = it }
+        client.downloadApk(sourceInfo.apkUrl, file).collect { progress = it }
 
         require(progress == Float.POSITIVE_INFINITY)
 
