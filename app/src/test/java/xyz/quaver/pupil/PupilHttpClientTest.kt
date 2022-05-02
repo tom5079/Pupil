@@ -31,6 +31,7 @@ import org.junit.Test
 import xyz.quaver.pupil.util.PupilHttpClient
 import xyz.quaver.pupil.util.RemoteSourceInfo
 import java.io.File
+import java.util.*
 import kotlin.random.Random
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -65,9 +66,48 @@ class PupilHttpClientTest {
 
         val client = PupilHttpClient(mockEngine)
 
-        client.downloadApk(RemoteSourceInfo("", "", ""), tempFile).collect()
+        client.downloadApk("http://a/", tempFile).collect()
 
         assertArrayEquals(expected, tempFile.readBytes())
+    }
+
+    @Test
+    fun latestRelease() = runTest {
+        val expectedVersion = "5.3.7"
+        val expectedApkUrl = "https://github.com/tom5079/Pupil/releases/download/5.3.7/Pupil-v5.3.7.apk"
+        val expectedUpdateNotes = mapOf(
+            Locale.KOREAN to """
+                * 가끔씩 무한로딩 걸리는 현상 수정
+                * 백업시 즐겨찾기 태그도 백업되게 수정
+                * 이전 안드로이드에서 앱이 튕기는 오류 수정
+            """.trimIndent(),
+            Locale.JAPANESE to """
+                * 稀に接続不可になるバグを修正
+                * お気に入りタグを含むようバックアップ機能を修正
+                * 旧バージョンのアンドロイドでアプリがクラッシュするバグを解決
+            """.trimIndent(),
+            Locale.ENGLISH to """
+                * Fixed occasional outage
+                * Updated backup/restore feature to include favorite tags
+                * Fixed app crashing on older Androids
+            """.trimIndent()
+        )
+
+        val mockEngine = MockEngine { _ ->
+            val response = javaClass.getResource("/releases.json")!!.readText()
+            respond(response)
+        }
+
+        val client = PupilHttpClient(mockEngine)
+
+        val release = client.latestRelease()
+
+        assertEquals(expectedVersion, release.version)
+        assertEquals(expectedApkUrl, release.apkUrl)
+
+        println(expectedUpdateNotes)
+        println(release.updateNotes)
+        assertEquals(expectedUpdateNotes, release.updateNotes)
     }
 
 }

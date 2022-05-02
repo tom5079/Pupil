@@ -32,13 +32,27 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.*
 import java.io.File
+import java.util.*
 
 @Serializable
 data class RemoteSourceInfo(
     val projectName: String,
     val name: String,
     val version: String
+)
+
+class Release(
+    val version: String,
+    val apkUrl: String,
+    val updateNotes: Map<Locale, String>
+)
+
+private val localeMap = mapOf(
+    "한국어" to Locale.KOREAN,
+    "日本語" to Locale.JAPANESE,
+    "English" to Locale.ENGLISH
 )
 
 class PupilHttpClient(engine: HttpClientEngine) {
@@ -52,10 +66,7 @@ class PupilHttpClient(engine: HttpClientEngine) {
         httpClient.get("https://tom5079.github.io/PupilSources/versions.json").body()
     }
 
-    fun downloadApk(sourceInfo: RemoteSourceInfo, dest: File) = flow {
-        val url =
-            "https://github.com/tom5079/PupilSources/releases/download/${sourceInfo.name}-${sourceInfo.version}/${sourceInfo.projectName}-release.apk"
-
+    fun downloadApk(url: String, dest: File) = flow {
         httpClient.prepareGet(url).execute { response ->
             val channel = response.bodyAsChannel()
             val contentLength = response.contentLength() ?: -1
@@ -77,4 +88,43 @@ class PupilHttpClient(engine: HttpClientEngine) {
 
         emit(Float.POSITIVE_INFINITY)
     }.flowOn(Dispatchers.IO)
+
+    suspend fun latestRelease(beta: Boolean = true): Release = withContext(Dispatchers.IO) {
+        val releases = Json.parseToJsonElement(
+            httpClient.get("https://api.github.com/repos/tom5079/Pupil/releases").bodyAsText()
+        ).jsonArray
+
+        val latestRelease = releases.first { release ->
+            beta || !release.jsonObject["prerelease"]!!.jsonPrimitive.boolean
+        }.jsonObject
+
+        val version = latestRelease["tag_name"]!!.jsonPrimitive.content
+
+        val apkUrl = latestRelease["assets"]!!.jsonArray.first { asset ->
+            val name = asset.jsonObject["name"]!!.jsonPrimitive.content
+            name.startsWith("Pupil-v") && name.endsWith(".apk")
+        }.jsonObject["browser_download_url"]!!.jsonPrimitive.content
+
+        val updateNotes: Map<Locale, String> = buildMap {
+            val body = latestRelease["body"]!!.jsonPrimitive.content
+
+            var locale: Locale? = null
+            val stringBuilder = StringBuilder()
+            body.lineSequence().forEach { line ->
+                localeMap[line.drop(3)]?.let { newLocale ->
+                    if (locale != null) {
+                        put(locale!!, stringBuilder.deleteCharAt(stringBuilder.length-1).toString())
+                        stringBuilder.clear()
+                    }
+                    locale = newLocale
+                    return@forEach
+                }
+
+                if (locale != null) stringBuilder.appendLine(line)
+            }
+            put(locale!!, stringBuilder.deleteCharAt(stringBuilder.length-1).toString())
+        }
+
+        Release(version, apkUrl, updateNotes)
+    }
 }
