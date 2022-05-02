@@ -101,6 +101,8 @@ dependencies {
     implementation(JetpackCompose.MATERIAL_ICONS)
     implementation(JetpackCompose.RUNTIME_LIVEDATA)
 
+    implementation(JetpackCompose.MARKDOWN)
+
     implementation(Accompanist.INSETS)
     implementation(Accompanist.INSETS_UI)
     implementation(Accompanist.FLOW_LAYOUT)

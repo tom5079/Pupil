@@ -66,7 +66,7 @@ class PupilHttpClientTest {
 
         val client = PupilHttpClient(mockEngine)
 
-        client.downloadApk("http://a/", tempFile).collect()
+        client.downloadFile("http://a/", tempFile).collect()
 
         assertArrayEquals(expected, tempFile.readBytes())
     }
@@ -75,7 +75,7 @@ class PupilHttpClientTest {
     fun latestRelease() = runTest {
         val expectedVersion = "5.3.7"
         val expectedApkUrl = "https://github.com/tom5079/Pupil/releases/download/5.3.7/Pupil-v5.3.7.apk"
-        val expectedUpdateNotes = mapOf(
+        val expectedReleaseNotes = mapOf(
             Locale.KOREAN to """
                 * 가끔씩 무한로딩 걸리는 현상 수정
                 * 백업시 즐겨찾기 태그도 백업되게 수정
@@ -100,14 +100,14 @@ class PupilHttpClientTest {
 
         val client = PupilHttpClient(mockEngine)
 
-        val release = client.latestRelease()
+        val release = client.latestRelease()!!
 
         assertEquals(expectedVersion, release.version)
         assertEquals(expectedApkUrl, release.apkUrl)
 
-        println(expectedUpdateNotes)
-        println(release.updateNotes)
-        assertEquals(expectedUpdateNotes, release.updateNotes)
+        println(expectedReleaseNotes)
+        println(release.releaseNotes)
+        assertEquals(expectedReleaseNotes, release.releaseNotes)
     }
 
 }

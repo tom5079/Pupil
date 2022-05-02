@@ -45,6 +45,8 @@ object JetpackCompose {
     const val RUNTIME_LIVEDATA = "androidx.compose.runtime:runtime-livedata:${Versions.JETPACK_COMPOSE}"
     const val UI_UTIL = "androidx.compose.ui:ui-util:${Versions.JETPACK_COMPOSE}"
     const val ANIMATION = "androidx.compose.animation:animation:${Versions.JETPACK_COMPOSE}"
+
+    const val MARKDOWN = "com.github.jeziellago:compose-markdown:0.2.9"
 }
 
 object Accompanist {
