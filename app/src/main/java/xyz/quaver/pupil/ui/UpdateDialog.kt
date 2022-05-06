@@ -26,7 +26,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
-import dev.jeziellago.compose.markdowntext.MarkdownText
 import kotlinx.coroutines.launch
 import org.kodein.di.compose.onDIContext
 import xyz.quaver.pupil.util.Release
@@ -65,7 +64,7 @@ fun UpdateAlertDialog(
                         style = MaterialTheme.typography.h6
                     )
 
-                    MarkdownText(release.releaseNotes.getOrElse(Locale.getDefault()) { release.releaseNotes[Locale.ENGLISH]!! })
+                    Text(release.releaseNotes.getOrElse(Locale.getDefault()) { release.releaseNotes[Locale.ENGLISH]!! })
 
                     Row(
                         Modifier.fillMaxWidth(),

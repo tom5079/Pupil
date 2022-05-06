@@ -24,7 +24,7 @@ object Versions {
     const val COROUTINE = "1.6.1"
     const val SERIALIZATION = "1.3.2"
 
-    const val JETPACK_COMPOSE = "1.1.1"
+    const val JETPACK_COMPOSE = "1.2.0-alpha07"
     const val ACCOMPANIST = "0.23.1"
 
     const val KTOR = "2.0.0"

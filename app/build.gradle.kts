@@ -101,7 +101,7 @@ dependencies {
     implementation(JetpackCompose.MATERIAL_ICONS)
     implementation(JetpackCompose.RUNTIME_LIVEDATA)
 
-    implementation(JetpackCompose.MARKDOWN)
+//    implementation(JetpackCompose.MARKDOWN)
 
     implementation(Accompanist.INSETS)
     implementation(Accompanist.INSETS_UI)
@@ -110,7 +110,7 @@ dependencies {
     implementation(Accompanist.DRAWABLE_PAINTER)
     implementation(Accompanist.APPCOMPAT_THEME)
 
-    implementation("io.coil-kt:coil-compose:1.4.0")
+    implementation("io.coil-kt:coil-compose:2.0.0-rc03")
 
     implementation(KtorClient.CORE)
     implementation(KtorClient.OKHTTP)
@@ -137,8 +137,6 @@ dependencies {
     implementation("com.google.android.gms:play-services-oss-licenses:17.0.0")
 
     implementation("org.jsoup:jsoup:1.14.3")
-
-    implementation("ru.noties.markwon:core:3.1.0")
 
     implementation("xyz.quaver.pupil.sources:core:0.0.1-alpha01-DEV26")
 
