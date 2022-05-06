@@ -55,11 +55,11 @@ import com.google.accompanist.insets.systemBarsPadding
 import com.google.accompanist.insets.ui.BottomNavigation
 import com.google.accompanist.insets.ui.Scaffold
 import com.google.accompanist.insets.ui.TopAppBar
-import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.kodein.di.*
 import org.kodein.di.compose.localDI
-import org.kodein.di.compose.rememberInstance
 import xyz.quaver.pupil.sources.SourceEntry
 import xyz.quaver.pupil.sources.rememberLocalSourceList
 import xyz.quaver.pupil.sources.rememberRemoteSourceList
@@ -83,6 +83,10 @@ private val sourceSelectorScreens = listOf(
     SourceSelectorScreen.Explore
 )
 
+private val RemoteSourceInfo.apkUrl: String
+    get() = "https://github.com/tom5079/PupilSources/releases/download/$name-$version/$projectName-release.apk"
+
+
 class DownloadApkActionState(override val di: DI) : DIAware {
     private val app: Application by instance()
     private val client: PupilHttpClient by instance()
@@ -90,19 +94,20 @@ class DownloadApkActionState(override val di: DI) : DIAware {
     var progress by mutableStateOf<Float?>(null)
         private set
 
-    suspend fun download(sourceInfo: RemoteSourceInfo): File {
+    suspend fun download(url: String): File? = withContext(Dispatchers.IO) {
         progress = 0f
 
-        val file = File(app.cacheDir, "apks/${sourceInfo.name}-${sourceInfo.version}.apk").also {
+        val file = File.createTempFile("pupil", ".apk", File(app.cacheDir, "apks")).also {
             it.parentFile?.mkdirs()
         }
 
-        client.downloadApk(sourceInfo, file).collect { progress = it }
+        client.downloadFile(url, file).collect { progress = it }
 
-        require(progress == Float.POSITIVE_INFINITY)
+        if (progress == Float.POSITIVE_INFINITY) file else null
+    }
 
+    fun reset() {
         progress = null
-        return file
     }
 }
 
@@ -111,7 +116,7 @@ fun rememberDownloadApkActionState(di: DI = localDI()) = remember { DownloadApkA
 
 @Composable
 fun DownloadApkAction(
-    state: DownloadApkActionState = rememberDownloadApkActionState(),
+    state: DownloadApkActionState,
     content: @Composable () -> Unit
 ) {
     state.progress?.let { progress ->
@@ -203,8 +208,9 @@ fun Local(onSource: (SourceEntry) -> Unit) {
                         if (remoteSource != null && remoteSource.version != source.version) {
                             TextButton(onClick = {
                                 coroutineScope.launch {
-                                    val file = actionState.download(remoteSource)
+                                    val file = actionState.download(remoteSource.apkUrl)!! // TODO("Handle error")
                                     context.launchApkInstaller(file)
+                                    actionState.reset()
                                 }
                             }) {
                                 Text("UPDATE")
@@ -263,8 +269,9 @@ fun Explore() {
                             if (localSources[sourceInfo.name]?.version != sourceInfo.version) {
                                 TextButton(onClick = {
                                     coroutineScope.launch {
-                                        val file = actionState.download(sourceInfo)
+                                        val file = actionState.download(sourceInfo.apkUrl)!! // TODO("Handle exception")
                                         context.launchApkInstaller(file)
+                                        actionState.reset()
                                     }
                                 }) {
                                     Text("UPDATE")
@@ -279,8 +286,9 @@ fun Explore() {
                                             )
                                         )
                                     } else coroutineScope.launch {
-                                        val file = actionState.download(sourceInfo)
+                                        val file = actionState.download(sourceInfo.apkUrl)!! // TODO("Handle exception")
                                         context.launchApkInstaller(file)
+                                        actionState.reset()
                                     }
                                 }) {
                                     Icon(

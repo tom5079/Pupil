@@ -35,9 +35,13 @@ import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import kotlinx.coroutines.launch
 import org.kodein.di.DIAware
 import org.kodein.di.android.closestDI
+import org.kodein.di.compose.rememberInstance
+import xyz.quaver.pupil.BuildConfig
 import xyz.quaver.pupil.sources.core.Source
 import xyz.quaver.pupil.sources.loadSource
 import xyz.quaver.pupil.ui.theme.PupilTheme
+import xyz.quaver.pupil.util.PupilHttpClient
+import xyz.quaver.pupil.util.Release
 
 class MainActivity : ComponentActivity(), DIAware {
     override val di by closestDI()
@@ -57,10 +61,26 @@ class MainActivity : ComponentActivity(), DIAware {
 
                     val coroutineScope = rememberCoroutineScope()
 
+                    val client: PupilHttpClient by rememberInstance()
+
+                    val latestRelease by produceState<Release?>(null) {
+                        value = client.latestRelease()
+                    }
+
+                    var dismissUpdate by remember { mutableStateOf(false) }
+
                     SideEffect {
                         systemUiController.setSystemBarsColor(
                             color = Color.Transparent,
                             darkIcons = useDarkIcons
+                        )
+                    }
+
+                    latestRelease?.let { release ->
+                        UpdateAlertDialog(
+                            show = !dismissUpdate && release.version != BuildConfig.VERSION_NAME,
+                            release = release,
+                            onDismiss = { dismissUpdate = true }
                         )
                     }
 
