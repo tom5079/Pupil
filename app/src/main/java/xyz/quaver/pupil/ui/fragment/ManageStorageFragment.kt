@@ -117,7 +117,9 @@ class ManageStorageFragment : PreferenceFragmentCompat(), Preference.OnPreferenc
                         if (!metadataFile.exists()) return@forEach
 
                         val metadata = metadataFile.readText()?.let {
-                            json.decodeFromString<Metadata>(it)
+                            runCatching {
+                                json.decodeFromString<Metadata>(it)
+                            }.getOrNull()
                         } ?: return@forEach
 
                         val galleryID = metadata.galleryBlock?.id ?: metadata.galleryInfo?.id?.toIntOrNull() ?: return@forEach
