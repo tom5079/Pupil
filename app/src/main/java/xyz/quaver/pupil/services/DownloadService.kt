@@ -168,17 +168,23 @@ class DownloadService : Service() {
     private val interceptor: PupilInterceptor = { chain ->
         val request = chain.request()
 
-        var response = chain.proceed(request)
+        var response = kotlin.runCatching {
+            chain.proceed(request)
+        }.getOrNull()
         var limit = 5
 
-        while (!response.isSuccessful) {
-            if (response.code() == 503) {
+        while (response?.isSuccessful != true) {
+            if (response?.code() == 503) {
                 Thread.sleep(200)
-            } else if (--limit > 0)
+            } else if (--limit < 0)
                 break
 
-            response = chain.proceed(request)
+            response = kotlin.runCatching {
+                chain.proceed(request)
+            }.getOrNull()
         }
+
+        checkNotNull(response)
 
         response.newBuilder()
             .body(response.body()?.let {
@@ -207,6 +213,7 @@ class DownloadService : Service() {
     private val callback = object: Callback {
 
         override fun onFailure(call: Call, e: IOException) {
+            Log.d("PUPILD", "ONFAILURE ${call.request().tag()}, ${e}")
             FirebaseCrashlytics.getInstance().recordException(e)
 
             if (e.message?.contains("cancel", true) == false) {
@@ -215,6 +222,7 @@ class DownloadService : Service() {
         }
 
         override fun onResponse(call: Call, response: Response) {
+            Log.d("PUPILD", "ONRESPONSE ${call.request().tag()}")
             val (galleryID, index, startId) = call.request().tag() as Tag
             val ext = call.request().url().encodedPath().split('.').last()
 

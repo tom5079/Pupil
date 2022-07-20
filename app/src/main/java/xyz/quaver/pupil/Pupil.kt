@@ -100,7 +100,7 @@ class Pupil : Application() {
         val proxyInfo = getProxyInfo()
 
         clientBuilder = OkHttpClient.Builder()
-            .connectTimeout(0, TimeUnit.SECONDS)
+//            .connectTimeout(0, TimeUnit.SECONDS)
             .readTimeout(0, TimeUnit.SECONDS)
             .proxyInfo(proxyInfo)
             .addInterceptor { chain ->
