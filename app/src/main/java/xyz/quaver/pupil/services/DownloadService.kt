@@ -171,7 +171,7 @@ class DownloadService : Service() {
         var response = kotlin.runCatching {
             chain.proceed(request)
         }.getOrNull()
-        var limit = 5
+        var limit = 10
 
         while (response?.isSuccessful != true) {
             if (response?.code() == 503) {
@@ -184,9 +184,10 @@ class DownloadService : Service() {
             }.getOrNull()
         }
 
-        checkNotNull(response)
+        if (response == null)
+            response = chain.proceed(request)
 
-        response.newBuilder()
+        response!!.newBuilder()
             .body(response.body()?.let {
                 ProgressResponseBody(request.tag(), it, progressListener)
             }).build()

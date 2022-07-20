@@ -38,7 +38,7 @@ android {
         minSdkVersion 16
         targetSdkVersion 32
         versionCode 69
-        versionName "5.3.8"
+        versionName "5.3.8-hotfix1"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
     }
