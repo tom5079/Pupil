@@ -20,14 +20,14 @@ const val GROUP_ID = "xyz.quaver"
 const val VERSION = "6.0.0-alpha02"
 
 object Versions {
-    const val KOTLIN = "1.6.10"
-    const val COROUTINE = "1.6.1"
-    const val SERIALIZATION = "1.3.2"
+    const val KOTLIN = "1.7.10"
+    const val COROUTINE = "1.6.4"
+    const val SERIALIZATION = "1.4.1"
 
-    const val JETPACK_COMPOSE = "1.2.0-alpha07"
-    const val ACCOMPANIST = "0.23.1"
+    const val JETPACK_COMPOSE = "1.3.0"
+    const val ACCOMPANIST = "0.27.0"
 
-    const val KTOR = "2.0.0"
+    const val KTOR = "2.1.3"
 }
 
 object Kotlin {

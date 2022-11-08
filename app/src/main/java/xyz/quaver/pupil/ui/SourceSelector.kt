@@ -47,7 +47,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import coil.compose.rememberImagePainter
+import coil.compose.AsyncImage
 import com.google.accompanist.drawablepainter.rememberDrawablePainter
 import com.google.accompanist.insets.LocalWindowInsets
 import com.google.accompanist.insets.rememberInsetsPaddingValues
@@ -58,8 +58,10 @@ import com.google.accompanist.insets.ui.TopAppBar
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import org.kodein.di.*
+import org.kodein.di.DI
+import org.kodein.di.DIAware
 import org.kodein.di.compose.localDI
+import org.kodein.di.instance
 import xyz.quaver.pupil.sources.SourceEntry
 import xyz.quaver.pupil.sources.rememberLocalSourceList
 import xyz.quaver.pupil.sources.rememberRemoteSourceList
@@ -67,11 +69,6 @@ import xyz.quaver.pupil.util.PupilHttpClient
 import xyz.quaver.pupil.util.RemoteSourceInfo
 import xyz.quaver.pupil.util.launchApkInstaller
 import java.io.File
-import kotlin.collections.associateBy
-import kotlin.collections.contains
-import kotlin.collections.forEach
-import kotlin.collections.listOf
-import kotlin.collections.orEmpty
 
 private sealed class SourceSelectorScreen(val route: String, val icon: ImageVector) {
     object Local: SourceSelectorScreen("local", Icons.Default.DownloadDone)
@@ -97,9 +94,9 @@ class DownloadApkActionState(override val di: DI) : DIAware {
     suspend fun download(url: String): File? = withContext(Dispatchers.IO) {
         progress = 0f
 
-        val file = File.createTempFile("pupil", ".apk", File(app.cacheDir, "apks")).also {
-            it.parentFile?.mkdirs()
-        }
+        val file = File.createTempFile("pupil", ".apk", File(app.cacheDir, "apks").also {
+            it.mkdirs()
+        })
 
         client.downloadFile(url, file).collect { progress = it }
 
@@ -256,8 +253,8 @@ fun Explore() {
 
                     SourceListItem(
                         icon = { modifier ->
-                            Image(
-                                rememberImagePainter("https://raw.githubusercontent.com/tom5079/PupilSources/master/${sourceInfo.projectName}/src/main/res/mipmap-xxxhdpi/ic_launcher.png"),
+                            AsyncImage(
+                                "https://raw.githubusercontent.com/tom5079/PupilSources/master/${sourceInfo.projectName}/src/main/res/mipmap-xxxhdpi/ic_launcher.png",
                                 contentDescription = "source icon",
                                 modifier = modifier
                             )

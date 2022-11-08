@@ -33,11 +33,13 @@ import androidx.navigation.compose.rememberNavController
 import com.google.accompanist.insets.ProvideWindowInsets
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import kotlinx.coroutines.launch
-import org.kodein.di.DIAware
+import org.kodein.di.*
 import org.kodein.di.android.closestDI
+import org.kodein.di.android.subDI
 import org.kodein.di.compose.rememberInstance
 import xyz.quaver.pupil.BuildConfig
 import xyz.quaver.pupil.sources.core.Source
+import xyz.quaver.pupil.sources.core.util.LocalActivity
 import xyz.quaver.pupil.sources.loadSource
 import xyz.quaver.pupil.ui.theme.PupilTheme
 import xyz.quaver.pupil.util.PupilHttpClient
@@ -64,7 +66,7 @@ class MainActivity : ComponentActivity(), DIAware {
                     val client: PupilHttpClient by rememberInstance()
 
                     val latestRelease by produceState<Release?>(null) {
-                        value = client.latestRelease()
+                        value = null //client.latestRelease()
                     }
 
                     var dismissUpdate by remember { mutableStateOf(false) }
@@ -102,7 +104,9 @@ class MainActivity : ComponentActivity(), DIAware {
                                         }
                                     }
                                 else {
-                                    _source.Entry()
+                                    CompositionLocalProvider(LocalActivity provides this@MainActivity) {
+                                        _source.Entry()
+                                    }
                                 }
                             }
                         }

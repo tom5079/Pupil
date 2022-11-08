@@ -14,12 +14,21 @@ plugins {
 }
 
 android {
-    compileSdk = 31
+    compileSdk = 33
+
+    signingConfigs {
+        create("release") {
+            storeFile = File(System.getenv("SIGNING_STORE_FILE"))
+            storePassword = System.getenv("SIGNING_STORE_PASSWORD")
+            keyAlias = System.getenv("SIGNING_KEY_ALIAS")
+            keyPassword = System.getenv("SIGNING_KEY_PASSWORD")
+        }
+    }
 
     defaultConfig {
         applicationId = "xyz.quaver.pupil"
         minSdk = 21
-        targetSdk = 31
+        targetSdk = 33
         versionCode = 600
         versionName = VERSION
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -43,15 +52,8 @@ android {
             isCrunchPngs = false
 
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-        }
-    }
 
-    signingConfigs {
-        create("release") {
-            storeFile = File("/tmp/keystore.jks")
-            storePassword = System.getenv("SIGNING_STORE_PASSWORD")
-            keyAlias = System.getenv("SIGNING_KEY_ALIAS")
-            keyPassword = System.getenv("SIGNING_KEY_PASSWORD")
+            signingConfig = signingConfigs.getByName("release")
         }
     }
 
@@ -81,6 +83,7 @@ android {
             )
         )
     }
+    namespace = "xyz.quaver.pupil"
 }
 
 dependencies {
@@ -89,8 +92,8 @@ dependencies {
     implementation(Kotlin.SERIALIZATION)
     implementation(Kotlin.COROUTINE)
 
-    implementation("androidx.activity:activity-compose:1.4.0")
-    implementation("androidx.navigation:navigation-compose:2.4.2")
+    implementation("androidx.activity:activity-compose:1.6.1")
+    implementation("androidx.navigation:navigation-compose:2.5.3")
 
     implementation(JetpackCompose.FOUNDATION)
     implementation(JetpackCompose.UI)
@@ -117,10 +120,10 @@ dependencies {
     implementation(KtorClient.CONTENT_NEGOTIATION)
     implementation(KtorClient.SERIALIZATION)
 
-    implementation("androidx.room:room-runtime:2.4.2")
-    annotationProcessor("androidx.room:room-compiler:2.4.2")
-    kapt("androidx.room:room-compiler:2.4.2")
-    implementation("androidx.room:room-ktx:2.4.2")
+    implementation("androidx.room:room-runtime:2.4.3")
+    annotationProcessor("androidx.room:room-compiler:2.4.3")
+    kapt("androidx.room:room-compiler:2.4.3")
+    implementation("androidx.room:room-ktx:2.4.3")
 
     implementation("androidx.datastore:datastore:1.0.0")
     implementation("androidx.datastore:datastore-preferences:1.0.0")
@@ -138,10 +141,10 @@ dependencies {
 
     implementation("org.jsoup:jsoup:1.14.3")
 
-    implementation("xyz.quaver.pupil.sources:core:0.0.1-alpha01-DEV26")
+    implementation("xyz.quaver.pupil.sources:core:0.0.1-alpha01-DEV29")
 
     implementation("xyz.quaver:documentfilex:0.7.2")
-    implementation("xyz.quaver:subsampledimage:0.0.1-alpha19-SNAPSHOT")
+    implementation("xyz.quaver:subsampledimage:0.0.1-alpha22-SNAPSHOT")
 
     implementation("org.kodein.log:kodein-log:0.12.0")
     debugImplementation("com.squareup.leakcanary:leakcanary-android:2.8.1")
