@@ -18,8 +18,10 @@
 
 package xyz.quaver.pupil.ui
 
+import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -31,7 +33,9 @@ import android.view.View
 import android.view.animation.DecelerateInterpolator
 import android.widget.EditText
 import android.widget.TextView
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
+import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.view.GravityCompat
 import androidx.core.view.ViewCompat
@@ -58,10 +62,12 @@ import xyz.quaver.pupil.ui.view.MainView
 import xyz.quaver.pupil.ui.view.ProgressCard
 import xyz.quaver.pupil.util.ItemClickSupport
 import xyz.quaver.pupil.util.Preferences
+import xyz.quaver.pupil.util.requestNotificationPermission
 import xyz.quaver.pupil.util.checkUpdate
 import xyz.quaver.pupil.util.downloader.Cache
 import xyz.quaver.pupil.util.downloader.DownloadManager
 import xyz.quaver.pupil.util.restore
+import xyz.quaver.pupil.util.showNotificationPermissionExplanationDialog
 import java.util.regex.Pattern
 import kotlin.math.ceil
 import kotlin.math.max
@@ -107,6 +113,12 @@ class MainActivity :
 
     private lateinit var binding: MainActivityBinding
 
+    private val requestNotificationPermssionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
+        if (!isGranted) {
+            showNotificationPermissionExplanationDialog(this)
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = MainActivityBinding.inflate(layoutInflater)
@@ -123,6 +135,8 @@ class MainActivity :
                 )
             }
         }
+
+        requestNotificationPermission(this, requestNotificationPermssionLauncher, false) {}
 
         if (Preferences["download_folder", ""].isEmpty())
             DownloadLocationDialogFragment().show(supportFragmentManager, "Download Location Dialog")
@@ -392,12 +406,17 @@ class MainActivity :
                 onDownloadClickedHandler = { position ->
                     val galleryID = galleries[position]
 
-                    if (DownloadManager.getInstance(context).isDownloading(galleryID)) {     //download in progress
-                        DownloadService.cancel(this@MainActivity, galleryID)
-                    }
-                    else {
-                        DownloadManager.getInstance(context).addDownloadFolder(galleryID)
-                        DownloadService.download(this@MainActivity, galleryID)
+                    requestNotificationPermission(
+                        this@MainActivity,
+                        requestNotificationPermssionLauncher
+                    ) {
+                        if (DownloadManager.getInstance(context).isDownloading(galleryID)) {     //download in progress
+                            DownloadService.cancel(this@MainActivity, galleryID)
+                        }
+                        else {
+                            DownloadManager.getInstance(context).addDownloadFolder(galleryID)
+                            DownloadService.download(this@MainActivity, galleryID)
+                        }
                     }
 
                     closeAllItems()

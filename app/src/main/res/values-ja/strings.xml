@@ -22,6 +22,7 @@
     <string name="settings_clear_history_alert_message">履歴を削除しますか？</string>
     <string name="settings_clear_history_summary">履歴数: %1$d</string>
     <string name="main_drawer_history">履歴</string>
+    <string name="notification_denied">通知を無効にするとバックグラウンドダウンロード及びアプリのアップデート機能が使用不可になります。</string>
     <string name="main_drawer_home">トップ</string>
     <string name="update_release_note"># リリースノート(v%1$s)\n%2$s</string>
     <string name="settings_security_mode_title">セキュリティーモード</string>

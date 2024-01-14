@@ -21,6 +21,7 @@
     <string name="settings_clear_history_alert_message">기록을 삭제하시겠습니까?</string>
     <string name="settings_clear_history_summary">기록 %1$d개 저장됨</string>
     <string name="main_drawer_history">기록</string>
+    <string name="notification_denied">백그라운드 다운로드를 위해서는 알림을 활성화할 필요가 있습니다. 알림을 비활성화하면 백그라운드 다운로드와 앱 업데이트 기능을 사용할 수 없습니다.</string>
     <string name="main_drawer_home">홈</string>
     <string name="update_release_note"># 릴리즈 노트(v%1$s)\n%2$s</string>
     <string name="settings_security_mode_summary">최근 앱 목록 창에서 앱 화면을 보이지 않게 합니다</string>

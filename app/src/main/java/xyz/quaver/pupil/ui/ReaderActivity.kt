@@ -57,9 +57,12 @@ import xyz.quaver.pupil.favorites
 import xyz.quaver.pupil.services.DownloadService
 import xyz.quaver.pupil.util.Preferences
 import xyz.quaver.pupil.util.camera
+import xyz.quaver.pupil.util.checkNotificationEnabled
 import xyz.quaver.pupil.util.closeCamera
 import xyz.quaver.pupil.util.downloader.Cache
 import xyz.quaver.pupil.util.downloader.DownloadManager
+import xyz.quaver.pupil.util.requestNotificationPermission
+import xyz.quaver.pupil.util.showNotificationPermissionExplanationDialog
 import xyz.quaver.pupil.util.startCamera
 
 class ReaderActivity : BaseActivity() {
@@ -116,6 +119,12 @@ class ReaderActivity : BaseActivity() {
     private var eyeTime: Long = 0L
 
     private lateinit var binding: ReaderActivityBinding
+
+    private val requestNotificationPermssionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
+        if (!isGranted) {
+            showNotificationPermissionExplanationDialog(this)
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -360,15 +369,20 @@ class ReaderActivity : BaseActivity() {
             animateDownloadFAB(DownloadManager.getInstance(this@ReaderActivity).getDownloadFolder(galleryID) != null) //If download in progress, animate button
 
             setOnClickListener {
-                val downloadManager = DownloadManager.getInstance(this@ReaderActivity)
+                requestNotificationPermission(
+                    this@ReaderActivity,
+                    requestNotificationPermssionLauncher
+                ) {
+                    val downloadManager = DownloadManager.getInstance(this@ReaderActivity)
 
-                if (downloadManager.isDownloading(galleryID)) {
-                    downloadManager.deleteDownloadFolder(galleryID)
-                    animateDownloadFAB(false)
-                } else {
-                    downloadManager.addDownloadFolder(galleryID)
-                    DownloadService.download(context, galleryID, true)
-                    animateDownloadFAB(true)
+                    if (downloadManager.isDownloading(galleryID)) {
+                        downloadManager.deleteDownloadFolder(galleryID)
+                        animateDownloadFAB(false)
+                    } else {
+                        downloadManager.addDownloadFolder(galleryID)
+                        DownloadService.download(context, galleryID, true)
+                        animateDownloadFAB(true)
+                    }
                 }
             }
         }

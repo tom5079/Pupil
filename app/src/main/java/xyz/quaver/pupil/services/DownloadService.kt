@@ -23,6 +23,7 @@ import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
 import android.content.Intent
+import android.content.pm.ServiceInfo
 import android.os.Build
 import android.util.Log
 import androidx.core.app.NotificationCompat
@@ -100,12 +101,14 @@ class DownloadService : Service() {
         notify(galleryID)
     }
 
-    @SuppressLint("RestrictedApi")
+    @SuppressLint("RestrictedApi", "MissingPermission")
     private fun notify(galleryID: Int) {
         val max = progress[galleryID]?.size ?: 0
         val progress = progress[galleryID]?.count { it == Float.POSITIVE_INFINITY } ?: 0
 
         val notification = notification[galleryID] ?: return
+
+        if (!checkNotificationEnabled(this)) return
 
         if (isCompleted(galleryID)) {
             notification
@@ -403,7 +406,11 @@ class DownloadService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        startForeground(R.id.downloader_notification_id, serviceNotification.build())
+        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.TIRAMISU) {
+            startForeground(R.id.downloader_notification_id, serviceNotification.build())
+        } else {
+            startForeground(R.id.downloader_notification_id, serviceNotification.build(), ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE)
+        }
 
         when (intent?.getStringExtra(KEY_COMMAND)) {
             COMMAND_DOWNLOAD -> intent.getIntExtra(KEY_ID, -1).let { if (it > 0)
@@ -424,7 +431,11 @@ class DownloadService : Service() {
     override fun onBind(p0: Intent?) = binder
 
     override fun onCreate() {
-        startForeground(R.id.downloader_notification_id, serviceNotification.build())
+        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.TIRAMISU) {
+            startForeground(R.id.downloader_notification_id, serviceNotification.build())
+        } else {
+            startForeground(R.id.downloader_notification_id, serviceNotification.build(), ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE)
+        }
         interceptors[Tag::class] = interceptor
     }
 

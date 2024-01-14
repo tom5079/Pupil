@@ -18,6 +18,7 @@
   -->
 
 <paths>
-    <external-path name="external" path="/"/>
-    <external-files-path name="files" path="/"/>
+    <external-path name="external" path="."/>
+    <external-files-path name="files" path="."/>
+    <files-path name="files" path="." />
 </paths>

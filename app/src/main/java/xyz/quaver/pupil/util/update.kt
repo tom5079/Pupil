@@ -135,6 +135,11 @@ fun checkUpdate(context: Context, force: Boolean = false) {
             val msg = extractReleaseNote(update, Locale.getDefault())
             setMessage(Markwon.create(context).toMarkdown(msg))
             setPositiveButton(android.R.string.ok) { _, _ ->
+                if (!checkNotificationEnabled(context)) {
+                    showNotificationPermissionExplanationDialog(context)
+                    return@setPositiveButton
+                }
+
                 val downloadManager = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
 
                 //Cancel any download queued before

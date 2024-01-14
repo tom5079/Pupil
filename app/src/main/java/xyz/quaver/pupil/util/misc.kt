@@ -18,11 +18,21 @@
 
 package xyz.quaver.pupil.util
 
+import android.Manifest
 import android.annotation.SuppressLint
+import android.app.Activity
+import android.content.Context
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.activity.result.ActivityResultLauncher
+import androidx.appcompat.app.AlertDialog
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import com.google.firebase.crashlytics.FirebaseCrashlytics
 import kotlinx.serialization.json.*
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import xyz.quaver.pupil.R
 import xyz.quaver.pupil.hitomi.GalleryBlock
 import xyz.quaver.pupil.hitomi.GalleryInfo
 import xyz.quaver.pupil.hitomi.imageUrlFromImage
@@ -133,3 +143,30 @@ fun JsonElement.getOrNull(tag: String) = kotlin.runCatching {
 
 val JsonElement.content
     get() = this.jsonPrimitive.contentOrNull
+
+fun checkNotificationEnabled(context: Context) =
+    Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+    ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
+
+fun showNotificationPermissionExplanationDialog(context: Context) {
+    AlertDialog.Builder(context)
+        .setTitle(R.string.warning)
+        .setMessage(R.string.notification_denied)
+        .setPositiveButton(android.R.string.ok) { _, _ -> }
+        .show()
+}
+
+fun requestNotificationPermission(
+    activity: Activity,
+    requestPermissionLauncher: ActivityResultLauncher<String>,
+    showRationale: Boolean = true,
+    ifGranted: () -> Unit,
+) {
+    when {
+        checkNotificationEnabled(activity) -> ifGranted()
+        showRationale && ActivityCompat.shouldShowRequestPermissionRationale(activity, Manifest.permission.POST_NOTIFICATIONS) ->
+            showNotificationPermissionExplanationDialog(activity)
+        else ->
+            requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+    }
+}
