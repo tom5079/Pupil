@@ -64,165 +64,107 @@
             android:configChanges="keyboardHidden|orientation|screenSize"
             android:parentActivityName=".ui.MainActivity"
             android:exported="true">
-            <intent-filter>
+            <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW" />
 
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
 
-                <data
-                    android:host="hitomi.la"
-                    android:pathPrefix="/galleries"
-                    android:scheme="http" />
+                <data android:scheme="http" />
+                <data android:scheme="https" />
+                <data android:host="*.hasha.in"/>
+                <data android:pathPrefix="/reader"/>
             </intent-filter>
-            <intent-filter>
+            <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW" />
 
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
 
-                <data
-                    android:host="hitomi.la"
-                    android:pathPrefix="/manga"
-                    android:scheme="http" />
+                <data android:scheme="http" />
+                <data android:scheme="https" />
+                <data android:host="hitomi.la"/>
+                <data android:pathPrefix="/galleries"/>
             </intent-filter>
-            <intent-filter>
+            <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW" />
 
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
 
-                <data
-                    android:host="hitomi.la"
-                    android:pathPrefix="/doujinshi"
-                    android:scheme="http" />
+                <data android:scheme="http" />
+                <data android:scheme="https" />
+                <data android:host="hitomi.la" />
+                <data android:pathPrefix="/manga" />
             </intent-filter>
-            <intent-filter>
+            <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW" />
 
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
 
-                <data
-                    android:host="hitomi.la"
-                    android:pathPrefix="/cg"
-                    android:scheme="http" />
+                <data android:scheme="http" />
+                <data android:scheme="https" />
+                <data android:host="hitomi.la" />
+                <data android:pathPrefix="/doujinshi" />
             </intent-filter>
-            <intent-filter>
+            <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW" />
 
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
 
-                <data
-                    android:host="hitomi.la"
-                    android:pathPrefix="/reader"
-                    android:scheme="http" />
+                <data android:scheme="http" />
+                <data android:scheme="https" />
+                <data android:host="hitomi.la" />
+                <data android:pathPrefix="/cg" />
             </intent-filter>
-            <intent-filter>
+            <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW" />
 
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
 
-                <data
-                    android:host="hitomi.la"
-                    android:pathPrefix="/galleries"
-                    android:scheme="https" />
+                <data android:scheme="http" />
+                <data android:scheme="https" />
+                <data android:host="hitomi.la" />
+                <data android:pathPrefix="/imageset" />
             </intent-filter>
-            <intent-filter>
+            <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW" />
 
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
 
-                <data
-                    android:host="hitomi.la"
-                    android:pathPrefix="/manga"
-                    android:scheme="https" />
+                <data android:scheme="http" />
+                <data android:scheme="https" />
+                <data android:host="hitomi.la" />
+                <data android:pathPrefix="/reader" />
             </intent-filter>
-            <intent-filter>
+            <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW" />
 
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
 
-                <data
-                    android:host="hitomi.la"
-                    android:pathPrefix="/doujinshi"
-                    android:scheme="https" />
+                <data android:scheme="http" />
+                <data android:host="e-hentai.org" />
+                <data android:pathPrefix="/g" />
             </intent-filter>
-            <intent-filter>
+            <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW" />
 
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
 
-                <data
-                    android:host="hitomi.la"
-                    android:pathPrefix="/cg"
-                    android:scheme="https" />
-            </intent-filter>
-            <intent-filter>
-                <action android:name="android.intent.action.VIEW" />
-
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-
-                <data
-                    android:host="hitomi.la"
-                    android:pathPrefix="/reader"
-                    android:scheme="https" />
-            </intent-filter>
-            <intent-filter>
-                <action android:name="android.intent.action.VIEW" />
-
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-
-                <data
-                    android:host="hiyobi.me"
-                    android:scheme="http"
-                    android:pathPrefix="/reader" />
-            </intent-filter>
-            <intent-filter>
-                <action android:name="android.intent.action.VIEW" />
-
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-
-                <data
-                    android:host="hiyobi.me"
-                    android:pathPrefix="/reader"
-                    android:scheme="https" />
-            </intent-filter>
-            <intent-filter>
-                <action android:name="android.intent.action.VIEW" />
-
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-
-                <data
-                    android:host="e-hentai.org"
-                    android:pathPrefix="/g"
-                    android:scheme="http" />
-            </intent-filter>
-            <intent-filter>
-                <action android:name="android.intent.action.VIEW" />
-
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-
-                <data
-                    android:host="e-hentai.org"
-                    android:pathPrefix="/g"
-                    android:scheme="https" />
+                <data android:scheme="https" />
+                <data android:host="e-hentai.org" />
+                <data android:pathPrefix="/g" />
             </intent-filter>
         </activity>
         <activity
             android:name=".ui.SettingsActivity"
             android:label="@string/settings_title">
-            <tools:validation testUrl="http://ix.io/eer" />
         </activity>
         <activity
             android:name=".ui.MainActivity"
@@ -234,17 +176,6 @@
                 <action android:name="android.intent.action.VIEW" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-            <intent-filter>
-                <action android:name="android.intent.action.VIEW" />
-
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-
-                <data
-                    android:scheme="http"
-                    android:host="ix.io"
-                    android:pathPattern="/..*" />
             </intent-filter>
         </activity>
         <activity android:name="net.rdrei.android.dirchooser.DirectoryChooserActivity" />

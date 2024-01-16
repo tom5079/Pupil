@@ -27,6 +27,7 @@ import android.os.Bundle
 import android.util.Log
 import android.widget.EditText
 import android.widget.TextView
+import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
@@ -65,10 +66,14 @@ class ManageFavoritesFragment : PreferenceFragmentCompat() {
 
         val uri = result.data?.data ?: return@registerForActivityResult
         val context = context ?: return@registerForActivityResult
+        val view = view ?: return@registerForActivityResult
 
         val backupData = runCatching {
             FileX(context, uri).readText()?.let { Json.parseToJsonElement(it) }
-        }.getOrNull() ?: return@registerForActivityResult
+        }.getOrNull() ?: run{
+            Snackbar.make(view, context.getString(R.string.error), Toast.LENGTH_LONG).show()
+            return@registerForActivityResult
+        }
 
         val newFavorites = backupData["favorites"]?.let { Json.decodeFromJsonElement<List<Int>>(it) }.orEmpty()
         val newFavoriteTags = backupData["favorite_tags"]?.let { Json.decodeFromJsonElement<List<Tag>>(it) }.orEmpty()
@@ -76,7 +81,6 @@ class ManageFavoritesFragment : PreferenceFragmentCompat() {
         favorites.addAll(newFavorites)
         favoriteTags.addAll(newFavoriteTags)
 
-        val view = view ?: return@registerForActivityResult
         Snackbar.make(view, context.getString(R.string.settings_restore_success, newFavorites.size + newFavoriteTags.size), Snackbar.LENGTH_LONG).show()
     }
 
@@ -124,7 +128,7 @@ class ManageFavoritesFragment : PreferenceFragmentCompat() {
         findPreference<Preference>("restore")?.setOnPreferenceClickListener {
             val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
                 addCategory(Intent.CATEGORY_OPENABLE)
-                type = "application/json"
+                type = "*/*"
             }
 
             requestBackupFileLauncher.launch(intent)

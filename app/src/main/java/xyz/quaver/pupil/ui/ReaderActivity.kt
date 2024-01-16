@@ -157,10 +157,11 @@ class ReaderActivity : BaseActivity() {
             val uri = intent.data
             val lastPathSegment = uri?.lastPathSegment
             if (uri != null && lastPathSegment != null) {
-                galleryID = when (uri.host) {
+                galleryID = if (uri.host?.endsWith("hasha.in") == true) {
+                    lastPathSegment?.toInt() ?: 0
+                } else when (uri.host) {
                     "hitomi.la" ->
                         Regex("([0-9]+).html").find(lastPathSegment)?.groupValues?.get(1)?.toIntOrNull() ?: 0
-                    "hiyobi.me" -> lastPathSegment.toInt()
                     "e-hentai.org" -> uri.pathSegments[1].toInt()
                     else -> 0
                 }
