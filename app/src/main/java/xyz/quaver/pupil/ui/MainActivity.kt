@@ -24,8 +24,10 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
 import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
+import androidx.compose.runtime.getValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.google.accompanist.adaptive.calculateDisplayFeatures
-import xyz.quaver.pupil.ui.composable.PupilApp
+import xyz.quaver.pupil.ui.composable.MainApp
 import xyz.quaver.pupil.ui.theme.AppTheme
 import xyz.quaver.pupil.ui.viewmodel.MainViewModel
 
@@ -42,10 +44,13 @@ class MainActivity : BaseActivity() {
                 val windowSize = calculateWindowSizeClass(this)
                 val displayFeatures = calculateDisplayFeatures(this)
 
-                PupilApp(
+                val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+                MainApp(
                     windowSize = windowSize,
                     displayFeatures = displayFeatures,
-                    uiState = viewModel.uiState
+                    uiState = uiState,
+                    navigateToDestination = viewModel::navigateToDestination
                 )
             }
         }

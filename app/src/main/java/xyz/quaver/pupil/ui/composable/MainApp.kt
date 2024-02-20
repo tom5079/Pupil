@@ -1,6 +1,14 @@
 package xyz.quaver.pupil.ui.composable
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.DrawerValue
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.PermanentNavigationDrawer
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.material3.windowsizeclass.WindowHeightSizeClass
@@ -8,16 +16,18 @@ import androidx.compose.material3.windowsizeclass.WindowSizeClass
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.navigation.compose.rememberNavController
+import androidx.compose.ui.Modifier
 import androidx.window.layout.DisplayFeature
 import androidx.window.layout.FoldingFeature
+import kotlinx.coroutines.launch
 import xyz.quaver.pupil.ui.viewmodel.MainUIState
 
 @Composable
-fun PupilApp(
+fun MainApp(
     windowSize: WindowSizeClass,
     displayFeatures: List<DisplayFeature>,
-    uiState: MainUIState
+    uiState: MainUIState,
+    navigateToDestination: (MainDestination) -> Unit
 ) {
     val navigationType: NavigationType
     val contentType: ContentType
@@ -31,7 +41,7 @@ fun PupilApp(
 
     when (windowSize.widthSizeClass) {
         WindowWidthSizeClass.Compact -> {
-            navigationType = NavigationType.NAVIGATION_RAIL
+            navigationType = NavigationType.BOTTOM_NAVIGATION
             contentType = ContentType.SINGLE_PANE
         }
         WindowWidthSizeClass.Medium -> {
@@ -51,7 +61,7 @@ fun PupilApp(
             contentType = ContentType.DUAL_PANE
         }
         else -> {
-            navigationType = NavigationType.NAVIGATION_RAIL
+            navigationType = NavigationType.BOTTOM_NAVIGATION
             contentType = ContentType.SINGLE_PANE
         }
     }
@@ -63,30 +73,113 @@ fun PupilApp(
         else -> NavigationContentPosition.TOP
     }
 
-    PupilNavigationWrapper(
+    MainNavigationWrapper(
         navigationType,
         contentType,
-        navigationContentPosition
+        displayFeatures,
+        navigationContentPosition,
+        uiState,
+        navigateToDestination
     )
 
 }
 
 @Composable
-private fun PupilNavigationWrapper(
+private fun MainNavigationWrapper(
     navigationType: NavigationType,
     contentType: ContentType,
-    navigationContentPosition: NavigationContentPosition
+    displayFeatures: List<DisplayFeature>,
+    navigationContentPosition: NavigationContentPosition,
+    uiState: MainUIState,
+    navigateToDestination: (MainDestination) -> Unit
 ) {
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val coroutineScope = rememberCoroutineScope()
 
+    val openDrawer: () -> Unit = {
+        coroutineScope.launch {
+            drawerState.open()
+        }
+    }
+
     if (navigationType == NavigationType.PERMANENT_NAVIGATION_DRAWER) {
         PermanentNavigationDrawer(drawerContent = {
             PermanentNavigationDrawerContent(
-                navigationContentPosition = navigationContentPosition
+                selectedDestination = uiState.currentDestination,
+                navigationContentPosition = navigationContentPosition,
+                navigateToDestination = navigateToDestination
             )
         }) {
-//            PupilMain()
+            MainContent(
+                navigationType = navigationType,
+                contentType = contentType,
+                displayFeatures = displayFeatures,
+                navigationContentPosition = navigationContentPosition,
+                uiState = uiState,
+                navigateToDestination = navigateToDestination,
+                onDrawerClicked = openDrawer
+            )
+        }
+    } else {
+        ModalNavigationDrawer(
+            drawerContent = {
+                ModalNavigationDrawerContent(
+                    selectedDestination = uiState.currentDestination,
+                    navigationContentPosition = navigationContentPosition,
+                    navigateToDestination = navigateToDestination,
+                    onDrawerClicked = {
+                        coroutineScope.launch {
+                            drawerState.close()
+                        }
+                    }
+                )
+            },
+            drawerState = drawerState
+        ) {
+            MainContent(
+                navigationType = navigationType,
+                contentType = contentType,
+                displayFeatures = displayFeatures,
+                navigationContentPosition = navigationContentPosition,
+                uiState = uiState,
+                navigateToDestination = navigateToDestination,
+                onDrawerClicked = openDrawer
+            )
+        }
+    }
+}
+
+@Composable
+fun MainContent(
+    navigationType: NavigationType,
+    contentType: ContentType,
+    displayFeatures: List<DisplayFeature>,
+    navigationContentPosition: NavigationContentPosition,
+    uiState: MainUIState,
+    navigateToDestination: (MainDestination) -> Unit,
+    onDrawerClicked: () -> Unit
+) {
+    Row(modifier = Modifier.fillMaxSize()) {
+        AnimatedVisibility(visible = navigationType == NavigationType.NAVIGATION_RAIL) {
+            MainNavigationRail(
+                selectedDestination = uiState.currentDestination,
+                navigationContentPosition = navigationContentPosition,
+                navigateToDestination = navigateToDestination,
+                onDrawerClicked = onDrawerClicked
+            )
+        }
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.inverseOnSurface)
+        ) {
+            Box(modifier = Modifier.weight(1f))
+            AnimatedVisibility(visible = navigationType == NavigationType.BOTTOM_NAVIGATION) {
+                BottomNavigationBar(
+                    selectedDestination = uiState.currentDestination,
+                    navigateToDestination = navigateToDestination
+                )
+            }
         }
     }
 }

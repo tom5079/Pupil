@@ -36,6 +36,7 @@
     <string name="main_drawer_group_contact_github">Github</string>
     <string name="main_drawer_group_contact_help">도움말</string>
     <string name="main_drawer_group_contact_homepage">홈페이지</string>
+    <string name="main_open_navigation_drawer">메뉴 열기</string>
     <string name="main_drawer_group_contact_title">문의</string>
     <string name="reader_fab_fullscreen">전체 화면</string>
     <string name="channel_download">다운로드</string>
@@ -159,4 +160,5 @@
     <string name="unaccessible_download_folder">안드로이드 11 이상에서는 외부에서 현재 다운로드 폴더에 접근할 수 없습니다. 변경하시겠습니까?</string>
     <string name="settings_networking">네트워크</string>
     <string name="settings_recover_downloads">다운로드 데이터베이스 복구</string>
+    <string name="main_close_navigation_drawer">메뉴 닫기</string>
 </resources>

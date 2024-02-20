@@ -33,6 +33,7 @@
     <string name="default_query_dialog_filter_guro">グロフィルター</string>
     <string name="default_query_dialog_language">"言語: "</string>
     <string name="default_query_dialog_title">デフォルトキーワード設定</string>
+    <string name="main_open_navigation_drawer">メニューを開く</string>
     <string name="main_drawer_group_contact_title">お問い合わせ先</string>
     <string name="main_drawer_group_contact_homepage">ホームページ</string>
     <string name="main_drawer_group_contact_help">ヘルプ</string>
@@ -159,4 +160,5 @@
     <string name="unaccessible_download_folder">アンドロイド11以上では外部からのアプリ内部空間接近が不可能です。ダウンロードフォルダを変更しますか？</string>
     <string name="settings_networking">ネットワーク</string>
     <string name="settings_recover_downloads">ダウンロードデータベースを再構築</string>
+    <string name="main_close_navigation_drawer">メニューを閉じる</string>
 </resources>
