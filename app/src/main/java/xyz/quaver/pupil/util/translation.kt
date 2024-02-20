@@ -44,10 +44,10 @@ fun updateTranslations() = CoroutineScope(Dispatchers.IO).launch {
     translations = emptyMap()
     kotlin.runCatching {
         translations = Json.decodeFromString<Map<String, String>>(client.newCall(
-            Request.Builder()
-                .url(contentURL + "${Preferences["tag_translation", ""].let { if (it.isEmpty()) Locale.getDefault().language else it }}.json")
-                .build()
-        ).execute().also { if (it.code() != 200) return@launch }.body()?.use { it.string() } ?: return@launch).filterValues { it.isNotEmpty() }
+                Request.Builder()
+                    .url(contentURL + "${Preferences["tag_translation", ""].let { if (it.isEmpty()) Locale.getDefault().language else it }}.json")
+                    .build()
+            ).execute().also { if (it.code != 200) return@launch }.body?.use { it.string() } ?: return@launch).filterValues { it.isNotEmpty() }
     }
 }
 
@@ -58,7 +58,7 @@ fun getAvailableLanguages(): List<String> {
         Request.Builder()
             .url(filesURL)
             .build()
-    ).execute().also { if (it.code() != 200) throw IOException() }.body()?.use { it.string() } ?: return emptyList())
+    ).execute().also { if (it.code != 200) throw IOException() }.body?.use { it.string() } ?: return emptyList())
 
     return listOf("en") + (json["tree"]?.jsonArray?.mapNotNull {
         val name = it["path"]?.jsonPrimitive?.content?.takeWhile { c -> c != '.' }

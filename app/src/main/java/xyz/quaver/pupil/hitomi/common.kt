@@ -110,7 +110,7 @@ fun URL.readText(settings: HeaderSetter? = null): String {
             settings?.invoke(it) ?: it
         }.build()
 
-    return client.newCall(request).execute().also{ if (it.code() != 200) throw IOException("CODE ${it.code()}") }.body()?.use { it.string() } ?: throw IOException()
+    return client.newCall(request).execute().also{ if (it.code != 200) throw IOException("CODE ${it.code}") }.body?.use { it.string() } ?: throw IOException()
 }
 
 fun URL.readBytes(settings: HeaderSetter? = null): ByteArray {
@@ -119,7 +119,7 @@ fun URL.readBytes(settings: HeaderSetter? = null): ByteArray {
             settings?.invoke(it) ?: it
         }.build()
 
-    return client.newCall(request).execute().also { if (it.code() != 200) throw IOException("CODE ${it.code()}") }.body()?.use { it.bytes() } ?: throw IOException()
+    return client.newCall(request).execute().also { if (it.code != 200) throw IOException("CODE ${it.code}") }.body?.use { it.bytes() } ?: throw IOException()
 }
 
 @Suppress("EXPERIMENTAL_API_USAGE")
@@ -161,8 +161,8 @@ object gg {
                         }
 
                         override fun onResponse(call: Call, response: Response) {
-                            if (!call.isCanceled) {
-                                response.body()?.use {
+                            if (!call.isCanceled()) {
+                                response.body?.use {
                                     continuation.resume(it.string()) {
                                         call.cancel()
                                     }

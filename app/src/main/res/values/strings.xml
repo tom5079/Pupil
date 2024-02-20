@@ -53,10 +53,10 @@
 
     <string name="notification_denied">Notification permission is required for background downloads. If you deny notifications from this app, in-app update and background download will be disabled.</string>
 
-    <string name="main_drawer_home">Home</string>
-    <string name="main_drawer_history">History</string>
-    <string name="main_drawer_downloads">Downloads</string>
-    <string name="main_drawer_favorite">Favorites</string>
+    <string name="main_destination_search">Home</string>
+    <string name="main_destination_history">History</string>
+    <string name="main_destination_downloads">Downloads</string>
+    <string name="main_destination_favorites">Favorites</string>
     <string name="main_drawer_group_contact_title">Contact</string>
     <string name="main_drawer_group_contact_help">Help</string>
     <string name="main_drawer_group_contact_homepage">Visit homepage</string>

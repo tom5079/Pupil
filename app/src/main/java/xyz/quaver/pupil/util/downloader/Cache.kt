@@ -190,7 +190,7 @@ class Cache private constructor(context: Context, val galleryID: Int) : ContextW
                         .header("Referer", "https://hitomi.la/")
                         .build()
 
-                    client.newCall(request).execute().also { if (it.code() != 200) throw IOException() }.body()?.use { it.bytes() }
+                    client.newCall(request).execute().also { if (it.code != 200) throw IOException() }.body?.use { it.bytes() }
                 }.getOrNull()?.let { thumbnail -> kotlin.runCatching {
                     cacheFolder.getChild(".thumbnail").also {
                         if (!it.exists())

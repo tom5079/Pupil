@@ -149,7 +149,7 @@ class DownloadService : Service() {
 
         override fun source(): BufferedSource {
             if (bufferedSource == null)
-                bufferedSource = Okio.buffer(source(responseBody.source()))
+                bufferedSource = source(responseBody.source()).buffer()
 
             return bufferedSource!!
         }
@@ -177,7 +177,7 @@ class DownloadService : Service() {
         var limit = 10
 
         while (response?.isSuccessful != true) {
-            if (response?.code() == 503) {
+            if (response?.code == 503) {
                 Thread.sleep(200)
             } else if (--limit < 0)
                 break
@@ -191,7 +191,7 @@ class DownloadService : Service() {
             response = chain.proceed(request)
 
         response!!.newBuilder()
-            .body(response.body()?.let {
+            .body(response.body?.let {
                 ProgressResponseBody(request.tag(), it, progressListener)
             }).build()
     }
@@ -228,11 +228,11 @@ class DownloadService : Service() {
         override fun onResponse(call: Call, response: Response) {
             Log.d("PUPILD", "ONRESPONSE ${call.request().tag()}")
             val (galleryID, index, startId) = call.request().tag() as Tag
-            val ext = call.request().url().encodedPath().split('.').last()
+            val ext = call.request().url.encodedPath.split('.').last()
 
             CoroutineScope(Dispatchers.IO).launch {
                 runCatching {
-                    val image = response.also { if (it.code() != 200) throw IOException( "$galleryID $index ${response.request().url()} CODE ${it.code()}" ) }.body()?.use { it.bytes() } ?: throw Exception("Response null")
+                    val image = response.also { if (it.code != 200) throw IOException( "$galleryID $index ${response.request.url} CODE ${it.code}" ) }.body?.use { it.bytes() } ?: throw Exception("Response null")
                     val padding = ceil(progress[galleryID]?.size?.let { log10(it.toFloat()) } ?: 0F).toInt()
 
                     Cache.getInstance(this@DownloadService, galleryID)
@@ -257,13 +257,13 @@ class DownloadService : Service() {
     }
 
     fun cancel(startId: Int? = null) {
-        client.dispatcher().queuedCalls().filter {
+        client.dispatcher.queuedCalls().filter {
             it.request().tag() is Tag
         }.forEach {
             (it.request().tag() as? Tag)?.startId?.let { stopSelf(it) }
             it.cancel()
         }
-        client.dispatcher().runningCalls().filter {
+        client.dispatcher.runningCalls().filter {
             it.request().tag() is Tag
         }.forEach {
             (it.request().tag() as? Tag)?.startId?.let { stopSelf(it) }
@@ -278,13 +278,13 @@ class DownloadService : Service() {
     }
 
     fun cancel(galleryID: Int, startId: Int? = null) {
-        client.dispatcher().queuedCalls().filter {
+        client.dispatcher.queuedCalls().filter {
             (it.request().tag() as? Tag)?.galleryID == galleryID
         }.forEach {
             (it.request().tag() as? Tag)?.startId?.let { stopSelf(it) }
             it.cancel()
         }
-        client.dispatcher().runningCalls().filter {
+        client.dispatcher.runningCalls().filter {
             (it.request().tag() as? Tag)?.galleryID == galleryID
         }.forEach {
             (it.request().tag() as? Tag)?.startId?.let { stopSelf(it) }
@@ -350,7 +350,7 @@ class DownloadService : Service() {
         val queued = mutableSetOf<Int>()
 
         if (priority) {
-            client.dispatcher().queuedCalls().forEach {
+            client.dispatcher.queuedCalls().forEach {
                 val queuedID = (it.request().tag() as? Tag)?.galleryID ?: return@forEach
 
                 if (queued.add(queuedID))

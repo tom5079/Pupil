@@ -50,7 +50,7 @@ fun sanitize(input: String) : String {
 }
 
 fun getIndexVersion(name: String) =
-        URL("$protocol//$domain/$name/version?_=${System.currentTimeMillis()}").readText()
+        URL("$protocol//${xyz.quaver.pupil.networking.domain}/$name/version?_=${System.currentTimeMillis()}").readText()
 
 //search.js
 fun getGalleryIDsForQuery(query: String) : Set<Int> {
@@ -115,7 +115,7 @@ fun getSuggestionsForQuery(query: String) : List<Suggestion> {
 
 data class Suggestion(val s: String, val t: Int, val u: String, val n: String)
 fun getSuggestionsFromData(field: String, data: Pair<Long, Int>) : List<Suggestion> {
-    val url = "$protocol//$domain/$index_dir/$field.$tag_index_version.data"
+    val url = "$protocol//${xyz.quaver.pupil.networking.domain}/$index_dir/$field.$tag_index_version.data"
     val (offset, length) = data
     if (length > 10000 || length <= 0)
         throw Exception("length $length is too long")
@@ -162,8 +162,8 @@ fun getSuggestionsFromData(field: String, data: Pair<Long, Int>) : List<Suggesti
 fun getGalleryIDsFromNozomi(area: String?, tag: String, language: String) : Set<Int> {
     val nozomiAddress =
             when(area) {
-                null -> "$protocol//$domain/$compressed_nozomi_prefix/$tag-$language$nozomiextension"
-                else -> "$protocol//$domain/$compressed_nozomi_prefix/$area/$tag-$language$nozomiextension"
+                null -> "$protocol//${xyz.quaver.pupil.networking.domain}/$compressed_nozomi_prefix/$tag-$language$nozomiextension"
+                else -> "$protocol//${xyz.quaver.pupil.networking.domain}/$compressed_nozomi_prefix/$area/$tag-$language$nozomiextension"
             }
 
     val bytes = try {
@@ -185,7 +185,7 @@ fun getGalleryIDsFromNozomi(area: String?, tag: String, language: String) : Set<
 }
 
 fun getGalleryIDsFromData(data: Pair<Long, Int>) : Set<Int> {
-    val url = "$protocol//$domain/$galleries_index_dir/galleries.$galleries_index_version.data"
+    val url = "$protocol//${xyz.quaver.pupil.networking.domain}/$galleries_index_dir/galleries.$galleries_index_version.data"
     val (offset, length) = data
     if (length > 100000000 || length <= 0)
         throw Exception("length $length is too long")
@@ -216,10 +216,10 @@ fun getGalleryIDsFromData(data: Pair<Long, Int>) : Set<Int> {
 fun getNodeAtAddress(field: String, address: Long) : Node? {
     val url =
             when(field) {
-                "galleries" -> "$protocol//$domain/$galleries_index_dir/galleries.$galleries_index_version.index"
-                "languages" -> "$protocol//$domain/$galleries_index_dir/languages.$galleries_index_version.index"
-                "nozomiurl" -> "$protocol//$domain/$galleries_index_dir/nozomiurl.$galleries_index_version.index"
-                else -> "$protocol//$domain/$index_dir/$field.$tag_index_version.index"
+                "galleries" -> "$protocol//${xyz.quaver.pupil.networking.domain}/$galleries_index_dir/galleries.$galleries_index_version.index"
+                "languages" -> "$protocol//${xyz.quaver.pupil.networking.domain}/$galleries_index_dir/languages.$galleries_index_version.index"
+                "nozomiurl" -> "$protocol//${xyz.quaver.pupil.networking.domain}/$galleries_index_dir/nozomiurl.$galleries_index_version.index"
+                else -> "$protocol//${xyz.quaver.pupil.networking.domain}/$index_dir/$field.$tag_index_version.index"
             }
 
     val nodedata = getURLAtRange(url, address.until(address+ max_node_size))
@@ -233,7 +233,7 @@ fun getURLAtRange(url: String, range: LongRange) : ByteArray {
         .header("Range", "bytes=${range.first}-${range.last}")
         .build()
     
-    return client.newCall(request).execute().body()?.use { it.bytes() } ?: byteArrayOf()
+    return client.newCall(request).execute().body?.use { it.bytes() } ?: byteArrayOf()
 }
 
 @OptIn(ExperimentalUnsignedTypes::class)

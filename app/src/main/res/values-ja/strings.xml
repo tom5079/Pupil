@@ -21,9 +21,9 @@
     <string name="settings_clear_history">履歴を削除</string>
     <string name="settings_clear_history_alert_message">履歴を削除しますか？</string>
     <string name="settings_clear_history_summary">履歴数: %1$d</string>
-    <string name="main_drawer_history">履歴</string>
+    <string name="main_destination_history">履歴</string>
     <string name="notification_denied">通知を無効にするとバックグラウンドダウンロード及びアプリのアップデート機能が使用不可になります。</string>
-    <string name="main_drawer_home">トップ</string>
+    <string name="main_destination_search">トップ</string>
     <string name="update_release_note"># リリースノート(v%1$s)\n%2$s</string>
     <string name="settings_security_mode_title">セキュリティーモード</string>
     <string name="settings_security_mode_summary">アプリ履歴でアプリの画面を表示しない</string>
@@ -45,7 +45,7 @@
     <string name="reader_notification_text">ダウンロード中…</string>
     <string name="reader_notification_complete">ダウンロード完了</string>
     <string name="reader_fab_download_cancel">バックグラウンドダウンロード中止</string>
-    <string name="main_drawer_downloads">ダウンロード</string>
+    <string name="main_destination_downloads">ダウンロード</string>
     <string name="main_jump_title">ページ移動</string>
     <string name="main_jump_message">現ページ番号: %1$d\nページ数: %2$d</string>
     <string name="unable_to_connect">hitomi.laに接続できません</string>
@@ -53,7 +53,7 @@
     <string name="settings_clear_downloads">ダウンロード削除</string>
     <string name="settings_clear_downloads_alert_message">ダウンロードしたギャラリーを全て削除します。\n実行しますか？</string>
     <string name="settings_mirror_summary">ミラーサーバからイメージをロード</string>
-    <string name="main_drawer_favorite">ブックマーク</string>
+    <string name="main_destination_favorites">ブックマーク</string>
     <string name="main_open_gallery_by_id">ギャラリー番号で見る</string>
     <string name="reader_failed_to_find_gallery">エラーが発生しました</string>
     <string name="settings_storage">ストレージ</string>

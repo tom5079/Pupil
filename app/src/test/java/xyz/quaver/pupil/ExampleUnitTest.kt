@@ -16,8 +16,6 @@
  *     along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-@file:Suppress("UNUSED_VARIABLE", "IncorrectScope")
-
 package xyz.quaver.pupil
 
 /**
@@ -26,14 +24,18 @@ package xyz.quaver.pupil
  * See [testing documentation](http://d.android.com/tools/testing).
  */
 
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import org.junit.Test
-import java.lang.reflect.ParameterizedType
+import xyz.quaver.pupil.networking.HitomiHttpClient
 
 class ExampleUnitTest {
     @Test
-    fun test() {
-        val a = mutableSetOf<Int>()
+    fun test() = runTest {
+        val hitomi = HitomiHttpClient()
 
-        print(a::class.java.methods.firstOrNull { it.name == "add" }?.genericParameterTypes?.firstOrNull() as? ParameterizedType)
+        val result = hitomi.getGalleryIDsFromNozomi(null, "index", "all")
+
+        println(result.array())
     }
 }

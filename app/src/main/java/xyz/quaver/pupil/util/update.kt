@@ -193,7 +193,7 @@ fun restore(url: String, onFailure: ((Throwable) -> Unit)? = null, onSuccess: ((
 
         override fun onResponse(call: Call, response: Response) {
             kotlin.runCatching {
-                val data = Json.parseToJsonElement(response.also { if (it.code() != 200) throw IOException() }.body().use { it?.string() } ?: "[]")
+                val data = Json.parseToJsonElement(response.also { if (it.code != 200) throw IOException() }.body.use { it?.string() } ?: "[]")
 
                 when (data) {
                     is JsonArray -> favorites.addAll(data.map { it.jsonPrimitive.int })

@@ -44,8 +44,6 @@ import okhttp3.Interceptor
 import okhttp3.OkHttpClient
 import okhttp3.Response
 import xyz.quaver.io.FileX
-import xyz.quaver.pupil.hitomi.evaluationContext
-import xyz.quaver.pupil.hitomi.readText
 import xyz.quaver.pupil.types.Tag
 import xyz.quaver.pupil.util.*
 import java.io.File
