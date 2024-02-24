@@ -4,7 +4,7 @@ sealed interface SearchQuery {
     data class Tag(
         val namespace: String?,
         val tag: String
-    ): SearchQuery {
+    ): SearchQuery, TagLike {
         companion object {
             fun parseTag(tag: String): Tag {
                 val splitTag = tag.split(':', limit =  1)
@@ -18,6 +18,8 @@ sealed interface SearchQuery {
         }
 
         override fun toString() = if (namespace == null) tag else "$namespace:$tag"
+
+        override fun toTag() = this
     }
 
 

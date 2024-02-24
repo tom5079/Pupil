@@ -27,7 +27,8 @@ fun MainApp(
     windowSize: WindowSizeClass,
     displayFeatures: List<DisplayFeature>,
     uiState: MainUIState,
-    navigateToDestination: (MainDestination) -> Unit
+    navigateToDestination: (MainDestination) -> Unit,
+    closeDetailScreen: () -> Unit
 ) {
     val navigationType: NavigationType
     val contentType: ContentType
@@ -79,9 +80,9 @@ fun MainApp(
         displayFeatures,
         navigationContentPosition,
         uiState,
-        navigateToDestination
+        navigateToDestination,
+        closeDetailScreen = closeDetailScreen
     )
-
 }
 
 @Composable
@@ -91,7 +92,8 @@ private fun MainNavigationWrapper(
     displayFeatures: List<DisplayFeature>,
     navigationContentPosition: NavigationContentPosition,
     uiState: MainUIState,
-    navigateToDestination: (MainDestination) -> Unit
+    navigateToDestination: (MainDestination) -> Unit,
+    closeDetailScreen: () -> Unit
 ) {
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val coroutineScope = rememberCoroutineScope()
@@ -117,7 +119,8 @@ private fun MainNavigationWrapper(
                 navigationContentPosition = navigationContentPosition,
                 uiState = uiState,
                 navigateToDestination = navigateToDestination,
-                onDrawerClicked = openDrawer
+                onDrawerClicked = openDrawer,
+                closeDetailScreen = closeDetailScreen
             )
         }
     } else {
@@ -143,7 +146,8 @@ private fun MainNavigationWrapper(
                 navigationContentPosition = navigationContentPosition,
                 uiState = uiState,
                 navigateToDestination = navigateToDestination,
-                onDrawerClicked = openDrawer
+                onDrawerClicked = openDrawer,
+                closeDetailScreen = closeDetailScreen
             )
         }
     }
@@ -157,7 +161,8 @@ fun MainContent(
     navigationContentPosition: NavigationContentPosition,
     uiState: MainUIState,
     navigateToDestination: (MainDestination) -> Unit,
-    onDrawerClicked: () -> Unit
+    onDrawerClicked: () -> Unit,
+    closeDetailScreen: () -> Unit
 ) {
     Row(modifier = Modifier.fillMaxSize()) {
         AnimatedVisibility(visible = navigationType == NavigationType.NAVIGATION_RAIL) {
@@ -173,7 +178,16 @@ fun MainContent(
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.inverseOnSurface)
         ) {
-            Box(modifier = Modifier.weight(1f))
+            Box(
+                modifier = Modifier.weight(1f)
+            ) {
+                MainScreen(
+                    contentType = contentType,
+                    displayFeatures = displayFeatures,
+                    uiState = uiState,
+                    closeDetailScreen = closeDetailScreen
+                )
+            }
             AnimatedVisibility(visible = navigationType == NavigationType.BOTTOM_NAVIGATION) {
                 BottomNavigationBar(
                     selectedDestination = uiState.currentDestination,

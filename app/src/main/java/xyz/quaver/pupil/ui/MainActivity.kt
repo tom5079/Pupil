@@ -50,7 +50,8 @@ class MainActivity : BaseActivity() {
                     windowSize = windowSize,
                     displayFeatures = displayFeatures,
                     uiState = uiState,
-                    navigateToDestination = viewModel::navigateToDestination
+                    navigateToDestination = viewModel::navigateToDestination,
+                    closeDetailScreen = viewModel::closeDetailScreen
                 )
             }
         }
