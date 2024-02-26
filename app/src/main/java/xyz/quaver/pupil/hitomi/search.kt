@@ -166,11 +166,7 @@ fun getGalleryIDsFromNozomi(area: String?, tag: String, language: String) : Set<
                 else -> "$protocol//$domain/$compressed_nozomi_prefix/$area/$tag-$language$nozomiextension"
             }
 
-    val bytes = try {
-        URL(nozomiAddress).readBytes()
-    } catch (e: Exception) {
-        return emptySet()
-    }
+    val bytes = URL(nozomiAddress).readBytes()
 
     val nozomi = mutableSetOf<Int>()
 

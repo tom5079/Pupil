@@ -50,9 +50,14 @@ import xyz.quaver.pupil.types.Tag
 import xyz.quaver.pupil.util.*
 import java.io.File
 import java.net.URL
+import java.security.KeyStore
+import java.security.SecureRandom
+import java.security.cert.CertificateFactory
 import java.util.*
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
+import javax.net.ssl.SSLContext
+import javax.net.ssl.TrustManagerFactory
 import kotlin.reflect.KClass
 
 typealias PupilInterceptor = (Interceptor.Chain) -> Response
@@ -75,6 +80,27 @@ val client: OkHttpClient
     get() = clientHolder ?: clientBuilder.build().also {
         clientHolder = it
     }
+
+fun getSSLContext(context: Context): SSLContext {
+    val keyStore = KeyStore.getInstance(KeyStore.getDefaultType())
+    keyStore.load(null, null)
+
+    val certificateFactory = CertificateFactory.getInstance("X.509")
+
+    val certificate = context.resources.openRawResource(R.raw.isrgrootx1).use {
+        certificateFactory.generateCertificate(it)
+    }
+
+    keyStore.setCertificateEntry("isrgrootx1", certificate)
+
+    val trustManagerFactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm())
+    trustManagerFactory.init(keyStore)
+
+    val sslContext = SSLContext.getInstance("TLS")
+    sslContext.init(null, trustManagerFactory.trustManagers, SecureRandom())
+
+    return sslContext
+}
 
 class Pupil : Application() {
     companion object {
@@ -101,6 +127,7 @@ class Pupil : Application() {
 
         clientBuilder = OkHttpClient.Builder()
 //            .connectTimeout(0, TimeUnit.SECONDS)
+            .sslSocketFactory(getSSLContext(this).socketFactory)
             .readTimeout(0, TimeUnit.SECONDS)
             .proxyInfo(proxyInfo)
             .addInterceptor { chain ->
