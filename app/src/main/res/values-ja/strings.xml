@@ -79,6 +79,7 @@
     <string name="lock_corrupted">ロックファイルが破損されています。Pupilを再再インストールしてください。</string>
     <string name="settings_dark_mode_title">ダークモード</string>
     <string name="settings_dark_mode_summary">夜にシコりたい方々へ</string>
+    <string name="search_add_query_item">追加</string>
     <string name="gallery_details">ギャラリー情報</string>
     <string name="gallery_artists">アーティスト</string>
     <string name="gallery_characters">キャラクター</string>
@@ -161,4 +162,6 @@
     <string name="settings_networking">ネットワーク</string>
     <string name="settings_recover_downloads">ダウンロードデータベースを再構築</string>
     <string name="main_close_navigation_drawer">メニューを閉じる</string>
+    <string name="search_remove_query_item_description">検索構文を除去</string>
+    <string name="search_add_query_item_tag">タグ</string>
 </resources>

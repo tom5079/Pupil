@@ -77,6 +77,7 @@
     <string name="lock_corrupted">잠금 파일이 손상되었습니다! 앱을 재설치 해 주시기 바랍니다.</string>
     <string name="settings_dark_mode_title">다크 모드</string>
     <string name="settings_dark_mode_summary">딥 다크한 모오드</string>
+    <string name="search_add_query_item">추가</string>
     <string name="gallery_details">갤러리 정보</string>
     <string name="gallery_artists">작가</string>
     <string name="gallery_characters">캐릭터</string>
@@ -161,4 +162,6 @@
     <string name="settings_networking">네트워크</string>
     <string name="settings_recover_downloads">다운로드 데이터베이스 복구</string>
     <string name="main_close_navigation_drawer">메뉴 닫기</string>
+    <string name="search_remove_query_item_description">검색 구문 제거</string>
+    <string name="search_add_query_item_tag">태그</string>
 </resources>

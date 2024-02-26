@@ -1,8 +1,35 @@
 package xyz.quaver.pupil.networking
 
+import androidx.compose.ui.tooling.preview.PreviewParameterProvider
+
+class SearchQueryPreviewParameterProvider: PreviewParameterProvider<SearchQuery> {
+    override val values = sequenceOf(
+        SearchQuery.And(listOf(
+            SearchQuery.Or(listOf(
+                SearchQuery.And(listOf(
+                    SearchQuery.Tag("language", "korean"),
+                    SearchQuery.Tag("female", "unusual pupil"),
+                    SearchQuery.Tag("female", "collar")
+                )),
+                SearchQuery.And(listOf(
+                    SearchQuery.Tag("language", "japanese"),
+                    SearchQuery.Tag("female", "unusual pupil"),
+                    SearchQuery.Tag("female", "collar")
+                ))
+            )),
+            SearchQuery.Not(
+                SearchQuery.And(listOf(
+                    SearchQuery.Tag("male", "yaoi"),
+                    SearchQuery.Tag("group", "zenmai kourogi")
+                ))
+            )
+        ))
+    )
+}
+
 sealed interface SearchQuery {
     data class Tag(
-        val namespace: String?,
+        val namespace: String? = null,
         val tag: String
     ): SearchQuery, TagLike {
         companion object {

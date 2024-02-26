@@ -66,8 +66,6 @@
     <string name="main_drawer_group_contact_email">Email me!</string>
     <string name="main_drawer_grouop_contact_discord">Discord</string>
 
-    <string name="main_menu_thin">Thin Mode</string>
-
     <string name="main_menu_sort">Sort</string>
     <string name="main_menu_sort_newest">Newest</string>
     <string name="main_menu_sort_popular">Popular</string>
@@ -94,6 +92,10 @@
     <string name="search_all">Search all galleries</string>
     <string name="search_show_histories">Show histories</string>
     <string name="search_show_tags">Show favorite tags</string>
+
+    <string name="search_add_query_item">Add</string>
+    <string name="search_add_query_item_tag">Tag</string>
+    <string name="search_remove_query_item_description">Remove query item</string>
 
     <string name="gallery_details">Details</string>
     <string name="gallery_thumbnails">Thumbnails</string>
@@ -253,5 +255,6 @@
     <string name="import_old_galleries_notification_text" translatable="false">%1$d/%2$d</string>
     <string name="import_old_galleries_notification_done">Importing completed</string>
     <string name="settings_lock_fingerprint_prompt_subtitle">Ah Shit, Here we go again</string>
+    <string name="main_menu_thin">Thin Mode</string>
 
 </resources>
