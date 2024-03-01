@@ -58,6 +58,7 @@ import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import javax.net.ssl.SSLContext
 import javax.net.ssl.TrustManagerFactory
+import javax.net.ssl.X509TrustManager
 import kotlin.reflect.KClass
 
 typealias PupilInterceptor = (Interceptor.Chain) -> Response
@@ -92,6 +93,15 @@ fun getSSLContext(context: Context): SSLContext {
     }
 
     keyStore.setCertificateEntry("isrgrootx1", certificate)
+
+    val defaultTrustManagerFactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm())
+    defaultTrustManagerFactory.init(null as KeyStore?)
+
+    defaultTrustManagerFactory.trustManagers.filterIsInstance(X509TrustManager::class.java).forEach { trustManager ->
+        trustManager.acceptedIssuers.forEach { acceptedIssuer ->
+            keyStore.setCertificateEntry(acceptedIssuer.subjectDN.name, acceptedIssuer)
+        }
+    }
 
     val trustManagerFactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm())
     trustManagerFactory.init(keyStore)
