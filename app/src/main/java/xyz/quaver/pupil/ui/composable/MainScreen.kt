@@ -1,8 +1,6 @@
 package xyz.quaver.pupil.ui.composable
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.fadeIn
@@ -31,10 +29,8 @@ import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.AddCircleOutline
 import androidx.compose.material.icons.filled.Book
 import androidx.compose.material.icons.filled.Brush
 import androidx.compose.material.icons.filled.Face
@@ -43,12 +39,9 @@ import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.LocalOffer
 import androidx.compose.material.icons.filled.Male
-import androidx.compose.material.icons.filled.RemoveCircleOutline
 import androidx.compose.material.icons.filled.Translate
 import androidx.compose.material3.Card
-import androidx.compose.material3.CardColors
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
@@ -80,11 +73,8 @@ import xyz.quaver.pupil.R
 import xyz.quaver.pupil.networking.GalleryInfo
 import xyz.quaver.pupil.networking.SearchQuery
 import xyz.quaver.pupil.networking.SearchQueryPreviewParameterProvider
-import xyz.quaver.pupil.ui.theme.Blue300
 import xyz.quaver.pupil.ui.theme.Blue600
-import xyz.quaver.pupil.ui.theme.Gray300
 import xyz.quaver.pupil.ui.theme.Pink600
-import xyz.quaver.pupil.ui.theme.Red300
 import xyz.quaver.pupil.ui.theme.Yellow400
 import xyz.quaver.pupil.ui.viewmodel.MainUIState
 
@@ -102,7 +92,7 @@ private val iconMap = mapOf(
 
 @Composable
 fun TagChipIcon(tag: SearchQuery.Tag) {
-    val icon = iconMap[tag.namespace ?: "tag"]
+    val icon = iconMap[tag.namespace]
 
     if (icon != null)
         Icon(
@@ -122,9 +112,9 @@ fun TagChip(
     isFavorite: Boolean = false,
     enabled: Boolean = true,
     onClick: (SearchQuery.Tag) -> Unit = { },
-    leftIcon: @Composable (SearchQuery.Tag) -> Unit = { tag -> TagChipIcon(tag) },
-    rightIcon: @Composable (SearchQuery.Tag) -> Unit = { _ -> Spacer(Modifier.width(16.dp)) },
-    content: @Composable (SearchQuery.Tag) -> Unit = { tag -> Text(tag.tag) },
+    leftIcon: @Composable (SearchQuery.Tag) -> Unit = { TagChipIcon(it) },
+    rightIcon: @Composable (SearchQuery.Tag) -> Unit = { Spacer(Modifier.width(16.dp)) },
+    content: @Composable (SearchQuery.Tag) -> Unit = { Text(it.tag) },
 ) {
     val surfaceColor = if (isFavorite) Yellow400 else when (tag.namespace) {
         "male" -> Blue600
@@ -176,7 +166,7 @@ fun TagChip(
 @Preview
 @Composable
 fun QueryView(
-    @PreviewParameter(SearchQueryPreviewParameterProvider::class) query: SearchQuery?,
+    @PreviewParameter(SearchQueryPreviewParameterProvider::class) query: SearchQuery,
     topLevel: Boolean = true
 ) {
     val modifier = if (topLevel) {
@@ -301,6 +291,8 @@ fun SearchBar(
                     }
                 }
                 androidx.compose.animation.AnimatedVisibility(focused, enter = fadeIn(), exit = fadeOut()) {
+                    val state = remember(query) { query.toEditableState() }
+
                     Column(
                         Modifier
                             .fillMaxSize()
@@ -315,10 +307,7 @@ fun SearchBar(
                                 contentDescription = "close search bar"
                             )
                         }
-                        QueryEditor(
-                            query = query,
-                            onQueryChange = onQueryChange
-                        )
+                        QueryEditor(state = state)
                     }
                 }
             }
