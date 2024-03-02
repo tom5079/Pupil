@@ -18,10 +18,8 @@
 
 package xyz.quaver.pupil.ui
 
-import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -39,6 +37,7 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.view.GravityCompat
 import androidx.core.view.ViewCompat
+import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.navigation.NavigationView
 import com.google.android.material.snackbar.Snackbar
@@ -62,10 +61,10 @@ import xyz.quaver.pupil.ui.view.MainView
 import xyz.quaver.pupil.ui.view.ProgressCard
 import xyz.quaver.pupil.util.ItemClickSupport
 import xyz.quaver.pupil.util.Preferences
-import xyz.quaver.pupil.util.requestNotificationPermission
 import xyz.quaver.pupil.util.checkUpdate
 import xyz.quaver.pupil.util.downloader.Cache
 import xyz.quaver.pupil.util.downloader.DownloadManager
+import xyz.quaver.pupil.util.requestNotificationPermission
 import xyz.quaver.pupil.util.restore
 import xyz.quaver.pupil.util.showNotificationPermissionExplanationDialog
 import java.util.regex.Pattern
@@ -496,6 +495,20 @@ class MainActivity :
     private var suggestionJob : Job? = null
     private fun setupSearchBar() {
         with(binding.contents.searchview) {
+            val scrollSuggestionToTop = {
+                with(binding.suggestionSection.suggestionsList) {
+                    MainScope().launch {
+                        withTimeout(1000) {
+                            val layoutManager = layoutManager as LinearLayoutManager
+                            while (layoutManager.findLastVisibleItemPosition() != adapter?.itemCount?.minus(1)) {
+                                layoutManager.scrollToPosition(adapter?.itemCount?.minus(1) ?: 0)
+                                delay(100)
+                            }
+                        }
+                    }
+                }
+            }
+
             onMenuStatusChangeListener = object: FloatingSearchView.OnMenuStatusChangeListener {
                 override fun onMenuOpened() {
                     (this@MainActivity.binding.contents.recyclerview.adapter as GalleryBlockAdapter).closeAllItems()
@@ -521,6 +534,7 @@ class MainActivity :
             onFavoriteHistorySwitchClickListener = {
                 isFavorite = !isFavorite
                 swapSuggestions(defaultSuggestions)
+                scrollSuggestionToTop()
             }
 
             onMenuItemClickListener = {
@@ -534,6 +548,7 @@ class MainActivity :
 
                 if (query.isEmpty() or query.endsWith(' ')) {
                     swapSuggestions(defaultSuggestions)
+                    scrollSuggestionToTop()
 
                     return@lambda
                 }
@@ -565,8 +580,10 @@ class MainActivity :
 
             onFocusChangeListener = object: FloatingSearchView.OnFocusChangeListener {
                 override fun onFocus() {
-                    if (query.isEmpty() or query.endsWith(' '))
+                    if (query.isEmpty() or query.endsWith(' ')) {
                         swapSuggestions(defaultSuggestions)
+                        scrollSuggestionToTop()
+                    }
                 }
 
                 override fun onFocusCleared() {
