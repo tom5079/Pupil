@@ -13,7 +13,9 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withContext
 import xyz.quaver.pupil.hitomi.max_node_size
 import java.nio.ByteBuffer
+import java.nio.ByteOrder
 import java.nio.IntBuffer
+import java.nio.charset.Charset
 
 const val domain = "ltn.hitomi.la"
 const val galleryBlockExtension = ".html"
@@ -27,6 +29,11 @@ const val indexDir = "tagindex"
 const val galleriesIndexDir = "galleriesindex"
 const val languagesIndexDir = "languagesindex"
 const val nozomiURLIndexDir = "nozomiurlindex"
+
+data class Suggestion(
+    val tag: SearchQuery.Tag,
+    val count: Int
+)
 
 fun IntBuffer.toSet(): Set<Int> {
     val result = mutableSetOf<Int>()
@@ -78,7 +85,7 @@ class HitomiHttpClient {
         }
 
         return Node.decodeNode(
-            getURLAtRange(url, address until (address+max_node_size))
+            getURLAtRange(url, address ..< address+max_node_size)
         )
     }
 
@@ -112,7 +119,38 @@ class HitomiHttpClient {
         return getURLAtRange(url, offset until (offset+length)).asIntBuffer()
     }
 
-    suspend fun getGalleryIDsFromNozomi(
+    private suspend fun getSuggestionsFromData(field: String, data: Node.Data): List<Suggestion> {
+        val url = "https://$domain/$indexDir/$field.${getTagIndexVersion()}.data"
+        val (offset, length) = data
+
+        check(data.length in 1..10000) { "Invalid length ${data.length}" }
+
+        val buffer = getURLAtRange(url, offset..<offset+length).order(ByteOrder.BIG_ENDIAN)
+
+        val numberOfSuggestions = buffer.int
+
+        check(numberOfSuggestions in 1 .. 100) { "Number of suggestions $numberOfSuggestions is too long" }
+
+        return buildList {
+            for (i in 0 ..< numberOfSuggestions) {
+                val namespaceLen = buffer.int
+                val namespace = ByteArray(namespaceLen).apply {
+                    buffer.get(this)
+                }.toString(charset("UTF-8"))
+
+                val tagLen = buffer.int
+                val tag = ByteArray(tagLen).apply {
+                    buffer.get(this)
+                }.toString(charset("UTF-8"))
+
+                val count = buffer.int
+
+                add(Suggestion(SearchQuery.Tag(namespace, tag), count))
+            }
+        }
+    }
+
+    private suspend fun getGalleryIDsFromNozomi(
         area: String?,
         tag: String,
         language: String
@@ -132,7 +170,7 @@ class HitomiHttpClient {
         return ByteBuffer.wrap(result).asIntBuffer()
     }
 
-    suspend fun getGalleryIDsForQuery(query: SearchQuery.Tag, language: String = "all"): IntBuffer = when (query.namespace) {
+    private suspend fun getGalleryIDsForQuery(query: SearchQuery.Tag, language: String = "all"): IntBuffer = when (query.namespace) {
         "female", "male" -> getGalleryIDsFromNozomi("tag", query.toString(), language)
         "language" -> getGalleryIDsFromNozomi(null, "index", query.tag)
         null -> {
@@ -146,62 +184,73 @@ class HitomiHttpClient {
         else -> getGalleryIDsFromNozomi(query.namespace, query.tag, language)
     }
 
-    suspend fun search(query: SearchQuery?): Set<Int> = when (query) {
-        is SearchQuery.Tag -> getGalleryIDsForQuery(query).toSet()
-        is SearchQuery.Not -> coroutineScope {
-            val allGalleries = async {
-                getGalleryIDsFromNozomi(null, "index", "all")
-            }
+    suspend fun getSuggestionsForQuery(query: SearchQuery.Tag): Result<List<Suggestion>> = runCatching {
+        val field = query.namespace ?: "global"
+        val key = Node.Key(field)
+        val node = getNodeAtAddress(field, 0)
+        val data = bSearch(field, key, node)
 
-            val queriedGalleries = search(query.query)
+        data?.let { getSuggestionsFromData(field, data) } ?: emptyList()
+    }
 
-            val result = mutableSetOf<Int>()
+    suspend fun search(query: SearchQuery?): Result<Set<Int>> = runCatching {
+        when (query) {
+            is SearchQuery.Tag -> getGalleryIDsForQuery(query).toSet()
+            is SearchQuery.Not -> coroutineScope {
+                val allGalleries = async {
+                    getGalleryIDsFromNozomi(null, "index", "all")
+                }
 
-            with (allGalleries.await()) {
-                while (this.hasRemaining()) {
-                    val gallery = this.get()
+                val queriedGalleries = search(query.query).getOrThrow()
 
-                    if (gallery in queriedGalleries) {
-                        result.add(gallery)
+                val result = mutableSetOf<Int>()
+
+                with (allGalleries.await()) {
+                    while (this.hasRemaining()) {
+                        val gallery = this.get()
+
+                        if (gallery in queriedGalleries) {
+                            result.add(gallery)
+                        }
                     }
                 }
-            }
 
-            result
-        }
-        is SearchQuery.And -> coroutineScope {
-            val queries = query.queries.map { query ->
-                async {
-                    search(query)
+                result
+            }
+            is SearchQuery.And -> coroutineScope {
+                val queries = query.queries.map { query ->
+                    async {
+                        search(query).getOrThrow()
+                    }
                 }
-            }
 
-            val result = queries.first().await().toMutableSet()
+                val result = queries.first().await().toMutableSet()
 
-            queries.drop(1).forEach {
-                val queryResult = it.await()
+                queries.drop(1).forEach {
+                    val queryResult = it.await()
 
-                result.retainAll(queryResult)
-            }
-
-            result
-        }
-        is SearchQuery.Or -> coroutineScope {
-            val queries = query.queries.map { query ->
-                async {
-                    search(query)
+                    result.retainAll(queryResult)
                 }
+
+                result
             }
+            is SearchQuery.Or -> coroutineScope {
+                val queries = query.queries.map { query ->
+                    async {
+                        search(query).getOrThrow()
+                    }
+                }
 
-            val result = mutableSetOf<Int>()
+                val result = mutableSetOf<Int>()
 
-            queries.forEach {
-                val queryResult = it.await()
-                result.addAll(queryResult)
+                queries.forEach {
+                    val queryResult = it.await()
+                    result.addAll(queryResult)
+                }
+
+                result
             }
-
-            result
+            null -> getGalleryIDsFromNozomi(null, "index", "all").toSet()
         }
-        null -> getGalleryIDsFromNozomi(null, "index", "all").toSet()
     }
 }
