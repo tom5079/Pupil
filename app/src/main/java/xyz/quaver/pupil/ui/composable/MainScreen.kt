@@ -61,6 +61,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
@@ -87,23 +88,74 @@ private val iconMap = mapOf(
     "series" to Icons.Default.Book,
     "type" to Icons.Default.Folder,
     "language" to Icons.Default.Translate,
-    "tag" to Icons.Default.LocalOffer
+    "tag" to Icons.Default.LocalOffer,
+)
+
+private val languageMap = mapOf(
+    "indonesian" to R.drawable.language_indonesian,
+    "javanese" to R.drawable.language_javanese,
+    "catalan" to R.drawable.language_catalan,
+    "cebuano" to R.drawable.language_philippines,
+    "czech" to R.drawable.language_czech,
+    "danish" to R.drawable.language_danish,
+    "german" to R.drawable.language_german,
+    "estonian" to R.drawable.language_estonian,
+    "english" to R.drawable.language_english,
+    "spanish" to R.drawable.language_spanish,
+    "french" to R.drawable.language_french,
+    "italian" to R.drawable.language_italian,
+    "latin" to R.drawable.language_latin,
+    "hungarian" to R.drawable.language_hungarian,
+    "dutch" to R.drawable.language_dutch,
+    "norwegian" to R.drawable.language_norwegian,
+    "polish" to R.drawable.language_polish,
+    "portuguese" to R.drawable.language_portuguese,
+    "romanian" to R.drawable.language_romanian,
+    "albanian" to R.drawable.language_albanian,
+    "slovak" to R.drawable.language_slovak,
+    "finnish" to R.drawable.language_finnish,
+    "swedish" to R.drawable.language_swedish,
+    "tagalog" to R.drawable.language_philippines,
+    "vietnamese" to R.drawable.language_vietnamese,
+    "turkish" to R.drawable.language_turkish,
+    "greek" to R.drawable.language_greek,
+    "mongolian" to R.drawable.language_mongolian,
+    "russian" to R.drawable.language_russian,
+    "ukrainian" to R.drawable.language_ukrainian,
+    "hebrew" to R.drawable.language_hebrew,
+    "persian" to R.drawable.language_persian,
+    "thai" to R.drawable.language_thai,
+    "korean" to R.drawable.language_korean,
+    "chinese" to R.drawable.language_chinese,
+    "japanese" to R.drawable.language_japanese,
 )
 
 @Composable
 fun TagChipIcon(tag: SearchQuery.Tag) {
     val icon = iconMap[tag.namespace]
 
-    if (icon != null)
-        Icon(
-            icon,
-            contentDescription = "icon",
-            modifier = Modifier
-                .padding(4.dp)
-                .size(24.dp)
-        )
-    else
+    if (icon != null) {
+        if (tag.namespace == "language" && languageMap.contains(tag.tag)) {
+            Icon(
+                painter = painterResource(languageMap[tag.tag]!!),
+                contentDescription = "icon",
+                modifier = Modifier
+                    .padding(4.dp)
+                    .size(24.dp),
+                tint = Color.Unspecified
+            )
+        } else {
+            Icon(
+                icon,
+                contentDescription = "icon",
+                modifier = Modifier
+                    .padding(4.dp)
+                    .size(24.dp)
+            )
+        }
+    } else {
         Spacer(Modifier.width(16.dp))
+    }
 }
 
 @Composable
@@ -163,10 +215,9 @@ fun TagChip(
         )
 }
 
-@Preview
 @Composable
 fun QueryView(
-    @PreviewParameter(SearchQueryPreviewParameterProvider::class) query: SearchQuery,
+    query: SearchQuery,
     topLevel: Boolean = true
 ) {
     val modifier = if (topLevel) {
@@ -188,9 +239,9 @@ fun QueryView(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(4.dp),
             ) {
-                query.queries.forEachIndexed { index, subquery ->
+                query.queries.forEachIndexed { index, subQuery ->
                     if (index != 0) { Text("+") }
-                    QueryView(subquery, topLevel = false)
+                    QueryView(subQuery, topLevel = false)
                 }
             }
         }
@@ -287,7 +338,9 @@ fun SearchBar(
                             .horizontalScroll(rememberScrollState()),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
+                        Box(Modifier.size(8.dp))
                         QueryView(query!!)
+                        Box(Modifier.size(8.dp))
                     }
                 }
                 androidx.compose.animation.AnimatedVisibility(focused, enter = fadeIn(), exit = fadeOut()) {

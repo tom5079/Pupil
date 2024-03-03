@@ -121,7 +121,7 @@ fun EditableTagChip(
     enabled: Boolean = true,
     leftIcon: @Composable (SearchQuery.Tag) -> Unit = { tag -> TagChipIcon(tag) },
     rightIcon: @Composable (SearchQuery.Tag) -> Unit = { _ -> Spacer(Modifier.width(16.dp)) },
-    content: @Composable (SearchQuery.Tag) -> Unit = { tag -> Text(tag.tag) },
+    content: @Composable (SearchQuery.Tag) -> Unit = { tag -> Text(tag.tag.ifBlank { stringResource(R.string.search_bar_edit_tag) }) },
 ) {
     val namespace by state.namespace
     val tag by state.tag
