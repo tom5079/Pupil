@@ -1,10 +1,15 @@
 package xyz.quaver.pupil.ui.composable
 
+import android.util.Log
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.focusable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -13,21 +18,26 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AddCircleOutline
 import androidx.compose.material.icons.filled.RemoveCircleOutline
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardColors
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -35,18 +45,28 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.toLowerCase
 import androidx.compose.ui.unit.dp
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.networking.SearchQuery
+import xyz.quaver.pupil.networking.validNamespace
 import xyz.quaver.pupil.ui.theme.Blue300
 import xyz.quaver.pupil.ui.theme.Blue600
 import xyz.quaver.pupil.ui.theme.Gray300
 import xyz.quaver.pupil.ui.theme.Pink600
 import xyz.quaver.pupil.ui.theme.Red300
 import xyz.quaver.pupil.ui.theme.Yellow400
+import kotlin.math.exp
 
 private fun SearchQuery.toEditableStateInternal(): EditableSearchQueryState = when (this) {
     is SearchQuery.Tag -> EditableSearchQueryState.Tag(namespace, tag)
@@ -118,60 +138,129 @@ sealed interface EditableSearchQueryState {
 fun EditableTagChip(
     state: EditableSearchQueryState.Tag,
     isFavorite: Boolean = false,
-    enabled: Boolean = true,
-    leftIcon: @Composable (SearchQuery.Tag) -> Unit = { tag -> TagChipIcon(tag) },
-    rightIcon: @Composable (SearchQuery.Tag) -> Unit = { _ -> Spacer(Modifier.width(16.dp)) },
-    content: @Composable (SearchQuery.Tag) -> Unit = { tag -> Text(tag.tag.ifBlank { stringResource(R.string.search_bar_edit_tag) }) },
-) {
-    val namespace by state.namespace
-    val tag by state.tag
-
-    val surfaceColor = if (isFavorite) Yellow400 else when (namespace) {
-        "male" -> Blue600
-        "female" -> Pink600
-        else -> MaterialTheme.colorScheme.surface
+    leftIcon: @Composable RowScope.(SearchQuery.Tag) -> Unit = { tag -> TagChipIcon(tag) },
+    rightIcon: @Composable RowScope.(SearchQuery.Tag) -> Unit = { _ -> Spacer(Modifier.width(16.dp)) },
+    content: @Composable RowScope.(SearchQuery.Tag) -> Unit = { tag ->
+        Text(
+            modifier = Modifier
+                .weight(1f, fill = false)
+                .horizontalScroll(rememberScrollState()),
+            text = tag.tag.ifBlank { stringResource(R.string.search_bar_edit_tag) }
+        )
     }
+) {
+    var namespace by state.namespace
+    var tag by state.tag
 
-    val contentColor =
-        if (surfaceColor == MaterialTheme.colorScheme.surface)
-            MaterialTheme.colorScheme.onSurface
-        else
-            Color.White
+    var expanded by remember { mutableStateOf(false) }
 
-    val inner = @Composable {
-        CompositionLocalProvider(
-            LocalContentColor provides contentColor,
-            LocalTextStyle provides MaterialTheme.typography.bodyMedium
-        ) {
-            val queryTag = SearchQuery.Tag(namespace, tag)
+    val surfaceColor by animateColorAsState(
+        when {
+            expanded -> MaterialTheme.colorScheme.surface
+            isFavorite -> Yellow400
+            namespace == "male" -> Blue600
+            namespace == "female" -> Pink600
+            else -> MaterialTheme.colorScheme.surface
+        }, label = "tag surface color"
+    )
 
-            Row(
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                leftIcon(queryTag)
-                content(queryTag)
-                rightIcon(queryTag)
+    val contentColor by animateColorAsState(
+        when {
+            expanded -> Color.White
+            isFavorite -> Color.White
+            namespace == "male" -> Color.White
+            namespace == "female" -> Color.White
+            else -> MaterialTheme.colorScheme.onSurface
+        }, label = "tag content color"
+    )
+
+    Surface(
+        shape = RoundedCornerShape(16.dp),
+        color = surfaceColor
+    ) {
+        AnimatedContent(targetState = expanded, label = "open tag editor") { targetExpanded ->
+            if (!targetExpanded) {
+                CompositionLocalProvider(
+                    LocalContentColor provides contentColor,
+                    LocalTextStyle provides MaterialTheme.typography.bodyMedium
+                ) {
+                    val queryTag = SearchQuery.Tag(namespace, tag)
+
+                    Row(
+                        modifier = Modifier
+                            .height(32.dp)
+                            .clickable { expanded = true },
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        leftIcon(queryTag)
+                        content(queryTag)
+                        rightIcon(queryTag)
+                    }
+                }
+            } else {
+                Column(
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(top = 8.dp, bottom = 8.dp, end = 8.dp)
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        IconButton(
+                            onClick = {
+                                expanded = false
+                            }
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "close tag editor"
+                            )
+                        }
+
+                        var selection by remember { mutableStateOf(TextRange.Zero) }
+                        var composition by remember { mutableStateOf<TextRange?>(null) }
+
+                        val textFieldValue = remember(tag, selection, composition) {
+                            TextFieldValue(tag, selection, composition)
+                        }
+
+                        OutlinedTextField(
+                            value = textFieldValue,
+                            singleLine = true,
+                            leadingIcon = {
+                                TagChipIcon(SearchQuery.Tag(namespace, tag))
+                            },
+                            modifier = Modifier
+                                .onKeyEvent { event ->
+                                    if (event.key == Key.Backspace && tag.isEmpty()) {
+                                        val newTag = namespace?.dropLast(1) ?: ""
+                                        namespace = null
+                                        tag = newTag
+                                        selection = TextRange(newTag.length)
+                                        composition = null
+                                        true
+                                    } else false
+                                },
+                            keyboardActions = KeyboardActions(
+                                onDone = {
+                                    expanded = false
+                                }
+                            ),
+                            onValueChange = { newTextValue ->
+                                val newTag = newTextValue.text.lowercase()
+                                tag = if (namespace == null && newTag.trim() in validNamespace) {
+                                    namespace = newTag.trim()
+                                    ""
+                                } else newTag
+                                selection = newTextValue.selection
+                                composition = newTextValue.composition
+                            }
+                        )
+                    }
+                }
             }
         }
     }
-
-    val modifier = Modifier.height(32.dp)
-    val shape = RoundedCornerShape(16.dp)
-
-    if (enabled)
-        Surface(
-            modifier = modifier,
-            shape = shape,
-            color = surfaceColor,
-            content = inner
-        )
-    else
-        Surface(
-            modifier,
-            shape = shape,
-            color = surfaceColor,
-            content = inner
-        )
 }
 
 @Composable
@@ -267,7 +356,6 @@ fun QueryEditorQueryView(
         is EditableSearchQueryState.Tag -> {
             EditableTagChip(
                 state,
-                enabled = false,
                 rightIcon = {
                     Icon(
                         modifier = Modifier

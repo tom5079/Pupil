@@ -2,11 +2,24 @@ package xyz.quaver.pupil.networking
 
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 
+val validNamespace = listOf(
+    "female",
+    "male",
+    "artist",
+    "group",
+    "character",
+    "series",
+    "type",
+    "language",
+    "tag"
+)
+
 class SearchQueryPreviewParameterProvider: PreviewParameterProvider<SearchQuery> {
     override val values = sequenceOf(
         SearchQuery.And(listOf(
             SearchQuery.Or(listOf(
                 SearchQuery.And(listOf(
+                    SearchQuery.Tag("language", "thisisareallylongtagyoucantevenseetheendofthis"),
                     SearchQuery.Tag("language", "korean"),
                     SearchQuery.Tag("female", "unusual pupil"),
                     SearchQuery.Tag("female", "collar")
