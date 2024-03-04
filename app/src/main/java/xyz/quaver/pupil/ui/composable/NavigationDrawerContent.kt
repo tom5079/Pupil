@@ -4,17 +4,20 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.ime
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.sizeIn
+import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.MenuOpen
 import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material.icons.filled.MenuOpen
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -34,7 +37,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.Measurable
 import androidx.compose.ui.layout.MeasurePolicy
-import androidx.compose.ui.layout.layout
 import androidx.compose.ui.layout.layoutId
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -237,7 +239,7 @@ fun BottomNavigationBar(
     selectedDestination: MainDestination,
     navigateToDestination: (MainDestination) -> Unit
 ) {
-    NavigationBar(modifier = Modifier.fillMaxWidth()) {
+    NavigationBar(modifier = Modifier.fillMaxWidth(), windowInsets = WindowInsets.ime.union(WindowInsets.navigationBars)) {
         mainDestinations.forEach { destination ->
             NavigationBarItem(
                 selected = selectedDestination.route == destination.route,

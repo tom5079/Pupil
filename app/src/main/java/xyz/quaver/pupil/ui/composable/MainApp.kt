@@ -5,7 +5,11 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.ime
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalNavigationDrawer
@@ -105,13 +109,15 @@ private fun MainNavigationWrapper(
     }
 
     if (navigationType == NavigationType.PERMANENT_NAVIGATION_DRAWER) {
-        PermanentNavigationDrawer(drawerContent = {
-            PermanentNavigationDrawerContent(
-                selectedDestination = uiState.currentDestination,
-                navigationContentPosition = navigationContentPosition,
-                navigateToDestination = navigateToDestination
-            )
-        }) {
+        PermanentNavigationDrawer(
+            drawerContent = {
+                PermanentNavigationDrawerContent(
+                    selectedDestination = uiState.currentDestination,
+                    navigationContentPosition = navigationContentPosition,
+                    navigateToDestination = navigateToDestination
+                )
+            }
+        ) {
             MainContent(
                 navigationType = navigationType,
                 contentType = contentType,
@@ -180,6 +186,12 @@ fun MainContent(
         ) {
             Box(
                 modifier = Modifier.weight(1f)
+                    .run {
+                        if (navigationType == NavigationType.BOTTOM_NAVIGATION) {
+                            this.consumeWindowInsets(WindowInsets.ime)
+                                .consumeWindowInsets(WindowInsets.navigationBars)
+                        } else this
+                    }
             ) {
                 MainScreen(
                     contentType = contentType,

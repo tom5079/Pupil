@@ -25,6 +25,7 @@ import androidx.activity.viewModels
 import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
 import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
 import androidx.compose.runtime.getValue
+import androidx.core.view.WindowCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.google.accompanist.adaptive.calculateDisplayFeatures
 import xyz.quaver.pupil.ui.composable.MainApp
@@ -38,6 +39,8 @@ class MainActivity : BaseActivity() {
         super.onCreate(savedInstanceState)
 
         val viewModel: MainViewModel by viewModels()
+
+        WindowCompat.setDecorFitsSystemWindows(window, false)
 
         setContent {
             AppTheme {
