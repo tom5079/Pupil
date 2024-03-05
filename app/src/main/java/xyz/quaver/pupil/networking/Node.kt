@@ -95,7 +95,7 @@ data class Node(
     val isLeaf: Boolean = subNodeAddresses.all { it == 0L }
 
     fun locateKey(target: Key): Pair<Boolean, Int> {
-        val index = keys.indexOfFirst { key -> key <= target }
+        val index = keys.indexOfFirst { key -> target <= key }
 
         if (index == -1) {
             return Pair(false, keys.size)

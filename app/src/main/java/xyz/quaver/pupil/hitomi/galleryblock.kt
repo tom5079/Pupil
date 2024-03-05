@@ -17,13 +17,11 @@
 package xyz.quaver.pupil.hitomi
 
 import kotlinx.serialization.Serializable
-import org.jsoup.Jsoup
 import java.net.URL
 import java.net.URLDecoder
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import javax.net.ssl.HttpsURLConnection
-import kotlin.io.readText
 
 //galleryblock.js
 fun fetchNozomi(area: String? = null, tag: String = "index", language: String = "all", start: Int = -1, count: Int = -1) : Pair<List<Int>, Int> {

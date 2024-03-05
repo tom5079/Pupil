@@ -29,8 +29,6 @@ import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
 import androidx.fragment.app.DialogFragment
 import com.google.android.material.snackbar.Snackbar
-import net.rdrei.android.dirchooser.DirectoryChooserActivity
-import net.rdrei.android.dirchooser.DirectoryChooserConfig
 import xyz.quaver.io.FileX
 import xyz.quaver.io.util.toFile
 import xyz.quaver.pupil.R
@@ -56,8 +54,7 @@ class DownloadLocationDialogFragment : DialogFragment() {
             it.data?.data?.also { uri ->
                 val takeFlags: Int = Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
 
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT)
-                    context.contentResolver.takePersistableUriPermission(uri, takeFlags)
+                context.contentResolver.takePersistableUriPermission(uri, takeFlags)
 
                 if (kotlin.runCatching { FileX(context, uri).canWrite() }.getOrDefault(false)) {
                     entries[null]?.locationAvailable?.text = uri.toFile(context)?.canonicalPath
@@ -72,43 +69,17 @@ class DownloadLocationDialogFragment : DialogFragment() {
                     val downloadFolder = DownloadManager.getInstance(context).downloadFolder.canonicalPath
                     val key = entries.keys.firstOrNull { it?.canonicalPath == downloadFolder }
                     entries[key]!!.button.isChecked = true
-                    if (key == null) entries[key]!!.locationAvailable.text = downloadFolder
+                    if (key == null) entries[null]!!.locationAvailable.text = downloadFolder
                 }
             }
         } else {
             val downloadFolder = DownloadManager.getInstance(context ?: return@registerForActivityResult).downloadFolder.canonicalPath
             val key = entries.keys.firstOrNull { it?.canonicalPath == downloadFolder }
             if (key == null)
-                entries[key]!!.locationAvailable.text = downloadFolder
+                entries[null]!!.locationAvailable.text = downloadFolder
             else {
                 entries[null]!!.button.isChecked = false
                 entries[key]!!.button.isChecked = true
-            }
-        }
-    }
-
-    private val requestDownloadFolderOldLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
-        val context = context ?: return@registerForActivityResult
-        val dialog = dialog ?: return@registerForActivityResult
-
-        if (it.resultCode == DirectoryChooserActivity.RESULT_CODE_DIR_SELECTED) {
-            val directory = it.data?.getStringExtra(DirectoryChooserActivity.RESULT_SELECTED_DIR)!!
-
-            if (!File(directory).canWrite()) {
-                Snackbar.make(
-                    dialog.window!!.decorView.rootView,
-                    R.string.settings_download_folder_not_writable,
-                    Snackbar.LENGTH_LONG
-                ).show()
-
-                val downloadFolder = DownloadManager.getInstance(context).downloadFolder.canonicalPath
-                val key = entries.keys.firstOrNull { it?.canonicalPath == downloadFolder }
-                entries[key]!!.button.isChecked = true
-                if (key == null) entries[key]!!.locationAvailable.text = downloadFolder
-            }
-            else {
-                entries[null]?.locationAvailable?.text = directory
-                Preferences["download_folder"] = File(directory).toURI().toString()
             }
         }
     }
@@ -147,24 +118,11 @@ class DownloadLocationDialogFragment : DialogFragment() {
                 }
                 button.performClick()
 
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                    val intent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).apply {
-                        putExtra("android.content.extra.SHOW_ADVANCED", true)
-                    }
-
-                    requestDownloadFolderLauncher.launch(intent)
-                } else {    // Can't use SAF on old Androids!
-                    val config = DirectoryChooserConfig.builder()
-                        .newDirectoryName("Pupil")
-                        .allowNewDirectoryNameModification(true)
-                        .build()
-
-                    val intent = Intent(context, DirectoryChooserActivity::class.java).apply {
-                        putExtra(DirectoryChooserActivity.EXTRA_CONFIG, config)
-                    }
-
-                    requestDownloadFolderOldLauncher.launch(intent)
+                val intent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).apply {
+                    putExtra("android.content.extra.SHOW_ADVANCED", true)
                 }
+
+                requestDownloadFolderLauncher.launch(intent)
             }
             entries[null] = this
         }

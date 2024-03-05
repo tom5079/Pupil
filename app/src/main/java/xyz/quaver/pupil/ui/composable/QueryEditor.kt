@@ -1,5 +1,6 @@
 package xyz.quaver.pupil.ui.composable
 
+import android.util.Log
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Spring
@@ -9,6 +10,7 @@ import androidx.compose.foundation.gestures.animateScrollBy
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
@@ -69,7 +71,9 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import xyz.quaver.pupil.R
+import xyz.quaver.pupil.networking.HitomiHttpClient
 import xyz.quaver.pupil.networking.SearchQuery
+import xyz.quaver.pupil.networking.Suggestion
 import xyz.quaver.pupil.networking.validNamespace
 import xyz.quaver.pupil.ui.theme.Blue300
 import xyz.quaver.pupil.ui.theme.Blue600
@@ -144,6 +148,45 @@ sealed interface EditableSearchQueryState {
         val query = mutableStateOf(query)
     }
 
+}
+
+@Composable
+fun TagSuggestionList(
+    state: EditableSearchQueryState.Tag
+) {
+    var suggestionList: List<Suggestion>? by remember { mutableStateOf(null) }
+
+    var namespace by state.namespace
+    var tag by state.tag
+    var expanded by state.expanded
+
+    LaunchedEffect(namespace, tag) {
+        suggestionList = null
+        suggestionList = HitomiHttpClient.getSuggestionsForQuery(SearchQuery.Tag(namespace, tag))
+            .getOrDefault(emptyList())
+            .filterNot { it.tag == SearchQuery.Tag(namespace, tag) }
+    }
+
+    val suggestionListSnapshot = suggestionList
+    if (suggestionListSnapshot == null) {
+        Text("Loading")
+    } else if (suggestionListSnapshot.isNotEmpty()) {
+        Column(
+            modifier = Modifier.padding(8.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            suggestionListSnapshot.forEach { suggestion ->
+                TagChip(
+                    tag = suggestion.tag,
+                    onClick = {
+                        namespace = it.namespace
+                        tag = it.tag
+                        expanded = false
+                    }
+                )
+            }
+        }
+    }
 }
 
 @Composable
@@ -244,7 +287,7 @@ fun EditableTagChip(
                             )
                         }
 
-                        var selection by remember { mutableStateOf(TextRange(tag.length)) }
+                        var selection by remember(tag) { mutableStateOf(TextRange(tag.length)) }
                         var composition by remember { mutableStateOf<TextRange?>(null) }
 
                         val focusRequester = remember { FocusRequester() }
@@ -311,6 +354,8 @@ fun EditableTagChip(
                             }
                         )
                     }
+
+                    TagSuggestionList(state)
                 }
             }
         }

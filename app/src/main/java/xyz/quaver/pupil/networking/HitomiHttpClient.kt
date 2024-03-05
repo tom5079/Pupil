@@ -45,7 +45,7 @@ fun IntBuffer.toSet(): Set<Int> {
     return result
 }
 
-class HitomiHttpClient {
+object HitomiHttpClient {
     private val httpClient = HttpClient(OkHttp)
 
     private var _tagIndexVersion: String? = null
@@ -186,7 +186,7 @@ class HitomiHttpClient {
 
     suspend fun getSuggestionsForQuery(query: SearchQuery.Tag): Result<List<Suggestion>> = runCatching {
         val field = query.namespace ?: "global"
-        val key = Node.Key(field)
+        val key = Node.Key(query.tag)
         val node = getNodeAtAddress(field, 0)
         val data = bSearch(field, key, node)
 
