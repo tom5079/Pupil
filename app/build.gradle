@@ -1,9 +1,10 @@
 apply plugin: "com.android.application"
 apply plugin: "kotlin-android"
-apply plugin: "kotlin-kapt"
 apply plugin: "kotlin-parcelize"
 apply plugin: "kotlinx-serialization"
 apply plugin: "com.google.android.gms.oss-licenses-plugin"
+apply plugin: "com.google.devtools.ksp"
+
 
 if (file("google-services.json").exists()) {
     logger.lifecycle("Firebase Enabled")
@@ -96,7 +97,13 @@ dependencies {
     implementation "com.google.accompanist:accompanist-adaptive:0.34.0"
     implementation "androidx.navigation:navigation-compose:2.7.7"
 
-    kapt 'androidx.lifecycle:lifecycle-compiler:2.7.0'
+    ksp 'androidx.lifecycle:lifecycle-compiler:2.7.0'
+
+    def room_version = "2.6.1"
+
+    implementation "androidx.room:room-runtime:$room_version"
+    annotationProcessor "androidx.room:room-compiler:$room_version"
+    ksp "androidx.room:room-compiler:$room_version"
 
     implementation "androidx.paging:paging-compose:3.2.1"
 
