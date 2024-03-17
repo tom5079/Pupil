@@ -105,8 +105,6 @@ dependencies {
     annotationProcessor "androidx.room:room-compiler:$room_version"
     ksp "androidx.room:room-compiler:$room_version"
 
-    implementation "androidx.paging:paging-compose:3.2.1"
-
     implementation "io.ktor:ktor-client-core:2.3.8"
     implementation "io.ktor:ktor-client-okhttp:2.3.8"
 

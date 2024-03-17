@@ -11,6 +11,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.json.Json
 import xyz.quaver.pupil.hitomi.max_node_size
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
@@ -36,13 +37,18 @@ data class Suggestion(
 )
 
 fun IntBuffer.toSet(): Set<Int> {
-    val result = mutableSetOf<Int>()
+    val result = LinkedHashSet<Int>()
 
     while (this.hasRemaining()) {
         result.add(this.get())
     }
 
     return result
+}
+
+private val json = Json {
+    isLenient = true
+    ignoreUnknownKeys = true
 }
 
 object HitomiHttpClient {
@@ -193,6 +199,15 @@ object HitomiHttpClient {
         data?.let { getSuggestionsFromData(field, data) } ?: emptyList()
     }
 
+    suspend fun getGalleryInfo(galleryID: Int) = runCatching {
+        withContext(Dispatchers.IO) {
+            json.decodeFromString<GalleryInfo>(
+                httpClient.get("https://$domain/galleries/$galleryID.js").bodyAsText()
+                    .replace("var galleryinfo = ", "")
+            )
+        }
+    }
+
     suspend fun search(query: SearchQuery?): Result<Set<Int>> = runCatching {
         when (query) {
             is SearchQuery.Tag -> getGalleryIDsForQuery(query).toSet()
@@ -203,7 +218,7 @@ object HitomiHttpClient {
 
                 val queriedGalleries = search(query.query).getOrThrow()
 
-                val result = mutableSetOf<Int>()
+                val result = LinkedHashSet<Int>()
 
                 with (allGalleries.await()) {
                     while (this.hasRemaining()) {
@@ -241,7 +256,7 @@ object HitomiHttpClient {
                     }
                 }
 
-                val result = mutableSetOf<Int>()
+                val result = LinkedHashSet<Int>()
 
                 queries.forEach {
                     val queryResult = it.await()

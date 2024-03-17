@@ -18,7 +18,7 @@ data class Group(val group: String): TagLike {
 }
 
 @Serializable
-data class Series(val series: String): TagLike {
+data class Series(@SerialName("parody") val series: String): TagLike {
     override fun toTag() = SearchQuery.Tag("series", series)
 }
 

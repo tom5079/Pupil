@@ -1,6 +1,5 @@
 package xyz.quaver.pupil.ui.composable
 
-import android.util.Log
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Spring
@@ -10,7 +9,6 @@ import androidx.compose.foundation.gestures.animateScrollBy
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
@@ -92,11 +90,23 @@ private fun SearchQuery.toEditableStateInternal(): EditableSearchQueryState = wh
 fun SearchQuery?.toEditableState(): EditableSearchQueryState.Root
     = EditableSearchQueryState.Root(this?.toEditableStateInternal())
 
+private fun EditableSearchQueryState.Tag.toSearchQueryInternal(): SearchQuery.Tag? =
+    if (namespace.value != null || tag.value.isNotBlank()) SearchQuery.Tag(namespace.value, tag.value.lowercase().trim()) else null
+
+private fun EditableSearchQueryState.And.toSearchQueryInternal(): SearchQuery.And? =
+    queries.mapNotNull { it.toSearchQueryInternal() }.let { if (it.isNotEmpty()) SearchQuery.And(it) else null }
+
+private fun EditableSearchQueryState.Or.toSearchQueryInternal(): SearchQuery.Or? =
+    queries.mapNotNull { it.toSearchQueryInternal() }.let { if (it.isNotEmpty()) SearchQuery.Or(it) else null }
+
+private fun EditableSearchQueryState.Not.toSearchQueryInternal(): SearchQuery.Not? =
+    query.value?.toSearchQueryInternal()?.let { SearchQuery.Not(it) }
+
 private fun EditableSearchQueryState.toSearchQueryInternal(): SearchQuery? = when (this) {
-    is EditableSearchQueryState.Tag -> SearchQuery.Tag(namespace.value, tag.value)
-    is EditableSearchQueryState.And -> SearchQuery.And(queries.mapNotNull { it.toSearchQueryInternal() })
-    is EditableSearchQueryState.Or -> SearchQuery.Or(queries.mapNotNull { it.toSearchQueryInternal() })
-    is EditableSearchQueryState.Not -> query.value?.toSearchQueryInternal()?.let { SearchQuery.Not(it) }
+    is EditableSearchQueryState.Tag -> this.toSearchQueryInternal()
+    is EditableSearchQueryState.And -> this.toSearchQueryInternal()
+    is EditableSearchQueryState.Or -> this.toSearchQueryInternal()
+    is EditableSearchQueryState.Not -> this.toSearchQueryInternal()
 }
 
 fun EditableSearchQueryState.Root.toSearchQuery(): SearchQuery?
@@ -162,9 +172,16 @@ fun TagSuggestionList(
 
     LaunchedEffect(namespace, tag) {
         suggestionList = null
-        suggestionList = HitomiHttpClient.getSuggestionsForQuery(SearchQuery.Tag(namespace, tag))
-            .getOrDefault(emptyList())
-            .filterNot { it.tag == SearchQuery.Tag(namespace, tag) }
+
+        val searchQuery = state.toSearchQueryInternal()
+
+        suggestionList = if (searchQuery != null) {
+            HitomiHttpClient.getSuggestionsForQuery(searchQuery)
+                .getOrDefault(emptyList())
+                .filterNot { it.tag == SearchQuery.Tag(namespace, tag) }
+        } else {
+            emptyList()
+        }
     }
 
     val suggestionListSnapshot = suggestionList
@@ -576,18 +593,6 @@ fun QueryEditorQueryView(
                     EditableTagChip(
                         newSearchQuery,
                         requestScrollTo = requestScrollTo,
-                        rightIcon = {
-                            Icon(
-                                modifier = Modifier
-                                    .padding(8.dp)
-                                    .size(16.dp)
-                                    .clickable {
-                                        onQueryRemove(state)
-                                    },
-                                imageVector = Icons.Default.RemoveCircleOutline,
-                                contentDescription = stringResource(R.string.search_remove_query_item_description)
-                            )
-                        }
                     )
                     NewQueryChip(state) { newQueryState ->
                         state.queries.add(newQueryState)
@@ -677,26 +682,60 @@ fun QueryEditor(
         verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
         val rootQuerySnapshot = rootQuery
+
+        val requestScrollTo: (Float) -> Unit = { target ->
+            val topYSnapshot = topY
+
+            coroutineScope.launch {
+                scrollState.animateScrollBy(target - topYSnapshot - scrollOffset, spring(stiffness = Spring.StiffnessLow))
+            }
+        }
+
+        val requestScrollBy: (Float) -> Unit = { value ->
+            coroutineScope.launch {
+                scrollState.animateScrollBy(value)
+            }
+        }
+
         if (rootQuerySnapshot != null) {
             QueryEditorQueryView(
                 state = rootQuerySnapshot,
                 onQueryRemove = { rootQuery = null },
-                requestScrollTo = { target ->
-                    val topYSnapshot = topY
-
-                    coroutineScope.launch {
-                        scrollState.animateScrollBy(target - topYSnapshot - scrollOffset, spring(stiffness = Spring.StiffnessLow))
-                    }
-                },
-                requestScrollBy = { value ->
-                    coroutineScope.launch {
-                        scrollState.animateScrollBy(value)
-                    }
-                }
+                requestScrollTo = requestScrollTo,
+                requestScrollBy = requestScrollBy
             )
         }
 
         if (rootQuerySnapshot is EditableSearchQueryState.Tag?) {
+            val newSearchQuery = remember { EditableSearchQueryState.Tag(expanded = true) }
+
+            var newQueryNamespace by newSearchQuery.namespace
+            var newQueryTag by newSearchQuery.tag
+            var newQueryExpanded by newSearchQuery.expanded
+
+            val offset = with (LocalDensity.current) { 40.dp.toPx() }
+
+            LaunchedEffect(newQueryExpanded) {
+                if (!newQueryExpanded && (newQueryNamespace != null || newQueryTag.isNotBlank())) {
+                    rootQuery = if (rootQuerySnapshot == null) {
+                        EditableSearchQueryState.Tag(newQueryNamespace, newQueryTag)
+                    } else {
+                        EditableSearchQueryState.And(listOf(
+                            rootQuerySnapshot,
+                            EditableSearchQueryState.Tag(newQueryNamespace, newQueryTag)
+                        ))
+                    }
+                    newQueryNamespace = null
+                    newQueryTag = ""
+                    newQueryExpanded = true
+                    requestScrollBy(offset)
+                }
+            }
+
+            EditableTagChip(
+                newSearchQuery,
+                requestScrollTo = requestScrollTo
+            )
             NewQueryChip(rootQuerySnapshot) { newState ->
                 rootQuery = coalesceTags(rootQuerySnapshot, newState)
             }

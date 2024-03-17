@@ -1,6 +1,7 @@
 package xyz.quaver.pupil.ui.composable
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.fadeIn
@@ -14,8 +15,13 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -23,9 +29,12 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -42,6 +51,7 @@ import androidx.compose.material.icons.filled.Male
 import androidx.compose.material.icons.filled.Translate
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
@@ -61,10 +71,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.tooling.preview.PreviewParameter
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.window.layout.DisplayFeature
@@ -73,7 +83,6 @@ import com.google.accompanist.adaptive.TwoPane
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.networking.GalleryInfo
 import xyz.quaver.pupil.networking.SearchQuery
-import xyz.quaver.pupil.networking.SearchQueryPreviewParameterProvider
 import xyz.quaver.pupil.ui.theme.Blue600
 import xyz.quaver.pupil.ui.theme.Pink600
 import xyz.quaver.pupil.ui.theme.Yellow400
@@ -217,7 +226,7 @@ fun TagChip(
 
 @Composable
 fun QueryView(
-    query: SearchQuery,
+    query: SearchQuery?,
     topLevel: Boolean = true
 ) {
     val modifier = if (topLevel) {
@@ -227,6 +236,16 @@ fun QueryView(
     }
 
     when (query) {
+        null -> {
+            Text(
+                modifier = Modifier
+                    .height(60.dp)
+                    .wrapContentHeight()
+                    .padding(horizontal = 16.dp),
+                text = stringResource(id = R.string.search_hint),
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+            )
+        }
         is SearchQuery.Tag -> {
             TagChip(
                 query,
@@ -250,8 +269,8 @@ fun QueryView(
                 horizontalArrangement = Arrangement.spacedBy(4.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                query.queries.forEach { subquery ->
-                    QueryView(subquery, topLevel = false)
+                query.queries.forEach { subQuery ->
+                    QueryView(subQuery, topLevel = false)
                 }
             }
         }
@@ -272,16 +291,24 @@ fun QueryView(
 fun SearchBar(
     contentType: ContentType,
     query: SearchQuery?,
-    onQueryChange: (SearchQuery) -> Unit,
+    onQueryChange: (SearchQuery?) -> Unit,
     onSearch: () -> Unit,
     topOffset: Int,
     onTopOffsetChange: (Int) -> Unit,
     content: @Composable () -> Unit
 ) {
-    var focused by remember { mutableStateOf(true) }
-    val scrimAlpha: Float by animateFloatAsState(if (focused && contentType == ContentType.SINGLE_PANE) 0.3f else 0f, label = "skrim alpha")
+    var focused by remember { mutableStateOf(false) }
+    val scrimAlpha: Float by animateFloatAsState(if (focused && contentType == ContentType.SINGLE_PANE) 0.3f else 0f, label = "scrim alpha")
 
     val interactionSource = remember { MutableInteractionSource() }
+
+    val state = remember(query) { query.toEditableState() }
+
+    LaunchedEffect(focused) {
+        if (!focused) {
+            onQueryChange(state.toSearchQuery())
+        }
+    }
 
     if (focused) {
         BackHandler {
@@ -299,13 +326,15 @@ fun SearchBar(
             ) {
                 focused = false
             }
-            .safeDrawingPadding()
-            .padding(16.dp)
     ) {
         val height: Dp by animateDpAsState(if (focused) maxHeight else 60.dp, label = "searchbar height")
 
+        content()
+
         Card(
             modifier = Modifier
+                .safeDrawingPadding()
+                .padding(16.dp)
                 .fillMaxWidth()
                 .height(height)
                 .clickable(
@@ -321,17 +350,7 @@ fun SearchBar(
             ) else CardDefaults.cardElevation()
         ) {
             Box {
-                androidx.compose.animation.AnimatedVisibility(query == null && !focused, enter = fadeIn(), exit = fadeOut()) {
-                    Text(
-                        modifier = Modifier
-                            .height(60.dp)
-                            .wrapContentHeight()
-                            .padding(horizontal = 16.dp),
-                        text = stringResource(id = R.string.search_hint),
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-                    )
-                }
-                androidx.compose.animation.AnimatedVisibility(query != null && !focused, enter = fadeIn(), exit = fadeOut()) {
+                androidx.compose.animation.AnimatedVisibility(!focused, enter = fadeIn(), exit = fadeOut()) {
                     Row(
                         modifier = Modifier
                             .heightIn(min = 60.dp)
@@ -339,13 +358,11 @@ fun SearchBar(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Box(Modifier.size(8.dp))
-                        QueryView(query!!)
+                        QueryView(query)
                         Box(Modifier.size(8.dp))
                     }
                 }
                 androidx.compose.animation.AnimatedVisibility(focused, enter = fadeIn(), exit = fadeOut()) {
-                    val state = remember(query) { query.toEditableState() }
-
                     Column(
                         Modifier
                             .fillMaxSize()
@@ -373,7 +390,9 @@ fun MainScreen(
     contentType: ContentType,
     displayFeatures: List<DisplayFeature>,
     uiState: MainUIState,
-    closeDetailScreen: () -> Unit
+    closeDetailScreen: () -> Unit,
+    onQueryChange: (SearchQuery?) -> Unit,
+    loadSearchResult: (IntRange) -> Unit
 ) {
     LaunchedEffect(contentType) {
         if (contentType == ContentType.SINGLE_PANE && !uiState.isDetailOnlyOpen) {
@@ -383,12 +402,34 @@ fun MainScreen(
 
     val galleryLazyListState = rememberLazyListState()
 
+    val itemsPerPage by remember { mutableIntStateOf(20) }
+
+    val currentRange = remember(uiState) {
+        if (uiState.currentRange != IntRange.EMPTY) {
+            uiState.currentRange
+        } else {
+            0 ..< itemsPerPage
+        }
+    }
+
+    val search = remember(currentRange) {{ loadSearchResult(currentRange) }}
+
+    LaunchedEffect(Unit) {
+        search()
+    }
+
     if (contentType == ContentType.DUAL_PANE) {
         TwoPane(
             first = {
                 GalleryList(
                     contentType = contentType,
-                    galleryLazyListState = galleryLazyListState
+                    galleries = uiState.galleries,
+                    query = uiState.query,
+                    loading = uiState.loading,
+                    error = uiState.error,
+                    galleryLazyListState = galleryLazyListState,
+                    onQueryChange = onQueryChange,
+                    search = search
                 )
             },
             second = {
@@ -400,7 +441,13 @@ fun MainScreen(
     } else {
         GalleryList(
             contentType = contentType,
-            galleryLazyListState = galleryLazyListState
+            galleries = uiState.galleries,
+            query = uiState.query,
+            loading = uiState.loading,
+            error = uiState.error,
+            galleryLazyListState = galleryLazyListState,
+            onQueryChange = onQueryChange,
+            search = search
         )
     }
 }
@@ -408,11 +455,13 @@ fun MainScreen(
 @Composable
 fun GalleryList(
     contentType: ContentType,
-    galleries: List<GalleryInfo> = emptyList(),
+    galleries: List<GalleryInfo>,
+    query: SearchQuery?,
+    loading: Boolean = false,
+    error: Boolean = false,
     openedGallery: GalleryInfo? = null,
-    query: SearchQuery? = SearchQueryPreviewParameterProvider().values.first(),
-    onQueryChange: (SearchQuery) -> Unit = {},
-    onSearch: () -> Unit = { },
+    onQueryChange: (SearchQuery?) -> Unit = {},
+    search: () -> Unit = {},
     selectedGalleryIds: Set<Int> = emptySet(),
     toggleGallerySelection: (Int) -> Unit = {},
     galleryLazyListState: LazyListState,
@@ -424,10 +473,43 @@ fun GalleryList(
         contentType = contentType,
         query = query,
         onQueryChange = onQueryChange,
-        onSearch = onSearch,
+        onSearch = search,
         topOffset = topOffset,
         onTopOffsetChange = { topOffset = it },
     ) {
-
+        AnimatedVisibility (loading) {
+            Box(Modifier.fillMaxSize()) {
+                CircularProgressIndicator(Modifier.align(Alignment.Center))
+            }
+        }
+        AnimatedVisibility(error) {
+            Box(Modifier.fillMaxSize()) {
+                Column(
+                    Modifier.align(Alignment.Center),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    Text("(´∇｀)", style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))
+                    Text("No sources found!\nLet's go download one.", textAlign = TextAlign.Center)
+                }
+            }
+        }
+        AnimatedVisibility(!loading && !error) {
+            LazyColumn(
+                contentPadding = WindowInsets.systemBars.asPaddingValues().let { systemBarPaddingValues ->
+                    val layoutDirection = LocalLayoutDirection.current
+                    PaddingValues(
+                        top = systemBarPaddingValues.calculateTopPadding() + 96.dp,
+                        bottom = systemBarPaddingValues.calculateBottomPadding(),
+                        start = systemBarPaddingValues.calculateStartPadding(layoutDirection),
+                        end = systemBarPaddingValues.calculateEndPadding(layoutDirection),
+                    )
+                }
+            ) {
+                items(galleries) {galleryInfo ->
+                    Text(galleryInfo.title)
+                }
+            }
+        }
     }
 }

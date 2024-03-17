@@ -30,6 +30,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.google.accompanist.adaptive.calculateDisplayFeatures
 import xyz.quaver.pupil.ui.composable.MainApp
 import xyz.quaver.pupil.ui.theme.AppTheme
+import xyz.quaver.pupil.ui.viewmodel.MainUIState
 import xyz.quaver.pupil.ui.viewmodel.MainViewModel
 
 class MainActivity : BaseActivity() {
@@ -54,7 +55,9 @@ class MainActivity : BaseActivity() {
                     displayFeatures = displayFeatures,
                     uiState = uiState,
                     navigateToDestination = viewModel::navigateToDestination,
-                    closeDetailScreen = viewModel::closeDetailScreen
+                    closeDetailScreen = viewModel::closeDetailScreen,
+                    onQueryChange = viewModel::onQueryChange,
+                    loadSearchResult = viewModel::loadSearchResult
                 )
             }
         }

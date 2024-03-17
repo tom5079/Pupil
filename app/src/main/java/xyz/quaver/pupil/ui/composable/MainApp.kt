@@ -24,6 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.window.layout.DisplayFeature
 import androidx.window.layout.FoldingFeature
 import kotlinx.coroutines.launch
+import xyz.quaver.pupil.networking.SearchQuery
 import xyz.quaver.pupil.ui.viewmodel.MainUIState
 
 @Composable
@@ -32,7 +33,9 @@ fun MainApp(
     displayFeatures: List<DisplayFeature>,
     uiState: MainUIState,
     navigateToDestination: (MainDestination) -> Unit,
-    closeDetailScreen: () -> Unit
+    closeDetailScreen: () -> Unit,
+    onQueryChange: (SearchQuery?) -> Unit,
+    loadSearchResult: (IntRange) -> Unit
 ) {
     val navigationType: NavigationType
     val contentType: ContentType
@@ -85,7 +88,9 @@ fun MainApp(
         navigationContentPosition,
         uiState,
         navigateToDestination,
-        closeDetailScreen = closeDetailScreen
+        closeDetailScreen = closeDetailScreen,
+        onQueryChange = onQueryChange,
+        loadSearchResult = loadSearchResult
     )
 }
 
@@ -97,7 +102,9 @@ private fun MainNavigationWrapper(
     navigationContentPosition: NavigationContentPosition,
     uiState: MainUIState,
     navigateToDestination: (MainDestination) -> Unit,
-    closeDetailScreen: () -> Unit
+    closeDetailScreen: () -> Unit,
+    onQueryChange: (SearchQuery?) -> Unit,
+    loadSearchResult: (IntRange) -> Unit
 ) {
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val coroutineScope = rememberCoroutineScope()
@@ -126,7 +133,9 @@ private fun MainNavigationWrapper(
                 uiState = uiState,
                 navigateToDestination = navigateToDestination,
                 onDrawerClicked = openDrawer,
-                closeDetailScreen = closeDetailScreen
+                closeDetailScreen = closeDetailScreen,
+                onQueryChange = onQueryChange,
+                loadSearchResult = loadSearchResult
             )
         }
     } else {
@@ -153,7 +162,9 @@ private fun MainNavigationWrapper(
                 uiState = uiState,
                 navigateToDestination = navigateToDestination,
                 onDrawerClicked = openDrawer,
-                closeDetailScreen = closeDetailScreen
+                closeDetailScreen = closeDetailScreen,
+                onQueryChange = onQueryChange,
+                loadSearchResult = loadSearchResult
             )
         }
     }
@@ -168,7 +179,9 @@ fun MainContent(
     uiState: MainUIState,
     navigateToDestination: (MainDestination) -> Unit,
     onDrawerClicked: () -> Unit,
-    closeDetailScreen: () -> Unit
+    closeDetailScreen: () -> Unit,
+    onQueryChange: (SearchQuery?) -> Unit,
+    loadSearchResult: (IntRange) -> Unit
 ) {
     Row(modifier = Modifier.fillMaxSize()) {
         AnimatedVisibility(visible = navigationType == NavigationType.NAVIGATION_RAIL) {
@@ -197,7 +210,9 @@ fun MainContent(
                     contentType = contentType,
                     displayFeatures = displayFeatures,
                     uiState = uiState,
-                    closeDetailScreen = closeDetailScreen
+                    closeDetailScreen = closeDetailScreen,
+                    onQueryChange = onQueryChange,
+                    loadSearchResult = loadSearchResult
                 )
             }
             AnimatedVisibility(visible = navigationType == NavigationType.BOTTOM_NAVIGATION) {
