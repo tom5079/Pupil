@@ -404,19 +404,27 @@ fun MainScreen(
 
     val itemsPerPage by remember { mutableIntStateOf(20) }
 
-    val currentRange = remember(uiState) {
+    val pageToRange: (Int) -> IntRange = remember(itemsPerPage) {{ page ->
+        page * itemsPerPage ..< (page+1) * itemsPerPage
+    }}
+
+    val currentPage = remember(uiState) {
         if (uiState.currentRange != IntRange.EMPTY) {
-            uiState.currentRange
-        } else {
-            0 ..< itemsPerPage
-        }
+            uiState.currentRange.first / itemsPerPage
+        } else 0
     }
 
-    val search = remember(currentRange) {{ loadSearchResult(currentRange) }}
-
-    LaunchedEffect(Unit) {
-        search()
+    val maxPage = remember(itemsPerPage, uiState) {
+        if (uiState.galleryCount != null) {
+            uiState.galleryCount / itemsPerPage + if (uiState.galleryCount % itemsPerPage != 0) 1 else 0
+        } else 0
     }
+
+    val loadResult: (Int) -> Unit = remember(loadSearchResult) {{ page ->
+        loadSearchResult(pageToRange(page))
+    }}
+
+    LaunchedEffect(Unit) { loadSearchResult(pageToRange(0)) }
 
     if (contentType == ContentType.DUAL_PANE) {
         TwoPane(
@@ -425,11 +433,13 @@ fun MainScreen(
                     contentType = contentType,
                     galleries = uiState.galleries,
                     query = uiState.query,
+                    currentPage = currentPage,
+                    maxPage = maxPage,
                     loading = uiState.loading,
                     error = uiState.error,
                     galleryLazyListState = galleryLazyListState,
                     onQueryChange = onQueryChange,
-                    search = search
+                    onPageChange = loadResult
                 )
             },
             second = {
@@ -443,11 +453,13 @@ fun MainScreen(
             contentType = contentType,
             galleries = uiState.galleries,
             query = uiState.query,
+            currentPage = currentPage,
+            maxPage = maxPage,
             loading = uiState.loading,
             error = uiState.error,
             galleryLazyListState = galleryLazyListState,
             onQueryChange = onQueryChange,
-            search = search
+            onPageChange = loadResult
         )
     }
 }
@@ -457,9 +469,12 @@ fun GalleryList(
     contentType: ContentType,
     galleries: List<GalleryInfo>,
     query: SearchQuery?,
+    currentPage: Int,
+    maxPage: Int,
     loading: Boolean = false,
     error: Boolean = false,
     openedGallery: GalleryInfo? = null,
+    onPageChange: (Int) -> Unit,
     onQueryChange: (SearchQuery?) -> Unit = {},
     search: () -> Unit = {},
     selectedGalleryIds: Set<Int> = emptySet(),
@@ -477,12 +492,12 @@ fun GalleryList(
         topOffset = topOffset,
         onTopOffsetChange = { topOffset = it },
     ) {
-        AnimatedVisibility (loading) {
+        AnimatedVisibility (loading, enter = fadeIn(), exit = fadeOut()) {
             Box(Modifier.fillMaxSize()) {
                 CircularProgressIndicator(Modifier.align(Alignment.Center))
             }
         }
-        AnimatedVisibility(error) {
+        AnimatedVisibility(error, enter = fadeIn(), exit = fadeOut()) {
             Box(Modifier.fillMaxSize()) {
                 Column(
                     Modifier.align(Alignment.Center),
@@ -494,20 +509,26 @@ fun GalleryList(
                 }
             }
         }
-        AnimatedVisibility(!loading && !error) {
-            LazyColumn(
-                contentPadding = WindowInsets.systemBars.asPaddingValues().let { systemBarPaddingValues ->
-                    val layoutDirection = LocalLayoutDirection.current
-                    PaddingValues(
-                        top = systemBarPaddingValues.calculateTopPadding() + 96.dp,
-                        bottom = systemBarPaddingValues.calculateBottomPadding(),
-                        start = systemBarPaddingValues.calculateStartPadding(layoutDirection),
-                        end = systemBarPaddingValues.calculateEndPadding(layoutDirection),
-                    )
-                }
+        AnimatedVisibility(!loading && !error, enter = fadeIn(), exit = fadeOut()) {
+            OverscrollPager(
+                prevPage = if (currentPage != 0) currentPage else null,
+                nextPage = if (currentPage < maxPage) currentPage + 2 else null,
+                onPageTurn = { onPageChange(it-1) }
             ) {
-                items(galleries) {galleryInfo ->
-                    Text(galleryInfo.title)
+                LazyColumn(
+                    contentPadding = WindowInsets.systemBars.asPaddingValues().let { systemBarPaddingValues ->
+                        val layoutDirection = LocalLayoutDirection.current
+                        PaddingValues(
+                            top = systemBarPaddingValues.calculateTopPadding() + 96.dp,
+                            bottom = systemBarPaddingValues.calculateBottomPadding(),
+                            start = systemBarPaddingValues.calculateStartPadding(layoutDirection),
+                            end = systemBarPaddingValues.calculateEndPadding(layoutDirection),
+                        )
+                    }
+                ) {
+                    items(galleries) {galleryInfo ->
+                        Text(galleryInfo.title)
+                    }
                 }
             }
         }

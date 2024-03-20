@@ -2,18 +2,17 @@ package xyz.quaver.pupil.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.observeOn
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import xyz.quaver.pupil.networking.GalleryInfo
 import xyz.quaver.pupil.networking.GallerySearchSource
 import xyz.quaver.pupil.networking.SearchQuery
 import xyz.quaver.pupil.ui.composable.MainDestination
 import xyz.quaver.pupil.ui.composable.mainDestinations
+import kotlin.math.max
+import kotlin.math.min
 
 class MainViewModel : ViewModel() {
     private val _uiState = MutableStateFlow(MainUIState())
@@ -36,7 +35,7 @@ class MainViewModel : ViewModel() {
     fun onQueryChange(query: SearchQuery?) {
         _uiState.value = _uiState.value.copy(
             query = query,
-            validRange = IntRange.EMPTY,
+            galleryCount = null,
             currentRange = IntRange.EMPTY
         )
 
@@ -46,9 +45,10 @@ class MainViewModel : ViewModel() {
     fun loadSearchResult(range: IntRange) {
         job?.cancel()
         job = viewModelScope.launch {
+            val sanitizedRange = max(range.first, 0) .. min(range.last, uiState.value.galleryCount ?: Int.MAX_VALUE)
             _uiState.value = _uiState.value.copy(
                 loading = true,
-                currentRange = range
+                currentRange = sanitizedRange
             )
 
             var error = false
@@ -60,7 +60,7 @@ class MainViewModel : ViewModel() {
 
             _uiState.value = _uiState.value.copy(
                 galleries = galleries,
-                validRange = IntRange(1, galleryCount),
+                galleryCount = galleryCount,
                 error = error,
                 loading = false
             )
@@ -78,7 +78,7 @@ data class MainUIState(
     val galleries: List<GalleryInfo> = emptyList(),
     val loading: Boolean = false,
     val error: Boolean = false,
-    val validRange: IntRange = IntRange.EMPTY,
+    val galleryCount: Int? = null,
     val currentRange: IntRange = IntRange.EMPTY,
     val openedGallery: GalleryInfo? = null,
     val isDetailOnlyOpen: Boolean = false

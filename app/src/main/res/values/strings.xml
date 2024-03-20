@@ -112,6 +112,8 @@
     <string name="galleryblock_language">Language: %1$s</string>
     <string name="galleryblock_pagecount" translatable="false">%dP</string>
 
+    <string name="move_to_page">Move to page %1$d</string>
+
     <!-- SEARCH BAR -->
     <string name="search_bar_edit_tag">Touch to edit</string>
 
