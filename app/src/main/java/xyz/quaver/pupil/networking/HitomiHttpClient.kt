@@ -52,7 +52,13 @@ private val json = Json {
 }
 
 object HitomiHttpClient {
-    private val httpClient = HttpClient(OkHttp)
+    private val httpClient = HttpClient(OkHttp) {
+        engine {
+            config {
+                sslSocketFactory(SSLSettings.sslContext!!.socketFactory, SSLSettings.trustManager!!)
+            }
+        }
+    }
 
     private var _tagIndexVersion: String? = null
     private suspend fun getTagIndexVersion(): String =
