@@ -80,3 +80,11 @@ data class GalleryInfo(
     @SerialName("scene_indexes") val sceneIndices: List<Int>? = emptyList(),
     val files: List<GalleryFile> = emptyList()
 )
+
+
+@JvmName("joinToCapitalizedStringArtist")
+fun List<Artist>.joinToCapitalizedString() = joinToString { it.artist.replaceFirstChar(Char::titlecase) }
+@JvmName("joinToCapitalizedStringGroup")
+fun List<Group>.joinToCapitalizedString() = joinToString { it.group.replaceFirstChar(Char::titlecase) }
+@JvmName("joinToCapitalizedStringParody")
+fun List<Series>.joinToCapitalizedString() = joinToString { it.series.replaceFirstChar(Char::titlecase) }

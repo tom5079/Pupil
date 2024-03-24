@@ -1,25 +1,40 @@
 package xyz.quaver.pupil.ui.composable
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.StarOutline
 import androidx.compose.material3.Card
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.unit.dp
-import coil.compose.AsyncImage
-import coil.request.ImageRequest
-import coil.transform.RoundedCornersTransformation
-import okhttp3.Headers
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.networking.Artist
 import xyz.quaver.pupil.networking.Character
@@ -29,6 +44,48 @@ import xyz.quaver.pupil.networking.GalleryTag
 import xyz.quaver.pupil.networking.Group
 import xyz.quaver.pupil.networking.Language
 import xyz.quaver.pupil.networking.Series
+import xyz.quaver.pupil.networking.joinToCapitalizedString
+import xyz.quaver.pupil.ui.theme.Yellow500
+
+private val languageMap = mapOf(
+    "indonesian" to "Bahasa Indonesia",
+    "catalan" to "català",
+    "cebuano" to "Cebuano",
+    "czech" to "Čeština",
+    "danish" to "Dansk",
+    "german" to "Deutsch",
+    "estonian" to "eesti",
+    "english" to "English",
+    "spanish" to "Español",
+    "esperanto" to "Esperanto",
+    "french" to "Français",
+    "italian" to "Italiano",
+    "latin" to "Latina",
+    "hungarian" to "magyar",
+    "dutch" to "Nederlands",
+    "norwegian" to "norsk",
+    "polish" to "polski",
+    "portuguese" to "Português",
+    "romanian" to "română",
+    "albanian" to "shqip",
+    "slovak" to "Slovenčina",
+    "finnish" to "Suomi",
+    "swedish" to "Svenska",
+    "tagalog" to "Tagalog",
+    "vietnamese" to "tiếng việt",
+    "turkish" to "Türkçe",
+    "greek" to "Ελληνικά",
+    "mongolian" to "Монгол",
+    "russian" to "Русский",
+    "ukrainian" to "Українська",
+    "hebrew" to "עברית",
+    "arabic" to "العربية",
+    "persian" to "فارسی",
+    "thai" to "ไทย",
+    "korean" to "한국어",
+    "chinese" to "中文",
+    "japanese" to "日本語"
+)
 
 class GalleryInfoProvider: PreviewParameterProvider<GalleryInfo> {
     override val values = sequenceOf(
@@ -145,6 +202,43 @@ class GalleryInfoProvider: PreviewParameterProvider<GalleryInfo> {
     )
 }
 
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+fun TagGroup(tags: List<GalleryTag>) {
+    var isFolded by remember { mutableStateOf(true) }
+
+    FlowRow(
+        Modifier.padding(0.dp, 16.dp),
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        tags.sortedBy {
+            if (!it.female.isNullOrEmpty()) 1
+            else if (!it.female.isNullOrEmpty()) 2
+            else 3
+        }.let {
+            if (isFolded) it.take(10) else it
+        }.forEach { tag ->
+            TagChip(tag = tag.toTag())
+        }
+
+        if (isFolded && tags.size > 10)
+            Surface(
+                modifier = Modifier.height(32.dp),
+                color = MaterialTheme.colorScheme.surface,
+                shape = RoundedCornerShape(16.dp),
+                onClick = { isFolded = false }
+            ) {
+                Text(
+                    "…",
+                    modifier = Modifier.padding(16.dp, 8.dp),
+                    color = MaterialTheme.colorScheme.onSurface,
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            }
+    }
+}
+
 @Preview
 @Composable
 fun DetailedGalleryInfo(
@@ -153,14 +247,80 @@ fun DetailedGalleryInfo(
 ) {
     Card(modifier) {
         Column(Modifier.padding(8.dp)) {
-            Text(galleryInfo.title, style = MaterialTheme.typography.headlineMedium)
-            Image(
-                modifier = Modifier
-                    .width(150.dp)
-                    .height((150 * galleryInfo.files[0].let { it.height / it.width.toFloat() }).dp),
-                painter = painterResource(R.drawable.thumbnail),
-                contentDescription = "Icon"
-            )
+            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                Image(
+                    modifier = Modifier.height(200.dp),
+                    painter = painterResource(R.drawable.thumbnail),
+                    contentDescription = "Icon"
+                )
+                Column(Modifier.heightIn(min = 200.dp)) {
+                    Text(galleryInfo.title, style = MaterialTheme.typography.headlineSmall)
+                    val artistsAndGroups = buildString {
+                        if (!galleryInfo.artists.isNullOrEmpty())
+                            append(galleryInfo.artists.joinToCapitalizedString())
+
+                        if (!galleryInfo.groups.isNullOrEmpty()) {
+                            if (this.isNotEmpty()) append(' ')
+                            append('(')
+                            append(galleryInfo.groups.joinToCapitalizedString())
+                            append(')')
+                        }
+                    }
+
+                    Text(
+                        artistsAndGroups,
+                        style = MaterialTheme.typography.labelLarge
+                    )
+
+                    Spacer(
+                        Modifier
+                            .weight(1f)
+                            .heightIn(min = 8.dp))
+
+                    if (galleryInfo.series?.isNotEmpty() == true)
+                        Text(
+                            "Series: ${galleryInfo.series.joinToCapitalizedString()}",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+
+                    Text(
+                        "Type: ${galleryInfo.type}",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+
+                    languageMap[galleryInfo.language]?.let {
+                        Text(
+                            "Language: $it",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+                }
+            }
+
+            if (galleryInfo.tags?.isNotEmpty() == true) {
+                TagGroup(galleryInfo.tags)
+            }
+
+            HorizontalDivider(Modifier.padding(4.dp))
+
+            Box(Modifier.fillMaxWidth().padding(4.dp)) {
+                Text(
+                    modifier = Modifier.align(Alignment.CenterStart),
+                    text = galleryInfo.id,
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                Text(
+                    modifier = Modifier.align(Alignment.Center),
+                    text = "${galleryInfo.files.size}P",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                Icon(
+                    modifier = Modifier.align(Alignment.CenterEnd).size(32.dp),
+                    imageVector = Icons.Default.StarOutline,
+                    contentDescription = null,
+                    tint = Yellow500
+                )
+            }
         }
     }
 }
