@@ -48,13 +48,11 @@ data class GalleryTag(
 @Serializable
 data class Language(
     @SerialName("galleryid") val galleryID: String,
-    val url: String,
-    @SerialName("language_localname") val localLanguageName: String,
     val name: String
 )
 
 @Serializable
-data class GalleryFiles(
+data class GalleryFile(
     @SerialName("haswebp") val hasWebP: Int = 0,
     @SerialName("hasavif") val hasAVIF: Int = 0,
     @SerialName("hasjxl") val hasJXL: Int = 0,
@@ -80,5 +78,5 @@ data class GalleryInfo(
     val languages: List<Language> = emptyList(),
     val characters: List<Character>? = null,
     @SerialName("scene_indexes") val sceneIndices: List<Int>? = emptyList(),
-    val files: List<GalleryFiles> = emptyList()
+    val files: List<GalleryFile> = emptyList()
 )

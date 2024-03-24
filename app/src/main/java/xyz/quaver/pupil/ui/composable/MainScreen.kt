@@ -2,8 +2,11 @@ package xyz.quaver.pupil.ui.composable
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.AnimationState
+import androidx.compose.animation.core.VectorConverter
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.animateTo
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
@@ -19,6 +22,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.absoluteOffset
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
@@ -69,13 +73,19 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.window.layout.DisplayFeature
 import com.google.accompanist.adaptive.HorizontalTwoPaneStrategy
@@ -87,6 +97,7 @@ import xyz.quaver.pupil.ui.theme.Blue600
 import xyz.quaver.pupil.ui.theme.Pink600
 import xyz.quaver.pupil.ui.theme.Yellow400
 import xyz.quaver.pupil.ui.viewmodel.MainUIState
+import kotlin.math.roundToInt
 
 private val iconMap = mapOf(
     "female" to Icons.Default.Female,
@@ -292,6 +303,7 @@ fun SearchBar(
     contentType: ContentType,
     query: SearchQuery?,
     onQueryChange: (SearchQuery?) -> Unit,
+    onSearchBarPositioned: (Int) -> Unit,
     onSearch: () -> Unit,
     topOffset: Int,
     onTopOffsetChange: (Int) -> Unit,
@@ -307,6 +319,8 @@ fun SearchBar(
     LaunchedEffect(focused) {
         if (!focused) {
             onQueryChange(state.toSearchQuery())
+        } else {
+            AnimationState(Int.VectorConverter, topOffset).animateTo(0) { onTopOffsetChange(value) }
         }
     }
 
@@ -319,7 +333,6 @@ fun SearchBar(
     BoxWithConstraints(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.Black.copy(alpha = scrimAlpha))
             .clickable(
                 interactionSource = interactionSource,
                 indication = null
@@ -328,8 +341,14 @@ fun SearchBar(
             }
     ) {
         val height: Dp by animateDpAsState(if (focused) maxHeight else 60.dp, label = "searchbar height")
+        val cardShape = RoundedCornerShape(30.dp)
 
         content()
+
+        Box(
+            Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = scrimAlpha)))
 
         Card(
             modifier = Modifier
@@ -342,12 +361,12 @@ fun SearchBar(
                     indication = null
                 ) {
                     focused = true
+                }.onGloballyPositioned {
+                    onSearchBarPositioned(it.positionInRoot().y.roundToInt() + it.size.height)
                 }
-                .clip(RoundedCornerShape(30.dp)),
-            shape = RoundedCornerShape(30.dp),
-            elevation = if (focused) CardDefaults.cardElevation(
-                defaultElevation = 4.dp
-            ) else CardDefaults.cardElevation()
+                .absoluteOffset { IntOffset(0, topOffset) },
+            shape = cardShape,
+            elevation = CardDefaults.cardElevation(6.dp)
         ) {
             Box {
                 androidx.compose.animation.AnimatedVisibility(!focused, enter = fadeIn(), exit = fadeOut()) {
@@ -482,12 +501,27 @@ fun GalleryList(
     galleryLazyListState: LazyListState,
     navigateToDetails: (GalleryInfo, ContentType) -> Unit = { gi, ct -> }
 ) {
+    val listState = rememberLazyListState()
     var topOffset by remember { mutableIntStateOf(0) }
+    var searchBarPosition by remember { mutableIntStateOf(0) }
+
+    val listModifier = Modifier.nestedScroll(object: NestedScrollConnection {
+        override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+            topOffset = (topOffset + available.y.roundToInt()).coerceIn(-searchBarPosition, 0)
+            return Offset.Zero
+        }
+    })
+
+    LaunchedEffect(galleries) {
+        listState.animateScrollToItem(0)
+        topOffset = 0
+    }
 
     SearchBar(
         contentType = contentType,
         query = query,
         onQueryChange = onQueryChange,
+        onSearchBarPositioned = { searchBarPosition = it },
         onSearch = search,
         topOffset = topOffset,
         onTopOffsetChange = { topOffset = it },
@@ -516,6 +550,7 @@ fun GalleryList(
                 onPageTurn = { onPageChange(it-1) }
             ) {
                 LazyColumn(
+                    modifier = listModifier,
                     contentPadding = WindowInsets.systemBars.asPaddingValues().let { systemBarPaddingValues ->
                         val layoutDirection = LocalLayoutDirection.current
                         PaddingValues(
@@ -524,10 +559,17 @@ fun GalleryList(
                             start = systemBarPaddingValues.calculateStartPadding(layoutDirection),
                             end = systemBarPaddingValues.calculateEndPadding(layoutDirection),
                         )
-                    }
+                    },
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    state = listState
                 ) {
                     items(galleries) {galleryInfo ->
-                        Text(galleryInfo.title)
+                        DetailedGalleryInfo(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 4.dp),
+                            galleryInfo = galleryInfo
+                        )
                     }
                 }
             }
