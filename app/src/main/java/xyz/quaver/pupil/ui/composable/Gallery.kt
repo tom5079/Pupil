@@ -248,22 +248,35 @@ fun TagGroup(tags: List<GalleryTag>) {
 
 @Composable
 fun DetailedGalleryInfoHeader(galleryInfo: GalleryInfo, thumbnailUrl: String?) {
-    val thumbnailFile = galleryInfo.files.firstOrNull()
-    if (thumbnailFile?.let { it.width > it.height } == true) {
+    val thumbnailFile = galleryInfo.files.first()
+    val aspectRatio = thumbnailFile.let { it.width / it.height.toFloat() }
+
+    if (thumbnailFile.let { it.width > it.height }) {
         Column {
-            SubcomposeAsyncImage(
-                model = ImageRequest.Builder(LocalContext.current)
-                    .data(thumbnailUrl)
-                    .setHeader("Referer", "https://hitomi.la/")
-                    .build(),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .aspectRatio(thumbnailFile.let { it.width / it.height.toFloat() })
-                    .clip(RoundedCornerShape(8.dp)),
-                loading = { CircularProgressIndicator() },
-                error = { Image(painter= painterResource(R.drawable.thumbnail), contentDescription = null) },
-                contentDescription = "Thumbnail"
-            )
+            if (thumbnailUrl != null) {
+                SubcomposeAsyncImage(
+                    model = ImageRequest.Builder(LocalContext.current)
+                        .data(thumbnailUrl)
+                        .setHeader("Referer", "https://hitomi.la/")
+                        .build(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .aspectRatio(aspectRatio)
+                        .clip(RoundedCornerShape(8.dp)),
+                    loading = { CircularProgressIndicator(Modifier.size(32.dp)) },
+                    error = {
+                        Image(
+                            painter = painterResource(R.drawable.thumbnail),
+                            contentDescription = null
+                        )
+                    },
+                    contentDescription = "Thumbnail"
+                )
+            } else {
+                Box(Modifier.fillMaxWidth().aspectRatio(aspectRatio)) {
+                    CircularProgressIndicator(Modifier.size(32.dp))
+                }
+            }
             Text(galleryInfo.title, style = MaterialTheme.typography.headlineSmall)
             val artistsAndGroups = buildString {
                 if (!galleryInfo.artists.isNullOrEmpty())
@@ -307,18 +320,30 @@ fun DetailedGalleryInfoHeader(galleryInfo: GalleryInfo, thumbnailUrl: String?) {
             horizontalArrangement = Arrangement.spacedBy(4.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            SubcomposeAsyncImage(
-                model = ImageRequest.Builder(LocalContext.current)
-                    .data(thumbnailUrl)
-                    .setHeader("Referer", "https://hitomi.la/")
-                    .build(),
-                modifier = Modifier
-                    .height(200.dp)
-                    .clip(RoundedCornerShape(8.dp)),
-                loading = { CircularProgressIndicator() },
-                error = { Image(painter= painterResource(R.drawable.thumbnail), contentDescription = null) },
-                contentDescription = "Thumbnail"
-            )
+            if (thumbnailUrl != null) {
+                SubcomposeAsyncImage(
+                    model = ImageRequest.Builder(LocalContext.current)
+                        .data(thumbnailUrl)
+                        .setHeader("Referer", "https://hitomi.la/")
+                        .build(),
+                    modifier = Modifier
+                        .height(200.dp)
+                        .aspectRatio(aspectRatio)
+                        .clip(RoundedCornerShape(8.dp)),
+                    loading = { CircularProgressIndicator(Modifier.size(32.dp)) },
+                    error = {
+                        Image(
+                            painter = painterResource(R.drawable.thumbnail),
+                            contentDescription = null
+                        )
+                    },
+                    contentDescription = "Thumbnail"
+                )
+            } else {
+                Box(Modifier.height(200.dp).aspectRatio(aspectRatio)) {
+                    CircularProgressIndicator(Modifier.size(32.dp))
+                }
+            }
             Column(Modifier.heightIn(min = 200.dp)) {
                 Text(galleryInfo.title, style = MaterialTheme.typography.headlineSmall)
                 val artistsAndGroups = buildString {

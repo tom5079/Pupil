@@ -443,7 +443,7 @@ fun MainScreen(
         loadSearchResult(pageToRange(page))
     }}
 
-    LaunchedEffect(Unit) { loadSearchResult(pageToRange(0)) }
+    LaunchedEffect(uiState.query, uiState.currentDestination) { loadSearchResult(pageToRange(0)) }
 
     if (contentType == ContentType.DUAL_PANE) {
         TwoPane(

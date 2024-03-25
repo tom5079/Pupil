@@ -217,6 +217,7 @@ class Pupil : Application(), ImageLoaderFactory {
                 .Builder()
                 .sslSocketFactory(SSLSettings.sslContext!!.socketFactory, SSLSettings.trustManager!!)
                 .build()
-        }.build()
+        }.memoryCache(null)
+        .build()
 
 }
