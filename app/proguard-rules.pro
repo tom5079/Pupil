@@ -31,7 +31,4 @@
 -keepclasseswithmembers class xyz.quaver.pupil.** { # <-- change package name to your app's
     kotlinx.serialization.KSerializer serializer(...);
 }
--keep class xyz.quaver.pupil.ui.fragment.ManageFavoritesFragment
--keep class xyz.quaver.pupil.ui.fragment.ManageStorageFragment
 -keep class xyz.quaver.pupil.** { *; }
--keep class app.cash.zipline.** { *; }

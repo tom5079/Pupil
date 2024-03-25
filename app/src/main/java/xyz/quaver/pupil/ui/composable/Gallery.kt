@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
@@ -17,24 +18,29 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.StarOutline
 import androidx.compose.material3.Card
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.unit.dp
+import coil.compose.SubcomposeAsyncImage
+import coil.request.ImageRequest
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.networking.Artist
 import xyz.quaver.pupil.networking.Character
@@ -42,6 +48,7 @@ import xyz.quaver.pupil.networking.GalleryFile
 import xyz.quaver.pupil.networking.GalleryInfo
 import xyz.quaver.pupil.networking.GalleryTag
 import xyz.quaver.pupil.networking.Group
+import xyz.quaver.pupil.networking.HitomiHttpClient
 import xyz.quaver.pupil.networking.Language
 import xyz.quaver.pupil.networking.Series
 import xyz.quaver.pupil.networking.joinToCapitalizedString
@@ -239,63 +246,142 @@ fun TagGroup(tags: List<GalleryTag>) {
     }
 }
 
+@Composable
+fun DetailedGalleryInfoHeader(galleryInfo: GalleryInfo, thumbnailUrl: String?) {
+    val thumbnailFile = galleryInfo.files.firstOrNull()
+    if (thumbnailFile?.let { it.width > it.height } == true) {
+        Column {
+            SubcomposeAsyncImage(
+                model = ImageRequest.Builder(LocalContext.current)
+                    .data(thumbnailUrl)
+                    .setHeader("Referer", "https://hitomi.la/")
+                    .build(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .aspectRatio(thumbnailFile.let { it.width / it.height.toFloat() })
+                    .clip(RoundedCornerShape(8.dp)),
+                loading = { CircularProgressIndicator() },
+                error = { Image(painter= painterResource(R.drawable.thumbnail), contentDescription = null) },
+                contentDescription = "Thumbnail"
+            )
+            Text(galleryInfo.title, style = MaterialTheme.typography.headlineSmall)
+            val artistsAndGroups = buildString {
+                if (!galleryInfo.artists.isNullOrEmpty())
+                    append(galleryInfo.artists.joinToCapitalizedString())
+
+                if (!galleryInfo.groups.isNullOrEmpty()) {
+                    if (this.isNotEmpty()) append(' ')
+                    append('(')
+                    append(galleryInfo.groups.joinToCapitalizedString())
+                    append(')')
+                }
+            }
+
+            Text(
+                artistsAndGroups,
+                style = MaterialTheme.typography.labelLarge
+            )
+
+            Spacer(Modifier.height(8.dp))
+
+            if (galleryInfo.series?.isNotEmpty() == true)
+                Text(
+                    "Series: ${galleryInfo.series.joinToCapitalizedString()}",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+
+            Text(
+                "Type: ${galleryInfo.type}",
+                style = MaterialTheme.typography.bodyMedium
+            )
+
+            languageMap[galleryInfo.language]?.let {
+                Text(
+                    "Language: $it",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            }
+        }
+    } else {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            SubcomposeAsyncImage(
+                model = ImageRequest.Builder(LocalContext.current)
+                    .data(thumbnailUrl)
+                    .setHeader("Referer", "https://hitomi.la/")
+                    .build(),
+                modifier = Modifier
+                    .height(200.dp)
+                    .clip(RoundedCornerShape(8.dp)),
+                loading = { CircularProgressIndicator() },
+                error = { Image(painter= painterResource(R.drawable.thumbnail), contentDescription = null) },
+                contentDescription = "Thumbnail"
+            )
+            Column(Modifier.heightIn(min = 200.dp)) {
+                Text(galleryInfo.title, style = MaterialTheme.typography.headlineSmall)
+                val artistsAndGroups = buildString {
+                    if (!galleryInfo.artists.isNullOrEmpty())
+                        append(galleryInfo.artists.joinToCapitalizedString())
+
+                    if (!galleryInfo.groups.isNullOrEmpty()) {
+                        if (this.isNotEmpty()) append(' ')
+                        append('(')
+                        append(galleryInfo.groups.joinToCapitalizedString())
+                        append(')')
+                    }
+                }
+
+                Text(
+                    artistsAndGroups,
+                    style = MaterialTheme.typography.labelLarge
+                )
+
+                Spacer(
+                    Modifier
+                        .weight(1f)
+                        .heightIn(min = 8.dp))
+
+                if (galleryInfo.series?.isNotEmpty() == true)
+                    Text(
+                        "Series: ${galleryInfo.series.joinToCapitalizedString()}",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+
+                Text(
+                    "Type: ${galleryInfo.type}",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+
+                languageMap[galleryInfo.language]?.let {
+                    Text(
+                        "Language: $it",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+            }
+        }
+    }
+}
+
 @Preview
 @Composable
 fun DetailedGalleryInfo(
     @PreviewParameter(GalleryInfoProvider::class) galleryInfo: GalleryInfo,
     modifier: Modifier = Modifier,
 ) {
+    var thumbnailUrl by remember { mutableStateOf<String?>(null) }
+    
+    LaunchedEffect(galleryInfo) {
+        thumbnailUrl = galleryInfo.files.firstOrNull()?.let {
+            HitomiHttpClient.getImageURL(it, true).firstOrNull()
+        } ?: ""
+    }
+    
     Card(modifier) {
         Column(Modifier.padding(8.dp)) {
-            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                Image(
-                    modifier = Modifier.height(200.dp),
-                    painter = painterResource(R.drawable.thumbnail),
-                    contentDescription = "Icon"
-                )
-                Column(Modifier.heightIn(min = 200.dp)) {
-                    Text(galleryInfo.title, style = MaterialTheme.typography.headlineSmall)
-                    val artistsAndGroups = buildString {
-                        if (!galleryInfo.artists.isNullOrEmpty())
-                            append(galleryInfo.artists.joinToCapitalizedString())
-
-                        if (!galleryInfo.groups.isNullOrEmpty()) {
-                            if (this.isNotEmpty()) append(' ')
-                            append('(')
-                            append(galleryInfo.groups.joinToCapitalizedString())
-                            append(')')
-                        }
-                    }
-
-                    Text(
-                        artistsAndGroups,
-                        style = MaterialTheme.typography.labelLarge
-                    )
-
-                    Spacer(
-                        Modifier
-                            .weight(1f)
-                            .heightIn(min = 8.dp))
-
-                    if (galleryInfo.series?.isNotEmpty() == true)
-                        Text(
-                            "Series: ${galleryInfo.series.joinToCapitalizedString()}",
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-
-                    Text(
-                        "Type: ${galleryInfo.type}",
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-
-                    languageMap[galleryInfo.language]?.let {
-                        Text(
-                            "Language: $it",
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                    }
-                }
-            }
+            DetailedGalleryInfoHeader(galleryInfo, thumbnailUrl)
 
             if (galleryInfo.tags?.isNotEmpty() == true) {
                 TagGroup(galleryInfo.tags)
@@ -303,7 +389,10 @@ fun DetailedGalleryInfo(
 
             HorizontalDivider(Modifier.padding(4.dp))
 
-            Box(Modifier.fillMaxWidth().padding(4.dp)) {
+            Box(
+                Modifier
+                    .fillMaxWidth()
+                    .padding(4.dp)) {
                 Text(
                     modifier = Modifier.align(Alignment.CenterStart),
                     text = galleryInfo.id,
@@ -315,7 +404,9 @@ fun DetailedGalleryInfo(
                     style = MaterialTheme.typography.bodyMedium
                 )
                 Icon(
-                    modifier = Modifier.align(Alignment.CenterEnd).size(32.dp),
+                    modifier = Modifier
+                        .align(Alignment.CenterEnd)
+                        .size(32.dp),
                     imageVector = Icons.Default.StarOutline,
                     contentDescription = null,
                     tint = Yellow500

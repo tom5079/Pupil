@@ -30,6 +30,8 @@ import android.util.Log
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.content.ContextCompat
 import androidx.preference.PreferenceManager
+import coil.ImageLoader
+import coil.ImageLoaderFactory
 import com.facebook.imagepipeline.backends.okhttp3.OkHttpImagePipelineConfigFactory
 import com.github.piasy.biv.BigImageViewer
 import com.github.piasy.biv.loader.fresco.FrescoImageLoader
@@ -44,6 +46,7 @@ import okhttp3.Interceptor
 import okhttp3.OkHttpClient
 import okhttp3.Response
 import xyz.quaver.io.FileX
+import xyz.quaver.pupil.networking.SSLSettings
 import xyz.quaver.pupil.types.Tag
 import xyz.quaver.pupil.util.*
 import java.io.File
@@ -74,7 +77,7 @@ val client: OkHttpClient
         clientHolder = it
     }
 
-class Pupil : Application() {
+class Pupil : Application(), ImageLoaderFactory {
     companion object {
         lateinit var instance: Pupil
             private set
@@ -206,5 +209,14 @@ class Pupil : Application() {
 
         super.onCreate()
     }
+
+    override fun newImageLoader() = ImageLoader
+        .Builder(this)
+        .okHttpClient {
+            OkHttpClient
+                .Builder()
+                .sslSocketFactory(SSLSettings.sslContext!!.socketFactory, SSLSettings.trustManager!!)
+                .build()
+        }.build()
 
 }
