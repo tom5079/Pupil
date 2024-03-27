@@ -1,7 +1,11 @@
 package xyz.quaver.pupil.ui.composable
 
+import android.util.Log
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -14,25 +18,39 @@ import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.PermanentNavigationDrawer
+import androidx.compose.material3.Text
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.material3.windowsizeclass.WindowHeightSizeClass
 import androidx.compose.material3.windowsizeclass.WindowSizeClass
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import androidx.navigation.NavHostController
+import androidx.navigation.activity
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.window.layout.DisplayFeature
 import androidx.window.layout.FoldingFeature
 import kotlinx.coroutines.launch
+import xyz.quaver.pupil.R
 import xyz.quaver.pupil.networking.SearchQuery
-import xyz.quaver.pupil.ui.viewmodel.MainUIState
+import xyz.quaver.pupil.ui.ReaderActivity
+import xyz.quaver.pupil.ui.SettingsActivity
+import xyz.quaver.pupil.ui.viewmodel.SearchState
 
 @Composable
 fun MainApp(
     windowSize: WindowSizeClass,
     displayFeatures: List<DisplayFeature>,
-    uiState: MainUIState,
-    navigateToDestination: (MainDestination) -> Unit,
+    uiState: SearchState,
+    navController: NavHostController,
     closeDetailScreen: () -> Unit,
     onQueryChange: (SearchQuery?) -> Unit,
     loadSearchResult: (IntRange) -> Unit
@@ -87,7 +105,7 @@ fun MainApp(
         displayFeatures,
         navigationContentPosition,
         uiState,
-        navigateToDestination,
+        navController,
         closeDetailScreen = closeDetailScreen,
         onQueryChange = onQueryChange,
         loadSearchResult = loadSearchResult
@@ -100,14 +118,17 @@ private fun MainNavigationWrapper(
     contentType: ContentType,
     displayFeatures: List<DisplayFeature>,
     navigationContentPosition: NavigationContentPosition,
-    uiState: MainUIState,
-    navigateToDestination: (MainDestination) -> Unit,
+    uiState: SearchState,
+    navController: NavHostController,
     closeDetailScreen: () -> Unit,
     onQueryChange: (SearchQuery?) -> Unit,
     loadSearchResult: (IntRange) -> Unit
 ) {
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val coroutineScope = rememberCoroutineScope()
+
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = navBackStackEntry?.destination?.route
 
     val openDrawer: () -> Unit = {
         coroutineScope.launch {
@@ -119,9 +140,12 @@ private fun MainNavigationWrapper(
         PermanentNavigationDrawer(
             drawerContent = {
                 PermanentNavigationDrawerContent(
-                    selectedDestination = uiState.currentDestination,
+                    selectedDestination = currentRoute,
+                    navigateToDestination = { navController.navigate(it.route) {
+                        popUpTo(MainDestination.Search.route)
+                        launchSingleTop = true
+                    } },
                     navigationContentPosition = navigationContentPosition,
-                    navigateToDestination = navigateToDestination
                 )
             }
         ) {
@@ -129,9 +153,8 @@ private fun MainNavigationWrapper(
                 navigationType = navigationType,
                 contentType = contentType,
                 displayFeatures = displayFeatures,
-                navigationContentPosition = navigationContentPosition,
                 uiState = uiState,
-                navigateToDestination = navigateToDestination,
+                navController = navController,
                 onDrawerClicked = openDrawer,
                 closeDetailScreen = closeDetailScreen,
                 onQueryChange = onQueryChange,
@@ -142,9 +165,12 @@ private fun MainNavigationWrapper(
         ModalNavigationDrawer(
             drawerContent = {
                 ModalNavigationDrawerContent(
-                    selectedDestination = uiState.currentDestination,
+                    selectedDestination = currentRoute,
+                    navigateToDestination = { navController.navigate(it.route) {
+                        popUpTo(MainDestination.Search.route)
+                        launchSingleTop = true
+                    } },
                     navigationContentPosition = navigationContentPosition,
-                    navigateToDestination = navigateToDestination,
                     onDrawerClicked = {
                         coroutineScope.launch {
                             drawerState.close()
@@ -158,9 +184,8 @@ private fun MainNavigationWrapper(
                 navigationType = navigationType,
                 contentType = contentType,
                 displayFeatures = displayFeatures,
-                navigationContentPosition = navigationContentPosition,
                 uiState = uiState,
-                navigateToDestination = navigateToDestination,
+                navController = navController,
                 onDrawerClicked = openDrawer,
                 closeDetailScreen = closeDetailScreen,
                 onQueryChange = onQueryChange,
@@ -171,24 +196,42 @@ private fun MainNavigationWrapper(
 }
 
 @Composable
+fun NotImplemented() {
+    Box(Modifier.fillMaxSize()) {
+        Column(
+            Modifier.align(Alignment.Center),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Text("(⁄ ⁄•⁄ω⁄•⁄ ⁄)", style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))
+            Text(stringResource(R.string.not_implemented), textAlign = TextAlign.Center)
+        }
+    }
+}
+
+@Composable
 fun MainContent(
     navigationType: NavigationType,
     contentType: ContentType,
     displayFeatures: List<DisplayFeature>,
-    navigationContentPosition: NavigationContentPosition,
-    uiState: MainUIState,
-    navigateToDestination: (MainDestination) -> Unit,
+    uiState: SearchState,
+    navController: NavHostController,
     onDrawerClicked: () -> Unit,
     closeDetailScreen: () -> Unit,
     onQueryChange: (SearchQuery?) -> Unit,
     loadSearchResult: (IntRange) -> Unit
 ) {
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = navBackStackEntry?.destination?.route
+
     Row(modifier = Modifier.fillMaxSize()) {
         AnimatedVisibility(visible = navigationType == NavigationType.NAVIGATION_RAIL) {
             MainNavigationRail(
-                selectedDestination = uiState.currentDestination,
-                navigationContentPosition = navigationContentPosition,
-                navigateToDestination = navigateToDestination,
+                selectedDestination = currentRoute,
+                navigateToDestination = { navController.navigate(it.route) {
+                    popUpTo(MainDestination.Search.route)
+                    launchSingleTop = true
+                } },
                 onDrawerClicked = onDrawerClicked
             )
         }
@@ -198,27 +241,55 @@ fun MainContent(
                 .background(MaterialTheme.colorScheme.inverseOnSurface)
         ) {
             Box(
-                modifier = Modifier.weight(1f)
+                modifier = Modifier
+                    .weight(1f)
                     .run {
                         if (navigationType == NavigationType.BOTTOM_NAVIGATION) {
-                            this.consumeWindowInsets(WindowInsets.ime)
+                            this
+                                .consumeWindowInsets(WindowInsets.ime)
                                 .consumeWindowInsets(WindowInsets.navigationBars)
                         } else this
                     }
             ) {
-                MainScreen(
-                    contentType = contentType,
-                    displayFeatures = displayFeatures,
-                    uiState = uiState,
-                    closeDetailScreen = closeDetailScreen,
-                    onQueryChange = onQueryChange,
-                    loadSearchResult = loadSearchResult
-                )
+                NavHost(
+                    modifier = Modifier.fillMaxSize(),
+                    navController = navController,
+                    startDestination = MainDestination.Search.route
+                ) {
+                    composable(MainDestination.Search.route) {
+                        SearchScreen(
+                            contentType = contentType,
+                            displayFeatures = displayFeatures,
+                            uiState = uiState,
+                            closeDetailScreen = closeDetailScreen,
+                            onQueryChange = onQueryChange,
+                            loadSearchResult = loadSearchResult
+                        )
+                    }
+                    composable(MainDestination.History.route) {
+                        NotImplemented()
+                    }
+                    composable(MainDestination.Downloads.route) {
+                        NotImplemented()
+                    }
+                    composable(MainDestination.Favorites.route) {
+                        NotImplemented()
+                    }
+                    activity(MainDestination.Settings.route) {
+                        activityClass = SettingsActivity::class
+                    }
+                    activity(MainDestination.ImageViewer.route) {
+                        activityClass = ReaderActivity::class
+                    }
+                }
             }
             AnimatedVisibility(visible = navigationType == NavigationType.BOTTOM_NAVIGATION) {
                 BottomNavigationBar(
-                    selectedDestination = uiState.currentDestination,
-                    navigateToDestination = navigateToDestination
+                    selectedDestination = currentRoute,
+                    navigateToDestination = { navController.navigate(it.route) {
+                        popUpTo(MainDestination.Search.route)
+                        launchSingleTop = true
+                    } }
                 )
             }
         }

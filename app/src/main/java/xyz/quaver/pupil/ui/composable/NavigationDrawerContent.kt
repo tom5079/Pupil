@@ -43,13 +43,14 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.offset
+import androidx.navigation.NavDestination
 import xyz.quaver.pupil.R
 
 @Composable
 fun PermanentNavigationDrawerContent(
-    selectedDestination: MainDestination,
+    selectedDestination: String?,
+    navigateToDestination: (MainDestination) -> Unit,
     navigationContentPosition: NavigationContentPosition,
-    navigateToDestination: (MainDestination) -> Unit
 ) {
     PermanentDrawerSheet(
         modifier = Modifier.sizeIn(minWidth = 200.dp, maxWidth = 300.dp),
@@ -97,7 +98,7 @@ fun PermanentNavigationDrawerContent(
                                     contentDescription = stringResource(destination.textId)
                                 )
                             },
-                            selected = selectedDestination.route == destination.route,
+                            selected = selectedDestination == destination.route,
                             colors = NavigationDrawerItemDefaults.colors(
                                 unselectedContainerColor = Color.Transparent
                             ),
@@ -113,7 +114,7 @@ fun PermanentNavigationDrawerContent(
 
 @Composable
 fun ModalNavigationDrawerContent(
-    selectedDestination: MainDestination,
+    selectedDestination: String?,
     navigationContentPosition: NavigationContentPosition,
     navigateToDestination: (MainDestination) -> Unit,
     onDrawerClicked: () -> Unit
@@ -177,7 +178,7 @@ fun ModalNavigationDrawerContent(
                                     contentDescription = stringResource(destination.textId)
                                 )
                             },
-                            selected = selectedDestination.route == destination.route,
+                            selected = selectedDestination == destination.route,
                             colors = NavigationDrawerItemDefaults.colors(
                                 unselectedContainerColor = Color.Transparent
                             ),
@@ -193,8 +194,7 @@ fun ModalNavigationDrawerContent(
 
 @Composable
 fun MainNavigationRail(
-    selectedDestination: MainDestination,
-    navigationContentPosition: NavigationContentPosition,
+    selectedDestination: String?,
     navigateToDestination: (MainDestination) -> Unit,
     onDrawerClicked: () -> Unit
 ) {
@@ -220,7 +220,7 @@ fun MainNavigationRail(
         ) {
             mainDestinations.forEach { destination ->
                 NavigationRailItem(
-                    selected = selectedDestination.route == destination.route,
+                    selected = selectedDestination == destination.route,
                     onClick = { navigateToDestination(destination) },
                     icon = { 
                         Icon(
@@ -236,13 +236,13 @@ fun MainNavigationRail(
 
 @Composable
 fun BottomNavigationBar(
-    selectedDestination: MainDestination,
+    selectedDestination: String?,
     navigateToDestination: (MainDestination) -> Unit
 ) {
     NavigationBar(modifier = Modifier.fillMaxWidth(), windowInsets = WindowInsets.ime.union(WindowInsets.navigationBars)) {
         mainDestinations.forEach { destination ->
             NavigationBarItem(
-                selected = selectedDestination.route == destination.route,
+                selected = selectedDestination == destination.route,
                 onClick = { navigateToDestination(destination) },
                 icon = {
                     Icon(

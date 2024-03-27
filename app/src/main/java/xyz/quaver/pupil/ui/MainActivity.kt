@@ -27,10 +27,10 @@ import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
 import androidx.compose.runtime.getValue
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.compose.rememberNavController
 import com.google.accompanist.adaptive.calculateDisplayFeatures
 import xyz.quaver.pupil.ui.composable.MainApp
 import xyz.quaver.pupil.ui.theme.AppTheme
-import xyz.quaver.pupil.ui.viewmodel.MainUIState
 import xyz.quaver.pupil.ui.viewmodel.MainViewModel
 
 class MainActivity : BaseActivity() {
@@ -48,13 +48,15 @@ class MainActivity : BaseActivity() {
                 val windowSize = calculateWindowSizeClass(this)
                 val displayFeatures = calculateDisplayFeatures(this)
 
-                val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+                val uiState by viewModel.searchState.collectAsStateWithLifecycle()
+
+                val navController = rememberNavController()
 
                 MainApp(
                     windowSize = windowSize,
                     displayFeatures = displayFeatures,
                     uiState = uiState,
-                    navigateToDestination = viewModel::navigateToDestination,
+                    navController = navController,
                     closeDetailScreen = viewModel::closeDetailScreen,
                     onQueryChange = viewModel::onQueryChange,
                     loadSearchResult = viewModel::loadSearchResult

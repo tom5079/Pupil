@@ -9,22 +9,14 @@ import kotlinx.coroutines.launch
 import xyz.quaver.pupil.networking.GalleryInfo
 import xyz.quaver.pupil.networking.GallerySearchSource
 import xyz.quaver.pupil.networking.SearchQuery
-import xyz.quaver.pupil.ui.composable.MainDestination
-import xyz.quaver.pupil.ui.composable.mainDestinations
 import kotlin.math.max
 import kotlin.math.min
 
 class MainViewModel : ViewModel() {
-    private val _uiState = MutableStateFlow(MainUIState())
-    val uiState: StateFlow<MainUIState> = _uiState
+    private val _uiState = MutableStateFlow(SearchState())
+    val searchState: StateFlow<SearchState> = _uiState
     private var searchSource: GallerySearchSource = GallerySearchSource(null)
     private var job: Job? = null
-
-    fun navigateToDestination(destination: MainDestination) {
-        _uiState.value = MainUIState(
-            currentDestination = destination
-        )
-    }
 
     fun closeDetailScreen() {
         _uiState.value = _uiState.value.copy(
@@ -45,7 +37,7 @@ class MainViewModel : ViewModel() {
     fun loadSearchResult(range: IntRange) {
         job?.cancel()
         job = viewModelScope.launch {
-            val sanitizedRange = max(range.first, 0) .. min(range.last, uiState.value.galleryCount ?: Int.MAX_VALUE)
+            val sanitizedRange = max(range.first, 0) .. min(range.last, searchState.value.galleryCount ?: Int.MAX_VALUE)
             _uiState.value = _uiState.value.copy(
                 loading = true,
                 currentRange = sanitizedRange
@@ -72,8 +64,7 @@ class MainViewModel : ViewModel() {
     }
 }
 
-data class MainUIState(
-    val currentDestination: MainDestination = mainDestinations.first(),
+data class SearchState(
     val query: SearchQuery? = null,
     val galleries: List<GalleryInfo> = emptyList(),
     val loading: Boolean = false,

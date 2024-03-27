@@ -36,6 +36,8 @@
     <string name="main_drawer_group_contact_github">Github</string>
     <string name="main_drawer_group_contact_help">도움말</string>
     <string name="main_drawer_group_contact_homepage">홈페이지</string>
+    <string name="main_destination_settings">설정</string>
+    <string name="main_destination_image_viewer">뷰어</string>
     <string name="main_open_navigation_drawer">메뉴 열기</string>
     <string name="main_drawer_group_contact_title">문의</string>
     <string name="reader_fab_fullscreen">전체 화면</string>
@@ -166,4 +168,5 @@
     <string name="search_add_query_item_tag">태그</string>
     <string name="move_to_page">%1$d 페이지로 이동</string>
     <string name="search_bar_edit_tag">터치하여 수정</string>
+    <string name="not_implemented">이 기능은 아직 개발 중입니다</string>
 </resources>

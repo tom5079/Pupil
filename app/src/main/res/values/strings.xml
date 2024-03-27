@@ -32,6 +32,8 @@
 
     <string name="unlimited">Unlimited</string>
 
+    <string name="not_implemented">This feature is not implemented yet</string>
+
     <string name="copied_to_clipboard">Copied to clipboard</string>
 
     <string name="channel_download">Download</string>
@@ -57,6 +59,8 @@
     <string name="main_destination_history">History</string>
     <string name="main_destination_downloads">Downloads</string>
     <string name="main_destination_favorites">Favorites</string>
+    <string name="main_destination_settings">Settings</string>
+    <string name="main_destination_image_viewer">Reader</string>
     <string name="main_open_navigation_drawer">Open Navigation Drawer</string>
     <string name="main_close_navigation_drawer">Close Navigation Drawer</string>
     <string name="main_drawer_group_contact_title">Contact</string>

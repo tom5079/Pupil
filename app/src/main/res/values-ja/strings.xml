@@ -33,6 +33,7 @@
     <string name="default_query_dialog_filter_guro">グロフィルター</string>
     <string name="default_query_dialog_language">"言語: "</string>
     <string name="default_query_dialog_title">デフォルトキーワード設定</string>
+    <string name="main_destination_settings">設定</string>
     <string name="main_open_navigation_drawer">メニューを開く</string>
     <string name="main_drawer_group_contact_title">お問い合わせ先</string>
     <string name="main_drawer_group_contact_homepage">ホームページ</string>
@@ -166,4 +167,6 @@
     <string name="search_add_query_item_tag">タグ</string>
     <string name="move_to_page">%1$d ページへ移動</string>
     <string name="search_bar_edit_tag">タッチして編集</string>
+    <string name="main_destination_image_viewer">イメージビューア</string>
+    <string name="not_implemented">この機能はまだ実装されていません</string>
 </resources>

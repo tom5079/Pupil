@@ -96,7 +96,7 @@ import xyz.quaver.pupil.networking.SearchQuery
 import xyz.quaver.pupil.ui.theme.Blue600
 import xyz.quaver.pupil.ui.theme.Pink600
 import xyz.quaver.pupil.ui.theme.Yellow400
-import xyz.quaver.pupil.ui.viewmodel.MainUIState
+import xyz.quaver.pupil.ui.viewmodel.SearchState
 import kotlin.math.roundToInt
 
 private val iconMap = mapOf(
@@ -304,7 +304,6 @@ fun SearchBar(
     query: SearchQuery?,
     onQueryChange: (SearchQuery?) -> Unit,
     onSearchBarPositioned: (Int) -> Unit,
-    onSearch: () -> Unit,
     topOffset: Int,
     onTopOffsetChange: (Int) -> Unit,
     content: @Composable () -> Unit
@@ -405,85 +404,6 @@ fun SearchBar(
 }
 
 @Composable
-fun MainScreen(
-    contentType: ContentType,
-    displayFeatures: List<DisplayFeature>,
-    uiState: MainUIState,
-    closeDetailScreen: () -> Unit,
-    onQueryChange: (SearchQuery?) -> Unit,
-    loadSearchResult: (IntRange) -> Unit
-) {
-    LaunchedEffect(contentType) {
-        if (contentType == ContentType.SINGLE_PANE && !uiState.isDetailOnlyOpen) {
-            closeDetailScreen()
-        }
-    }
-
-    val galleryLazyListState = rememberLazyListState()
-
-    val itemsPerPage by remember { mutableIntStateOf(20) }
-
-    val pageToRange: (Int) -> IntRange = remember(itemsPerPage) {{ page ->
-        page * itemsPerPage ..< (page+1) * itemsPerPage
-    }}
-
-    val currentPage = remember(uiState) {
-        if (uiState.currentRange != IntRange.EMPTY) {
-            uiState.currentRange.first / itemsPerPage
-        } else 0
-    }
-
-    val maxPage = remember(itemsPerPage, uiState) {
-        if (uiState.galleryCount != null) {
-            uiState.galleryCount / itemsPerPage + if (uiState.galleryCount % itemsPerPage != 0) 1 else 0
-        } else 0
-    }
-
-    val loadResult: (Int) -> Unit = remember(loadSearchResult) {{ page ->
-        loadSearchResult(pageToRange(page))
-    }}
-
-    LaunchedEffect(uiState.query, uiState.currentDestination) { loadSearchResult(pageToRange(0)) }
-
-    if (contentType == ContentType.DUAL_PANE) {
-        TwoPane(
-            first = {
-                GalleryList(
-                    contentType = contentType,
-                    galleries = uiState.galleries,
-                    query = uiState.query,
-                    currentPage = currentPage,
-                    maxPage = maxPage,
-                    loading = uiState.loading,
-                    error = uiState.error,
-                    galleryLazyListState = galleryLazyListState,
-                    onQueryChange = onQueryChange,
-                    onPageChange = loadResult
-                )
-            },
-            second = {
-
-            },
-            strategy = HorizontalTwoPaneStrategy(splitFraction = 0.5f, gapWidth = 16.dp),
-            displayFeatures = displayFeatures
-        )
-    } else {
-        GalleryList(
-            contentType = contentType,
-            galleries = uiState.galleries,
-            query = uiState.query,
-            currentPage = currentPage,
-            maxPage = maxPage,
-            loading = uiState.loading,
-            error = uiState.error,
-            galleryLazyListState = galleryLazyListState,
-            onQueryChange = onQueryChange,
-            onPageChange = loadResult
-        )
-    }
-}
-
-@Composable
 fun GalleryList(
     contentType: ContentType,
     galleries: List<GalleryInfo>,
@@ -492,14 +412,8 @@ fun GalleryList(
     maxPage: Int,
     loading: Boolean = false,
     error: Boolean = false,
-    openedGallery: GalleryInfo? = null,
     onPageChange: (Int) -> Unit,
     onQueryChange: (SearchQuery?) -> Unit = {},
-    search: () -> Unit = {},
-    selectedGalleryIds: Set<Int> = emptySet(),
-    toggleGallerySelection: (Int) -> Unit = {},
-    galleryLazyListState: LazyListState,
-    navigateToDetails: (GalleryInfo, ContentType) -> Unit = { gi, ct -> }
 ) {
     val listState = rememberLazyListState()
     var topOffset by remember { mutableIntStateOf(0) }
@@ -522,7 +436,6 @@ fun GalleryList(
         query = query,
         onQueryChange = onQueryChange,
         onSearchBarPositioned = { searchBarPosition = it },
-        onSearch = search,
         topOffset = topOffset,
         onTopOffsetChange = { topOffset = it },
     ) {
@@ -563,7 +476,7 @@ fun GalleryList(
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                     state = listState
                 ) {
-                    items(galleries) {galleryInfo ->
+                    items(galleries, key = { it.id }) {galleryInfo ->
                         DetailedGalleryInfo(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -576,3 +489,79 @@ fun GalleryList(
         }
     }
 }
+
+@Composable
+fun SearchScreen(
+    contentType: ContentType,
+    displayFeatures: List<DisplayFeature>,
+    uiState: SearchState,
+    closeDetailScreen: () -> Unit,
+    onQueryChange: (SearchQuery?) -> Unit,
+    loadSearchResult: (IntRange) -> Unit
+) {
+    LaunchedEffect(contentType) {
+        if (contentType == ContentType.SINGLE_PANE && !uiState.isDetailOnlyOpen) {
+            closeDetailScreen()
+        }
+    }
+
+    val itemsPerPage by remember { mutableIntStateOf(20) }
+
+    val pageToRange: (Int) -> IntRange = remember(itemsPerPage) {{ page ->
+        page * itemsPerPage ..< (page+1) * itemsPerPage
+    }}
+
+    val currentPage = remember(uiState) {
+        if (uiState.currentRange != IntRange.EMPTY) {
+            uiState.currentRange.first / itemsPerPage
+        } else 0
+    }
+
+    val maxPage = remember(itemsPerPage, uiState) {
+        if (uiState.galleryCount != null) {
+            uiState.galleryCount / itemsPerPage + if (uiState.galleryCount % itemsPerPage != 0) 1 else 0
+        } else 0
+    }
+
+    val loadResult: (Int) -> Unit = remember(loadSearchResult) {{ page ->
+        loadSearchResult(pageToRange(page))
+    }}
+
+    LaunchedEffect(uiState.query, currentPage) { loadSearchResult(pageToRange(currentPage)) }
+
+    if (contentType == ContentType.DUAL_PANE) {
+        TwoPane(
+            first = {
+                GalleryList(
+                    contentType = contentType,
+                    galleries = uiState.galleries,
+                    query = uiState.query,
+                    currentPage = currentPage,
+                    maxPage = maxPage,
+                    loading = uiState.loading,
+                    error = uiState.error,
+                    onQueryChange = onQueryChange,
+                    onPageChange = loadResult
+                )
+            },
+            second = {
+
+            },
+            strategy = HorizontalTwoPaneStrategy(splitFraction = 0.5f, gapWidth = 16.dp),
+            displayFeatures = displayFeatures
+        )
+    } else {
+        GalleryList(
+            contentType = contentType,
+            galleries = uiState.galleries,
+            query = uiState.query,
+            currentPage = currentPage,
+            maxPage = maxPage,
+            loading = uiState.loading,
+            error = uiState.error,
+            onQueryChange = onQueryChange,
+            onPageChange = loadResult
+        )
+    }
+}
+

@@ -32,3 +32,4 @@
     kotlinx.serialization.KSerializer serializer(...);
 }
 -keep class xyz.quaver.pupil.** { *; }
+-dontwarn org.slf4j.impl.StaticLoggerBinder
