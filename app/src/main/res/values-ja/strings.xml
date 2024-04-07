@@ -14,6 +14,11 @@
     <string name="settings_search_title">検索設定</string>
     <string name="settings_title">設定</string>
     <string name="update_notification_description">アップデートダウンロード中</string>
+    <string name="doujinshi">同人誌</string>
+    <string name="manga">漫画</string>
+    <string name="artist_cg">アーティストCG</string>
+    <string name="game_cg">ゲームCG</string>
+    <string name="image_set">イメージまとめ</string>
     <string name="update_title">新しいアップデートがあります</string>
     <string name="warning">注意</string>
     <string name="settings_miscellaneous_title">その他</string>
@@ -92,7 +97,7 @@
     <string name="gallery_related">おすすめ</string>
     <string name="settings_nomedia_title">イメージを隠す</string>
     <string name="main_delete">削除</string>
-    <string name="main_download">ダウンロード</string>
+    <string name="download">ダウンロード</string>
     <string name="settings_backup_title">ブックマークバックアップ</string>
     <string name="settings_restore_title">ブックマーク復元</string>
     <string name="settings_backup_file_created">バックアップファイルを作成しました</string>

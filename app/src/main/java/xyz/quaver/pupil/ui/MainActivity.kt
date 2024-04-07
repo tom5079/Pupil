@@ -57,7 +57,8 @@ class MainActivity : BaseActivity() {
                     displayFeatures = displayFeatures,
                     uiState = uiState,
                     navController = navController,
-                    closeDetailScreen = viewModel::closeDetailScreen,
+                    openGalleryDetails = viewModel::openGalleryDetails,
+                    closeGalleryDetails = viewModel::closeGalleryDetails,
                     onQueryChange = viewModel::onQueryChange,
                     loadSearchResult = viewModel::loadSearchResult
                 )

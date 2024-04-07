@@ -2,8 +2,6 @@ package xyz.quaver.pupil.ui.composable
 
 import android.util.Log
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -40,8 +38,8 @@ import androidx.window.layout.DisplayFeature
 import androidx.window.layout.FoldingFeature
 import kotlinx.coroutines.launch
 import xyz.quaver.pupil.R
+import xyz.quaver.pupil.networking.GalleryInfo
 import xyz.quaver.pupil.networking.SearchQuery
-import xyz.quaver.pupil.ui.ReaderActivity
 import xyz.quaver.pupil.ui.SettingsActivity
 import xyz.quaver.pupil.ui.viewmodel.SearchState
 
@@ -51,9 +49,10 @@ fun MainApp(
     displayFeatures: List<DisplayFeature>,
     uiState: SearchState,
     navController: NavHostController,
-    closeDetailScreen: () -> Unit,
+    openGalleryDetails: (GalleryInfo) -> Unit,
+    closeGalleryDetails: () -> Unit,
     onQueryChange: (SearchQuery?) -> Unit,
-    loadSearchResult: (IntRange) -> Unit
+    loadSearchResult: (IntRange) -> Unit,
 ) {
     val navigationType: NavigationType
     val contentType: ContentType
@@ -106,7 +105,8 @@ fun MainApp(
         navigationContentPosition,
         uiState,
         navController,
-        closeDetailScreen = closeDetailScreen,
+        openGalleryDetails = openGalleryDetails,
+        closeGalleryDetails = closeGalleryDetails,
         onQueryChange = onQueryChange,
         loadSearchResult = loadSearchResult
     )
@@ -120,7 +120,8 @@ private fun MainNavigationWrapper(
     navigationContentPosition: NavigationContentPosition,
     uiState: SearchState,
     navController: NavHostController,
-    closeDetailScreen: () -> Unit,
+    openGalleryDetails: (GalleryInfo) -> Unit,
+    closeGalleryDetails: () -> Unit,
     onQueryChange: (SearchQuery?) -> Unit,
     loadSearchResult: (IntRange) -> Unit
 ) {
@@ -156,9 +157,10 @@ private fun MainNavigationWrapper(
                 uiState = uiState,
                 navController = navController,
                 onDrawerClicked = openDrawer,
-                closeDetailScreen = closeDetailScreen,
+                openGalleryDetails = openGalleryDetails,
+                closeGalleryDetails = closeGalleryDetails,
                 onQueryChange = onQueryChange,
-                loadSearchResult = loadSearchResult
+                loadSearchResult = loadSearchResult,
             )
         }
     } else {
@@ -187,9 +189,10 @@ private fun MainNavigationWrapper(
                 uiState = uiState,
                 navController = navController,
                 onDrawerClicked = openDrawer,
-                closeDetailScreen = closeDetailScreen,
+                openGalleryDetails = openGalleryDetails,
+                closeGalleryDetails = closeGalleryDetails,
                 onQueryChange = onQueryChange,
-                loadSearchResult = loadSearchResult
+                loadSearchResult = loadSearchResult,
             )
         }
     }
@@ -217,9 +220,10 @@ fun MainContent(
     uiState: SearchState,
     navController: NavHostController,
     onDrawerClicked: () -> Unit,
-    closeDetailScreen: () -> Unit,
+    openGalleryDetails: (GalleryInfo) -> Unit,
+    closeGalleryDetails: () -> Unit,
     onQueryChange: (SearchQuery?) -> Unit,
-    loadSearchResult: (IntRange) -> Unit
+    loadSearchResult: (IntRange) -> Unit,
 ) {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
@@ -261,9 +265,16 @@ fun MainContent(
                             contentType = contentType,
                             displayFeatures = displayFeatures,
                             uiState = uiState,
-                            closeDetailScreen = closeDetailScreen,
+                            openGalleryDetails = openGalleryDetails,
+                            closeGalleryDetails = closeGalleryDetails,
                             onQueryChange = onQueryChange,
-                            loadSearchResult = loadSearchResult
+                            loadSearchResult = loadSearchResult,
+                            openGallery = {
+                                Log.d("PUPILD", "openGallery: ${it.id}")
+                                navController.navigate(MainDestination.ImageViewer(it.id).route) {
+                                    launchSingleTop = true
+                                }
+                            }
                         )
                     }
                     composable(MainDestination.History.route) {
@@ -278,8 +289,8 @@ fun MainContent(
                     activity(MainDestination.Settings.route) {
                         activityClass = SettingsActivity::class
                     }
-                    activity(MainDestination.ImageViewer.route) {
-                        activityClass = ReaderActivity::class
+                    activity(MainDestination.ImageViewer.commonRoute) {
+//                        argument("galleryID") { type = NavType.IntType }
                     }
                 }
             }

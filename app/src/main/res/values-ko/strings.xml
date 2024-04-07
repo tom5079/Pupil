@@ -13,6 +13,11 @@
     <string name="settings_search_title">검색 설정</string>
     <string name="settings_title">설정</string>
     <string name="update_notification_description">업데이트 다운로드중&#8230;</string>
+    <string name="doujinshi">동인지</string>
+    <string name="manga">만화</string>
+    <string name="artist_cg">아티스트 CG</string>
+    <string name="game_cg">게임 CG</string>
+    <string name="image_set">이미지 모음</string>
     <string name="update_title">업데이트가 있습니다!</string>
     <string name="warning">경고</string>
     <string name="main_no_result">결과 없음\n해결법</string>
@@ -91,7 +96,7 @@
     <string name="gallery_thumbnails">미리보기</string>
     <string name="settings_nomedia_title">이미지 숨기기</string>
     <string name="main_delete">삭제</string>
-    <string name="main_download">다운로드</string>
+    <string name="download">다운로드</string>
     <string name="settings_backup_title">즐겨찾기 백업</string>
     <string name="settings_restore_title">즐겨찾기 복원</string>
     <string name="settings_backup_file_created">백업 파일을 생성하였습니다</string>

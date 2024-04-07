@@ -1,5 +1,6 @@
 package xyz.quaver.pupil.ui.viewmodel
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Job
@@ -18,7 +19,14 @@ class MainViewModel : ViewModel() {
     private var searchSource: GallerySearchSource = GallerySearchSource(null)
     private var job: Job? = null
 
-    fun closeDetailScreen() {
+    fun openGalleryDetails(galleryInfo: GalleryInfo) {
+        _uiState.value = _uiState.value.copy(
+            openedGallery = galleryInfo,
+            isDetailOnlyOpen = true
+        )
+    }
+
+    fun closeGalleryDetails() {
         _uiState.value = _uiState.value.copy(
             isDetailOnlyOpen = false
         )
@@ -35,11 +43,13 @@ class MainViewModel : ViewModel() {
     }
 
     fun loadSearchResult(range: IntRange) {
+        Thread.dumpStack()
         job?.cancel()
         job = viewModelScope.launch {
             val sanitizedRange = max(range.first, 0) .. min(range.last, searchState.value.galleryCount ?: Int.MAX_VALUE)
             _uiState.value = _uiState.value.copy(
                 loading = true,
+                error = false,
                 currentRange = sanitizedRange
             )
 

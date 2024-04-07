@@ -3,10 +3,12 @@ package xyz.quaver.pupil.networking
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.engine.okhttp.OkHttp
+import io.ktor.client.plugins.onDownload
 import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.client.statement.HttpResponse
 import io.ktor.client.statement.bodyAsText
+import io.ktor.utils.io.ByteReadChannel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
@@ -16,7 +18,6 @@ import kotlinx.coroutines.withContext
 import kotlinx.datetime.Clock.System.now
 import kotlinx.datetime.Instant
 import kotlinx.serialization.json.Json
-import xyz.quaver.pupil.hitomi.max_node_size
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.IntBuffer
@@ -32,6 +33,7 @@ const val compressedNozomiPrefix = "n"
 
 const val B = 16
 const val indexDir = "tagindex"
+const val maxNodeSize = 464
 const val galleriesIndexDir = "galleriesindex"
 const val languagesIndexDir = "languagesindex"
 const val nozomiURLIndexDir = "nozomiurlindex"
@@ -145,7 +147,7 @@ object HitomiHttpClient {
         }
 
         return Node.decodeNode(
-            getURLAtRange(url, address ..< address+max_node_size)
+            getURLAtRange(url, address ..< address + maxNodeSize)
         )
     }
 
@@ -262,36 +264,6 @@ object HitomiHttpClient {
         }
     }
 
-    suspend fun getImageURL(galleryFile: GalleryFile, thumbnail: Boolean = false): List<String> = buildList {
-        val imagePathResolver = imagePathResolver.getValue()
-
-        listOf("webp", "avif", "jxl").forEach { type ->
-            val available = when {
-                thumbnail && type != "jxl" -> true
-                type == "webp" -> galleryFile.hasWebP != 0
-                type == "avif" -> galleryFile.hasAVIF != 0
-                !thumbnail && type == "jxl" -> galleryFile.hasJXL != 0
-                else -> false
-            }
-
-            if (!available) return@forEach
-
-            val url = buildString {
-                append("https://")
-                append(imagePathResolver.decodeSubdomain(galleryFile.hash, thumbnail))
-                append(".hitomi.la/")
-                append(type)
-                if (thumbnail) append("bigtn")
-                append('/')
-                append(imagePathResolver.decodeImagePath(galleryFile.hash, thumbnail))
-                append('.')
-                append(type)
-            }
-
-            add(url)
-        }
-    }
-
     suspend fun search(query: SearchQuery?): Result<Set<Int>> = runCatching {
         when (query) {
             is SearchQuery.Tag -> getGalleryIDsForQuery(query).toSet()
@@ -352,4 +324,50 @@ object HitomiHttpClient {
             null -> getGalleryIDsFromNozomi(null, "index", "all").toSet()
         }
     }
+
+    suspend fun getImageURL(galleryFile: GalleryFile, thumbnail: Boolean = false): List<String> = buildList {
+        val imagePathResolver = imagePathResolver.getValue()
+
+        listOf("webp", "avif", "jxl").forEach { type ->
+            val available = when {
+                thumbnail && type != "jxl" -> true
+                type == "webp" -> galleryFile.hasWebP != 0
+                type == "avif" -> galleryFile.hasAVIF != 0
+                !thumbnail && type == "jxl" -> galleryFile.hasJXL != 0
+                else -> false
+            }
+
+            if (!available) return@forEach
+
+            val url = buildString {
+                append("https://")
+                append(imagePathResolver.decodeSubdomain(galleryFile.hash, thumbnail))
+                append(".hitomi.la/")
+                append(type)
+                if (thumbnail) append("bigtn")
+                append('/')
+                append(imagePathResolver.decodeImagePath(galleryFile.hash, thumbnail))
+                append('.')
+                append(type)
+            }
+
+            add(url)
+        }
+    }
+
+    suspend fun loadImage(
+        galleryFile: GalleryFile,
+        thumbnail: Boolean = false,
+        acceptImage: (String) -> Boolean = { true },
+        onDownload: (bytesSentTotal: Long, contentLength: Long) -> Unit = { _, _ -> }
+    ): Result<Pair<ByteReadChannel, String>> {
+        return runCatching {
+            withContext(Dispatchers.IO) {
+                val url = getImageURL(galleryFile, thumbnail).firstOrNull(acceptImage) ?: error("No available image")
+                val channel: ByteReadChannel = httpClient.get(url) { onDownload(onDownload) }.body()
+                Pair(channel, url)
+            }
+        }
+    }
+
 }

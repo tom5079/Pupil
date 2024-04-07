@@ -83,8 +83,14 @@
 
     <string name="main_move_to_page">Move to page %1$d</string>
 
-    <string name="main_download">DOWNLOAD</string>
+    <string name="download">Download</string>
     <string name="main_delete">DELETE</string>
+
+    <string name="doujinshi">Doujinshi</string>
+    <string name="manga">Manga</string>
+    <string name="artist_cg">Artist CG</string>
+    <string name="game_cg">Game CG</string>
+    <string name="image_set">Image Set</string>
 
     <string name="update_title">Update available</string>
     <string name="update_download_completed">Download Completed</string>

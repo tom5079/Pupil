@@ -35,27 +35,30 @@ import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.windowInsetsTopHeight
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Label
 import androidx.compose.material.icons.filled.Book
 import androidx.compose.material.icons.filled.Brush
 import androidx.compose.material.icons.filled.Face
 import androidx.compose.material.icons.filled.Female
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Group
-import androidx.compose.material.icons.filled.LocalOffer
 import androidx.compose.material.icons.filled.Male
 import androidx.compose.material.icons.filled.Translate
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
@@ -92,6 +95,7 @@ import com.google.accompanist.adaptive.HorizontalTwoPaneStrategy
 import com.google.accompanist.adaptive.TwoPane
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.networking.GalleryInfo
+import xyz.quaver.pupil.networking.HitomiHttpClient
 import xyz.quaver.pupil.networking.SearchQuery
 import xyz.quaver.pupil.ui.theme.Blue600
 import xyz.quaver.pupil.ui.theme.Pink600
@@ -108,10 +112,10 @@ private val iconMap = mapOf(
     "series" to Icons.Default.Book,
     "type" to Icons.Default.Folder,
     "language" to Icons.Default.Translate,
-    "tag" to Icons.Default.LocalOffer,
+    "tag" to Icons.AutoMirrored.Filled.Label,
 )
 
-private val languageMap = mapOf(
+val languageIconMap = mapOf(
     "indonesian" to R.drawable.language_indonesian,
     "javanese" to R.drawable.language_javanese,
     "catalan" to R.drawable.language_catalan,
@@ -155,9 +159,9 @@ fun TagChipIcon(tag: SearchQuery.Tag) {
     val icon = iconMap[tag.namespace]
 
     if (icon != null) {
-        if (tag.namespace == "language" && languageMap.contains(tag.tag)) {
+        if (tag.namespace == "language" && languageIconMap.contains(tag.tag)) {
             Icon(
-                painter = painterResource(languageMap[tag.tag]!!),
+                painter = painterResource(languageIconMap[tag.tag]!!),
                 contentDescription = "icon",
                 modifier = Modifier
                     .padding(4.dp)
@@ -360,7 +364,8 @@ fun SearchBar(
                     indication = null
                 ) {
                     focused = true
-                }.onGloballyPositioned {
+                }
+                .onGloballyPositioned {
                     onSearchBarPositioned(it.positionInRoot().y.roundToInt() + it.size.height)
                 }
                 .absoluteOffset { IntOffset(0, topOffset) },
@@ -414,6 +419,7 @@ fun GalleryList(
     error: Boolean = false,
     onPageChange: (Int) -> Unit,
     onQueryChange: (SearchQuery?) -> Unit = {},
+    openGalleryDetails: (GalleryInfo) -> Unit,
 ) {
     val listState = rememberLazyListState()
     var topOffset by remember { mutableIntStateOf(0) }
@@ -480,7 +486,8 @@ fun GalleryList(
                         DetailedGalleryInfo(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(horizontal = 4.dp),
+                                .padding(horizontal = 4.dp)
+                                .clickable { openGalleryDetails(galleryInfo) },
                             galleryInfo = galleryInfo
                         )
                     }
@@ -491,20 +498,75 @@ fun GalleryList(
 }
 
 @Composable
+fun DetailScreen(
+    galleryInfo: GalleryInfo,
+    closeGalleryDetails: () -> Unit = { },
+    openGallery: (GalleryInfo) -> Unit = { }
+) {
+    var thumbnailUrl by remember { mutableStateOf<String?>(null) }
+
+    LaunchedEffect(galleryInfo) {
+        thumbnailUrl = galleryInfo.files.firstOrNull()?.let {
+            HitomiHttpClient.getImageURL(it, true).firstOrNull()
+        } ?: ""
+    }
+
+    Column(
+        Modifier
+            .padding(8.dp)
+            .verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        Spacer(Modifier.windowInsetsTopHeight(WindowInsets.systemBars))
+        IconButton(onClick = closeGalleryDetails) {
+            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Close Detail")
+        }
+
+        DetailedGalleryInfoHeader(galleryInfo, thumbnailUrl)
+
+        Row(Modifier.fillMaxWidth()) {
+            FilledTonalButton(
+                modifier = Modifier.weight(1f).padding(horizontal = 4.dp),
+                onClick = { /*TODO*/ }
+            ) {
+                Text(stringResource(R.string.download))
+            }
+
+            Button(
+                modifier = Modifier.weight(1f).padding(horizontal = 4.dp),
+                onClick = { openGallery(galleryInfo) }
+            ) {
+                Text("Open")
+            }
+        }
+
+        GalleryTypeIndicator(galleryInfo.type)
+
+        if (galleryInfo.series?.isNotEmpty() == true) {
+            TagGroup(galleryInfo.series.map { it.toTag() })
+        }
+
+        if (galleryInfo.characters?.isNotEmpty() == true) {
+            TagGroup(galleryInfo.characters.map { it.toTag() })
+        }
+
+        if (galleryInfo.tags?.isNotEmpty() == true) {
+            TagGroup(galleryInfo.tags.map { it.toTag() })
+        }
+    }
+}
+
+@Composable
 fun SearchScreen(
     contentType: ContentType,
     displayFeatures: List<DisplayFeature>,
     uiState: SearchState,
-    closeDetailScreen: () -> Unit,
+    openGalleryDetails: (GalleryInfo) -> Unit,
+    closeGalleryDetails: () -> Unit,
     onQueryChange: (SearchQuery?) -> Unit,
-    loadSearchResult: (IntRange) -> Unit
+    loadSearchResult: (IntRange) -> Unit,
+    openGallery: (GalleryInfo) -> Unit
 ) {
-    LaunchedEffect(contentType) {
-        if (contentType == ContentType.SINGLE_PANE && !uiState.isDetailOnlyOpen) {
-            closeDetailScreen()
-        }
-    }
-
     val itemsPerPage by remember { mutableIntStateOf(20) }
 
     val pageToRange: (Int) -> IntRange = remember(itemsPerPage) {{ page ->
@@ -527,7 +589,19 @@ fun SearchScreen(
         loadSearchResult(pageToRange(page))
     }}
 
-    LaunchedEffect(uiState.query, currentPage) { loadSearchResult(pageToRange(currentPage)) }
+    LaunchedEffect(uiState.query) { loadSearchResult(pageToRange(currentPage)) }
+
+    LaunchedEffect(contentType) {
+        if (contentType == ContentType.SINGLE_PANE && !uiState.isDetailOnlyOpen) {
+            closeGalleryDetails()
+        }
+    }
+
+    if (contentType == ContentType.SINGLE_PANE && uiState.isDetailOnlyOpen) {
+        BackHandler {
+            closeGalleryDetails()
+        }
+    }
 
     if (contentType == ContentType.DUAL_PANE) {
         TwoPane(
@@ -541,7 +615,8 @@ fun SearchScreen(
                     loading = uiState.loading,
                     error = uiState.error,
                     onQueryChange = onQueryChange,
-                    onPageChange = loadResult
+                    onPageChange = loadResult,
+                    openGalleryDetails = openGalleryDetails
                 )
             },
             second = {
@@ -551,17 +626,30 @@ fun SearchScreen(
             displayFeatures = displayFeatures
         )
     } else {
-        GalleryList(
-            contentType = contentType,
-            galleries = uiState.galleries,
-            query = uiState.query,
-            currentPage = currentPage,
-            maxPage = maxPage,
-            loading = uiState.loading,
-            error = uiState.error,
-            onQueryChange = onQueryChange,
-            onPageChange = loadResult
-        )
+        val detailGallery = uiState.openedGallery
+        AnimatedVisibility(!uiState.isDetailOnlyOpen || detailGallery == null) {
+            GalleryList(
+                contentType = contentType,
+                galleries = uiState.galleries,
+                query = uiState.query,
+                currentPage = currentPage,
+                maxPage = maxPage,
+                loading = uiState.loading,
+                error = uiState.error,
+                onQueryChange = onQueryChange,
+                onPageChange = loadResult,
+                openGalleryDetails = openGalleryDetails
+            )
+        }
+        AnimatedVisibility(uiState.isDetailOnlyOpen && detailGallery != null) {
+            if (detailGallery != null) {
+                DetailScreen(
+                    galleryInfo = detailGallery,
+                    closeGalleryDetails = closeGalleryDetails,
+                    openGallery = openGallery
+                )
+            }
+        }
     }
 }
 

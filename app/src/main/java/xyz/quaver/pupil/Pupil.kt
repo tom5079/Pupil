@@ -40,6 +40,7 @@ import com.google.android.gms.common.GooglePlayServicesRepairableException
 import com.google.android.gms.security.ProviderInstaller
 import com.google.firebase.FirebaseApp
 import com.google.firebase.crashlytics.FirebaseCrashlytics
+import dagger.hilt.android.HiltAndroidApp
 import kotlinx.coroutines.*
 import okhttp3.Dispatcher
 import okhttp3.Interceptor
@@ -58,15 +59,6 @@ import kotlin.reflect.KClass
 
 typealias PupilInterceptor = (Interceptor.Chain) -> Response
 
-lateinit var histories: SavedSet<Int>
-    private set
-lateinit var favorites: SavedSet<Int>
-    private set
-lateinit var favoriteTags: SavedSet<Tag>
-    private set
-lateinit var searchHistory: SavedSet<String>
-    private set
-
 val interceptors = mutableMapOf<KClass<out Any>, PupilInterceptor>()
 
 lateinit var clientBuilder: OkHttpClient.Builder
@@ -77,22 +69,13 @@ val client: OkHttpClient
         clientHolder = it
     }
 
-class Pupil : Application(), ImageLoaderFactory {
-    companion object {
-        lateinit var instance: Pupil
-            private set
-    }
-
+@HiltAndroidApp
+class Pupil : Application() {
     override fun onCreate() {
-        instance = this
-
-        AppCompatDelegate.setCompatVectorFromResourcesEnabled(true)
-
         preferences = PreferenceManager.getDefaultSharedPreferences(this)
 
         val userID = Preferences["user_id", ""].let {  userID ->
-            if (userID.isEmpty()) UUID.randomUUID().toString().also { Preferences["user_id"] = it }
-            else userID
+            userID.ifEmpty { UUID.randomUUID().toString().also { Preferences["user_id"] = it } }
         }
 
         FirebaseApp.initializeApp(this)
@@ -101,7 +84,6 @@ class Pupil : Application(), ImageLoaderFactory {
         val proxyInfo = getProxyInfo()
 
         clientBuilder = OkHttpClient.Builder()
-//            .connectTimeout(0, TimeUnit.SECONDS)
             .readTimeout(0, TimeUnit.SECONDS)
             .proxyInfo(proxyInfo)
             .addInterceptor { chain ->
@@ -139,19 +121,6 @@ class Pupil : Application(), ImageLoaderFactory {
             Preferences["security_mode"] = false
             Preferences["reset_secure"] = true
         }
-
-        histories = SavedSet(File(ContextCompat.getDataDir(this), "histories.json"), 0)
-        favorites = SavedSet(File(ContextCompat.getDataDir(this), "favorites.json"), 0)
-        favoriteTags = SavedSet(File(ContextCompat.getDataDir(this), "favorites_tags.json"), Tag.parse(""))
-        searchHistory = SavedSet(File(ContextCompat.getDataDir(this), "search_histories.json"), "")
-
-        favoriteTags.filter { it.tag.contains('_') }.forEach {
-            favoriteTags.remove(it)
-        }
-
-        /*
-        if (BuildConfig.DEBUG)
-            FirebaseAnalytics.getInstance(this).setAnalyticsCollectionEnabled(false)*/
 
         try {
             ProviderInstaller.installIfNeeded(this)
@@ -209,15 +178,4 @@ class Pupil : Application(), ImageLoaderFactory {
 
         super.onCreate()
     }
-
-    override fun newImageLoader() = ImageLoader
-        .Builder(this)
-        .okHttpClient {
-            OkHttpClient
-                .Builder()
-                .sslSocketFactory(SSLSettings.sslContext!!.socketFactory, SSLSettings.trustManager!!)
-                .build()
-        }.memoryCache(null)
-        .build()
-
 }

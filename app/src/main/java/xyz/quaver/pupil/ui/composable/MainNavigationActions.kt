@@ -47,11 +47,14 @@ sealed interface MainDestination {
         override val textId = R.string.main_destination_settings
     }
 
-    data object ImageViewer: MainDestination {
-        override val route = "image_viewer"
+    class ImageViewer(galleryID: String): MainDestination {
+        override val route = "image_viewer/$galleryID"
         override val icon = Icons.AutoMirrored.Filled.MenuBook
         override val textId = R.string.main_destination_image_viewer
 
+        companion object {
+            val commonRoute = "image_viewer/{galleryID}"
+        }
     }
 }
 

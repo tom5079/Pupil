@@ -1,5 +1,6 @@
 package xyz.quaver.pupil.networking
 
+import android.os.BaseBundle
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -60,7 +61,29 @@ data class GalleryFile(
     val width: Int,
     val hash: String,
     val name: String,
-)
+) {
+    fun writeToBundle(bundle: BaseBundle) {
+        bundle.putInt("hasWebP", hasWebP)
+        bundle.putInt("hasAVIF", hasAVIF)
+        bundle.putInt("hasJXL", hasJXL)
+        bundle.putInt("height", height)
+        bundle.putInt("width", width)
+        bundle.putString("hash", hash)
+        bundle.putString("name", name)
+    }
+
+    companion object {
+        fun fromBundle(bundle: BaseBundle) = GalleryFile(
+            bundle.getInt("hasWebP"),
+            bundle.getInt("hasAVIF"),
+            bundle.getInt("hasJXL"),
+            bundle.getInt("height"),
+            bundle.getInt("width"),
+            bundle.getString("hash")!!,
+            bundle.getString("name")!!
+        )
+    }
+}
 
 @Serializable
 data class GalleryInfo(
@@ -81,10 +104,7 @@ data class GalleryInfo(
     val files: List<GalleryFile> = emptyList()
 )
 
-
 @JvmName("joinToCapitalizedStringArtist")
 fun List<Artist>.joinToCapitalizedString() = joinToString { it.artist.replaceFirstChar(Char::titlecase) }
 @JvmName("joinToCapitalizedStringGroup")
 fun List<Group>.joinToCapitalizedString() = joinToString { it.group.replaceFirstChar(Char::titlecase) }
-@JvmName("joinToCapitalizedStringParody")
-fun List<Series>.joinToCapitalizedString() = joinToString { it.series.replaceFirstChar(Char::titlecase) }

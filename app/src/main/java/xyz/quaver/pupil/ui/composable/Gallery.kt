@@ -1,6 +1,7 @@
 package xyz.quaver.pupil.ui.composable
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -9,13 +10,18 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.InlineTextContent
+import androidx.compose.foundation.text.appendInlineContent
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.QuestionMark
 import androidx.compose.material.icons.filled.StarOutline
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
@@ -33,12 +39,18 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.Placeholder
+import androidx.compose.ui.text.PlaceholderVerticalAlign
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import coil.compose.SubcomposeAsyncImage
 import coil.request.ImageRequest
 import xyz.quaver.pupil.R
@@ -50,8 +62,13 @@ import xyz.quaver.pupil.networking.GalleryTag
 import xyz.quaver.pupil.networking.Group
 import xyz.quaver.pupil.networking.HitomiHttpClient
 import xyz.quaver.pupil.networking.Language
+import xyz.quaver.pupil.networking.SearchQuery
 import xyz.quaver.pupil.networking.Series
 import xyz.quaver.pupil.networking.joinToCapitalizedString
+import xyz.quaver.pupil.ui.theme.Blue500
+import xyz.quaver.pupil.ui.theme.Green500
+import xyz.quaver.pupil.ui.theme.Purple500
+import xyz.quaver.pupil.ui.theme.Red500
 import xyz.quaver.pupil.ui.theme.Yellow500
 
 private val languageMap = mapOf(
@@ -92,6 +109,22 @@ private val languageMap = mapOf(
     "korean" to "한국어",
     "chinese" to "中文",
     "japanese" to "日本語"
+)
+
+private val galleryTypeStringMap = mapOf(
+    "doujinshi" to R.string.doujinshi,
+    "manga" to R.string.manga,
+    "artistcg" to R.string.artist_cg,
+    "gamecg" to R.string.game_cg,
+    "imageset" to R.string.image_set
+)
+
+private val galleryTypeColorMap = mapOf(
+    "doujinshi" to Red500,
+    "manga" to Yellow500,
+    "artistcg" to Purple500,
+    "gamecg" to Green500,
+    "imageset" to Blue500
 )
 
 class GalleryInfoProvider: PreviewParameterProvider<GalleryInfo> {
@@ -211,18 +244,19 @@ class GalleryInfoProvider: PreviewParameterProvider<GalleryInfo> {
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun TagGroup(tags: List<GalleryTag>) {
-    var isFolded by remember { mutableStateOf(true) }
+fun TagGroup(tags: List<SearchQuery.Tag>, folded: Boolean = false) {
+    var isFolded by remember { mutableStateOf(folded) }
 
     FlowRow(
-        Modifier.padding(0.dp, 16.dp),
         horizontalArrangement = Arrangement.spacedBy(4.dp),
         verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
         tags.sortedBy {
-            if (!it.female.isNullOrEmpty()) 1
-            else if (!it.female.isNullOrEmpty()) 2
-            else 3
+            when(it.namespace) {
+                "female" -> 1
+                "male" -> 2
+                else -> 3
+            }
         }.let {
             if (isFolded) it.take(10) else it
         }.forEach { tag ->
@@ -247,6 +281,59 @@ fun TagGroup(tags: List<GalleryTag>) {
 }
 
 @Composable
+fun GalleryTypeIndicator(galleryType: String) {
+    Surface(
+        modifier = Modifier.height(32.dp),
+        color = galleryTypeColorMap[galleryType] ?: MaterialTheme.colorScheme.surface,
+        shape = RoundedCornerShape(16.dp)
+    ) {
+        Box(Modifier.fillMaxHeight()) {
+            Text(
+                galleryTypeStringMap[galleryType]?.let { stringResource(it) } ?: galleryType,
+                modifier = Modifier
+                    .padding(horizontal = 16.dp)
+                    .align(Alignment.Center),
+                style = MaterialTheme.typography.bodyMedium,
+                color = Color.White
+            )
+        }
+    }
+}
+
+@Composable
+fun LanguageTitle(title: String, language: String?) {
+    val icon = languageIconMap[language]
+
+    if (icon != null) {
+        Text(
+            buildAnnotatedString {
+                appendInlineContent("language", "<language>")
+                append(' ')
+                append(title)
+            },
+            style = MaterialTheme.typography.headlineSmall,
+            inlineContent = mapOf(
+                "language" to InlineTextContent(
+                    Placeholder(
+                        width = 20.sp,
+                        height = 20.sp,
+                        placeholderVerticalAlign = PlaceholderVerticalAlign.Center
+                    )
+                ) {
+                    Icon(
+                        painterResource(icon),
+                        contentDescription = null,
+                        tint = Color.Unspecified
+                    )
+                }
+            )
+        )
+    } else {
+        Text(title, style = MaterialTheme.typography.headlineSmall)
+    }
+}
+
+@Composable
 fun DetailedGalleryInfoHeader(galleryInfo: GalleryInfo, thumbnailUrl: String?) {
     val thumbnailFile = galleryInfo.files.first()
     val aspectRatio = thumbnailFile.let { it.width / it.height.toFloat() }
@@ -263,7 +350,7 @@ fun DetailedGalleryInfoHeader(galleryInfo: GalleryInfo, thumbnailUrl: String?) {
                         .fillMaxWidth()
                         .aspectRatio(aspectRatio)
                         .clip(RoundedCornerShape(8.dp)),
-                    loading = { CircularProgressIndicator(Modifier.size(32.dp)) },
+                    loading = { CircularProgressIndicator(Modifier.align(Alignment.Center)) },
                     error = {
                         Image(
                             painter = painterResource(R.drawable.thumbnail),
@@ -273,11 +360,18 @@ fun DetailedGalleryInfoHeader(galleryInfo: GalleryInfo, thumbnailUrl: String?) {
                     contentDescription = "Thumbnail"
                 )
             } else {
-                Box(Modifier.fillMaxWidth().aspectRatio(aspectRatio)) {
-                    CircularProgressIndicator(Modifier.size(32.dp))
+                Box(
+                    Modifier
+                        .fillMaxWidth()
+                        .aspectRatio(aspectRatio)) {
+                    CircularProgressIndicator(Modifier.align(Alignment.Center))
                 }
             }
-            Text(galleryInfo.title, style = MaterialTheme.typography.headlineSmall)
+
+            Spacer(Modifier.height(8.dp))
+
+            LanguageTitle(galleryInfo.title, galleryInfo.language)
+
             val artistsAndGroups = buildString {
                 if (!galleryInfo.artists.isNullOrEmpty())
                     append(galleryInfo.artists.joinToCapitalizedString())
@@ -290,34 +384,16 @@ fun DetailedGalleryInfoHeader(galleryInfo: GalleryInfo, thumbnailUrl: String?) {
                 }
             }
 
-            Text(
-                artistsAndGroups,
-                style = MaterialTheme.typography.labelLarge
-            )
-
-            Spacer(Modifier.height(8.dp))
-
-            if (galleryInfo.series?.isNotEmpty() == true)
+            if (artistsAndGroups.isNotEmpty()) {
                 Text(
-                    "Series: ${galleryInfo.series.joinToCapitalizedString()}",
-                    style = MaterialTheme.typography.bodyMedium
-                )
-
-            Text(
-                "Type: ${galleryInfo.type}",
-                style = MaterialTheme.typography.bodyMedium
-            )
-
-            languageMap[galleryInfo.language]?.let {
-                Text(
-                    "Language: $it",
-                    style = MaterialTheme.typography.bodyMedium
+                    artistsAndGroups,
+                    style = MaterialTheme.typography.labelLarge,
                 )
             }
         }
     } else {
         Row(
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             if (thumbnailUrl != null) {
@@ -330,7 +406,7 @@ fun DetailedGalleryInfoHeader(galleryInfo: GalleryInfo, thumbnailUrl: String?) {
                         .height(200.dp)
                         .aspectRatio(aspectRatio)
                         .clip(RoundedCornerShape(8.dp)),
-                    loading = { CircularProgressIndicator(Modifier.size(32.dp)) },
+                    loading = { CircularProgressIndicator(Modifier.align(Alignment.Center)) },
                     error = {
                         Image(
                             painter = painterResource(R.drawable.thumbnail),
@@ -340,12 +416,16 @@ fun DetailedGalleryInfoHeader(galleryInfo: GalleryInfo, thumbnailUrl: String?) {
                     contentDescription = "Thumbnail"
                 )
             } else {
-                Box(Modifier.height(200.dp).aspectRatio(aspectRatio)) {
-                    CircularProgressIndicator(Modifier.size(32.dp))
+                Box(
+                    Modifier
+                        .height(200.dp)
+                        .aspectRatio(aspectRatio)) {
+                    CircularProgressIndicator(Modifier.align(Alignment.Center))
                 }
             }
             Column(Modifier.heightIn(min = 200.dp)) {
-                Text(galleryInfo.title, style = MaterialTheme.typography.headlineSmall)
+                LanguageTitle(galleryInfo.title, galleryInfo.language)
+
                 val artistsAndGroups = buildString {
                     if (!galleryInfo.artists.isNullOrEmpty())
                         append(galleryInfo.artists.joinToCapitalizedString())
@@ -358,31 +438,10 @@ fun DetailedGalleryInfoHeader(galleryInfo: GalleryInfo, thumbnailUrl: String?) {
                     }
                 }
 
-                Text(
-                    artistsAndGroups,
-                    style = MaterialTheme.typography.labelLarge
-                )
-
-                Spacer(
-                    Modifier
-                        .weight(1f)
-                        .heightIn(min = 8.dp))
-
-                if (galleryInfo.series?.isNotEmpty() == true)
+                if (artistsAndGroups.isNotEmpty()) {
                     Text(
-                        "Series: ${galleryInfo.series.joinToCapitalizedString()}",
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-
-                Text(
-                    "Type: ${galleryInfo.type}",
-                    style = MaterialTheme.typography.bodyMedium
-                )
-
-                languageMap[galleryInfo.language]?.let {
-                    Text(
-                        "Language: $it",
-                        style = MaterialTheme.typography.bodyMedium
+                        artistsAndGroups,
+                        style = MaterialTheme.typography.labelLarge
                     )
                 }
             }
@@ -405,14 +464,16 @@ fun DetailedGalleryInfo(
     }
     
     Card(modifier) {
-        Column(Modifier.padding(8.dp)) {
+        Column(Modifier.padding(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             DetailedGalleryInfoHeader(galleryInfo, thumbnailUrl)
 
+            GalleryTypeIndicator(galleryInfo.type)
+
             if (galleryInfo.tags?.isNotEmpty() == true) {
-                TagGroup(galleryInfo.tags)
+                TagGroup(galleryInfo.tags.map { it.toTag() }, folded = true)
             }
 
-            HorizontalDivider(Modifier.padding(4.dp))
+            HorizontalDivider()
 
             Box(
                 Modifier
