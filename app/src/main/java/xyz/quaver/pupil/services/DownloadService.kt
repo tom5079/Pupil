@@ -226,7 +226,6 @@ class DownloadService : Service() {
         }
 
         override fun onResponse(call: Call, response: Response) {
-            Log.d("PUPILD", "ONRESPONSE ${call.request().tag()}")
             val (galleryID, index, startId) = call.request().tag() as Tag
             val ext = call.request().url().encodedPath().split('.').last()
 
