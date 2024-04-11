@@ -52,6 +52,10 @@
             app:defaultValue="8"
             app:useSimpleSummaryProvider="true"/>
 
+        <Preference
+            app:key="transfer_data"
+            app:title="@string/settings_transfer_data"/>
+
         <SwitchPreferenceCompat
             app:key="nomedia"
             app:title="@string/settings_nomedia_title"/>

@@ -21,12 +21,14 @@ package xyz.quaver.pupil.ui.fragment
 import android.app.Activity
 import android.content.*
 import android.os.Bundle
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.preference.*
 import com.google.android.gms.oss.licenses.OssLicensesMenuActivity
 import com.google.firebase.crashlytics.FirebaseCrashlytics
+import com.google.firebase.crashlytics.internal.model.CrashlyticsReport
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -40,6 +42,7 @@ import xyz.quaver.pupil.clientHolder
 import xyz.quaver.pupil.types.SendLogException
 import xyz.quaver.pupil.ui.LockActivity
 import xyz.quaver.pupil.ui.SettingsActivity
+import xyz.quaver.pupil.ui.TransferActivity
 import xyz.quaver.pupil.ui.dialog.*
 import xyz.quaver.pupil.util.*
 import xyz.quaver.pupil.util.downloader.DownloadManager
@@ -112,6 +115,9 @@ class SettingsFragment :
                         ClipData.newPlainText("user_id", Preferences.get<String>("user_id"))
                     )
                     Toast.makeText(context, R.string.copied_to_clipboard, Toast.LENGTH_SHORT).show()
+                }
+                "transfer_data" -> {
+                    activity?.startActivity(Intent(activity, TransferActivity::class.java))
                 }
                 else -> return false
             }
@@ -299,6 +305,9 @@ class SettingsFragment :
                                 context.startActivity(Intent(context, OssLicensesMenuActivity::class.java))
                                 true
                             }
+                        }
+                        "transfer_data" -> {
+                            onPreferenceClickListener = this@SettingsFragment
                         }
                     }
 
