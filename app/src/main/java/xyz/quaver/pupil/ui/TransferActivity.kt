@@ -3,7 +3,10 @@ package xyz.quaver.pupil.ui
 import android.Manifest
 import android.annotation.SuppressLint
 import android.content.BroadcastReceiver
+import android.content.ComponentName
+import android.content.Intent
 import android.content.IntentFilter
+import android.content.ServiceConnection
 import android.content.pm.ActivityInfo
 import android.content.pm.PackageManager
 import android.net.wifi.WpsInfo
@@ -15,11 +18,13 @@ import android.net.wifi.p2p.WifiP2pManager
 import android.os.Build.VERSION
 import android.os.Build.VERSION_CODES
 import android.os.Bundle
+import android.os.IBinder
 import android.util.Log
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.commit
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LiveData
@@ -27,13 +32,23 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.flowWithLifecycle
 import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.consumeEach
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.cancellable
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.receiver.WifiDirectBroadcastReceiver
+import xyz.quaver.pupil.services.TransferClientService
+import xyz.quaver.pupil.services.TransferServerService
+import xyz.quaver.pupil.ui.fragment.TransferConnectedFragment
 import xyz.quaver.pupil.ui.fragment.TransferDirectionFragment
 import xyz.quaver.pupil.ui.fragment.TransferPermissionFragment
+import xyz.quaver.pupil.ui.fragment.TransferSelectDataFragment
 import xyz.quaver.pupil.ui.fragment.TransferTargetFragment
 import xyz.quaver.pupil.ui.fragment.TransferWaitForConnectionFragment
 import kotlin.coroutines.resume
@@ -63,6 +78,18 @@ class TransferActivity : AppCompatActivity(R.layout.transfer_activity) {
             viewModel.setStep(TransferStep.TARGET)
         } else {
             viewModel.setStep(TransferStep.PERMISSION)
+        }
+    }
+
+    private var serviceBinder: TransferClientService.Binder? = null
+
+    private val serviceConnection = object : ServiceConnection {
+        override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
+            serviceBinder = service as TransferClientService.Binder
+        }
+
+        override fun onServiceDisconnected(name: ComponentName?) {
+            serviceBinder = null
         }
     }
 
@@ -110,40 +137,25 @@ class TransferActivity : AppCompatActivity(R.layout.transfer_activity) {
             }
 
             manager.connect(channel, config, object: WifiP2pManager.ActionListener {
-                override fun onSuccess() {
-                    Log.d("PUPILD", "Connection successful")
-                }
+                override fun onSuccess() { }
 
                 override fun onFailure(reason: Int) {
-                    Log.d("PUPILD", "Connection failed: $reason")
-                    viewModel.setPeers(null)
+                    viewModel.connect(null)
                 }
             })
         }
-
-        viewModel.connectionInfo.observe(this) { info ->
-            if (info == null) { return@observe }
-
-            if (info.groupFormed && info.isGroupOwner) {
-                // Do something
-                Log.d("PUPILD", "Group formed and is group owner")
-                Log.d("PUPILD", "Group owner IP: ${info.groupOwnerAddress.hostAddress}")
-            } else if (info.groupFormed) {
-                // Do something
-                Log.d("PUPILD", "Group formed")
-                Log.d("PUPILD", "Group owner IP: ${info.groupOwnerAddress.hostAddress}")
-                Log.d("PUPILD", "Local IP: ${info.groupOwnerAddress.hostAddress}")
-                Log.d("PUPILD", "Is group owner: ${info.isGroupOwner}")
-            }
-        }
-
         lifecycleScope.launch {
-            viewModel.step.flowWithLifecycle(lifecycle, Lifecycle.State.STARTED).collect { step ->
+            viewModel.messageQueue.consumeEach {
+                serviceBinder?.sendMessage(it)
+            }
+
+            viewModel.step.flowWithLifecycle(lifecycle, Lifecycle.State.STARTED).cancellable().collect step@{ step ->
+                Log.d("PUPILD", "Step: $step")
                 when (step) {
                     TransferStep.TARGET,
                     TransferStep.TARGET_FORCE -> {
                         if (!checkPermission(step == TransferStep.TARGET_FORCE)) {
-                            return@collect
+                            return@step
                         }
 
                         manager.discoverPeers(channel, object: WifiP2pManager.ActionListener {
@@ -156,6 +168,17 @@ class TransferActivity : AppCompatActivity(R.layout.transfer_activity) {
                         supportFragmentManager.commit {
                             replace(R.id.fragment_container_view, TransferTargetFragment())
                         }
+
+                        val hostAddress = viewModel.connectionInfo.filterNotNull().first {
+                            it.groupFormed
+                        }.groupOwnerAddress.hostAddress
+
+                        val intent = Intent(this@TransferActivity, TransferClientService::class.java).also {
+                            it.putExtra("address", hostAddress)
+                        }
+                        bindService(intent, serviceConnection, BIND_AUTO_CREATE)
+
+                        viewModel.setStep(TransferStep.SELECT_DATA)
                     }
                     TransferStep.DIRECTION -> {
                         supportFragmentManager.commit {
@@ -168,7 +191,8 @@ class TransferActivity : AppCompatActivity(R.layout.transfer_activity) {
                         }
                     }
                     TransferStep.WAIT_FOR_CONNECTION -> {
-                        if (!checkPermission()) { return@collect }
+                        Log.d("PUPILD", "wait for connection")
+                        if (!checkPermission()) { return@step }
 
                         runCatching {
                             suspendCoroutine { continuation ->
@@ -206,12 +230,37 @@ class TransferActivity : AppCompatActivity(R.layout.transfer_activity) {
                                     }
                                 })
                             }
+
+                            supportFragmentManager.commit {
+                                replace(R.id.fragment_container_view, TransferWaitForConnectionFragment())
+                            }
+
+                            val address = viewModel.connectionInfo.filterNotNull().first {
+                                it.groupFormed && it.isGroupOwner
+                            }.groupOwnerAddress.hostAddress
+
+                            val intent = Intent(this@TransferActivity, TransferServerService::class.java).also {
+                                it.putExtra("address", address)
+                            }
+                            ContextCompat.startForegroundService(this@TransferActivity, intent)
+
+                            viewModel.setStep(TransferStep.CONNECTED)
                         }.onFailure {
                             Log.e("PUPILD", "Failed to create group", it)
                         }
 
                         supportFragmentManager.commit {
                             replace(R.id.fragment_container_view, TransferWaitForConnectionFragment())
+                        }
+                    }
+                    TransferStep.CONNECTED -> {
+                        supportFragmentManager.commit {
+                            replace(R.id.fragment_container_view, TransferConnectedFragment())
+                        }
+                    }
+                    TransferStep.SELECT_DATA -> {
+                        supportFragmentManager.commit {
+                            replace(R.id.fragment_container_view, TransferSelectDataFragment())
                         }
                     }
                 }
@@ -236,7 +285,7 @@ class TransferActivity : AppCompatActivity(R.layout.transfer_activity) {
 }
 
 enum class TransferStep {
-    TARGET, TARGET_FORCE, DIRECTION, PERMISSION, WAIT_FOR_CONNECTION
+    TARGET, TARGET_FORCE, DIRECTION, PERMISSION, WAIT_FOR_CONNECTION, CONNECTED, SELECT_DATA
 }
 
 enum class ErrorType {
@@ -258,13 +307,16 @@ class TransferViewModel : ViewModel() {
     private val _peers: MutableLiveData<WifiP2pDeviceList?> = MutableLiveData(null)
     val peers: LiveData<WifiP2pDeviceList?> = _peers
 
-    private val _connectionInfo: MutableLiveData<WifiP2pInfo?> = MutableLiveData(null)
-    val connectionInfo: LiveData<WifiP2pInfo?> = _connectionInfo
+    private val _connectionInfo: MutableStateFlow<WifiP2pInfo?> = MutableStateFlow(null)
+    val connectionInfo: StateFlow<WifiP2pInfo?> = _connectionInfo
 
     private val _peerToConnect: MutableLiveData<WifiP2pDevice?> = MutableLiveData(null)
     val peerToConnect: LiveData<WifiP2pDevice?> = _peerToConnect
 
+    val messageQueue: Channel<String> = Channel()
+
     fun setStep(step: TransferStep) {
+        Log.d("PUPILD", "Set step: $step")
         _step.value = step
     }
 
@@ -288,7 +340,11 @@ class TransferViewModel : ViewModel() {
         _error.value = error
     }
 
-    fun connect(device: WifiP2pDevice) {
+    fun connect(device: WifiP2pDevice?) {
         _peerToConnect.value = device
+    }
+
+    fun ping() {
+        messageQueue.trySend("ping")
     }
 }

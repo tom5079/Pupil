@@ -43,6 +43,9 @@
     <string name="channel_update">Update</string>
     <string name="channel_update_description">Shows update progress</string>
 
+    <string name="channel_transfer">Transfer</string>
+    <string name="channel_transfer_description">Shows progress of transferring data to another device</string>
+
     <string name="unable_to_connect">Unable to connect to hitomi.la</string>
 
     <string name="lock_corrupted">Lock file corrupted! Please re-install Pupil</string>

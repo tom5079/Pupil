@@ -236,6 +236,13 @@ class Pupil : Application() {
                 enableVibration(false)
                 lockscreenVisibility = Notification.VISIBILITY_SECRET
             })
+
+            manager.createNotificationChannel(NotificationChannel("transfer", getString(R.string.channel_transfer), NotificationManager.IMPORTANCE_LOW).apply {
+                description = getString(R.string.channel_transfer_description)
+                enableLights(false)
+                enableVibration(false)
+                lockscreenVisibility = Notification.VISIBILITY_SECRET
+            })
         }
 
         AppCompatDelegate.setDefaultNightMode(when (Preferences.get<Boolean>("dark_mode")) {

@@ -1,0 +1,196 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <androidx.appcompat.widget.AppCompatImageView
+        android:id="@+id/icon"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_marginTop="48dp"
+        app:srcCompat="@drawable/check"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent" />
+
+    <TextView
+        android:id="@+id/textView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="Choose data to transfer"
+        android:textAlignment="center"
+        android:textSize="28sp"
+        android:textStyle="bold"
+        app:layout_constraintTop_toBottomOf="@id/icon" />
+
+    <CheckBox
+        android:id="@+id/check_all"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toBottomOf="@id/textView"
+        app:layout_constraintStart_toStartOf="parent"
+        android:layout_marginStart="32dp"
+        android:layout_marginTop="32dp" />
+
+    <TextView
+        android:id="@+id/check_all_label"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="All"
+        app:layout_constraintTop_toBottomOf="@id/check_all"
+        app:layout_constraintLeft_toLeftOf="@id/check_all"
+        app:layout_constraintRight_toRightOf="@id/check_all"
+        android:layout_marginTop="-8dp"/>
+
+    <TextView
+        android:id="@+id/selected_count"
+        android:layout_width="wrap_content"
+        android:layout_height="0dp"
+        android:text="3 items selected"
+        android:textStyle="bold"
+        android:textSize="24sp"
+        android:gravity="center_vertical"
+        app:layout_constraintTop_toTopOf="@id/check_all"
+        app:layout_constraintBottom_toTopOf="@id/selected_size"
+        app:layout_constraintStart_toEndOf="@id/check_all" />
+
+    <TextView
+        android:id="@+id/selected_size"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="37.8 GB / About 28 minutes"
+        android:gravity="center_vertical"
+        app:layout_constraintTop_toTopOf="@id/check_all_label"
+        app:layout_constraintBottom_toBottomOf="@id/check_all_label"
+        app:layout_constraintStart_toStartOf="@id/selected_count" />
+
+    <View
+        android:id="@+id/divider"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="?android:attr/dividerHorizontal"
+        app:layout_constraintTop_toBottomOf="@id/check_all_label"
+        android:layout_marginVertical="16dp"
+        android:layout_marginHorizontal="16dp"/>
+
+    <CheckBox
+        android:id="@+id/check_favorites"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toBottomOf="@id/divider"
+        app:layout_constraintLeft_toLeftOf="parent"
+        android:layout_marginStart="32dp"
+        android:layout_marginTop="32dp"/>
+
+    <androidx.appcompat.widget.AppCompatImageView
+        android:id="@+id/favorites_icon"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_margin="16dp"
+        app:srcCompat="@drawable/heart"
+        app:layout_constraintStart_toEndOf="@id/check_favorites"
+        app:layout_constraintTop_toTopOf="@id/check_favorites"
+        app:layout_constraintBottom_toBottomOf="@id/check_favorites"/>
+
+    <TextView
+        android:id="@+id/favorites_label"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Favorites"
+        android:textSize="28sp"
+        app:layout_constraintTop_toTopOf="@id/favorites_icon"
+        app:layout_constraintBottom_toTopOf="@id/favorites_count"
+        app:layout_constraintStart_toEndOf="@id/favorites_icon"
+        android:layout_marginStart="16dp" />
+
+    <TextView
+        android:id="@+id/favorites_count"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="275 items"
+        app:layout_constraintTop_toBottomOf="@id/favorites_label"
+        app:layout_constraintBottom_toBottomOf="@id/favorites_icon"
+        app:layout_constraintStart_toStartOf="@id/favorites_label" />
+
+    <CheckBox
+        android:id="@+id/check_history"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toBottomOf="@id/check_favorites"
+        app:layout_constraintLeft_toLeftOf="parent"
+        android:layout_marginStart="32dp"
+        android:layout_marginTop="32dp"/>
+
+    <androidx.appcompat.widget.AppCompatImageView
+        android:id="@+id/history_icon"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_margin="16dp"
+        app:srcCompat="@drawable/history_rounded"
+        app:layout_constraintStart_toEndOf="@id/check_history"
+        app:layout_constraintTop_toTopOf="@id/check_history"
+        app:layout_constraintBottom_toBottomOf="@id/check_history"/>
+
+    <TextView
+        android:id="@+id/history_label"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="History"
+        android:textSize="28sp"
+        app:layout_constraintTop_toTopOf="@id/history_icon"
+        app:layout_constraintBottom_toTopOf="@id/history_count"
+        app:layout_constraintStart_toEndOf="@id/history_icon"
+        android:layout_marginStart="16dp" />
+
+    <TextView
+        android:id="@+id/history_count"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="2375 items"
+        app:layout_constraintTop_toBottomOf="@id/history_label"
+        app:layout_constraintBottom_toBottomOf="@id/history_icon"
+        app:layout_constraintStart_toStartOf="@id/history_label" />
+
+    <CheckBox
+        android:id="@+id/check_downloads"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toBottomOf="@id/check_history"
+        app:layout_constraintLeft_toLeftOf="parent"
+        android:layout_marginStart="32dp"
+        android:layout_marginTop="32dp"/>
+
+    <androidx.appcompat.widget.AppCompatImageView
+        android:id="@+id/downloads_icon"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_margin="16dp"
+        app:srcCompat="@drawable/download"
+        app:layout_constraintStart_toEndOf="@id/check_downloads"
+        app:layout_constraintTop_toTopOf="@id/check_downloads"
+        app:layout_constraintBottom_toBottomOf="@id/check_downloads"/>
+
+    <TextView
+        android:id="@+id/downloads_label"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Downloads"
+        android:textSize="28sp"
+        app:layout_constraintTop_toTopOf="@id/downloads_icon"
+        app:layout_constraintBottom_toTopOf="@id/downloads_count"
+        app:layout_constraintStart_toEndOf="@id/downloads_icon"
+        android:layout_marginStart="16dp" />
+
+    <TextView
+        android:id="@+id/downloads_count"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="881 items"
+        app:layout_constraintTop_toBottomOf="@id/downloads_label"
+        app:layout_constraintBottom_toBottomOf="@id/downloads_icon"
+        app:layout_constraintStart_toStartOf="@id/downloads_label" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>
