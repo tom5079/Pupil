@@ -14,12 +14,15 @@ import io.ktor.network.sockets.Socket
 import io.ktor.network.sockets.aSocket
 import io.ktor.network.sockets.openReadChannel
 import io.ktor.network.sockets.openWriteChannel
-import io.ktor.utils.io.writeStringUtf8
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 import xyz.quaver.pupil.R
+import xyz.quaver.pupil.favorites
+import xyz.quaver.pupil.histories
+import xyz.quaver.pupil.util.downloader.DownloadManager
 
 class TransferServerService : Service() {
     private val selectorManager = SelectorManager(Dispatchers.IO)
@@ -43,15 +46,33 @@ class TransferServerService : Service() {
         )
     }
 
+    private fun generateListResponse(): TransferPacket.ListResponse {
+        val favoritesCount = favorites.size
+        val historyCount = histories.size
+        val downloadsCount = DownloadManager.getInstance(this).downloadFolderMap.size
+        return TransferPacket.ListResponse(favoritesCount, historyCount, downloadsCount)
+    }
+
     private suspend fun handleConnection(socket: Socket) {
         val readChannel = socket.openReadChannel()
         val writeChannel = socket.openWriteChannel(autoFlush = true)
 
         runCatching {
             while (true) {
-                if (readChannel.readUTF8Line(8) == "ping") {
-                    writeChannel.writeStringUtf8("pong\n")
+                val packet = TransferPacket.readFromChannel(readChannel)
+
+                Log.d("PUPILD", "Received packet $packet")
+
+                binder.channel.trySend(packet)
+
+                val response = when (packet) {
+                    is TransferPacket.Hello -> TransferPacket.Hello()
+                    is TransferPacket.Ping -> TransferPacket.Pong
+                    is TransferPacket.ListRequest -> generateListResponse()
+                    else -> TransferPacket.Invalid
                 }
+
+                response.writeToChannel(writeChannel)
             }
         }.onFailure {
             socket.close()
@@ -93,7 +114,7 @@ class TransferServerService : Service() {
     }
 
     inner class Binder: android.os.Binder() {
-        fun getService() = this@TransferServerService
+        val channel = Channel<TransferPacket>()
     }
 
     private val binder = Binder()

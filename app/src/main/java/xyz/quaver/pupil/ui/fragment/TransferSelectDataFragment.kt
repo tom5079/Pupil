@@ -24,7 +24,7 @@ class TransferSelectDataFragment: Fragment() {
         _binding = TransferSelectDataFragmentBinding.inflate(inflater, container, false)
 
         binding.checkAll.setOnCheckedChangeListener {  _, isChecked ->
-            viewModel.ping()
+            viewModel.list()
         }
 
         return binding.root

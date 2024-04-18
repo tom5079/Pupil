@@ -343,7 +343,7 @@ class DownloadService : Service() {
             return@launch
         }
 
-        notification[galleryID]?.setContentTitle(galleryInfo.title?.ellipsize(30))
+        notification[galleryID]?.setContentTitle(galleryInfo.title.ellipsize(32))
         notify(galleryID)
 
         val queued = mutableSetOf<Int>()
@@ -408,7 +408,7 @@ class DownloadService : Service() {
         if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.TIRAMISU) {
             startForeground(R.id.downloader_notification_id, serviceNotification.build())
         } else {
-            startForeground(R.id.downloader_notification_id, serviceNotification.build(), ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE)
+            startForeground(R.id.downloader_notification_id, serviceNotification.build(), ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC)
         }
 
         when (intent?.getStringExtra(KEY_COMMAND)) {
@@ -433,7 +433,7 @@ class DownloadService : Service() {
         if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.TIRAMISU) {
             startForeground(R.id.downloader_notification_id, serviceNotification.build())
         } else {
-            startForeground(R.id.downloader_notification_id, serviceNotification.build(), ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE)
+            startForeground(R.id.downloader_notification_id, serviceNotification.build(), ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC)
         }
         interceptors[Tag::class] = interceptor
     }

@@ -36,7 +36,6 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.consumeEach
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.cancellable
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
@@ -44,6 +43,7 @@ import kotlinx.coroutines.launch
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.receiver.WifiDirectBroadcastReceiver
 import xyz.quaver.pupil.services.TransferClientService
+import xyz.quaver.pupil.services.TransferPacket
 import xyz.quaver.pupil.services.TransferServerService
 import xyz.quaver.pupil.ui.fragment.TransferConnectedFragment
 import xyz.quaver.pupil.ui.fragment.TransferDirectionFragment
@@ -81,15 +81,15 @@ class TransferActivity : AppCompatActivity(R.layout.transfer_activity) {
         }
     }
 
-    private var serviceBinder: TransferClientService.Binder? = null
+    private var clientServiceBinder: TransferClientService.Binder? = null
 
-    private val serviceConnection = object : ServiceConnection {
+    private val clientServiceConnection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
-            serviceBinder = service as TransferClientService.Binder
+            clientServiceBinder = service as TransferClientService.Binder
         }
 
         override fun onServiceDisconnected(name: ComponentName?) {
-            serviceBinder = null
+            clientServiceBinder = null
         }
     }
 
@@ -116,6 +116,17 @@ class TransferActivity : AppCompatActivity(R.layout.transfer_activity) {
         }
 
         return true
+    }
+
+    private fun handleServerResponse(response: TransferPacket?) {
+        when (response) {
+            is TransferPacket.ListResponse -> {
+                Log.d("PUPILD", "Received list response $response")
+            }
+            else -> {
+                Log.d("PUPILD", "Received invalid response $response")
+            }
+        }
     }
 
     @SuppressLint("SourceLockedOrientationActivity")
@@ -146,11 +157,12 @@ class TransferActivity : AppCompatActivity(R.layout.transfer_activity) {
         }
         lifecycleScope.launch {
             viewModel.messageQueue.consumeEach {
-                serviceBinder?.sendMessage(it)
+                clientServiceBinder?.sendPacket(it)?.getOrNull()?.let(::handleServerResponse)
             }
+        }
 
-            viewModel.step.flowWithLifecycle(lifecycle, Lifecycle.State.STARTED).cancellable().collect step@{ step ->
-                Log.d("PUPILD", "Step: $step")
+        lifecycleScope.launch {
+            viewModel.step.flowWithLifecycle(lifecycle, Lifecycle.State.STARTED).collectLatest step@{ step ->
                 when (step) {
                     TransferStep.TARGET,
                     TransferStep.TARGET_FORCE -> {
@@ -176,7 +188,8 @@ class TransferActivity : AppCompatActivity(R.layout.transfer_activity) {
                         val intent = Intent(this@TransferActivity, TransferClientService::class.java).also {
                             it.putExtra("address", hostAddress)
                         }
-                        bindService(intent, serviceConnection, BIND_AUTO_CREATE)
+                        ContextCompat.startForegroundService(this@TransferActivity, intent)
+                        bindService(intent, clientServiceConnection, BIND_AUTO_CREATE)
 
                         viewModel.setStep(TransferStep.SELECT_DATA)
                     }
@@ -243,6 +256,16 @@ class TransferActivity : AppCompatActivity(R.layout.transfer_activity) {
                                 it.putExtra("address", address)
                             }
                             ContextCompat.startForegroundService(this@TransferActivity, intent)
+                            val binder: TransferServerService.Binder = suspendCoroutine { continuation ->
+                                bindService(intent, object: ServiceConnection {
+                                    override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
+                                        continuation.resume(service as TransferServerService.Binder)
+                                    }
+
+                                    override fun onServiceDisconnected(name: ComponentName?) { }
+                                }, BIND_AUTO_CREATE)
+                            }
+                            binder.channel.receive()
 
                             viewModel.setStep(TransferStep.CONNECTED)
                         }.onFailure {
@@ -271,6 +294,7 @@ class TransferActivity : AppCompatActivity(R.layout.transfer_activity) {
 
     override fun onResume() {
         super.onResume()
+        bindService(Intent(this, TransferClientService::class.java), clientServiceConnection, BIND_AUTO_CREATE)
         WifiDirectBroadcastReceiver(manager, channel, viewModel).also {
             receiver = it
             registerReceiver(it, intentFilter)
@@ -279,6 +303,7 @@ class TransferActivity : AppCompatActivity(R.layout.transfer_activity) {
 
     override fun onPause() {
         super.onPause()
+        unbindService(clientServiceConnection)
         receiver?.let { unregisterReceiver(it) }
         receiver = null
     }
@@ -313,7 +338,7 @@ class TransferViewModel : ViewModel() {
     private val _peerToConnect: MutableLiveData<WifiP2pDevice?> = MutableLiveData(null)
     val peerToConnect: LiveData<WifiP2pDevice?> = _peerToConnect
 
-    val messageQueue: Channel<String> = Channel()
+    val messageQueue: Channel<TransferPacket> = Channel()
 
     fun setStep(step: TransferStep) {
         Log.d("PUPILD", "Set step: $step")
@@ -345,6 +370,10 @@ class TransferViewModel : ViewModel() {
     }
 
     fun ping() {
-        messageQueue.trySend("ping")
+        messageQueue.trySend(TransferPacket.Ping)
+    }
+
+    fun list() {
+        messageQueue.trySend(TransferPacket.ListRequest)
     }
 }

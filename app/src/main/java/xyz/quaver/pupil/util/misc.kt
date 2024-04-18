@@ -24,6 +24,7 @@ import android.app.Activity
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
+import android.util.Log
 import androidx.activity.result.ActivityResultLauncher
 import androidx.appcompat.app.AlertDialog
 import androidx.core.app.ActivityCompat
@@ -136,18 +137,20 @@ fun byteCount(codePoint: Int): Int = when (codePoint) {
 fun String.ellipsize(n: Int): String = buildString {
     var count = 0
     var index = 0
-    val codePointLength = this.codePointCount(0, this.length)
+    val codePointLength = this@ellipsize.codePointCount(0, this@ellipsize.length)
 
     while (index < codePointLength) {
-        val next = this.codePointAt(index)
-        if (count + next > 124) {
+        val nextCodePoint = this@ellipsize.codePointAt(index)
+        val nextByte = byteCount(nextCodePoint)
+        if (count + nextByte > 124) {
             append("…")
             break
         }
-        appendCodePoint(next)
-        count += next
+        appendCodePoint(nextCodePoint)
+        count += nextByte
         index++
     }
+
 }
 
 operator fun JsonElement.get(index: Int) =

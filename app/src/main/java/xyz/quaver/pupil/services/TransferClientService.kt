@@ -12,18 +12,21 @@ import io.ktor.network.selector.SelectorManager
 import io.ktor.network.sockets.aSocket
 import io.ktor.network.sockets.openReadChannel
 import io.ktor.network.sockets.openWriteChannel
-import io.ktor.utils.io.writeStringUtf8
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.trySendBlocking
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeout
 import xyz.quaver.pupil.R
+import kotlin.coroutines.Continuation
+import kotlin.coroutines.resume
+import kotlin.coroutines.suspendCoroutine
 
 class TransferClientService : Service() {
     private val selectorManager = SelectorManager(Dispatchers.IO)
-    private val channel = Channel<String>()
+    private val channel = Channel<Pair<TransferPacket, Continuation<TransferPacket>>>()
     private var job: Job? = null
 
     private fun startForeground() = runCatching {
@@ -64,13 +67,28 @@ class TransferClientService : Service() {
             val writeChannel = socket.openWriteChannel(autoFlush = true)
 
             runCatching {
+                TransferPacket.Hello().writeToChannel(writeChannel)
+                val handshake = TransferPacket.readFromChannel(readChannel)
+
+                if (handshake !is TransferPacket.Hello || handshake.version != TRANSFER_PROTOCOL_VERSION) {
+                    throw IllegalStateException("Invalid handshake")
+                }
+
                 while (true) {
-                    val message = channel.receive()
-                    Log.d("PUPILD", "Sending message $message!")
-                    writeChannel.writeStringUtf8(message)
-                    Log.d("PUPILD", readChannel.readUTF8Line(4).toString())
+                    val (packet, continuation) = channel.receive()
+
+                    Log.d("PUPILD", "Sending packet $packet")
+
+                    packet.writeToChannel(writeChannel)
+
+                    val response = TransferPacket.readFromChannel(readChannel).also {
+                        Log.d("PUPILD", "Received packet $it")
+                    }
+
+                    continuation.resume(response)
                 }
             }.onFailure {
+                Log.d("PUPILD", "Connection closed with error $it")
                 socket.close()
                 stopSelf(startId)
             }
@@ -85,9 +103,14 @@ class TransferClientService : Service() {
     }
 
     inner class Binder: android.os.Binder() {
-        fun sendMessage(message: String) {
-            Log.d("PUPILD", "Sending message $message")
-            channel.trySendBlocking(message + '\n')
+
+
+        suspend fun sendPacket(packet: TransferPacket): Result<TransferPacket.ListResponse> = runCatching {
+            val response = withTimeout(1000) { suspendCoroutine { continuation ->
+                channel.trySendBlocking(packet to continuation)
+            } }
+
+            response as? TransferPacket.ListResponse ?: throw IllegalStateException("Invalid response")
         }
     }
 
