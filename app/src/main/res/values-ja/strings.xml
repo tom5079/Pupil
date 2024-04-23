@@ -162,5 +162,5 @@
     <string name="settings_transfer_data">他の機器にデータを転送</string>
     <string name="channel_transfer_description">他の機器へのデータ転送の進捗度を表示</string>
     <string name="dialog_find_id_title">IDを見つけました</string>
-    <string name="dialog_find_message">" 복사된 ID : %d을 찾았습니다\\n이동할까요?"</string>
+    <string name="dialog_find_message">コピーされたID: %dを見つけました\n続行しますか？</string>
 </resources>
