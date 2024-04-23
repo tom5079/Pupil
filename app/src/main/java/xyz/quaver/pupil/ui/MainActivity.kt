@@ -25,6 +25,7 @@ import android.os.Build
 import android.os.Bundle
 import android.text.InputType
 import android.text.util.Linkify
+import android.util.Log
 import android.view.KeyEvent
 import android.view.MenuItem
 import android.view.View
@@ -33,7 +34,6 @@ import android.widget.EditText
 import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
-import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.view.GravityCompat
 import androidx.core.view.ViewCompat
@@ -59,6 +59,7 @@ import xyz.quaver.pupil.ui.dialog.DownloadLocationDialogFragment
 import xyz.quaver.pupil.ui.dialog.GalleryDialog
 import xyz.quaver.pupil.ui.view.MainView
 import xyz.quaver.pupil.ui.view.ProgressCard
+import xyz.quaver.pupil.util.ClipboardHelper
 import xyz.quaver.pupil.util.ItemClickSupport
 import xyz.quaver.pupil.util.Preferences
 import xyz.quaver.pupil.util.checkUpdate
@@ -118,10 +119,41 @@ class MainActivity :
         }
     }
 
+    private val clipboardHelper by lazy {
+        ClipboardHelper(this)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = MainActivityBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        clipboardHelper.numberFoundAction = { galleryID ->
+            AlertDialog.Builder(this)
+                .setTitle(R.string.dialog_find_id_title)
+                .setMessage(String.format(getString(R.string.dialog_find_message),galleryID))
+                .setPositiveButton(R.string.reader_go_to_page) { _, _ ->
+                    GalleryDialog(this@MainActivity, galleryID).apply {
+                        onChipClickedHandler.add {
+                            runOnUiThread {
+                                query = it.toQuery()
+                                currentPage = 0
+
+                                cancelFetch()
+                                clearGalleries()
+                                fetchGalleries(query, sortMode)
+                                loadBlocks()
+                            }
+                            dismiss()
+                        }
+                    }.show()
+                }
+                .setNegativeButton(R.string.ignore) { _, _  ->
+                    clipboardHelper.clearClipboard()
+                }
+                .show()
+
+        }
 
         if (intent.action == Intent.ACTION_VIEW) {
             intent.dataString?.let { url ->
@@ -161,6 +193,13 @@ class MainActivity :
         super.onResume()
 
         checkUpdate(this)
+    }
+
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        if (hasFocus) {
+            clipboardHelper.checkClipboardOnFocus()
+        }
     }
 
     @OptIn(ExperimentalStdlibApi::class)

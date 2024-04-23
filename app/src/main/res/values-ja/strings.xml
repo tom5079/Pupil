@@ -159,4 +159,8 @@
     <string name="unaccessible_download_folder">アンドロイド11以上では外部からのアプリ内部空間接近が不可能です。ダウンロードフォルダを変更しますか？</string>
     <string name="settings_networking">ネットワーク</string>
     <string name="settings_recover_downloads">ダウンロードデータベースを再構築</string>
+    <string name="settings_transfer_data">他の機器にデータを転送</string>
+    <string name="channel_transfer_description">他の機器へのデータ転送の進捗度を表示</string>
+    <string name="dialog_find_id_title">IDを見つけました</string>
+    <string name="dialog_find_message">" 복사된 ID : %d을 찾았습니다\\n이동할까요?"</string>
 </resources>
