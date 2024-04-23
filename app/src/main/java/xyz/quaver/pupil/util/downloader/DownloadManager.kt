@@ -20,6 +20,7 @@ package xyz.quaver.pupil.util.downloader
 
 import android.content.Context
 import android.content.ContextWrapper
+import android.util.Log
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -28,7 +29,10 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import okhttp3.Call
 import xyz.quaver.io.FileX
-import xyz.quaver.io.util.*
+import xyz.quaver.io.util.deleteRecursively
+import xyz.quaver.io.util.getChild
+import xyz.quaver.io.util.readText
+import xyz.quaver.io.util.writeText
 import xyz.quaver.pupil.client
 import xyz.quaver.pupil.services.DownloadService
 import xyz.quaver.pupil.util.Preferences

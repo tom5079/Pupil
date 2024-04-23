@@ -24,6 +24,7 @@ import android.app.Activity
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
+import android.util.Log
 import androidx.activity.result.ActivityResultLauncher
 import androidx.appcompat.app.AlertDialog
 import androidx.core.app.ActivityCompat
@@ -125,11 +126,32 @@ suspend fun GalleryInfo.getRequestBuilders(): List<Request.Builder> {
     }
 }
 
-fun String.ellipsize(n: Int): String =
-    if (this.length > n)
-        this.slice(0 until n) + "…"
-    else
-        this
+fun byteCount(codePoint: Int): Int = when (codePoint) {
+    in 0 ..< 0x80 -> 1
+    in 0x80 ..< 0x800 -> 2
+    in 0x800 ..< 0x10000 -> 3
+    in 0x10000 ..< 0x110000 -> 4
+    else -> 0
+}
+
+fun String.ellipsize(n: Int): String = buildString {
+    var count = 0
+    var index = 0
+    val codePointLength = this@ellipsize.codePointCount(0, this@ellipsize.length)
+
+    while (index < codePointLength) {
+        val nextCodePoint = this@ellipsize.codePointAt(index)
+        val nextByte = byteCount(nextCodePoint)
+        if (count + nextByte > 124) {
+            append("…")
+            break
+        }
+        appendCodePoint(nextCodePoint)
+        count += nextByte
+        index++
+    }
+
+}
 
 operator fun JsonElement.get(index: Int) =
     this.jsonArray[index]
