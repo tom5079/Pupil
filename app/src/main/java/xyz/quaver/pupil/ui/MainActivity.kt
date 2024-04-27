@@ -113,7 +113,7 @@ class MainActivity :
 
     private lateinit var binding: MainActivityBinding
 
-    private val requestNotificationPermssionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
+    private val requestNotificationPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
         if (!isGranted) {
             showNotificationPermissionExplanationDialog(this)
         }
@@ -167,7 +167,7 @@ class MainActivity :
             }
         }
 
-        requestNotificationPermission(this, requestNotificationPermssionLauncher, false) {}
+        requestNotificationPermission(this, requestNotificationPermissionLauncher, false) {}
 
         if (Preferences["download_folder", ""].isEmpty())
             DownloadLocationDialogFragment().show(supportFragmentManager, "Download Location Dialog")
@@ -446,7 +446,7 @@ class MainActivity :
 
                     requestNotificationPermission(
                         this@MainActivity,
-                        requestNotificationPermssionLauncher
+                        requestNotificationPermissionLauncher
                     ) {
                         if (DownloadManager.getInstance(context).isDownloading(galleryID)) {     //download in progress
                             DownloadService.cancel(this@MainActivity, galleryID)
