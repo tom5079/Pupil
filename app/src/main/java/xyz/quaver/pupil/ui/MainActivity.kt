@@ -25,13 +25,13 @@ import android.os.Build
 import android.os.Bundle
 import android.text.InputType
 import android.text.util.Linkify
-import android.util.Log
 import android.view.KeyEvent
 import android.view.MenuItem
 import android.view.View
 import android.view.animation.DecelerateInterpolator
 import android.widget.EditText
 import android.widget.TextView
+import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
@@ -128,33 +128,6 @@ class MainActivity :
         binding = MainActivityBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        clipboardHelper.numberFoundAction = { galleryID ->
-            AlertDialog.Builder(this)
-                .setTitle(R.string.dialog_find_id_title)
-                .setMessage(String.format(getString(R.string.dialog_find_message),galleryID))
-                .setPositiveButton(R.string.reader_go_to_page) { _, _ ->
-                    GalleryDialog(this@MainActivity, galleryID).apply {
-                        onChipClickedHandler.add {
-                            runOnUiThread {
-                                query = it.toQuery()
-                                currentPage = 0
-
-                                cancelFetch()
-                                clearGalleries()
-                                fetchGalleries(query, sortMode)
-                                loadBlocks()
-                            }
-                            dismiss()
-                        }
-                    }.show()
-                }
-                .setNegativeButton(R.string.ignore) { _, _  ->
-                    clipboardHelper.clearClipboard()
-                }
-                .show()
-
-        }
-
         if (intent.action == Intent.ACTION_VIEW) {
             intent.dataString?.let { url ->
                 restore(url,
@@ -197,9 +170,7 @@ class MainActivity :
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         super.onWindowFocusChanged(hasFocus)
-        if (hasFocus) {
-            clipboardHelper.checkClipboardOnFocus()
-        }
+        clipboardHelper.updateFocus(focus = hasFocus)
     }
 
     @OptIn(ExperimentalStdlibApi::class)
@@ -354,6 +325,13 @@ class MainActivity :
             setOnClickListener {
                 val editText = EditText(context).apply {
                     inputType = InputType.TYPE_CLASS_NUMBER
+                }
+
+                // 생성될때 clipboard에 복사된 값이 숫자 7자리인지 확인하여
+                // 7자리라면 세팅해줌
+                clipboardHelper.checkClipboardOnFocus { galleryId ->
+                    editText.setText(galleryId.toString())
+                    Toast.makeText(this@MainActivity,String.format(getString(R.string.dialog_find_message,galleryId)),Toast.LENGTH_SHORT).show()
                 }
 
                 AlertDialog.Builder(context).apply {

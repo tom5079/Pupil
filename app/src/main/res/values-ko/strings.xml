@@ -161,6 +161,5 @@
     <string name="settings_recover_downloads">다운로드 데이터베이스 복구</string>
     <string name="settings_transfer_data">다른 기기에 데이터 전송</string>
     <string name="channel_transfer_description">다른 기기에 데이터 전송 시 상태 표시</string>
-    <string name="dialog_find_id_title">ID를 찾았습니다</string>
-    <string name="dialog_find_message">복사된 ID : %d을 찾았습니다\n이동할까요?</string>
+    <string name="dialog_find_message">복사된 ID : %d을 찾았습니다</string>
 </resources>

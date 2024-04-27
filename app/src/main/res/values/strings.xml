@@ -253,7 +253,6 @@
     <string name="settings_lock_fingerprint_prompt_subtitle">Ah Shit, Here we go again</string>
 
     <!-- DIALOG FIND ID -->
-    <string name="dialog_find_id_title">ID found</string>
-    <string name="dialog_find_message">Found copied ID: %d\nProceed?</string>
+    <string name="dialog_find_message">Found copied ID: %d</string>
 
 </resources>

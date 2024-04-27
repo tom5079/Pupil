@@ -12,35 +12,29 @@ class ClipboardHelper(
         context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
     }
 
-    var numberFoundAction: ((galleryID: Int) -> Unit)? = null
+    private var isFocus: Boolean = false
 
-    fun checkClipboardOnFocus() {
+    // Focus를 체크하는 이유는 안드로이드10 이상에서 background에서 접근하려하면 에러나기때문
+    fun updateFocus(focus: Boolean) {
+        this.isFocus = focus
+    }
 
-        clipboardManager
-            .primaryClip
-            ?.getItemAt(0)
-            ?.text
-            ?.toString()
-            ?.let { clipData ->
-                if (clipData.length == 7) {
-                    runCatching {
-                        clipData.toInt()
-                    }.onSuccess { galleryID ->
-                        numberFoundAction?.let {
-                            it(galleryID)
-                            clearClipboard()
+    fun checkClipboardOnFocus(completion: (Int) -> Unit) {
+        if (isFocus) {
+            clipboardManager
+                .primaryClip
+                ?.getItemAt(0)
+                ?.text
+                ?.toString()
+                ?.let { clipData ->
+                    if (clipData.length == 7) {
+                        runCatching {
+                            clipData.toInt()
+                        }.onSuccess { galleryID ->
+                            completion(galleryID)
                         }
                     }
                 }
-            }
-    }
-
-    fun clearClipboard() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            clipboardManager.clearPrimaryClip()
-        } else {
-            clipboardManager.setPrimaryClip(ClipData.newPlainText("", ""))
         }
     }
-
 }
