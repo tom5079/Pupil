@@ -129,6 +129,32 @@ class TransferActivity : AppCompatActivity(R.layout.transfer_activity) {
         }
     }
 
+    private suspend fun WifiP2pManager.disconnect() {
+        suspendCoroutine { continuation ->
+            removeGroup(channel, object : WifiP2pManager.ActionListener {
+                override fun onSuccess() {
+                    continuation.resume(Unit)
+                }
+
+                override fun onFailure(reason: Int) {
+                    continuation.resume(Unit)
+                }
+            })
+        }
+
+        suspendCoroutine { continuation ->
+            cancelConnect(channel, object: WifiP2pManager.ActionListener {
+                override fun onSuccess() {
+                    continuation.resume(Unit)
+                }
+
+                override fun onFailure(reason: Int) {
+                    continuation.resume(Unit)
+                }
+            })
+        }
+    }
+
     @SuppressLint("SourceLockedOrientationActivity")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -177,7 +203,7 @@ class TransferActivity : AppCompatActivity(R.layout.transfer_activity) {
                             }
                         })
 
-                        supportFragmentManager.commit {
+                        supportFragmentManager.commit(true) {
                             replace(R.id.fragment_container_view, TransferTargetFragment())
                         }
 
@@ -194,12 +220,13 @@ class TransferActivity : AppCompatActivity(R.layout.transfer_activity) {
                         viewModel.setStep(TransferStep.SELECT_DATA)
                     }
                     TransferStep.DIRECTION -> {
-                        supportFragmentManager.commit {
+                        manager.disconnect()
+                        supportFragmentManager.commit(true) {
                             replace(R.id.fragment_container_view, TransferDirectionFragment())
                         }
                     }
                     TransferStep.PERMISSION -> {
-                        supportFragmentManager.commit {
+                        supportFragmentManager.commit(true) {
                             replace(R.id.fragment_container_view, TransferPermissionFragment())
                         }
                     }
@@ -208,30 +235,6 @@ class TransferActivity : AppCompatActivity(R.layout.transfer_activity) {
                         if (!checkPermission()) { return@step }
 
                         runCatching {
-                            suspendCoroutine { continuation ->
-                                manager.removeGroup(channel, object: WifiP2pManager.ActionListener {
-                                    override fun onSuccess() {
-                                        continuation.resume(Unit)
-                                    }
-
-                                    override fun onFailure(reason: Int) {
-                                        continuation.resume(Unit)
-                                    }
-                                })
-                            }
-
-                            suspendCoroutine { continuation ->
-                                manager.cancelConnect(channel, object: WifiP2pManager.ActionListener {
-                                    override fun onSuccess() {
-                                        continuation.resume(Unit)
-                                    }
-
-                                    override fun onFailure(reason: Int) {
-                                        continuation.resume(Unit)
-                                    }
-                                })
-                            }
-
                             suspendCoroutine { continuation ->
                                 manager.createGroup(channel, object: WifiP2pManager.ActionListener {
                                     override fun onSuccess() {
@@ -244,7 +247,7 @@ class TransferActivity : AppCompatActivity(R.layout.transfer_activity) {
                                 })
                             }
 
-                            supportFragmentManager.commit {
+                            supportFragmentManager.commit(true) {
                                 replace(R.id.fragment_container_view, TransferWaitForConnectionFragment())
                             }
 
@@ -272,17 +275,17 @@ class TransferActivity : AppCompatActivity(R.layout.transfer_activity) {
                             Log.e("PUPILD", "Failed to create group", it)
                         }
 
-                        supportFragmentManager.commit {
+                        supportFragmentManager.commit(true) {
                             replace(R.id.fragment_container_view, TransferWaitForConnectionFragment())
                         }
                     }
                     TransferStep.CONNECTED -> {
-                        supportFragmentManager.commit {
+                        supportFragmentManager.commit(true) {
                             replace(R.id.fragment_container_view, TransferConnectedFragment())
                         }
                     }
                     TransferStep.SELECT_DATA -> {
-                        supportFragmentManager.commit {
+                        supportFragmentManager.commit(true) {
                             replace(R.id.fragment_container_view, TransferSelectDataFragment())
                         }
                     }

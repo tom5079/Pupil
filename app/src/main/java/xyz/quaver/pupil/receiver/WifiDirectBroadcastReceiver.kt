@@ -31,9 +31,11 @@ class WifiDirectBroadcastReceiver(
         when (intent?.action) {
             WifiP2pManager.WIFI_P2P_STATE_CHANGED_ACTION -> {
                 val state = intent.getIntExtra(WifiP2pManager.EXTRA_WIFI_STATE, -1)
+                Log.d("PUPILD", "Wifi P2P state changed: $state")
                 viewModel.setWifiP2pEnabled(state == WifiP2pManager.WIFI_P2P_STATE_ENABLED)
             }
             WifiP2pManager.WIFI_P2P_PEERS_CHANGED_ACTION -> {
+                Log.d("PUPILD", "Wifi P2P peers changed")
                 manager.requestPeers(channel) { peers ->
                     viewModel.setPeers(peers)
                 }
@@ -41,6 +43,8 @@ class WifiDirectBroadcastReceiver(
             WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION -> {
                 // Respond to new connection or disconnections
                 val networkInfo = intent.getParcelableExtraCompat<android.net.NetworkInfo>(WifiP2pManager.EXTRA_NETWORK_INFO)
+
+                Log.d("PUPILD", "Wifi P2P connection changed: $networkInfo ${networkInfo?.isConnected}")
 
                 if (networkInfo?.isConnected == true) {
                     manager.requestConnectionInfo(channel) { info ->
@@ -52,6 +56,7 @@ class WifiDirectBroadcastReceiver(
             }
             WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION -> {
                 // Respond to this device's wifi state changing
+                Log.d("PUPILD", "Wifi P2P this device changed")
                 viewModel.setThisDevice(intent.getParcelableExtraCompat(WifiP2pManager.EXTRA_WIFI_P2P_DEVICE))
             }
         }

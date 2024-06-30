@@ -13,6 +13,7 @@ import io.ktor.network.sockets.aSocket
 import io.ktor.network.sockets.openReadChannel
 import io.ktor.network.sockets.openWriteChannel
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
@@ -89,6 +90,7 @@ class TransferClientService : Service() {
                 }
             }.onFailure {
                 Log.d("PUPILD", "Connection closed with error $it")
+                channel.close()
                 socket.close()
                 stopSelf(startId)
             }
@@ -105,12 +107,18 @@ class TransferClientService : Service() {
     inner class Binder: android.os.Binder() {
 
 
+        @OptIn(DelicateCoroutinesApi::class)
         suspend fun sendPacket(packet: TransferPacket): Result<TransferPacket.ListResponse> = runCatching {
-            val response = withTimeout(1000) { suspendCoroutine { continuation ->
-                channel.trySendBlocking(packet to continuation)
-            } }
+            check(job != null) { "Service not running" }
+            check(!channel.isClosedForSend) { "Service not running" }
 
-            response as? TransferPacket.ListResponse ?: throw IllegalStateException("Invalid response")
+            val response = suspendCoroutine { continuation ->
+                check (channel.trySend(packet to continuation).isSuccess) { "Service not running" }
+            }
+
+            check (response is TransferPacket.ListResponse) { "Invalid response" }
+
+            response
         }
     }
 
