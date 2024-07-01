@@ -21,6 +21,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.InlineTextContent
 import androidx.compose.foundation.text.appendInlineContent
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.BrokenImage
 import androidx.compose.material.icons.filled.QuestionMark
 import androidx.compose.material.icons.filled.StarOutline
 import androidx.compose.material3.Card
@@ -352,9 +353,9 @@ fun DetailedGalleryInfoHeader(galleryInfo: GalleryInfo, thumbnailUrl: String?) {
                         .clip(RoundedCornerShape(8.dp)),
                     loading = { CircularProgressIndicator(Modifier.align(Alignment.Center)) },
                     error = {
-                        Image(
-                            painter = painterResource(R.drawable.thumbnail),
-                            contentDescription = null
+                        Icon(
+                            Icons.Default.BrokenImage,
+                            contentDescription = null,
                         )
                     },
                     contentDescription = "Thumbnail"
@@ -408,9 +409,9 @@ fun DetailedGalleryInfoHeader(galleryInfo: GalleryInfo, thumbnailUrl: String?) {
                         .clip(RoundedCornerShape(8.dp)),
                     loading = { CircularProgressIndicator(Modifier.align(Alignment.Center)) },
                     error = {
-                        Image(
-                            painter = painterResource(R.drawable.thumbnail),
-                            contentDescription = null
+                        Icon(
+                            Icons.Default.BrokenImage,
+                            contentDescription = null,
                         )
                     },
                     contentDescription = "Thumbnail"

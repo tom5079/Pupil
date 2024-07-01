@@ -40,7 +40,6 @@ import kotlinx.coroutines.launch
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.networking.GalleryInfo
 import xyz.quaver.pupil.networking.SearchQuery
-import xyz.quaver.pupil.ui.SettingsActivity
 import xyz.quaver.pupil.ui.viewmodel.SearchState
 
 @Composable
@@ -286,11 +285,11 @@ fun MainContent(
                     composable(MainDestination.Favorites.route) {
                         NotImplemented()
                     }
-                    activity(MainDestination.Settings.route) {
-                        activityClass = SettingsActivity::class
+                    composable(MainDestination.Settings.route) {
+                        NotImplemented()
                     }
-                    activity(MainDestination.ImageViewer.commonRoute) {
-//                        argument("galleryID") { type = NavType.IntType }
+                    composable(MainDestination.ImageViewer.commonRoute) {
+                        NotImplemented()
                     }
                 }
             }

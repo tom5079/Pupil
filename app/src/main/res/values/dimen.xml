@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources xmlns:tools="http://schemas.android.com/tools">
-
-    <dimen name="thumb_width">24dp</dimen>
-	<dimen name="thumb_height">72dp</dimen>
-
-</resources>

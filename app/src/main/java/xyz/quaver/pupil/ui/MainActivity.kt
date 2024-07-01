@@ -19,6 +19,7 @@
 package xyz.quaver.pupil.ui
 
 import android.os.Bundle
+import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
@@ -33,7 +34,7 @@ import xyz.quaver.pupil.ui.composable.MainApp
 import xyz.quaver.pupil.ui.theme.AppTheme
 import xyz.quaver.pupil.ui.viewmodel.MainViewModel
 
-class MainActivity : BaseActivity() {
+class MainActivity : ComponentActivity() {
     @OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()

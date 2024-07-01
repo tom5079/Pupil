@@ -1,4 +1,0 @@
-<!--drawable/numeric.xml-->
-<vector xmlns:android="http://schemas.android.com/apk/res/android" android:height="24dp" android:width="24dp" android:viewportWidth="24" android:viewportHeight="24">
-    <path android:fillColor="#fff" android:pathData="M4 17V9H2V7h4v10H4m18-2c0 1.11-0.9 2-2 2h-4v-2h4v-2h-2v-2h2V9h-4V7h4a2 2 0 0 1 2 2v1.5a1.5 1.5 0 0 1-1.5 1.5 1.5 1.5 0 0 1 1.5 1.5V15m-8 0v2H8v-4c0-1.11 0.9-2 2-2h2V9H8V7h4a2 2 0 0 1 2 2v2c0 1.11-0.9 2-2 2h-2v2h4z"/>
-</vector>
