@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.absoluteOffset
@@ -190,7 +191,14 @@ fun TagChip(
     onClick: (SearchQuery.Tag) -> Unit = { },
     leftIcon: @Composable (SearchQuery.Tag) -> Unit = { TagChipIcon(it) },
     rightIcon: @Composable (SearchQuery.Tag) -> Unit = { Spacer(Modifier.width(16.dp)) },
-    content: @Composable (SearchQuery.Tag) -> Unit = { Text(it.tag) },
+    content: @Composable RowScope.(SearchQuery.Tag) -> Unit = {
+        Text(
+            it.tag,
+            modifier = Modifier
+                .weight(1f, fill = false)
+                .horizontalScroll(rememberScrollState())
+        )
+    },
 ) {
     val surfaceColor = if (isFavorite) Yellow400 else when (tag.namespace) {
         "male" -> Blue600
@@ -513,7 +521,7 @@ fun DetailScreen(
 
     Column(
         Modifier
-            .padding(8.dp)
+            .padding(horizontal = 8.dp)
             .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
@@ -526,14 +534,18 @@ fun DetailScreen(
 
         Row(Modifier.fillMaxWidth()) {
             FilledTonalButton(
-                modifier = Modifier.weight(1f).padding(horizontal = 4.dp),
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(horizontal = 4.dp),
                 onClick = { /*TODO*/ }
             ) {
                 Text(stringResource(R.string.download))
             }
 
             Button(
-                modifier = Modifier.weight(1f).padding(horizontal = 4.dp),
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(horizontal = 4.dp),
                 onClick = { openGallery(galleryInfo) }
             ) {
                 Text("Open")
@@ -569,9 +581,11 @@ fun SearchScreen(
 ) {
     val itemsPerPage by remember { mutableIntStateOf(20) }
 
-    val pageToRange: (Int) -> IntRange = remember(itemsPerPage) {{ page ->
-        page * itemsPerPage ..< (page+1) * itemsPerPage
-    }}
+    val pageToRange: (Int) -> IntRange = remember(itemsPerPage) {
+        { page ->
+            page * itemsPerPage..<(page + 1) * itemsPerPage
+        }
+    }
 
     val currentPage = remember(uiState) {
         if (uiState.currentRange != IntRange.EMPTY) {
@@ -585,9 +599,11 @@ fun SearchScreen(
         } else 0
     }
 
-    val loadResult: (Int) -> Unit = remember(loadSearchResult) {{ page ->
-        loadSearchResult(pageToRange(page))
-    }}
+    val loadResult: (Int) -> Unit = remember(loadSearchResult) {
+        { page ->
+            loadSearchResult(pageToRange(page))
+        }
+    }
 
     LaunchedEffect(uiState.query) { loadSearchResult(pageToRange(currentPage)) }
 
@@ -652,4 +668,3 @@ fun SearchScreen(
         }
     }
 }
-

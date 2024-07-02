@@ -269,7 +269,6 @@ fun MainContent(
                             onQueryChange = onQueryChange,
                             loadSearchResult = loadSearchResult,
                             openGallery = {
-                                Log.d("PUPILD", "openGallery: ${it.id}")
                                 navController.navigate(MainDestination.ImageViewer(it.id).route) {
                                     launchSingleTop = true
                                 }
