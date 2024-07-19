@@ -1,0 +1,236 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Translate needed down here -->
+
+    <string name="warning">警告</string>
+    <string name="error">錯誤</string>
+
+    <string name="ignore">忽略</string>
+
+    <string name="unlimited">無限制</string>
+
+    <string name="copied_to_clipboard">已複製到剪貼簿</string>
+
+    <string name="channel_download">下載</string>
+    <string name="channel_download_description">展示下載狀態</string>
+
+    <string name="channel_downloader">下載器</string>
+    <string name="channel_downloader_description">顯示下載器狀態</string>
+
+    <string name="channel_update">更新</string>
+    <string name="channel_update_description">顯示更新狀態</string>
+
+    <string name="channel_transfer">轉送</string>
+    <string name="channel_transfer_description">顯示轉送數據到其他裝置的進度</string>
+
+    <string name="unable_to_connect">沒法與hitomi.la建立連線</string>
+
+    <string name="lock_corrupted">檔案鎖發生錯誤！請重裝Pupil</string>
+
+    <string name="main_no_result">空無一物</string>
+
+    <string name="unaccessible_download_folder">從Android11及以後，默認的下載資料夾沒法被外界的應用訪問。是否要改變下載目的地？</string>
+
+    <string name="notification_denied">在背景下載需要通知權限。如果拒絕此權限則應用內更新和背景下載功能都會被停用。</string>
+
+    <string name="main_drawer_home">首頁</string>
+    <string name="main_drawer_history">歷史記錄</string>
+    <string name="main_drawer_downloads">下載</string>
+    <string name="main_drawer_favorite">收藏</string>
+    <string name="main_drawer_group_contact_title">聯絡</string>
+    <string name="main_drawer_group_contact_help">幫助</string>
+    <string name="main_drawer_group_contact_homepage">造訪主頁</string>
+    <string name="main_drawer_group_contact_github">造訪GitHub</string>
+    <string name="main_drawer_group_contact_email">給我傳電郵！</string>
+    <string name="main_drawer_grouop_contact_discord">Discord</string>
+
+    <string name="main_menu_thin">緊緻模式</string>
+
+    <string name="main_menu_sort">排序</string>
+    <string name="main_menu_sort_newest">最近新增</string>
+    <string name="main_menu_sort_popular">最有人氣</string>
+
+    <string name="main_jump_title">跳到頁面</string>
+    <string name="main_jump_message">現在頁面: %1$d\n最大頁面: %2$d</string>
+    <string name="main_open_gallery_by_id">以ID開啟相簿</string>
+    <string name="reader_failed_to_find_gallery">無法開啟相簿</string>
+    <string name="main_fab_random">隨機相簿</string>
+    <string name="main_fab_cancel">取消所有下載作業</string>
+
+    <string name="main_move_to_page">移動到第 %1$d 頁</string>
+
+    <string name="main_download">下載</string>
+    <string name="main_delete">刪除</string>
+
+    <string name="update_title">有可用更新</string>
+    <string name="update_download_completed">下載已完成</string>
+    <string name="update_download_completed_description">按此更新</string>
+    <string name="update_notification_description">正下載更新&#8230;</string>
+    <string name="update_release_note"># Release附註(v%1$s)\n%2$s</string>
+
+    <string name="search_hint">搜尋相簿</string>
+    <string name="search_all">搜尋所有相簿</string>
+    <string name="search_show_histories">顯示歷史</string>
+    <string name="search_show_tags">顯示收藏的標籤</string>
+
+    <string name="gallery_details">詳情</string>
+    <string name="gallery_thumbnails">縮圖</string>
+    <string name="gallery_related">有關聯的相簿</string>
+    <string name="gallery_artists">藝術家</string>
+    <string name="gallery_groups">團體</string>
+    <string name="gallery_language">語言</string>
+    <string name="gallery_series">系列</string>
+    <string name="gallery_characters">角色</string>
+    <string name="gallery_tags">標籤</string>
+
+    <string name="galleryblock_series">系列: %1$s</string>
+    <string name="galleryblock_type">類別: %1$s</string>
+    <string name="galleryblock_language">語言: %1$s</string>
+    <string name="galleryblock_pagecount" translatable="false">%dP</string>
+
+    <!-- READER -->
+
+    <string name="reader_loading">加載中</string>
+    <string name="reader_go_to_page">轉到頁面</string>
+    <string name="reader_fab_fullscreen">全螢幕</string>>
+    <string name="reader_fab_retry">重試</string>
+    <string name="reader_fab_auto">眨眼捲動</string>
+    <string name="reader_fab_auto_cancel">眨眼停止捲動</string>
+    <string name="reader_fab_download">背景下載</string>
+    <string name="reader_fab_download_cancel">取消背景下載</string>
+    <string name="reader_notification_text">正下載&#8230;</string>
+    <string name="reader_notification_complete">下載完成</string>
+
+    <string name="camera_denied">權限遭到拒絕，眨眼捲動無法運作。</string>
+    <string name="no_camera">這臺裝置沒有前置攝像頭。</string>
+
+    <!-- DOWNLOADER -->
+    <string name="downloader_running">下載器運行中…</string>
+
+    <!-- SETTINGS -->
+
+    <string name="settings_title">設定</string>
+
+    <string name="settings_app_version_title">應用版本（點選以更新）</string>
+    <string name="settings_app_version_description">v%s</string>
+    <string name="settings_beta">從Beta頻道更新</string>
+
+    <!-- SEARCH -->
+
+    <string name="settings_search_title">搜尋設定</string>
+    <string name="settings_galleries_per_page">每頁展示相簿數量</string>
+    <string name="settings_default_query">預設查詢</string>
+
+    <!-- SETTINGS/STORAGE -->
+
+    <string name="settings_storage">存儲位置</string>
+
+    <!-- SETTINGS/STORAGE / MANAGE STORAGE -->
+
+    <string name="settings_manage_storage">管理存儲位置</string>
+    <string name="settings_storage_usage">現正使用 %s</string>
+    <string name="settings_storage_usage_loading">計算存儲用量…</string>
+    <string name="settings_clear_cache">清除快取</string>
+    <string name="settings_clear_cache_alert_message">快取清除後會影響影像載入速度，確定嗎？</string>
+    <string name="settings_recover_downloads">重建下載資料庫</string>
+    <string name="settings_clear_downloads">清除下載</string>
+    <string name="settings_clear_downloads_alert_message">這會刪掉所有下載相簿。\n你要繼續嗎？</string>
+    <string name="settings_clear_history">清除歷史記錄</string>
+    <string name="settings_clear_history_alert_message">你想清除歷史記錄嗎？</string>
+    <string name="settings_clear_history_summary">有 %1$d 條歷史記錄</string>
+
+    <!-- SETTINGS/STORAGE / MISCELLANEOUS -->
+
+    <string name="settings_download_folder_name">資料夾命名模式</string>
+    <string name="settings_invalid_download_folder_name">有無效的字元！</string>
+    <string name="settings_download_folder_name_message">%s 會被替換成對應的字元\n\n%s</string>
+    <string name="settings_download_folder">下載資料夾</string>
+    <string name="settings_download_folder_removable">行動儲存</string>
+    <string name="settings_download_folder_internal">內置儲存</string>
+    <string name="settings_download_folder_available">%s 可用</string>
+    <string name="settings_download_folder_custom">自訂位置</string>
+    <string name="settings_download_folder_not_writable">此資料夾為只讀。請重新選擇另一個。</string>
+    <string name="settings_cache_limit">快取上限</string>
+    <string name="settings_nomedia_title">在相簿中隱藏影像</string>
+    <string name="settings_low_quality">低質影像</string>
+    <string name="settings_low_quality_summary">載入低質影像以改善載入速度和流量用量。</string>
+    <string name="settings_transfer_data">轉移數據到其他裝置</string>
+
+    <!-- SETTINGS/APP LOCK -->
+
+    <string name="settings_app_lock">應用鎖</string>
+    <string name="settings_app_lock_type">鎖定方式</string>
+
+    <!-- SETTINGS/NETWORKING -->
+    <string name="settings_networking">網路</string>
+    <string name="settings_mirror_summary">從映像站載入影像</string>
+    <string name="settings_proxy_title">代理</string>
+    <string name="settings_max_concurrent_download">並發下載數</string>
+
+    <!-- SETTINGS/MISCELLANEOUS -->
+
+    <string name="settings_miscellaneous_title">雜項</string>
+    <string name="settings_tag_translation">標籤語言</string>
+    <string name="settings_tag_translation_message">在GitHub上貢獻翻譯</string>
+    <string name="settings_rtl">從右至左翻頁</string>
+    <string name="settings_security_mode_title">啟用安全模式</string>
+    <string name="settings_security_mode_summary">啟用安全模式以在最近應用程式列表中隱藏螢幕內容</string>
+    <string name="settings_dark_mode_title">暗黑模式</string>
+    <string name="settings_dark_mode_summary">不要讓光亮瞎了你的眼！</string>
+    <string name="settings_import_old_galleries">匯入以前的相簿string>
+    <string name="settings_user_id">用戶ID</string>
+    <string name="settings_oss">開放原始碼提示ng>
+
+    <!-- MANAGE FAVORITES -->
+
+    <string name="settings_manage_favorites">管理收藏夾</string>
+    <string name="settings_backup_title">備份收藏夾</string>
+    <string name="settings_backup_failed">上載失敗</string>
+    <string name="settings_backup_share">分享備份</string>
+    <string name="settings_backup_file_created">備份檔已創建</string>
+    <string name="settings_restore_title">還原收藏夾</string>
+    <string name="settings_restore_failed">還原失敗</string>
+    <string name="settings_restore_success">%1$d 個條目已恢復</string>
+
+    <!-- SETTINGS/APP LOCK ACTIVITY -->
+
+    <string name="settings_lock_none">無</string>
+    <string name="settings_lock_pattern">圖形</string>
+    <string name="settings_lock_pin" translatable="false">PIN</string>
+    <string name="settings_lock_password">密碼</string>
+    <string name="settings_lock_biometrics">生物辨識</string>
+    <string name="settings_lock_fingerprint">指紋辨識</string>
+    <string name="settings_lock_fingerprint_without_lock">只有在啟用其他鎖定方式後才能啟用指紋。</string>
+    <string name="settings_lock_fingerprint_prompt">Pupil Fingerprint Lock™</string>
+    <string name="settings_lock_enabled">已啟用</string>
+    <string name="settings_lock_confirm">重複一次以確認</string>
+    <string name="settings_lock_remove_message">你想要移除鎖定嗎？</string>
+    <string name="settings_lock_wrong_confirm">兩次不匹配，請重試。</string>
+
+    <!-- SETTINGS/DEFAULT QUERY DIALOG -->
+
+    <string name="default_query_dialog_title">設定預設查詢</string>
+    <string name="default_query_dialog_language">語言: </string>
+    <string name="default_query_dialog_filter_BL">過濾 BL</string>
+    <string name="default_query_dialog_filter_guro">過濾 Guro</string>
+    <string name="default_query_dialog_filter_loli">合法18+模式</string>
+    <string name="default_query_dialog_language_selector_none">任何的</string>
+    <string name="settings_mirror_title">映像站</string>
+
+    <!-- PROXY DIALOG -->
+    <string name="proxy_dialog_type">類型</string>
+    <string name="proxy_dialog_addr_hint">位址</string>
+    <string name="proxy_dialog_port_hint">埠</string>
+    <string name="proxy_dialog_username_hint">使用者名稱</string>
+    <string name="proxy_dialog_password_hint">密碼</string>
+    <string name="proxy_dialog_error">錯誤的值</string>
+    <string name="proxy_dialog_server">伺服器</string>
+
+    <!-- IMPORT OLD GALLERIES -->
+    <string name="import_old_galleries_folder_not_readable">無法讀取該資料夾</string>
+    <string name="import_old_galleries_notification">匯入舊的相簿…</string>
+    <string name="import_old_galleries_notification_text" translatable="false">%1$d/%2$d</string>
+    <string name="import_old_galleries_notification_done">匯入完畢</string>
+    <string name="settings_lock_fingerprint_prompt_subtitle">喔靠，重試一次吧</string>
+
+</resources>
