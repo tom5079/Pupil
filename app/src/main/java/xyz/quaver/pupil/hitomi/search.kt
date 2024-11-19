@@ -16,8 +16,10 @@
 
 package xyz.quaver.pupil.hitomi
 
+import kotlinx.serialization.json.jsonArray
 import okhttp3.Request
 import xyz.quaver.pupil.client
+import xyz.quaver.pupil.util.content
 import java.net.URL
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
@@ -35,6 +37,7 @@ const val compressed_nozomi_prefix = "n"
 
 val tag_index_version: String by lazy { getIndexVersion("tagindex") }
 val galleries_index_version: String by lazy { getIndexVersion("galleriesindex") }
+val tagIndexDomain = "tagindex.hitomi.la"
 
 fun sha256(data: ByteArray) : ByteArray {
     return MessageDigest.getInstance("SHA-256").digest(data)
@@ -91,6 +94,14 @@ fun getGalleryIDsForQuery(query: String) : Set<Int> {
     }
 }
 
+fun encodeSearchQueryForUrl(s: Char) =
+    when(s) {
+        ' ' -> "_"
+        '/' -> "slash"
+        '.' -> "dot"
+        else -> s.toString()
+    }
+
 fun getSuggestionsForQuery(query: String) : List<Suggestion> {
     query.replace('_', ' ').let {
         var field = "global"
@@ -102,14 +113,33 @@ fun getSuggestionsForQuery(query: String) : List<Suggestion> {
             term = sides[1]
         }
 
-        val key = hashTerm(term)
-        val node = getNodeAtAddress(field, 0) ?: return emptyList()
-        val data = bSearch(field, key, node)
+        val chars = term.map(::encodeSearchQueryForUrl)
+        val url = "https://$tagIndexDomain/$field${if (chars.isNotEmpty()) "/${chars.joinToString("/")}" else ""}.json"
 
-        if (data != null)
-            return getSuggestionsFromData(field, data)
+        val request = Request.Builder()
+            .url(url)
+            .build()
 
-        return emptyList()
+        val suggestions = json.parseToJsonElement(client.newCall(request).execute().body()?.use { body -> body.string() } ?: return emptyList())
+
+        return buildList {
+            suggestions.jsonArray.forEach { suggestionRaw ->
+                val suggestion = suggestionRaw.jsonArray
+                if (suggestion.size < 3) {
+                    return@forEach
+                }
+                val ns = suggestion[2].content ?: ""
+
+                val tagname = sanitize(suggestion[0].content ?: return@forEach)
+                val url = when(ns) {
+                    "female", "male" -> "/tag/$ns:$tagname${separator}1$extension"
+                    "language" -> "/index-$tagname${separator}1$extension"
+                    else -> "/$ns/$tagname${separator}all${separator}1$extension"
+                }
+
+                add(Suggestion(suggestion[0].content ?: "", suggestion[1].content?.toIntOrNull() ?: 0, url, ns))
+            }
+        }
     }
 }
 
