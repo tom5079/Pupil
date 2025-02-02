@@ -12,15 +12,15 @@
     <string name="channel_downloader">ダウンローダ</string>
     <string name="channel_downloader_description">ダウンローダの状態を表示</string>
     <string name="channel_update">アップデート</string>
-    <string name="channel_update_description">アップデートの進行状態を表示</string>
+    <string name="channel_update_description">アップデートの進行状況を表示</string>
     <string name="channel_transfer">転送</string>
-    <string name="channel_transfer_description">他の機器へのデータ転送の進捗度を表示</string>
+    <string name="channel_transfer_description">他の機器へのデータ転送の進行状況を表示</string>
 
     <string name="unable_to_connect">hitomi.laに接続できません</string>
-    <string name="lock_corrupted">ロックファイルが破損されています。Pupilを再再インストールしてください。</string>
+    <string name="lock_corrupted">ロックファイルが破損されています。Pupilを再インストールしてください。</string>
     <string name="main_no_result">結果なし</string>
-    <string name="unaccessible_download_folder">アンドロイド11以上では外部からのアプリ内部空間接近が不可能です。ダウンロードフォルダを変更しますか？</string>
-    <string name="notification_denied">通知を無効にするとバックグラウンドダウンロード及びアプリのアップデート機能が使用不可になります。</string>
+    <string name="unaccessible_download_folder">アンドロイド11以上では、現在のダウンロードフォルダに外部アプリからアクセスできません。ダウンロードフォルダを変更しますか？</string>
+    <string name="notification_denied">通知を無効にすると、バックグラウンドでのダウンロードとアプリのアップデート機能が使用不可になります。</string>
 
     <string name="main_drawer_home">トップ</string>
     <string name="main_drawer_history">履歴</string>
@@ -35,37 +35,37 @@
 
     <string name="main_menu_thin">簡単モード</string>
 
-    <string name="main_menu_sort">ソート</string>
-    <string name="main_menu_sort_newest">投稿日時順</string>
+    <string name="main_menu_sort">並び替え</string>
+    <string name="main_menu_sort_newest">新しい順</string>
     <string name="main_menu_sort_popular">人気順</string>
 
     <string name="main_jump_title">ページ移動</string>
     <string name="main_jump_message">現ページ番号: %1$d\nページ数: %2$d</string>
-    <string name="main_open_gallery_by_id">ギャラリー番号で見る</string>
+    <string name="main_open_gallery_by_id">IDで作品を開く</string>
     <string name="reader_failed_to_find_gallery">エラーが発生しました</string>
-    <string name="main_fab_random">ランダムギャラリーを開く</string>
-    <string name="main_fab_cancel">すべてのダウンロードキャンセル</string>
+    <string name="main_fab_random">ランダムに作品を開く</string>
+    <string name="main_fab_cancel">すべてのダウンロードをキャンセル</string>
 
     <string name="main_move_to_page">%1$dページへ移動</string>
  
     <string name="main_download">ダウンロード</string>
     <string name="main_delete">削除</string>
 
-    <string name="update_title">新しいアップデートがあります</string>
+    <string name="update_title">最新版あり</string>
     <string name="update_download_completed">ダウンロードが完了しました</string>
-    <string name="update_download_completed_description">ここをクリックしてアップデートを行えます</string>
-    <string name="update_notification_description">アップデートダウンロード中</string>
-    <string name="update_release_note"># リリースノート(v%1$s)\n%2$s</string>
+    <string name="update_download_completed_description">ここをクリックして更新</string>
+    <string name="update_notification_description">最新版をダウンロード中&#8230;</string>
+    <string name="update_release_note"># 更新履歴(v%1$s)\n%2$s</string>
 
-    <string name="search_hint">ギャラリー検索</string>
-    <string name="search_all">全てのギャラリーを対象に検索</string>
+    <string name="search_hint">作品を検索</string>
+    <string name="search_all">すべての作品を対象に検索</string>
     <string name="search_show_histories">履歴を見る</string>
     <string name="search_show_tags">お気に入りのタグを見る</string>
 
-    <string name="gallery_details">ギャラリー情報</string>
+    <string name="gallery_details">作品情報</string>
     <string name="gallery_thumbnails">サムネイル</string>
     <string name="gallery_related">おすすめ</string>
-    <string name="gallery_artists">アーティスト</string>
+    <string name="gallery_artists">作者</string>
     <string name="gallery_groups">グループ</string>
     <string name="gallery_language">言語</string>
     <string name="gallery_series">シリーズ</string>
@@ -77,13 +77,13 @@
     <string name="galleryblock_language">言語: %1$s</string>
 
     <!-- READER -->
-    <string name="reader_loading">ロード中</string>
+    <string name="reader_loading">読込中</string>
     <string name="reader_go_to_page">移動</string>
-    <string name="reader_fab_fullscreen">フルスクリーン</string>
-    <string name="reader_fab_retry">リトライ</string>
+    <string name="reader_fab_fullscreen">全画面</string>
+    <string name="reader_fab_retry">再試行</string>
     <string name="reader_fab_auto">まばたき検知スクロール</string>
     <string name="reader_fab_auto_cancel">まばたき検知を中止</string>
-    <string name="reader_fab_download">バックグラウンドダウンロード</string>
+    <string name="reader_fab_download">バックグラウンドでダウンロード</string>
     <string name="reader_fab_download_cancel">バックグラウンドダウンロード中止</string>
     <string name="reader_notification_text">ダウンロード中…</string>
     <string name="reader_notification_complete">ダウンロード完了</string>
@@ -95,52 +95,53 @@
 
     <string name="settings_title">設定</string>
     
-    <string name="settings_app_version_title">バージョン(アップデート確認)</string>
+    <string name="settings_app_version_title">バージョン(クリックで更新確認)</string>
     <string name="settings_app_version_description">v%s</string>
-    <string name="settings_beta">ベータチャンネルでアップデートを受信</string>
+    <string name="settings_beta">ベータ版チャンネルでアップデート</string>
 
     <string name="settings_search_title">検索設定</string>
-    <string name="settings_galleries_per_page">一回にロードするギャラリー数</string>
-    <string name="settings_default_query">デフォルトキーワード</string>
+    <string name="settings_galleries_per_page">一度に読み込むギャラリー数</string>
+    <string name="settings_default_query">検索語句の初期値</string>
 
-    <string name="settings_storage">ストレージ</string>
-    <string name="settings_manage_storage">ストレージ管理</string>
+    <string name="settings_storage">保存領域</string>
+
+    <string name="settings_manage_storage">保存領域の管理</string>
     <string name="settings_storage_usage">%s使用中</string>
-    <string name="settings_storage_usage_loading">ストレージ使用量読み込み中…</string>
-    <string name="settings_clear_cache">キャッシュクリア</string>
-    <string name="settings_clear_cache_alert_message">キャッシュをクリアするとイメージのロード速度に影響を与えます。実行しますか？</string>
+    <string name="settings_storage_usage_loading">保存領域の使用量を算出中…</string>
+    <string name="settings_clear_cache">キャッシュを削除</string>
+    <string name="settings_clear_cache_alert_message">キャッシュを削除すると画像の読込に時間がかかります。実行しますか？</string>
     <string name="settings_recover_downloads">ダウンロードデータベースを再構築</string>
-    <string name="settings_clear_downloads">ダウンロード削除</string>
-    <string name="settings_clear_downloads_alert_message">ダウンロードしたギャラリーを全て削除します。\n実行しますか？</string>
+    <string name="settings_clear_downloads">ダウンロード済みを削除</string>
+    <string name="settings_clear_downloads_alert_message">ダウンロードした作品をすべて削除します。\n実行しますか？</string>
     <string name="settings_clear_history">履歴を削除</string>
     <string name="settings_clear_history_alert_message">履歴を削除しますか？</string>
     <string name="settings_clear_history_summary">履歴数: %1$d</string>
 
     <string name="settings_download_folder_name">フォルダ名パターン</string>
     <string name="settings_invalid_download_folder_name">フォルダ名に使用できない文字が含まれています</string>
-    <string name="settings_download_folder_name_message">%sに含まれている文字列を対応する変数に置換します\n\n%s</string>
+    <string name="settings_download_folder_name_message">変数 %s は対応する値に置換されます\n\n%s</string>
     <string name="settings_download_folder">ダウンロード場所</string>
-    <string name="settings_download_folder_removable">外部SDカード</string>
-    <string name="settings_download_folder_internal">内部ストレージ</string>
+    <string name="settings_download_folder_removable">取り外し可能メディア</string>
+    <string name="settings_download_folder_internal">内部の保存領域</string>
     <string name="settings_download_folder_available">%s 使用可能</string>
     <string name="settings_download_folder_custom">手動で設定</string>
     <string name="settings_download_folder_not_writable">このフォルダにアクセスできません。他のフォルダを選択してください。</string>
     <string name="settings_cache_limit">キャッシュサイズ制限</string>
-    <string name="settings_nomedia_title">イメージを隠す</string>
-    <string name="settings_low_quality">低解像度イメージ</string>
-    <string name="settings_low_quality_summary">ロード速度とデータ使用料を改善するため低解像度イメージをロード</string>
+    <string name="settings_nomedia_title">画像を隠す</string>
+    <string name="settings_low_quality">低解像度の画像</string>
+    <string name="settings_low_quality_summary">読込速度とデータ使用料を改善するため低解像度の画像を読み込む</string>
     <string name="settings_transfer_data">他の機器にデータを転送</string>
 
-    <string name="settings_app_lock">アプリロック</string>
-    <string name="settings_app_lock_type">アップロックの種類</string>
+    <string name="settings_app_lock">アプリをロック</string>
+    <string name="settings_app_lock_type">アップをロックする方法</string>
 
     <string name="settings_networking">ネットワーク</string>
-    <string name="settings_mirror_summary">ミラーサーバからイメージをロード</string>
+    <string name="settings_mirror_summary">ミラーサーバから画像を読み込む</string>
     <string name="settings_proxy_title">プロクシ</string>
     <string name="settings_max_concurrent_download">並列ダウンロード</string>
 
     <string name="settings_miscellaneous_title">その他</string>
-    <string name="settings_tag_translation">タグ言語</string>
+    <string name="settings_tag_translation">タグの言語</string>
     <string name="settings_tag_translation_message">Githubにて翻訳に参加できます</string>
     <string name="settings_rtl">綴じ方向を左にする</string>
     <string name="settings_security_mode_title">セキュリティーモード</string>
@@ -152,7 +153,7 @@
     <string name="settings_oss">オープンソースライセンス</string>
 
     <string name="settings_manage_favorites">ブックマーク管理</string>
-    <string name="settings_backup_title">ブックマークバックアップ</string>
+    <string name="settings_backup_title">ブックマークをバックアップ</string>
     <string name="settings_backup_failed">エラーが発生しました</string>
     <string name="settings_backup_share">バックアップ共有</string>
     <string name="settings_backup_file_created">バックアップファイルを作成しました</string>
@@ -165,14 +166,14 @@
     <string name="settings_lock_none">なし</string>
     <string name="settings_lock_pattern">パターン</string>
     <string name="settings_lock_password">パスワード</string>
-    <string name="settings_lock_biometrics">生体認識</string>
+    <string name="settings_lock_biometrics">生体認証</string>
     <string name="settings_lock_fingerprint">指紋</string>
     <string name="settings_lock_fingerprint_without_lock">予備のロックが設定されていないと指紋ロックは使用できません</string>
-    <string name="settings_lock_fingerprint_prompt">Pupil指紋ロック™</string>
+    <string name="settings_lock_fingerprint_prompt">Pupil 指紋ロック™</string>
     <string name="settings_lock_remove_message">ロックを無効にしますか？</string>
     <string name="settings_lock_wrong_confirm">ロックが一致しません。やり直してください。</string>
 
-    <string name="default_query_dialog_title">デフォルトキーワード設定</string>
+    <string name="default_query_dialog_title">検索語句の初期値を設定</string>
     <string name="default_query_dialog_language">"言語: "</string>
     <string name="default_query_dialog_filter_BL">BLフィルター</string>
     <string name="default_query_dialog_filter_guro">グロフィルター</string>
@@ -180,9 +181,9 @@
     <string name="default_query_dialog_language_selector_none">非選択</string>
     <string name="settings_mirror_title">ミラーサーバー</string>
 
-    <string name="proxy_dialog_type">プロクシタイプ</string>
+    <string name="proxy_dialog_type">プロクシの種類</string>
     <string name="proxy_dialog_addr_hint">サーバーアドレス</string>
-    <string name="proxy_dialog_port_hint">ポート</string>
+    <string name="proxy_dialog_port_hint">ポート番号</string>
     <string name="proxy_dialog_username_hint">ID</string>
     <string name="proxy_dialog_password_hint">パスワード</string>
     <string name="proxy_dialog_error">エラー</string>
