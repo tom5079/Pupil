@@ -100,7 +100,7 @@
     <string name="settings_beta">ベータ版チャンネルでアップデート</string>
 
     <string name="settings_search_title">検索設定</string>
-    <string name="settings_galleries_per_page">一度に読み込むギャラリー数</string>
+    <string name="settings_galleries_per_page">一度に読み込む作品数</string>
     <string name="settings_default_query">検索語句の初期値</string>
 
     <string name="settings_storage">保存領域</string>
