@@ -94,8 +94,6 @@ dependencies {
 
     implementation libs.fab
 
-    //implementation "com.quiph.ui:recyclerviewfastscroller:0.2.1"
-
     implementation libs.bigimageviewer
     implementation libs.frescoimageloader
     implementation libs.frescoimageviewfactory
@@ -111,7 +109,6 @@ dependencies {
     implementation libs.option
 
     implementation libs.patternlockview
-    //implementation "com.andrognito.pinlockview:pinlockview:2.1.0"
 
     implementation libs.core
 
