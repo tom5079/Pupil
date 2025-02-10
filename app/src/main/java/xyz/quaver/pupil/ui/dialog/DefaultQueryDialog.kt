@@ -122,7 +122,7 @@ class DefaultQueryDialog : DialogFragment() {
                         s.replace(
                             0,
                             s.length,
-                            s.toString().toLowerCase(java.util.Locale.getDefault())
+                            s.toString().lowercase()
                         )
                 }
             })

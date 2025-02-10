@@ -14,33 +14,19 @@ if (file("google-services.json").exists()) {
     logger.lifecycle("Firebase Disabled")
 }
 
-ext {
-    okhttp_version = "3.12.12"
-}
-
-configurations {
-    all {
-        resolutionStrategy {
-            eachDependency { DependencyResolveDetails details ->
-                if (details.requested.group == "com.squareup.okhttp3" && details.requested.name == "okhttp") {
-                    // OkHttp drops support before 5.0 since 3.13.0
-                    details.useVersion okhttp_version
-                }
-            }
-        }
-    }
-}
-
 android {
     defaultConfig {
         applicationId "xyz.quaver.pupil"
         minSdkVersion 16
-        compileSdk 34
-        targetSdkVersion 34
+        compileSdk 35
+        targetSdkVersion 35
         versionCode 69
         versionName "5.3.15"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
+    }
+    buildFeatures {
+        buildConfig true
     }
     buildTypes {
         debug {
@@ -68,7 +54,6 @@ android {
     }
     kotlinOptions {
         jvmTarget = JavaVersion.VERSION_11.toString()
-        freeCompilerArgs += "-Xuse-experimental=kotlin.Experimental"
     }
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_11
@@ -79,68 +64,68 @@ android {
 
 dependencies {
     implementation fileTree(dir: "libs", include: ["*.jar", "*.aar"])
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
-    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.1"
-    implementation "org.jetbrains.kotlinx:kotlinx-serialization-json:1.3.2"
-    implementation "org.jetbrains.kotlinx:kotlinx-datetime:0.3.2"
+    implementation libs.kotlin.stdlib.jdk8
+    implementation libs.kotlinx.coroutines.android
+    implementation libs.kotlinx.serialization.json
+    implementation libs.kotlinx.datetime
 
-    implementation "androidx.core:core-ktx:1.12.0"
-    implementation "androidx.appcompat:appcompat:1.4.1"
-    implementation "androidx.activity:activity-ktx:1.4.0"
-    implementation "androidx.fragment:fragment-ktx:1.4.1"
-    implementation "androidx.preference:preference-ktx:1.2.0"
-    implementation "androidx.recyclerview:recyclerview:1.2.1"
-    implementation "androidx.constraintlayout:constraintlayout:2.1.4"
-    implementation "androidx.gridlayout:gridlayout:1.0.0"
-    implementation "androidx.biometric:biometric:1.1.0"
-    implementation "androidx.work:work-runtime-ktx:2.7.1"
+    implementation libs.core.ktx
+    implementation libs.appcompat
+    implementation libs.activity.ktx
+    implementation libs.fragment.ktx
+    implementation libs.preference.ktx
+    implementation libs.recyclerview
+    implementation libs.constraintlayout
+    implementation libs.gridlayout
+    implementation libs.biometric
+    implementation libs.work.runtime.ktx
 
-    implementation "com.daimajia.swipelayout:library:1.2.0@aar"
+    implementation libs.library
 
-    implementation "com.google.android.material:material:1.11.0"
+    implementation libs.material
 
-    implementation platform('com.google.firebase:firebase-bom:32.7.0')
-    implementation "com.google.firebase:firebase-analytics-ktx"
-    implementation "com.google.firebase:firebase-crashlytics-ktx"
-    implementation "com.google.firebase:firebase-perf-ktx"
+    implementation platform(libs.firebase.bom)
+    implementation libs.firebase.analytics.ktx
+    implementation libs.firebase.crashlytics.ktx
+    implementation libs.firebase.perf.ktx
 
-    implementation "com.google.android.gms:play-services-oss-licenses:17.0.1"
-    implementation "com.google.android.gms:play-services-mlkit-face-detection:17.1.0"
+    implementation libs.play.services.oss.licenses
+    implementation libs.play.services.mlkit.face.detection
 
-    implementation "com.github.clans:fab:1.6.4"
+    implementation libs.fab
 
     //implementation "com.quiph.ui:recyclerviewfastscroller:0.2.1"
 
-    implementation 'com.github.piasy:BigImageViewer:1.8.1'
-    implementation 'com.github.piasy:FrescoImageLoader:1.8.1'
-    implementation 'com.github.piasy:FrescoImageViewFactory:1.8.1'
-    implementation 'com.facebook.fresco:imagepipeline-okhttp3:2.6.0'
+    implementation libs.bigimageviewer
+    implementation libs.frescoimageloader
+    implementation libs.frescoimageviewfactory
+    implementation libs.imagepipeline.okhttp3
 
     //noinspection GradleDependency
-    implementation "com.squareup.okhttp3:okhttp:$okhttp_version"
-    implementation "io.ktor:ktor-network:2.3.10"
+    implementation libs.okhttp
+    implementation libs.ktor.network
 
-    implementation "com.tbuonomo.andrui:viewpagerdotsindicator:4.1.2"
+    implementation libs.viewpagerdotsindicator
 
-    implementation "net.rdrei.android.dirchooser:library:3.2@aar"
-    implementation "com.gu:option:1.3"
+    implementation libs.dirchooser.library
+    implementation libs.option
 
-    implementation "com.andrognito.patternlockview:patternlockview:1.0.0"
+    implementation libs.patternlockview
     //implementation "com.andrognito.pinlockview:pinlockview:2.1.0"
 
-    implementation "ru.noties.markwon:core:3.1.0"
+    implementation libs.core
 
-    implementation "com.skyfishjy.ripplebackground:library:1.0.1"
+    implementation libs.ripplebackground.library
 
-    implementation "org.jsoup:jsoup:1.14.3"
+    implementation libs.jsoup
 
-    implementation "xyz.quaver:documentfilex:0.7.2"
-    implementation "xyz.quaver:floatingsearchview:1.1.7"
+    implementation libs.documentfilex
+    implementation libs.floatingsearchview
 
-    testImplementation "junit:junit:4.13.2"
-    testImplementation "org.jetbrains.kotlinx:kotlinx-coroutines-test:1.6.1"
-    androidTestImplementation "androidx.test.ext:junit:1.1.3"
-    androidTestImplementation "androidx.test:rules:1.4.0"
-    androidTestImplementation "androidx.test:runner:1.4.0"
-    androidTestImplementation "androidx.test.espresso:espresso-core:3.4.0"
+    testImplementation libs.junit
+    testImplementation libs.kotlinx.coroutines.test
+    androidTestImplementation libs.ext.junit
+    androidTestImplementation libs.rules
+    androidTestImplementation libs.runner
+    androidTestImplementation libs.espresso.core
 }

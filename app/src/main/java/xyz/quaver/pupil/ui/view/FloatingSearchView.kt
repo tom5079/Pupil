@@ -76,7 +76,7 @@ class FloatingSearchView @JvmOverloads constructor(context: Context, attrs: Attr
         s ?: return
 
         if (s.any { it.isUpperCase() })
-            s.replace(0, s.length, s.toString().toLowerCase(Locale.getDefault()))
+            s.replace(0, s.length, s.toString().lowercase())
     }
 
     override fun onSuggestionClicked(searchSuggestion: SearchSuggestion?) {
