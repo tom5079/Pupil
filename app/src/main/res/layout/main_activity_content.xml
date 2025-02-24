@@ -1,5 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!--
+<?xml version="1.0" encoding="utf-8"?><!--
   ~     Pupil, Hitomi.la viewer for Android
   ~     Copyright (C) 2020  tom5079
   ~
@@ -18,8 +17,8 @@
   -->
 
 <androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".ui.MainActivity">
@@ -32,44 +31,43 @@
         <com.qtalk.recyclerviewfastscroller.RecyclerViewFastScroller
             android:layout_width="match_parent"
             android:layout_height="match_parent"
+            app:addLastItemPadding="true"
             app:handleDrawable="@drawable/thumb"
             app:handleHasFixedSize="true"
             app:handleHeight="72dp"
+            app:handleVisibilityDuration="1000"
             app:handleWidth="24dp"
-            app:disableTrack="true"
-            app:hideHandleAfter="1000"
-            app:trackMarginStart="64dp"
-            app:addLastItemPadding="true"
-            app:popupDrawable="@android:color/transparent">
+            app:popupDrawable="@android:color/transparent"
+            app:trackMarginStart="64dp">
 
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/recyclerview"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:paddingTop="64dp"
                 android:clipToPadding="false"
-                app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"/>
+                android:paddingTop="64dp"
+                app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
 
         </com.qtalk.recyclerviewfastscroller.RecyclerViewFastScroller>
 
     </xyz.quaver.pupil.ui.view.MainView>
 
     <androidx.core.widget.ContentLoadingProgressBar
-        style="?android:attr/progressBarStyle"
         android:id="@+id/progressbar"
+        style="?android:attr/progressBarStyle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
-        android:indeterminate="true"/>
+        android:indeterminate="true" />
 
     <TextView
         android:id="@+id/noresult"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
-        android:text="@string/main_no_result"
         android:linksClickable="true"
-        android:visibility="invisible"/>
+        android:text="@string/main_no_result"
+        android:visibility="invisible" />
 
     <com.github.clans.fab.FloatingActionMenu
         android:id="@+id/fab"
@@ -84,28 +82,28 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             app:fab_label="@string/main_fab_cancel"
-            app:fab_size="mini"/>
+            app:fab_size="mini" />
 
         <com.github.clans.fab.FloatingActionButton
             android:id="@+id/jump_fab"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             app:fab_label="@string/main_jump_title"
-            app:fab_size="mini"/>
+            app:fab_size="mini" />
 
         <com.github.clans.fab.FloatingActionButton
             android:id="@+id/random_fab"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             app:fab_label="@string/main_fab_random"
-            app:fab_size="mini"/>
+            app:fab_size="mini" />
 
         <com.github.clans.fab.FloatingActionButton
             android:id="@+id/id_fab"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             app:fab_label="@string/main_open_gallery_by_id"
-            app:fab_size="mini"/>
+            app:fab_size="mini" />
 
     </com.github.clans.fab.FloatingActionMenu>
 
@@ -113,15 +111,15 @@
         android:id="@+id/searchview"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        app:close_search_on_keyboard_dismiss="false"
+        app:dismissOnOutsideTouch="true"
+        app:leftActionMode="showHamburger"
+        app:menu="@menu/main"
         app:searchBarMarginLeft="6dp"
         app:searchBarMarginRight="6dp"
         app:searchBarMarginTop="6dp"
         app:searchHint="@string/search_hint"
-        app:suggestionAnimDuration="250"
         app:showSearchKey="true"
-        app:leftActionMode="showHamburger"
-        app:menu="@menu/main"
-        app:dismissOnOutsideTouch="true"
-        app:close_search_on_keyboard_dismiss="false" />
+        app:suggestionAnimDuration="250" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

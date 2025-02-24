@@ -44,7 +44,7 @@ recyclerview = "1.4.0"
 rules = "1.6.1"
 runner = "1.6.2"
 skyfishjyLibrary = "1.0.1"
-viewpagerdotsindicator = "4.1.2"
+dotsindicator = "5.1.0"
 workRuntimeKtx = "2.10.0"
 
 [libraries]
@@ -88,7 +88,7 @@ library = { module = "com.daimajia.swipelayout:library", version.ref = "library"
 material = { module = "com.google.android.material:material", version.ref = "material" }
 okhttp = { module = "com.squareup.okhttp3:okhttp", version.ref = "okhttp" }
 oss-licenses-plugin = { module = "com.google.android.gms:oss-licenses-plugin", version.ref = "ossLicensesPlugin" }
-patternlockview = { module = "com.andrognito.patternlockview:patternlockview", version.ref = "patternlockview" }
+patternlockview = { module = "com.github.aritraroy:PatternLockView", version = "master-SNAPSHOT" }
 perf-plugin = { module = "com.google.firebase:perf-plugin", version.ref = "perfPlugin" }
 play-services-mlkit-face-detection = { module = "com.google.android.gms:play-services-mlkit-face-detection", version.ref = "playServicesMlkitFaceDetection" }
 play-services-oss-licenses = { module = "com.google.android.gms:play-services-oss-licenses", version.ref = "playServicesOssLicenses" }
@@ -97,8 +97,11 @@ recyclerview = { module = "androidx.recyclerview:recyclerview", version.ref = "r
 ripplebackground-library = { module = "com.skyfishjy.ripplebackground:library", version.ref = "skyfishjyLibrary" }
 rules = { module = "androidx.test:rules", version.ref = "rules" }
 runner = { module = "androidx.test:runner", version.ref = "runner" }
-viewpagerdotsindicator = { module = "com.tbuonomo.andrui:viewpagerdotsindicator", version.ref = "viewpagerdotsindicator" }
+dotsindicator = { module = "com.tbuonomo:dotsindicator", version.ref = "dotsindicator" }
 work-runtime-ktx = { module = "androidx.work:work-runtime-ktx", version.ref = "workRuntimeKtx" }
+recyclerview-fastscroller = { module = "com.quiph.ui:recyclerviewfastscroller", version = "1.0.0" }
+pinlockview = { module = "com.github.aritraroy:pinlockview", version = "2.1.0" }
+androidx-compose-runtime = { module = "androidx.compose.runtime:runtime", version = "1.7.8" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
