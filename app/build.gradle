@@ -1,17 +1,12 @@
-apply plugin: "com.android.application"
-apply plugin: "kotlin-android"
-apply plugin: "kotlin-kapt"
-apply plugin: "kotlin-parcelize"
-apply plugin: "kotlinx-serialization"
-apply plugin: "com.google.android.gms.oss-licenses-plugin"
-
-if (file("google-services.json").exists()) {
-    logger.lifecycle("Firebase Enabled")
-    apply plugin: "com.google.gms.google-services"
-    apply plugin: "com.google.firebase.crashlytics"
-    apply plugin: "com.google.firebase.firebase-perf"
-} else {
-    logger.lifecycle("Firebase Disabled")
+plugins {
+    alias(libs.plugins.android.application)
+    alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.kotlinx.serialization)
+    alias(libs.plugins.gms.oss.licenses)
+    alias(libs.plugins.gms.google.services)
+    alias(libs.plugins.firebase.crashlytics)
+    alias(libs.plugins.firebase.perf)
+    id 'kotlin-parcelize'
 }
 
 android {
@@ -104,9 +99,6 @@ dependencies {
     implementation libs.ktor.network
 
     implementation libs.viewpagerdotsindicator
-
-    implementation libs.dirchooser.library
-    implementation libs.option
 
     implementation libs.patternlockview
 
