@@ -36,8 +36,13 @@
     <string name="main_menu_thin">簡単モード</string>
 
     <string name="main_menu_sort">並び替え</string>
-    <string name="main_menu_sort_newest">新しい順</string>
-    <string name="main_menu_sort_popular">人気順</string>
+    <string name="main_menu_sort_date_added">新しい順</string>
+    <string name="main_menu_sort_date_published">新しい順（発売日）</string>
+    <string name="main_menu_sort_popular_today">人気順（日間）</string>
+    <string name="main_menu_sort_popular_week">人気順（週間）</string>
+    <string name="main_menu_sort_popular_month">人気順（月間）</string>
+    <string name="main_menu_sort_popular_year">人気順（年間）</string>
+    <string name="main_menu_sort_random">ランダム</string>
 
     <string name="main_jump_title">ページ移動</string>
     <string name="main_jump_message">現ページ番号: %1$d\nページ数: %2$d</string>
@@ -47,7 +52,7 @@
     <string name="main_fab_cancel">すべてのダウンロードをキャンセル</string>
 
     <string name="main_move_to_page">%1$dページへ移動</string>
- 
+
     <string name="main_download">ダウンロード</string>
     <string name="main_delete">削除</string>
 
@@ -94,7 +99,7 @@
     <string name="downloader_running">ダウンローダー起動中</string>
 
     <string name="settings_title">設定</string>
-    
+
     <string name="settings_app_version_title">バージョン(クリックで更新確認)</string>
     <string name="settings_app_version_description">v%s</string>
     <string name="settings_beta">ベータ版チャンネルでアップデート</string>
