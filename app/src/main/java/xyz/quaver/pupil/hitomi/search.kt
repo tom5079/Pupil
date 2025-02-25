@@ -41,7 +41,7 @@ data class SearchArgs(
 
             return when (left) {
                 "male", "female" -> SearchArgs("tag", query, "all")
-                "language" -> SearchArgs(null, "index", right)
+                "language" -> SearchArgs("all", "index", right)
                 else -> SearchArgs(left, right, "all")
             }
         }
