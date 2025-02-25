@@ -18,9 +18,9 @@ package xyz.quaver.pupil.hitomi
 
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
-import java.util.*
+import java.util.LinkedList
 
-suspend fun doSearch(query: String, sortByPopularity: Boolean = false) : Set<Int> = coroutineScope {
+suspend fun doSearch(query: String, sortMode: SortMode): List<Int> = coroutineScope {
     val terms = query
         .trim()
         .replace(Regex("""^\?"""), "")
@@ -34,8 +34,8 @@ suspend fun doSearch(query: String, sortByPopularity: Boolean = false) : Set<Int
     val negativeTerms = LinkedList<String>()
 
     for (term in terms) {
-        if (term.matches(Regex("^-.+")))
-            negativeTerms.push(term.replace(Regex("^-"), ""))
+        if (term.startsWith("-"))
+            negativeTerms.push(term.substring(1))
         else if (term.isNotBlank())
             positiveTerms.push(term)
     }
@@ -43,22 +43,25 @@ suspend fun doSearch(query: String, sortByPopularity: Boolean = false) : Set<Int
     val positiveResults = positiveTerms.map {
         async {
             runCatching {
-                getGalleryIDsForQuery(it)
+                getGalleryIDsForQuery(it, sortMode)
             }.getOrElse { emptySet() }
         }
     }
 
-    val negativeResults = negativeTerms.mapIndexed { index, it ->
+    val negativeResults = negativeTerms.map {
         async {
             runCatching {
-                getGalleryIDsForQuery(it)
+                getGalleryIDsForQuery(it, sortMode)
             }.getOrElse { emptySet() }
         }
     }
 
     val results = when {
-        sortByPopularity -> getGalleryIDsFromNozomi(null, "popular", "all")
-        positiveTerms.isEmpty() -> getGalleryIDsFromNozomi(null, "index", "all")
+        positiveTerms.isEmpty() -> getGalleryIDsFromNozomi(
+            SearchArgs("all", "index", "all"),
+            sortMode
+        )
+
         else -> emptySet()
     }.toMutableSet()
 
@@ -79,9 +82,13 @@ suspend fun doSearch(query: String, sortByPopularity: Boolean = false) : Set<Int
     }
 
     //negative results
-    negativeResults.forEachIndexed { index, it ->
+    negativeResults.forEach {
         filterNegative(it.await())
     }
 
-    results
+    return@coroutineScope if (sortMode != SortMode.RANDOM) {
+        results.toList()
+    } else {
+        results.shuffled()
+    }
 }

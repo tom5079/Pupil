@@ -18,8 +18,8 @@ android {
         applicationId = "xyz.quaver.pupil"
         minSdk = 16
         targetSdk = 35
-        versionCode = 69
-        versionName = "5.3.15"
+        versionCode = 70
+        versionName = "5.3.16"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
     }

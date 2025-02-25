@@ -45,6 +45,7 @@
     <string name="reader_notification_complete">다운로드 완료</string>
     <string name="reader_fab_download_cancel">백그라운드 다운로드 취소</string>
     <string name="main_drawer_downloads">다운로드</string>
+    <string name="main_menu_sort_random">무작위</string>
     <string name="main_jump_title">페이지 이동</string>
     <string name="main_jump_message">현재 페이지: %1$d\n페이지 수: %2$d</string>
     <string name="channel_transfer">전송</string>
@@ -71,8 +72,6 @@
     <string name="settings_lock_remove_message">잠금을 해제할까요?</string>
     <string name="reader_loading">로딩중</string>
     <string name="main_menu_sort">정렬</string>
-    <string name="main_menu_sort_popular">인기순</string>
-    <string name="main_menu_sort_newest">시간순</string>
     <string name="ignore">무시</string>
     <string name="lock_corrupted">잠금 파일이 손상되었습니다! 앱을 재설치 해 주시기 바랍니다.</string>
     <string name="settings_dark_mode_title">다크 모드</string>
@@ -162,4 +161,10 @@
     <string name="settings_recover_downloads">다운로드 데이터베이스 복구</string>
     <string name="settings_transfer_data">다른 기기에 데이터 전송</string>
     <string name="channel_transfer_description">다른 기기에 데이터 전송 시 상태 표시</string>
+    <string name="main_menu_sort_date_added">추가일</string>
+    <string name="main_menu_sort_date_published">발매일</string>
+    <string name="main_menu_sort_popular_today">인기순 (오늘)</string>
+    <string name="main_menu_sort_popular_week">인기순 (이번 주)</string>
+    <string name="main_menu_sort_popular_month">인기순 (이번 달)</string>
+    <string name="main_menu_sort_popular_year">인기순 (이번 해)</string>
 </resources>

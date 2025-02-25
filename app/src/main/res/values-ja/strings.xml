@@ -46,6 +46,7 @@
     <string name="reader_notification_complete">ダウンロード完了</string>
     <string name="reader_fab_download_cancel">バックグラウンドダウンロード中止</string>
     <string name="main_drawer_downloads">ダウンロード</string>
+    <string name="main_menu_sort_random">ランダム</string>
     <string name="main_jump_title">ページ移動</string>
     <string name="main_jump_message">現ページ番号: %1$d\nページ数: %2$d</string>
     <string name="channel_transfer">転送</string>
@@ -73,8 +74,6 @@
     <string name="settings_lock_remove_message">ロックを無効にしますか？</string>
     <string name="reader_loading">ロード中</string>
     <string name="main_menu_sort">ソート</string>
-    <string name="main_menu_sort_newest">投稿日時順</string>
-    <string name="main_menu_sort_popular">人気順</string>
     <string name="ignore">無視</string>
     <string name="lock_corrupted">ロックファイルが破損されています。Pupilを再再インストールしてください。</string>
     <string name="settings_dark_mode_title">ダークモード</string>
@@ -162,4 +161,10 @@
     <string name="settings_recover_downloads">ダウンロードデータベースを再構築</string>
     <string name="settings_transfer_data">他の機器にデータを転送</string>
     <string name="channel_transfer_description">他の機器へのデータ転送の進捗度を表示</string>
+    <string name="main_menu_sort_date_added">新しい順</string>
+    <string name="main_menu_sort_date_published">新しい順（発売日）</string>
+    <string name="main_menu_sort_popular_today">人気順（今日）</string>
+    <string name="main_menu_sort_popular_week">人気順（週間）</string>
+    <string name="main_menu_sort_popular_month">人気順（月間）</string>
+    <string name="main_menu_sort_popular_year">人気順（年間）</string>
 </resources>

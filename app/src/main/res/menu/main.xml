@@ -26,11 +26,21 @@
 		app:showAsAction="ifRoom">
 		<menu>
 			<group android:checkableBehavior="single">
-				<item android:id="@+id/main_menu_sort_newest"
-					android:title="@string/main_menu_sort_newest"
+				<item android:id="@+id/main_menu_sort_date_added"
+					android:title="@string/main_menu_sort_date_added"
 					android:checked="true"/>
-				<item android:id="@+id/main_menu_sort_popular"
-					android:title="@string/main_menu_sort_popular"/>
+				<item android:id="@+id/main_menu_sort_date_published"
+					android:title="@string/main_menu_sort_date_published"/>
+				<item android:id="@+id/main_menu_sort_popular_today"
+					android:title="@string/main_menu_sort_popular_today"/>
+				<item android:id="@+id/main_menu_sort_popular_week"
+					android:title="@string/main_menu_sort_popular_week"/>
+				<item android:id="@+id/main_menu_sort_popular_month"
+					android:title="@string/main_menu_sort_popular_month"/>
+				<item android:id="@+id/main_menu_sort_popular_year"
+					android:title="@string/main_menu_sort_popular_year"/>
+				<item android:id="@+id/main_menu_sort_random"
+					android:title="@string/main_menu_sort_random"/>
 			</group>
 		</menu>
 	</item>

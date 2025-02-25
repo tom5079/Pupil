@@ -70,8 +70,13 @@
     <string name="main_menu_thin">Thin Mode</string>
 
     <string name="main_menu_sort">Sort</string>
-    <string name="main_menu_sort_newest">Newest</string>
-    <string name="main_menu_sort_popular">Popular</string>
+    <string name="main_menu_sort_date_added">Date Added</string>
+    <string name="main_menu_sort_date_published">Date Published</string>
+    <string name="main_menu_sort_popular_today">Popular: Today</string>
+    <string name="main_menu_sort_popular_week">Popular: Week</string>
+    <string name="main_menu_sort_popular_month">Popular: Month</string>
+    <string name="main_menu_sort_popular_year">Popular: Year</string>
+    <string name="main_menu_sort_random">Random</string>
 
     <string name="main_jump_title">Jump to page</string>
     <string name="main_jump_message">Current page: %1$d\nMaximum page: %2$d</string>
