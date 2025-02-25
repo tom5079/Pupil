@@ -16,7 +16,7 @@ android {
 
     defaultConfig {
         applicationId = "xyz.quaver.pupil"
-        minSdk = 16
+        minSdk = 21
         targetSdk = 35
         versionCode = 70
         versionName = "5.3.16"
@@ -29,8 +29,6 @@ android {
     }
     buildTypes {
         debug {
-            defaultConfig.minSdk = 21
-
             isMinifyEnabled = false
             isShrinkResources = false
 
