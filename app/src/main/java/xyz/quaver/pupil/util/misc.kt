@@ -24,24 +24,26 @@ import android.app.Activity
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
-import android.util.Log
 import androidx.activity.result.ActivityResultLauncher
 import androidx.appcompat.app.AlertDialog
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.google.firebase.crashlytics.FirebaseCrashlytics
-import kotlinx.serialization.json.*
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import xyz.quaver.pupil.R
 import xyz.quaver.pupil.hitomi.GalleryBlock
 import xyz.quaver.pupil.hitomi.GalleryInfo
 import xyz.quaver.pupil.hitomi.imageUrlFromImage
-import java.util.*
-import kotlin.collections.ArrayList
+import java.util.Locale
 
 @OptIn(ExperimentalStdlibApi::class)
-fun String.wordCapitalize() : String {
+fun String.wordCapitalize(): String {
     val result = ArrayList<String>()
 
     @SuppressLint("DefaultLocale")
@@ -59,8 +61,9 @@ private val suffix = listOf(
     "TB" //really?
 )
 
-fun byteToString(byte: Long, precision : Int = 1) : String {
-    var size = byte.toDouble(); var suffixIndex = 0
+fun byteToString(byte: Long, precision: Int = 1): String {
+    var size = byte.toDouble()
+    var suffixIndex = 0
 
     while (size >= 1024) {
         size /= 1024
@@ -92,6 +95,7 @@ val formatMap = mapOf<String, GalleryBlock.() -> (String)>(
     "-group-" to { if (groups.isNotEmpty()) groups.joinToString() else "N/A" }
     // TODO
 )
+
 /**
  * Formats download folder name with given Metadata
  */
@@ -117,20 +121,20 @@ suspend fun GalleryInfo.getRequestBuilders(): List<Request.Builder> {
                 runCatching {
                     imageUrlFromImage(galleryID, it, false)
                 }
-                .onFailure {
-                    FirebaseCrashlytics.getInstance().recordException(it)
-                }
-                .getOrDefault("https://a/")
+                    .onFailure {
+                        FirebaseCrashlytics.getInstance().recordException(it)
+                    }
+                    .getOrDefault("https://a/")
             )
             .header("Referer", "https://hitomi.la/")
     }
 }
 
 fun byteCount(codePoint: Int): Int = when (codePoint) {
-    in 0 ..< 0x80 -> 1
-    in 0x80 ..< 0x800 -> 2
-    in 0x800 ..< 0x10000 -> 3
-    in 0x10000 ..< 0x110000 -> 4
+    in 0..<0x80 -> 1
+    in 0x80..<0x800 -> 2
+    in 0x800..<0x10000 -> 3
+    in 0x10000..<0x110000 -> 4
     else -> 0
 }
 
@@ -168,7 +172,10 @@ val JsonElement.content
 
 fun checkNotificationEnabled(context: Context) =
     Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
-    ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
+            ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.POST_NOTIFICATIONS
+            ) == PackageManager.PERMISSION_GRANTED
 
 fun showNotificationPermissionExplanationDialog(context: Context) {
     AlertDialog.Builder(context)
@@ -182,12 +189,16 @@ fun requestNotificationPermission(
     activity: Activity,
     requestPermissionLauncher: ActivityResultLauncher<String>,
     showRationale: Boolean = true,
-    ifGranted: () -> Unit,
+    ifGranted: () -> Unit = { },
 ) {
     when {
         checkNotificationEnabled(activity) -> ifGranted()
-        showRationale && ActivityCompat.shouldShowRequestPermissionRationale(activity, Manifest.permission.POST_NOTIFICATIONS) ->
+        showRationale && ActivityCompat.shouldShowRequestPermissionRationale(
+            activity,
+            Manifest.permission.POST_NOTIFICATIONS
+        ) ->
             showNotificationPermissionExplanationDialog(activity)
+
         else ->
             requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
     }

@@ -82,6 +82,9 @@ dependencies {
     implementation(libs.compose.activity)
     implementation(libs.compose.lifecycle.viewmodel)
     implementation(libs.compose.livedata)
+    implementation(libs.compose.navigation)
+
+    implementation(libs.accompanist.adaptive)
 
     implementation(libs.core.ktx)
     implementation(libs.appcompat)

@@ -23,9 +23,11 @@ import android.os.Bundle
 import android.os.PersistableBundle
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.CallSuper
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.WindowCompat
 import xyz.quaver.pupil.util.LockManager
 import xyz.quaver.pupil.util.Preferences
 
@@ -41,8 +43,11 @@ open class BaseComponentActivity : ComponentActivity() {
         }
 
     @CallSuper
-    override fun onCreate(savedInstanceState: Bundle?, persistentState: PersistableBundle?) {
-        super.onCreate(savedInstanceState, persistentState)
+    override fun onCreate(savedInstanceState: Bundle?) {
+        enableEdgeToEdge()
+        super.onCreate(savedInstanceState)
+
+        WindowCompat.setDecorFitsSystemWindows(window, false)
 
         locked = !LockManager(this).locks.isNullOrEmpty()
     }

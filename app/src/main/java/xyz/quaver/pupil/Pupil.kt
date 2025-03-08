@@ -26,7 +26,6 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
-import android.util.Log
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.content.ContextCompat
 import androidx.preference.PreferenceManager
@@ -38,22 +37,22 @@ import com.google.android.gms.common.GooglePlayServicesRepairableException
 import com.google.android.gms.security.ProviderInstaller
 import com.google.firebase.FirebaseApp
 import com.google.firebase.crashlytics.FirebaseCrashlytics
-import kotlinx.coroutines.*
 import okhttp3.Dispatcher
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
 import okhttp3.Response
 import xyz.quaver.io.FileX
-import xyz.quaver.pupil.hitomi.evaluationContext
-import xyz.quaver.pupil.hitomi.readText
 import xyz.quaver.pupil.types.Tag
-import xyz.quaver.pupil.util.*
+import xyz.quaver.pupil.util.Preferences
+import xyz.quaver.pupil.util.SavedSet
+import xyz.quaver.pupil.util.getProxyInfo
+import xyz.quaver.pupil.util.preferences
+import xyz.quaver.pupil.util.proxyInfo
 import java.io.File
-import java.net.URL
 import java.security.KeyStore
 import java.security.SecureRandom
 import java.security.cert.CertificateFactory
-import java.util.*
+import java.util.UUID
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import javax.net.ssl.SSLContext
@@ -94,16 +93,19 @@ fun getSSLContext(context: Context): SSLContext {
 
     keyStore.setCertificateEntry("isrgrootx1", certificate)
 
-    val defaultTrustManagerFactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm())
+    val defaultTrustManagerFactory =
+        TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm())
     defaultTrustManagerFactory.init(null as KeyStore?)
 
-    defaultTrustManagerFactory.trustManagers.filterIsInstance(X509TrustManager::class.java).forEach { trustManager ->
-        trustManager.acceptedIssuers.forEach { acceptedIssuer ->
-            keyStore.setCertificateEntry(acceptedIssuer.subjectDN.name, acceptedIssuer)
+    defaultTrustManagerFactory.trustManagers.filterIsInstance<X509TrustManager>()
+        .forEach { trustManager ->
+            trustManager.acceptedIssuers.forEach { acceptedIssuer ->
+                keyStore.setCertificateEntry(acceptedIssuer.subjectDN.name, acceptedIssuer)
+            }
         }
-    }
 
-    val trustManagerFactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm())
+    val trustManagerFactory =
+        TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm())
     trustManagerFactory.init(keyStore)
 
     val sslContext = SSLContext.getInstance("TLS")
@@ -125,7 +127,7 @@ class Pupil : Application() {
 
         preferences = PreferenceManager.getDefaultSharedPreferences(this)
 
-        val userID = Preferences["user_id", ""].let {  userID ->
+        val userID = Preferences["user_id", ""].let { userID ->
             if (userID.isEmpty()) UUID.randomUUID().toString().also { Preferences["user_id"] = it }
             else userID
         }
@@ -142,7 +144,10 @@ class Pupil : Application() {
             .proxyInfo(proxyInfo)
             .addInterceptor { chain ->
                 val request = chain.request().newBuilder()
-                    .addHeader("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/94.0.4606.81 Safari/537.36")
+                    .addHeader(
+                        "User-Agent",
+                        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/94.0.4606.81 Safari/537.36"
+                    )
                     .header("Referer", "https://hitomi.la/")
                     .build()
 
@@ -178,7 +183,8 @@ class Pupil : Application() {
 
         histories = SavedSet(File(ContextCompat.getDataDir(this), "histories.json"), 0)
         favorites = SavedSet(File(ContextCompat.getDataDir(this), "favorites.json"), 0)
-        favoriteTags = SavedSet(File(ContextCompat.getDataDir(this), "favorites_tags.json"), Tag.parse(""))
+        favoriteTags =
+            SavedSet(File(ContextCompat.getDataDir(this), "favorites_tags.json"), Tag.parse(""))
         searchHistory = SavedSet(File(ContextCompat.getDataDir(this), "search_histories.json"), "")
 
         favoriteTags.filter { it.tag.contains('_') }.forEach {
@@ -209,46 +215,73 @@ class Pupil : Application() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
-            manager.createNotificationChannel(NotificationChannel("download", getString(R.string.channel_download), NotificationManager.IMPORTANCE_LOW).apply {
-                description = getString(R.string.channel_download_description)
-                enableLights(false)
-                enableVibration(false)
-                lockscreenVisibility = Notification.VISIBILITY_SECRET
-            })
+            manager.createNotificationChannel(
+                NotificationChannel(
+                    "download",
+                    getString(R.string.channel_download),
+                    NotificationManager.IMPORTANCE_LOW
+                ).apply {
+                    description = getString(R.string.channel_download_description)
+                    enableLights(false)
+                    enableVibration(false)
+                    lockscreenVisibility = Notification.VISIBILITY_SECRET
+                })
 
-            manager.createNotificationChannel(NotificationChannel("downloader", getString(R.string.channel_downloader), NotificationManager.IMPORTANCE_LOW).apply {
-                description = getString(R.string.channel_downloader_description)
-                enableLights(false)
-                enableVibration(false)
-                lockscreenVisibility = Notification.VISIBILITY_SECRET
-            })
+            manager.createNotificationChannel(
+                NotificationChannel(
+                    "downloader",
+                    getString(R.string.channel_downloader),
+                    NotificationManager.IMPORTANCE_LOW
+                ).apply {
+                    description = getString(R.string.channel_downloader_description)
+                    enableLights(false)
+                    enableVibration(false)
+                    lockscreenVisibility = Notification.VISIBILITY_SECRET
+                })
 
-            manager.createNotificationChannel(NotificationChannel("update", getString(R.string.channel_update), NotificationManager.IMPORTANCE_HIGH).apply {
-                description = getString(R.string.channel_update_description)
-                enableLights(true)
-                enableVibration(true)
-                lockscreenVisibility = Notification.VISIBILITY_SECRET
-            })
+            manager.createNotificationChannel(
+                NotificationChannel(
+                    "update",
+                    getString(R.string.channel_update),
+                    NotificationManager.IMPORTANCE_HIGH
+                ).apply {
+                    description = getString(R.string.channel_update_description)
+                    enableLights(true)
+                    enableVibration(true)
+                    lockscreenVisibility = Notification.VISIBILITY_SECRET
+                })
 
-            manager.createNotificationChannel(NotificationChannel("import", getString(R.string.channel_update), NotificationManager.IMPORTANCE_LOW).apply {
-                description = getString(R.string.channel_update_description)
-                enableLights(false)
-                enableVibration(false)
-                lockscreenVisibility = Notification.VISIBILITY_SECRET
-            })
+            manager.createNotificationChannel(
+                NotificationChannel(
+                    "import",
+                    getString(R.string.channel_update),
+                    NotificationManager.IMPORTANCE_LOW
+                ).apply {
+                    description = getString(R.string.channel_update_description)
+                    enableLights(false)
+                    enableVibration(false)
+                    lockscreenVisibility = Notification.VISIBILITY_SECRET
+                })
 
-            manager.createNotificationChannel(NotificationChannel("transfer", getString(R.string.channel_transfer), NotificationManager.IMPORTANCE_LOW).apply {
-                description = getString(R.string.channel_transfer_description)
-                enableLights(false)
-                enableVibration(false)
-                lockscreenVisibility = Notification.VISIBILITY_SECRET
-            })
+            manager.createNotificationChannel(
+                NotificationChannel(
+                    "transfer",
+                    getString(R.string.channel_transfer),
+                    NotificationManager.IMPORTANCE_LOW
+                ).apply {
+                    description = getString(R.string.channel_transfer_description)
+                    enableLights(false)
+                    enableVibration(false)
+                    lockscreenVisibility = Notification.VISIBILITY_SECRET
+                })
         }
 
-        AppCompatDelegate.setDefaultNightMode(when (Preferences.get<Boolean>("dark_mode")) {
-            true -> AppCompatDelegate.MODE_NIGHT_YES
-            false -> AppCompatDelegate.MODE_NIGHT_NO
-        })
+        AppCompatDelegate.setDefaultNightMode(
+            when (Preferences.get<Boolean>("dark_mode")) {
+                true -> AppCompatDelegate.MODE_NIGHT_YES
+                false -> AppCompatDelegate.MODE_NIGHT_NO
+            }
+        )
 
         super.onCreate()
     }
