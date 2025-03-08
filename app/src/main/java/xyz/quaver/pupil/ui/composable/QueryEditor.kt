@@ -87,17 +87,22 @@ private fun SearchQuery.toEditableStateInternal(): EditableSearchQueryState = wh
     is SearchQuery.Not -> EditableSearchQueryState.Not(query.toEditableStateInternal())
 }
 
-fun SearchQuery?.toEditableState(): EditableSearchQueryState.Root
-    = EditableSearchQueryState.Root(this?.toEditableStateInternal())
+fun SearchQuery?.toEditableState(): EditableSearchQueryState.Root =
+    EditableSearchQueryState.Root(this?.toEditableStateInternal())
 
 private fun EditableSearchQueryState.Tag.toSearchQueryInternal(): SearchQuery.Tag? =
-    if (namespace.value != null || tag.value.isNotBlank()) SearchQuery.Tag(namespace.value, tag.value.lowercase().trim()) else null
+    if (namespace.value != null || tag.value.isNotBlank()) SearchQuery.Tag(
+        namespace.value,
+        tag.value.lowercase().trim()
+    ) else null
 
 private fun EditableSearchQueryState.And.toSearchQueryInternal(): SearchQuery.And? =
-    queries.mapNotNull { it.toSearchQueryInternal() }.let { if (it.isNotEmpty()) SearchQuery.And(it) else null }
+    queries.mapNotNull { it.toSearchQueryInternal() }
+        .let { if (it.isNotEmpty()) SearchQuery.And(it) else null }
 
 private fun EditableSearchQueryState.Or.toSearchQueryInternal(): SearchQuery.Or? =
-    queries.mapNotNull { it.toSearchQueryInternal() }.let { if (it.isNotEmpty()) SearchQuery.Or(it) else null }
+    queries.mapNotNull { it.toSearchQueryInternal() }
+        .let { if (it.isNotEmpty()) SearchQuery.Or(it) else null }
 
 private fun EditableSearchQueryState.Not.toSearchQueryInternal(): SearchQuery.Not? =
     query.value?.toSearchQueryInternal()?.let { SearchQuery.Not(it) }
@@ -109,51 +114,55 @@ private fun EditableSearchQueryState.toSearchQueryInternal(): SearchQuery? = whe
     is EditableSearchQueryState.Not -> this.toSearchQueryInternal()
 }
 
-fun EditableSearchQueryState.Root.toSearchQuery(): SearchQuery?
-    = query.value?.toSearchQueryInternal()
+fun EditableSearchQueryState.Root.toSearchQuery(): SearchQuery? =
+    query.value?.toSearchQueryInternal()
 
-fun coalesceTags(oldTag: EditableSearchQueryState.Tag?, newTag: EditableSearchQueryState?): EditableSearchQueryState?
-    = if (oldTag != null) {
-        when (newTag) {
-            is EditableSearchQueryState.Tag,
-            is EditableSearchQueryState.Not -> EditableSearchQueryState.And(listOf(oldTag, newTag))
-            is EditableSearchQueryState.And -> newTag.apply { queries.add(oldTag) }
-            is EditableSearchQueryState.Or -> newTag.apply { queries.add(oldTag) }
-            null -> oldTag
-        }
-    } else newTag
+fun coalesceTags(
+    oldTag: EditableSearchQueryState.Tag?,
+    newTag: EditableSearchQueryState?,
+): EditableSearchQueryState? = if (oldTag != null) {
+    when (newTag) {
+        is EditableSearchQueryState.Tag,
+        is EditableSearchQueryState.Not,
+            -> EditableSearchQueryState.And(listOf(oldTag, newTag))
+
+        is EditableSearchQueryState.And -> newTag.apply { queries.add(oldTag) }
+        is EditableSearchQueryState.Or -> newTag.apply { queries.add(oldTag) }
+        null -> oldTag
+    }
+} else newTag
 
 sealed interface EditableSearchQueryState {
     class Tag(
         namespace: String? = null,
         tag: String = "",
-        expanded: Boolean = false
-    ): EditableSearchQueryState {
+        expanded: Boolean = false,
+    ) : EditableSearchQueryState {
         val namespace = mutableStateOf(namespace)
         val tag = mutableStateOf(tag)
         val expanded = mutableStateOf(expanded)
     }
 
     class And(
-        queries: List<EditableSearchQueryState> = emptyList()
-    ): EditableSearchQueryState {
+        queries: List<EditableSearchQueryState> = emptyList(),
+    ) : EditableSearchQueryState {
         val queries = queries.toMutableStateList()
     }
 
     class Or(
-        queries: List<EditableSearchQueryState> = emptyList()
-    ): EditableSearchQueryState {
+        queries: List<EditableSearchQueryState> = emptyList(),
+    ) : EditableSearchQueryState {
         val queries = queries.toMutableStateList()
     }
 
     class Not(
-        query: EditableSearchQueryState? = null
-    ): EditableSearchQueryState {
+        query: EditableSearchQueryState? = null,
+    ) : EditableSearchQueryState {
         val query = mutableStateOf(query)
     }
 
     class Root(
-        query: EditableSearchQueryState? = null
+        query: EditableSearchQueryState? = null,
     ) {
         val query = mutableStateOf(query)
     }
@@ -162,7 +171,7 @@ sealed interface EditableSearchQueryState {
 
 @Composable
 fun TagSuggestionList(
-    state: EditableSearchQueryState.Tag
+    state: EditableSearchQueryState.Tag,
 ) {
     var suggestionList: List<Suggestion>? by remember { mutableStateOf(null) }
 
@@ -221,7 +230,7 @@ fun EditableTagChip(
                 .horizontalScroll(rememberScrollState()),
             text = tag.tag.ifBlank { stringResource(R.string.search_bar_edit_tag) }
         )
-    }
+    },
 ) {
     val coroutineScope = rememberCoroutineScope()
 
@@ -323,8 +332,8 @@ fun EditableTagChip(
                             value = textFieldValue,
                             singleLine = true,
                             keyboardOptions = KeyboardOptions(
-                                autoCorrect = false,
                                 capitalization = KeyboardCapitalization.None,
+                                autoCorrectEnabled = false,
                                 imeAction = ImeAction.Done
                             ),
                             leadingIcon = {
@@ -362,10 +371,11 @@ fun EditableTagChip(
                             onValueChange = { newTextValue ->
                                 val newTag = newTextValue.text
                                 val possibleNamespace = newTag.dropLast(1).lowercase().trim()
-                                tag = if (namespace == null && newTag.endsWith(':') && possibleNamespace in validNamespace) {
-                                    namespace = possibleNamespace
-                                    ""
-                                } else newTag
+                                tag =
+                                    if (namespace == null && newTag.endsWith(':') && possibleNamespace in validNamespace) {
+                                        namespace = possibleNamespace
+                                        ""
+                                    } else newTag
                                 selection = newTextValue.selection
                                 composition = newTextValue.composition
                             }
@@ -382,7 +392,7 @@ fun EditableTagChip(
 @Composable
 fun NewQueryChip(
     currentQuery: EditableSearchQueryState?,
-    onNewQuery: (EditableSearchQueryState) -> Unit
+    onNewQuery: (EditableSearchQueryState) -> Unit,
 ) {
     var opened by remember { mutableStateOf(false) }
 
@@ -391,7 +401,7 @@ fun NewQueryChip(
         modifier: Modifier = Modifier,
         icon: ImageVector = Icons.Default.AddCircleOutline,
         text: String,
-        onClick: () -> Unit
+        onClick: () -> Unit,
     ) {
         Row(
             modifier = modifier
@@ -415,7 +425,7 @@ fun NewQueryChip(
     }
 
     Surface(shape = RoundedCornerShape(16.dp)) {
-        AnimatedContent(targetState = opened, label = "add new query" ) { targetOpened ->
+        AnimatedContent(targetState = opened, label = "add new query") { targetOpened ->
             if (targetOpened) {
                 Column {
                     NewQueryRow(
@@ -426,8 +436,11 @@ fun NewQueryChip(
                         opened = false
                     }
                     HorizontalDivider()
-                    if (currentQuery !is EditableSearchQueryState.Tag && currentQuery !is EditableSearchQueryState.And) {
-                        NewQueryRow(modifier = Modifier.fillMaxWidth(), text = stringResource(R.string.search_add_query_item_tag)) {
+                    if (currentQuery != null && currentQuery !is EditableSearchQueryState.Tag && currentQuery !is EditableSearchQueryState.And) {
+                        NewQueryRow(
+                            modifier = Modifier.fillMaxWidth(),
+                            text = stringResource(R.string.search_add_query_item_tag)
+                        ) {
                             opened = false
                             onNewQuery(EditableSearchQueryState.Tag(expanded = true))
                         }
@@ -489,6 +502,7 @@ fun QueryEditorQueryView(
                 }
             )
         }
+
         is EditableSearchQueryState.Or -> {
             Card(
                 colors = CardColors(
@@ -510,7 +524,11 @@ fun QueryEditorQueryView(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Text("OR", modifier = Modifier.padding(horizontal = 8.dp), style = MaterialTheme.typography.labelMedium)
+                        Text(
+                            "OR",
+                            modifier = Modifier.padding(horizontal = 8.dp),
+                            style = MaterialTheme.typography.labelMedium
+                        )
                         Icon(
                             modifier = Modifier
                                 .size(16.dp)
@@ -520,7 +538,9 @@ fun QueryEditorQueryView(
                         )
                     }
                     state.queries.forEachIndexed { index, subQueryState ->
-                        if (index != 0) { Text("+", modifier = Modifier.padding(horizontal = 8.dp)) }
+                        if (index != 0) {
+                            Text("+", modifier = Modifier.padding(horizontal = 8.dp))
+                        }
                         QueryEditorQueryView(
                             subQueryState,
                             onQueryRemove = { state.queries.remove(it) },
@@ -534,6 +554,7 @@ fun QueryEditorQueryView(
                 }
             }
         }
+
         is EditableSearchQueryState.And -> {
             Card(
                 colors = CardColors(
@@ -560,7 +581,12 @@ fun QueryEditorQueryView(
 
                     LaunchedEffect(newQueryExpanded) {
                         if (!newQueryExpanded && (newQueryNamespace != null || newQueryTag.isNotBlank())) {
-                            state.queries.add(EditableSearchQueryState.Tag(newQueryNamespace, newQueryTag))
+                            state.queries.add(
+                                EditableSearchQueryState.Tag(
+                                    newQueryNamespace,
+                                    newQueryTag
+                                )
+                            )
                             newQueryNamespace = null
                             newQueryTag = ""
                             newQueryExpanded = true
@@ -573,7 +599,11 @@ fun QueryEditorQueryView(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Text("AND", modifier = Modifier.padding(horizontal = 8.dp), style = MaterialTheme.typography.labelMedium)
+                        Text(
+                            "AND",
+                            modifier = Modifier.padding(horizontal = 8.dp),
+                            style = MaterialTheme.typography.labelMedium
+                        )
                         Icon(
                             modifier = Modifier
                                 .size(16.dp)
@@ -600,6 +630,7 @@ fun QueryEditorQueryView(
                 }
             }
         }
+
         is EditableSearchQueryState.Not -> {
             var subQueryState by state.query
 
@@ -623,7 +654,11 @@ fun QueryEditorQueryView(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Text("-", modifier = Modifier.padding(horizontal = 8.dp), style = MaterialTheme.typography.labelMedium)
+                        Text(
+                            "-",
+                            modifier = Modifier.padding(horizontal = 8.dp),
+                            style = MaterialTheme.typography.labelMedium
+                        )
                         Icon(
                             modifier = Modifier
                                 .size(16.dp)
@@ -661,14 +696,14 @@ fun QueryEditorQueryView(
 
 @Composable
 fun QueryEditor(
-    state: EditableSearchQueryState.Root
+    state: EditableSearchQueryState.Root,
 ) {
     var rootQuery by state.query
 
     val scrollState = rememberScrollState()
     var topY by remember { mutableFloatStateOf(0f) }
 
-    val scrollOffset = with (LocalDensity.current) { 16.dp.toPx() }
+    val scrollOffset = with(LocalDensity.current) { 16.dp.toPx() }
 
     val coroutineScope = rememberCoroutineScope()
 
@@ -687,7 +722,10 @@ fun QueryEditor(
             val topYSnapshot = topY
 
             coroutineScope.launch {
-                scrollState.animateScrollBy(target - topYSnapshot - scrollOffset, spring(stiffness = Spring.StiffnessLow))
+                scrollState.animateScrollBy(
+                    target - topYSnapshot - scrollOffset,
+                    spring(stiffness = Spring.StiffnessLow)
+                )
             }
         }
 
@@ -713,17 +751,19 @@ fun QueryEditor(
             var newQueryTag by newSearchQuery.tag
             var newQueryExpanded by newSearchQuery.expanded
 
-            val offset = with (LocalDensity.current) { 40.dp.toPx() }
+            val offset = with(LocalDensity.current) { 40.dp.toPx() }
 
             LaunchedEffect(newQueryExpanded) {
                 if (!newQueryExpanded && (newQueryNamespace != null || newQueryTag.isNotBlank())) {
                     rootQuery = if (rootQuerySnapshot == null) {
                         EditableSearchQueryState.Tag(newQueryNamespace, newQueryTag)
                     } else {
-                        EditableSearchQueryState.And(listOf(
-                            rootQuerySnapshot,
-                            EditableSearchQueryState.Tag(newQueryNamespace, newQueryTag)
-                        ))
+                        EditableSearchQueryState.And(
+                            listOf(
+                                rootQuerySnapshot,
+                                EditableSearchQueryState.Tag(newQueryNamespace, newQueryTag)
+                            )
+                        )
                     }
                     newQueryNamespace = null
                     newQueryTag = ""
