@@ -17,20 +17,24 @@ import java.io.File
 
 sealed class ImageLoadProgress {
     data object NotStarted : ImageLoadProgress()
-    data class Progress(val bytesSent: Long, val contentLength: Long) : ImageLoadProgress()
+    data class Progress(val bytesSent: Long, val contentLength: Long?) : ImageLoadProgress()
     data class Finished(val file: File) : ImageLoadProgress()
     data class Error(val exception: Throwable) : ImageLoadProgress()
 }
 
 interface ImageCache {
-    suspend fun load(galleryFile: GalleryFile, forceDownload: Boolean = false): StateFlow<ImageLoadProgress>
+    suspend fun load(
+        galleryFile: GalleryFile,
+        forceDownload: Boolean = false,
+    ): StateFlow<ImageLoadProgress>
+
     suspend fun free(vararg files: GalleryFile)
     suspend fun clear()
 }
 
 class FileImageCache(
     private val cacheDir: File,
-    private val cacheLimit: Long = 128 * 1024 * 1024 // 128MB
+    private val cacheLimit: Long = 128 * 1024 * 1024, // 128MB
 ) : ImageCache {
     private val mutex = Mutex()
 
@@ -56,7 +60,7 @@ class FileImageCache(
             files.forEach { file ->
                 val hash = file.hash
 
-                requests[hash]?.let {  (job, _) ->
+                requests[hash]?.let { (job, _) ->
                     job.cancel()
                 }
 
@@ -74,7 +78,10 @@ class FileImageCache(
         }
     }
 
-    override suspend fun load(galleryFile: GalleryFile, forceDownload: Boolean): StateFlow<ImageLoadProgress> {
+    override suspend fun load(
+        galleryFile: GalleryFile,
+        forceDownload: Boolean,
+    ): StateFlow<ImageLoadProgress> {
         val hash = galleryFile.hash
 
         mutex.withLock {

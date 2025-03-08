@@ -17,7 +17,6 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.datetime.Clock.System.now
 import kotlinx.datetime.Instant
-import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
@@ -41,7 +40,7 @@ const val nozomiURLIndexDir = "nozomiurlindex"
 
 data class Suggestion(
     val tag: SearchQuery.Tag,
-    val count: Int
+    val count: Int,
 )
 
 fun IntBuffer.toSet(): Set<Int> {
@@ -92,7 +91,7 @@ class ImagePathResolver(ggjs: String) {
 
 class ExpirableEntry<T>(
     private val expiryDuration: Duration,
-    private val action: suspend () -> T
+    private val action: suspend () -> T,
 ) {
     private var value: T? = null
     private var expiresAt: Instant = now()
@@ -121,7 +120,8 @@ object HitomiHttpClient {
     }
 
     private val tagIndexVersion = ExpirableEntry(1.minutes) { getIndexVersion("tagindex") }
-    private val galleriesIndexVersion = ExpirableEntry(1.minutes) { getIndexVersion("galleriesindex") }
+    private val galleriesIndexVersion =
+        ExpirableEntry(1.minutes) { getIndexVersion("galleriesindex") }
 
     private suspend fun getIndexVersion(name: String): String = withContext(Dispatchers.IO) {
         httpClient.get("https://$domain/$name/version?_=${System.currentTimeMillis()}").bodyAsText()
@@ -144,18 +144,18 @@ object HitomiHttpClient {
             "galleries" -> "https://$domain/$galleriesIndexDir/galleries.${galleriesIndexVersion.getValue()}.index"
             "languages" -> "https://$domain/$galleriesIndexDir/languages.${galleriesIndexVersion.getValue()}.index"
             "nozomiurl" -> "https://$domain/$galleriesIndexDir/nozomiurl.${galleriesIndexVersion.getValue()}.index"
-            else -> "https://$domain/$indexDir/$field.${HitomiHttpClient.tagIndexVersion.getValue()}.index"
+            else -> "https://$domain/$indexDir/$field.${tagIndexVersion.getValue()}.index"
         }
 
         return Node.decodeNode(
-            getURLAtRange(url, address ..< address + maxNodeSize)
+            getURLAtRange(url, address..<address + maxNodeSize)
         )
     }
 
     private suspend fun bSearch(
         field: String,
         key: Node.Key,
-        node: Node
+        node: Node,
     ): Node.Data? {
         if (node.keys.isEmpty()) {
             return null
@@ -174,12 +174,13 @@ object HitomiHttpClient {
     }
 
     private suspend fun getGalleryIDsFromData(offset: Long, length: Int): IntBuffer {
-        val url = "https://$domain/$galleriesIndexDir/galleries.${galleriesIndexVersion.getValue()}.data"
+        val url =
+            "https://$domain/$galleriesIndexDir/galleries.${galleriesIndexVersion.getValue()}.data"
         if (length > 100000000 || length <= 0) {
             error("length $length is too long")
         }
 
-        return getURLAtRange(url, offset until (offset+length)).asIntBuffer()
+        return getURLAtRange(url, offset until (offset + length)).asIntBuffer()
     }
 
     private suspend fun getSuggestionsFromData(field: String, data: Node.Data): List<Suggestion> {
@@ -188,14 +189,14 @@ object HitomiHttpClient {
 
         check(data.length in 1..10000) { "Invalid length ${data.length}" }
 
-        val buffer = getURLAtRange(url, offset..<offset+length).order(ByteOrder.BIG_ENDIAN)
+        val buffer = getURLAtRange(url, offset..<offset + length).order(ByteOrder.BIG_ENDIAN)
 
         val numberOfSuggestions = buffer.int
 
-        check(numberOfSuggestions in 1 .. 100) { "Number of suggestions $numberOfSuggestions is too long" }
+        check(numberOfSuggestions in 1..100) { "Number of suggestions $numberOfSuggestions is too long" }
 
         return buildList {
-            for (i in 0 ..< numberOfSuggestions) {
+            for (i in 0..<numberOfSuggestions) {
                 val namespaceLen = buffer.int
                 val namespace = ByteArray(namespaceLen).apply {
                     buffer.get(this)
@@ -216,7 +217,7 @@ object HitomiHttpClient {
     private suspend fun getGalleryIDsFromNozomi(
         area: String?,
         tag: String,
-        language: String
+        language: String,
     ): IntBuffer {
         val nozomiAddress = if (area == null) {
             "https://$domain/$compressedNozomiPrefix/$tag-$language$nozomiExtension"
@@ -233,7 +234,10 @@ object HitomiHttpClient {
         return ByteBuffer.wrap(result).asIntBuffer()
     }
 
-    private suspend fun getGalleryIDsForQuery(query: SearchQuery.Tag, language: String = "all"): IntBuffer = when (query.namespace) {
+    private suspend fun getGalleryIDsForQuery(
+        query: SearchQuery.Tag,
+        language: String = "all",
+    ): IntBuffer = when (query.namespace) {
         "female", "male" -> getGalleryIDsFromNozomi("tag", query.toString(), language)
         "language" -> getGalleryIDsFromNozomi(null, "index", query.tag)
         null -> {
@@ -242,19 +246,24 @@ object HitomiHttpClient {
             val node = getNodeAtAddress("galleries", 0)
             val data = bSearch("galleries", key, node)
 
-            if (data != null) getGalleryIDsFromData(data.offset, data.length) else IntBuffer.allocate(0)
+            if (data != null) getGalleryIDsFromData(
+                data.offset,
+                data.length
+            ) else IntBuffer.allocate(0)
         }
+
         else -> getGalleryIDsFromNozomi(query.namespace, query.tag, language)
     }
 
-    suspend fun getSuggestionsForQuery(query: SearchQuery.Tag): Result<List<Suggestion>> = runCatching {
-        val field = query.namespace ?: "global"
-        val key = Node.Key(query.tag)
-        val node = getNodeAtAddress(field, 0)
-        val data = bSearch(field, key, node)
+    suspend fun getSuggestionsForQuery(query: SearchQuery.Tag): Result<List<Suggestion>> =
+        runCatching {
+            val field = query.namespace ?: "global"
+            val key = Node.Key(query.tag)
+            val node = getNodeAtAddress(field, 0)
+            val data = bSearch(field, key, node)
 
-        data?.let { getSuggestionsFromData(field, data) } ?: emptyList()
-    }
+            data?.let { getSuggestionsFromData(field, data) } ?: emptyList()
+        }
 
     suspend fun getGalleryInfo(galleryID: Int) = runCatching {
         withContext(Dispatchers.IO) {
@@ -277,7 +286,7 @@ object HitomiHttpClient {
 
                 val result = LinkedHashSet<Int>()
 
-                with (allGalleries.await()) {
+                with(allGalleries.await()) {
                     while (this.hasRemaining()) {
                         val gallery = this.get()
 
@@ -289,6 +298,7 @@ object HitomiHttpClient {
 
                 result
             }
+
             is SearchQuery.And -> coroutineScope {
                 val queries = query.queries.map { query ->
                     async {
@@ -306,6 +316,7 @@ object HitomiHttpClient {
 
                 result
             }
+
             is SearchQuery.Or -> coroutineScope {
                 val queries = query.queries.map { query ->
                     async {
@@ -322,49 +333,52 @@ object HitomiHttpClient {
 
                 result
             }
+
             null -> getGalleryIDsFromNozomi(null, "index", "all").toSet()
         }
     }
 
-    suspend fun getImageURL(galleryFile: GalleryFile, thumbnail: Boolean = false): List<String> = buildList {
-        val imagePathResolver = imagePathResolver.getValue()
+    suspend fun getImageURL(galleryFile: GalleryFile, thumbnail: Boolean = false): List<String> =
+        buildList {
+            val imagePathResolver = imagePathResolver.getValue()
 
-        listOf("webp", "avif", "jxl").forEach { type ->
-            val available = when {
-                thumbnail && type != "jxl" -> true
-                type == "webp" -> galleryFile.hasWebP != 0
-                type == "avif" -> galleryFile.hasAVIF != 0
-                !thumbnail && type == "jxl" -> galleryFile.hasJXL != 0
-                else -> false
+            listOf("webp", "avif", "jxl").forEach { type ->
+                val available = when {
+                    thumbnail && type != "jxl" -> true
+                    type == "webp" -> galleryFile.hasWebP != 0
+                    type == "avif" -> galleryFile.hasAVIF != 0
+                    !thumbnail && type == "jxl" -> galleryFile.hasJXL != 0
+                    else -> false
+                }
+
+                if (!available) return@forEach
+
+                val url = buildString {
+                    append("https://")
+                    append(imagePathResolver.decodeSubdomain(galleryFile.hash, thumbnail))
+                    append(".hitomi.la/")
+                    append(type)
+                    if (thumbnail) append("bigtn")
+                    append('/')
+                    append(imagePathResolver.decodeImagePath(galleryFile.hash, thumbnail))
+                    append('.')
+                    append(type)
+                }
+
+                add(url)
             }
-
-            if (!available) return@forEach
-
-            val url = buildString {
-                append("https://")
-                append(imagePathResolver.decodeSubdomain(galleryFile.hash, thumbnail))
-                append(".hitomi.la/")
-                append(type)
-                if (thumbnail) append("bigtn")
-                append('/')
-                append(imagePathResolver.decodeImagePath(galleryFile.hash, thumbnail))
-                append('.')
-                append(type)
-            }
-
-            add(url)
         }
-    }
 
     suspend fun loadImage(
         galleryFile: GalleryFile,
         thumbnail: Boolean = false,
         acceptImage: (String) -> Boolean = { true },
-        onDownload: (bytesSentTotal: Long, contentLength: Long) -> Unit = { _, _ -> }
+        onDownload: (bytesSentTotal: Long, contentLength: Long?) -> Unit = { _, _ -> },
     ): Result<Pair<ByteReadChannel, String>> {
         return runCatching {
             withContext(Dispatchers.IO) {
-                val url = getImageURL(galleryFile, thumbnail).firstOrNull(acceptImage) ?: error("No available image")
+                val url = getImageURL(galleryFile, thumbnail).firstOrNull(acceptImage)
+                    ?: error("No available image")
                 val channel: ByteReadChannel = httpClient.get(url) { onDownload(onDownload) }.body()
                 Pair(channel, url)
             }
