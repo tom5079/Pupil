@@ -93,16 +93,6 @@ import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
 
-val sortModeLookup = mapOf(
-    R.id.main_menu_sort_date_added to SortMode.DATE_ADDED,
-    R.id.main_menu_sort_date_published to SortMode.DATE_PUBLISHED,
-    R.id.main_menu_sort_popular_today to SortMode.POPULAR_TODAY,
-    R.id.main_menu_sort_popular_week to SortMode.POPULAR_WEEK,
-    R.id.main_menu_sort_popular_month to SortMode.POPULAR_MONTH,
-    R.id.main_menu_sort_popular_year to SortMode.POPULAR_YEAR,
-    R.id.main_menu_sort_random to SortMode.RANDOM
-)
-
 class MainActivity :
     BaseActivity(),
     NavigationView.OnNavigationItemSelectedListener {

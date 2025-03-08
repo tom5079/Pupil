@@ -18,29 +18,27 @@
 
 package xyz.quaver.pupil.ui
 
-import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
 import android.os.PersistableBundle
 import android.view.WindowManager
+import androidx.activity.ComponentActivity
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.CallSuper
 import androidx.appcompat.app.AppCompatActivity
-import xyz.quaver.pupil.R
 import xyz.quaver.pupil.util.LockManager
 import xyz.quaver.pupil.util.Preferences
-import xyz.quaver.pupil.util.normalizeID
 
-open class BaseActivity : AppCompatActivity() {
-
+open class BaseComponentActivity : ComponentActivity() {
     private var locked: Boolean = true
 
-    private val lockLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
-        if (it.resultCode == Activity.RESULT_OK)
-            locked = false
-        else
-            finish()
-    }
+    private val lockLauncher =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+            if (it.resultCode == RESULT_OK)
+                locked = false
+            else
+                finish()
+        }
 
     @CallSuper
     override fun onCreate(savedInstanceState: Bundle?, persistentState: PersistableBundle?) {
@@ -56,12 +54,47 @@ open class BaseActivity : AppCompatActivity() {
         if (Preferences["security_mode"])
             window.setFlags(
                 WindowManager.LayoutParams.FLAG_SECURE,
-                WindowManager.LayoutParams.FLAG_SECURE)
+                WindowManager.LayoutParams.FLAG_SECURE
+            )
         else
             window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
 
         if (locked)
             lockLauncher.launch(Intent(this, LockActivity::class.java))
     }
+}
 
+open class BaseActivity : AppCompatActivity() {
+    private var locked: Boolean = true
+
+    private val lockLauncher =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+            if (it.resultCode == RESULT_OK)
+                locked = false
+            else
+                finish()
+        }
+
+    @CallSuper
+    override fun onCreate(savedInstanceState: Bundle?, persistentState: PersistableBundle?) {
+        super.onCreate(savedInstanceState, persistentState)
+
+        locked = !LockManager(this).locks.isNullOrEmpty()
+    }
+
+    @CallSuper
+    override fun onResume() {
+        super.onResume()
+
+        if (Preferences["security_mode"])
+            window.setFlags(
+                WindowManager.LayoutParams.FLAG_SECURE,
+                WindowManager.LayoutParams.FLAG_SECURE
+            )
+        else
+            window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
+
+        if (locked)
+            lockLauncher.launch(Intent(this, LockActivity::class.java))
+    }
 }
