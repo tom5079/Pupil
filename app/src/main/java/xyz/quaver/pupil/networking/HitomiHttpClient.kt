@@ -18,15 +18,15 @@ import kotlinx.coroutines.withContext
 import kotlinx.datetime.Clock.System.now
 import kotlinx.datetime.Instant
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonPrimitive
 import java.nio.ByteBuffer
-import java.nio.ByteOrder
 import java.nio.IntBuffer
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
 
 const val domain = "ltn.hitomi.la"
-const val galleryBlockExtension = ".html"
-const val galleryBlockDir = "galleryblock"
 const val nozomiExtension = ".nozomi"
 
 const val compressedNozomiPrefix = "n"
@@ -35,8 +35,10 @@ const val B = 16
 const val indexDir = "tagindex"
 const val maxNodeSize = 464
 const val galleriesIndexDir = "galleriesindex"
-const val languagesIndexDir = "languagesindex"
-const val nozomiURLIndexDir = "nozomiurlindex"
+const val tagIndexDomain = "tagindex.hitomi.la"
+
+const val separator = "-"
+const val extension = ".html"
 
 data class Suggestion(
     val tag: SearchQuery.Tag,
@@ -183,36 +185,15 @@ object HitomiHttpClient {
         return getURLAtRange(url, offset until (offset + length)).asIntBuffer()
     }
 
-    private suspend fun getSuggestionsFromData(field: String, data: Node.Data): List<Suggestion> {
-        val url = "https://$domain/$indexDir/$field.${tagIndexVersion.getValue()}.data"
-        val (offset, length) = data
-
-        check(data.length in 1..10000) { "Invalid length ${data.length}" }
-
-        val buffer = getURLAtRange(url, offset..<offset + length).order(ByteOrder.BIG_ENDIAN)
-
-        val numberOfSuggestions = buffer.int
-
-        check(numberOfSuggestions in 1..100) { "Number of suggestions $numberOfSuggestions is too long" }
-
-        return buildList {
-            for (i in 0..<numberOfSuggestions) {
-                val namespaceLen = buffer.int
-                val namespace = ByteArray(namespaceLen).apply {
-                    buffer.get(this)
-                }.toString(charset("UTF-8"))
-
-                val tagLen = buffer.int
-                val tag = ByteArray(tagLen).apply {
-                    buffer.get(this)
-                }.toString(charset("UTF-8"))
-
-                val count = buffer.int
-
-                add(Suggestion(SearchQuery.Tag(namespace, tag), count))
-            }
+    private fun encodeSearchQueryForUrl(s: Char) =
+        when (s) {
+            ' ' -> "_"
+            '/' -> "slash"
+            '.' -> "dot"
+            else -> s.toString()
         }
-    }
+
+    private fun sanitize(s: String) = s.replace(Regex("[/#]"), "")
 
     private suspend fun getGalleryIDsFromNozomi(
         area: String?,
@@ -258,11 +239,44 @@ object HitomiHttpClient {
     suspend fun getSuggestionsForQuery(query: SearchQuery.Tag): Result<List<Suggestion>> =
         runCatching {
             val field = query.namespace ?: "global"
-            val key = Node.Key(query.tag)
-            val node = getNodeAtAddress(field, 0)
-            val data = bSearch(field, key, node)
+            val chars = query.tag.map(::encodeSearchQueryForUrl)
 
-            data?.let { getSuggestionsFromData(field, data) } ?: emptyList()
+            val suggestions = json.parseToJsonElement(
+                withContext(Dispatchers.IO) {
+                    httpClient.get(
+                        "https://$tagIndexDomain/$field${
+                            if (chars.isNotEmpty()) "/${
+                                chars.joinToString(
+                                    "/"
+                                )
+                            }" else ""
+                        }.json"
+                    ).bodyAsText()
+                }
+            )
+
+            buildList {
+                suggestions.jsonArray.forEach { suggestionRaw ->
+                    val suggestion = suggestionRaw.jsonArray
+                    if (suggestion.size < 3) {
+                        return@forEach
+                    }
+                    val namespace = suggestion[2].jsonPrimitive.contentOrNull ?: ""
+
+                    val tag =
+                        sanitize(suggestion[0].jsonPrimitive.contentOrNull ?: return@forEach)
+
+                    add(
+                        Suggestion(
+                            SearchQuery.Tag(
+                                namespace,
+                                tag
+                            ),
+                            suggestion[1].jsonPrimitive.contentOrNull?.toIntOrNull() ?: 0,
+                        )
+                    )
+                }
+            }
         }
 
     suspend fun getGalleryInfo(galleryID: Int) = runCatching {

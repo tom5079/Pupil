@@ -28,6 +28,7 @@ import androidx.compose.material.icons.filled.AddCircleOutline
 import androidx.compose.material.icons.filled.RemoveCircleOutline
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardColors
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -195,7 +196,14 @@ fun TagSuggestionList(
 
     val suggestionListSnapshot = suggestionList
     if (suggestionListSnapshot == null) {
-        Text("Loading")
+        Row(
+            Modifier.padding(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            CircularProgressIndicator(Modifier.size(24.dp))
+            Text("Loading")
+        }
     } else if (suggestionListSnapshot.isNotEmpty()) {
         Column(
             modifier = Modifier.padding(8.dp),
@@ -272,7 +280,8 @@ fun EditableTagChip(
             positionY = it.positionInRoot().y
         },
         shape = RoundedCornerShape(16.dp),
-        color = surfaceColor
+        color = surfaceColor,
+        shadowElevation = 4.dp
     ) {
         AnimatedContent(targetState = expanded, label = "open tag editor") { targetExpanded ->
             if (!targetExpanded) {
@@ -424,7 +433,7 @@ fun NewQueryChip(
         }
     }
 
-    Surface(shape = RoundedCornerShape(16.dp)) {
+    Surface(shape = RoundedCornerShape(16.dp), shadowElevation = 4.dp) {
         AnimatedContent(targetState = opened, label = "add new query") { targetOpened ->
             if (targetOpened) {
                 Column {

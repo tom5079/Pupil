@@ -236,26 +236,32 @@ fun TagChip(
             shape = shape,
             color = surfaceColor,
             onClick = { onClick(tag) },
-            content = inner
+            content = inner,
+            shadowElevation = 4.dp
         )
     else
         Surface(
             modifier,
             shape = shape,
             color = surfaceColor,
-            content = inner
+            content = inner,
+            shadowElevation = 4.dp
         )
 }
 
 @Composable
 fun QueryView(
     query: SearchQuery?,
-    topLevel: Boolean = true
+    topLevel: Boolean = true,
 ) {
     val modifier = if (topLevel) {
         Modifier
     } else {
-        Modifier.border(width = 0.5.dp, color = LocalContentColor.current, shape = CardDefaults.shape)
+        Modifier.border(
+            width = 0.5.dp,
+            color = LocalContentColor.current,
+            shape = CardDefaults.shape
+        )
     }
 
     when (query) {
@@ -269,24 +275,29 @@ fun QueryView(
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
             )
         }
+
         is SearchQuery.Tag -> {
             TagChip(
                 query,
                 enabled = false
             )
         }
+
         is SearchQuery.Or -> {
             Row(
-                modifier = modifier.padding(vertical=2.dp, horizontal=4.dp),
+                modifier = modifier.padding(vertical = 2.dp, horizontal = 4.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(4.dp),
             ) {
                 query.queries.forEachIndexed { index, subQuery ->
-                    if (index != 0) { Text("+") }
+                    if (index != 0) {
+                        Text("+")
+                    }
                     QueryView(subQuery, topLevel = false)
                 }
             }
         }
+
         is SearchQuery.And -> {
             Row(
                 horizontalArrangement = Arrangement.spacedBy(4.dp),
@@ -297,9 +308,10 @@ fun QueryView(
                 }
             }
         }
+
         is SearchQuery.Not -> {
             Row(
-                modifier = modifier.padding(vertical=2.dp, horizontal=4.dp),
+                modifier = modifier.padding(vertical = 2.dp, horizontal = 4.dp),
                 horizontalArrangement = Arrangement.spacedBy(4.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -318,10 +330,13 @@ fun SearchBar(
     onSearchBarPositioned: (Int) -> Unit,
     topOffset: Int,
     onTopOffsetChange: (Int) -> Unit,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     var focused by remember { mutableStateOf(false) }
-    val scrimAlpha: Float by animateFloatAsState(if (focused && contentType == ContentType.SINGLE_PANE) 0.3f else 0f, label = "scrim alpha")
+    val scrimAlpha: Float by animateFloatAsState(
+        if (focused && contentType == ContentType.SINGLE_PANE) 0.3f else 0f,
+        label = "scrim alpha"
+    )
 
     val interactionSource = remember { MutableInteractionSource() }
 
@@ -351,7 +366,10 @@ fun SearchBar(
                 focused = false
             }
     ) {
-        val height: Dp by animateDpAsState(if (focused) maxHeight else 60.dp, label = "searchbar height")
+        val height: Dp by animateDpAsState(
+            if (focused) maxHeight else 60.dp,
+            label = "searchbar height"
+        )
         val cardShape = RoundedCornerShape(30.dp)
 
         content()
@@ -359,7 +377,8 @@ fun SearchBar(
         Box(
             Modifier
                 .fillMaxSize()
-                .background(Color.Black.copy(alpha = scrimAlpha)))
+                .background(Color.Black.copy(alpha = scrimAlpha))
+        )
 
         Card(
             modifier = Modifier
@@ -381,7 +400,11 @@ fun SearchBar(
             elevation = CardDefaults.cardElevation(6.dp)
         ) {
             Box {
-                androidx.compose.animation.AnimatedVisibility(!focused, enter = fadeIn(), exit = fadeOut()) {
+                androidx.compose.animation.AnimatedVisibility(
+                    !focused,
+                    enter = fadeIn(),
+                    exit = fadeOut()
+                ) {
                     Row(
                         modifier = Modifier
                             .heightIn(min = 60.dp)
@@ -393,11 +416,16 @@ fun SearchBar(
                         Box(Modifier.size(8.dp))
                     }
                 }
-                androidx.compose.animation.AnimatedVisibility(focused, enter = fadeIn(), exit = fadeOut()) {
+                androidx.compose.animation.AnimatedVisibility(
+                    focused,
+                    enter = fadeIn(),
+                    exit = fadeOut()
+                ) {
                     Column(
                         Modifier
                             .fillMaxSize()
-                            .padding(top = 8.dp, start = 8.dp, end = 8.dp)) {
+                            .padding(top = 8.dp, start = 8.dp, end = 8.dp)
+                    ) {
                         IconButton(
                             onClick = {
                                 focused = false
@@ -433,7 +461,7 @@ fun GalleryList(
     var topOffset by remember { mutableIntStateOf(0) }
     var searchBarPosition by remember { mutableIntStateOf(0) }
 
-    val listModifier = Modifier.nestedScroll(object: NestedScrollConnection {
+    val listModifier = Modifier.nestedScroll(object : NestedScrollConnection {
         override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
             topOffset = (topOffset + available.y.roundToInt()).coerceIn(-searchBarPosition, 0)
             return Offset.Zero
@@ -453,7 +481,7 @@ fun GalleryList(
         topOffset = topOffset,
         onTopOffsetChange = { topOffset = it },
     ) {
-        AnimatedVisibility (loading, enter = fadeIn(), exit = fadeOut()) {
+        AnimatedVisibility(loading, enter = fadeIn(), exit = fadeOut()) {
             Box(Modifier.fillMaxSize()) {
                 CircularProgressIndicator(Modifier.align(Alignment.Center))
             }
@@ -465,7 +493,11 @@ fun GalleryList(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    Text("(´∇｀)", style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))
+                    Text(
+                        "(´∇｀)",
+                        style = MaterialTheme.typography.headlineMedium,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                    )
                     Text("No sources found!\nLet's go download one.", textAlign = TextAlign.Center)
                 }
             }
@@ -474,23 +506,24 @@ fun GalleryList(
             OverscrollPager(
                 prevPage = if (currentPage != 0) currentPage else null,
                 nextPage = if (currentPage < maxPage) currentPage + 2 else null,
-                onPageTurn = { onPageChange(it-1) }
+                onPageTurn = { onPageChange(it - 1) }
             ) {
                 LazyColumn(
                     modifier = listModifier,
-                    contentPadding = WindowInsets.systemBars.asPaddingValues().let { systemBarPaddingValues ->
-                        val layoutDirection = LocalLayoutDirection.current
-                        PaddingValues(
-                            top = systemBarPaddingValues.calculateTopPadding() + 96.dp,
-                            bottom = systemBarPaddingValues.calculateBottomPadding(),
-                            start = systemBarPaddingValues.calculateStartPadding(layoutDirection),
-                            end = systemBarPaddingValues.calculateEndPadding(layoutDirection),
-                        )
-                    },
+                    contentPadding = WindowInsets.systemBars.asPaddingValues()
+                        .let { systemBarPaddingValues ->
+                            val layoutDirection = LocalLayoutDirection.current
+                            PaddingValues(
+                                top = systemBarPaddingValues.calculateTopPadding() + 96.dp,
+                                bottom = systemBarPaddingValues.calculateBottomPadding(),
+                                start = systemBarPaddingValues.calculateStartPadding(layoutDirection),
+                                end = systemBarPaddingValues.calculateEndPadding(layoutDirection),
+                            )
+                        },
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                     state = listState
                 ) {
-                    items(galleries, key = { it.id }) {galleryInfo ->
+                    items(galleries, key = { it.id }) { galleryInfo ->
                         DetailedGalleryInfo(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -509,7 +542,7 @@ fun GalleryList(
 fun DetailScreen(
     galleryInfo: GalleryInfo,
     closeGalleryDetails: () -> Unit = { },
-    openGallery: (GalleryInfo) -> Unit = { }
+    openGallery: (GalleryInfo) -> Unit = { },
 ) {
     var thumbnailUrl by remember { mutableStateOf<String?>(null) }
 
@@ -577,7 +610,7 @@ fun SearchScreen(
     closeGalleryDetails: () -> Unit,
     onQueryChange: (SearchQuery?) -> Unit,
     loadSearchResult: (IntRange) -> Unit,
-    openGallery: (GalleryInfo) -> Unit
+    openGallery: (GalleryInfo) -> Unit,
 ) {
     val itemsPerPage by remember { mutableIntStateOf(20) }
 
