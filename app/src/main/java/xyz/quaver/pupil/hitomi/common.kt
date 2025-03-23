@@ -16,12 +16,14 @@
 
 package xyz.quaver.pupil.hitomi
 
-import kotlinx.coroutines.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import kotlinx.datetime.Clock.System.now
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import okhttp3.Call
 import okhttp3.Callback
@@ -30,9 +32,7 @@ import okhttp3.Response
 import xyz.quaver.pupil.client
 import java.io.IOException
 import java.net.URL
-import java.util.concurrent.Executors
 import kotlin.coroutines.resumeWithException
-import kotlin.time.Duration.Companion.minutes
 import kotlin.time.ExperimentalTime
 
 const val protocol = "https:"
@@ -40,25 +40,25 @@ const val protocol = "https:"
 @Serializable
 data class Artist(
     val artist: String,
-    val url: String
+    val url: String,
 )
 
 @Serializable
 data class Group(
     val group: String,
-    val url: String
+    val url: String,
 )
 
 @Serializable
 data class Parody(
     val parody: String,
-    val url: String
+    val url: String,
 )
 
 @Serializable
 data class Character(
     val character: String,
-    val url: String
+    val url: String,
 )
 
 @Serializable
@@ -66,7 +66,7 @@ data class Tag(
     val tag: String,
     val url: String,
     val female: String? = null,
-    val male: String? = null
+    val male: String? = null,
 )
 
 @Serializable
@@ -74,7 +74,7 @@ data class Language(
     val galleryid: String,
     val url: String,
     val language_localname: String,
-    val name: String
+    val name: String,
 )
 
 @Serializable
@@ -93,7 +93,7 @@ data class GalleryInfo(
     val languages: List<Language> = emptyList(),
     val characters: List<Character>? = null,
     val scene_indexes: List<Int>? = emptyList(),
-    val files: List<GalleryFiles> = emptyList()
+    val files: List<GalleryFiles> = emptyList(),
 )
 
 val json = Json {
@@ -104,13 +104,16 @@ val json = Json {
 }
 
 typealias HeaderSetter = (Request.Builder) -> Request.Builder
+
 fun URL.readText(settings: HeaderSetter? = null): String {
     val request = Request.Builder()
         .url(this).let {
             settings?.invoke(it) ?: it
         }.build()
 
-    return client.newCall(request).execute().also{ if (it.code() != 200) throw IOException("CODE ${it.code()}") }.body()?.use { it.string() } ?: throw IOException()
+    return client.newCall(request).execute()
+        .also { if (it.code() != 200) throw IOException("CODE ${it.code()}") }.body()
+        ?.use { it.string() } ?: throw IOException()
 }
 
 fun URL.readBytes(settings: HeaderSetter? = null): ByteArray {
@@ -119,7 +122,9 @@ fun URL.readBytes(settings: HeaderSetter? = null): ByteArray {
             settings?.invoke(it) ?: it
         }.build()
 
-    return client.newCall(request).execute().also { if (it.code() != 200) throw IOException("CODE ${it.code()}") }.body()?.use { it.bytes() } ?: throw IOException()
+    return client.newCall(request).execute()
+        .also { if (it.code() != 200) throw IOException("CODE ${it.code()}") }.body()
+        ?.use { it.bytes() } ?: throw IOException()
 }
 
 @Suppress("EXPERIMENTAL_API_USAGE")
@@ -130,7 +135,7 @@ fun getGalleryInfo(galleryID: Int) =
     )
 
 //common.js
-const val domain = "ltn.hitomi.la"
+const val domain = "ltn.gold-usergeneratedcontent.net"
 const val galleryblockextension = ".html"
 const val galleryblockdir = "galleryblock"
 const val nozomiextension = ".nozomi"
@@ -152,9 +157,13 @@ object gg {
         mutex.withLock {
             if (lastRetrieval == null || (lastRetrieval!! + 60000) < System.currentTimeMillis()) {
                 val ggjs: String = suspendCancellableCoroutine { continuation ->
-                    val call = client.newCall(Request.Builder().url("https://ltn.hitomi.la/gg.js").build())
+                    val call =
+                        client.newCall(
+                            Request.Builder().url("https://ltn.gold-usergeneratedcontent.net/gg.js")
+                                .build()
+                        )
 
-                    call.enqueue(object: Callback {
+                    call.enqueue(object : Callback {
                         override fun onFailure(call: Call, e: IOException) {
                             if (continuation.isCancelled) return
                             continuation.resumeWithException(e)
@@ -202,13 +211,14 @@ object gg {
         refresh()
         return b
     }
+
     fun s(h: String): String {
         val m = Regex("(..)(.)$").find(h)
-        return m!!.groupValues.let { it[2]+it[1] }.toInt(16).toString(10)
+        return m!!.groupValues.let { it[2] + it[1] }.toInt(16).toString(10)
     }
 }
 
-suspend fun subdomainFromURL(url: String, base: String? = null) : String {
+suspend fun subdomainFromURL(url: String, base: String? = null): String {
     var retval = "b"
 
     if (!base.isNullOrBlank())
@@ -219,46 +229,55 @@ suspend fun subdomainFromURL(url: String, base: String? = null) : String {
     val r = Regex("""/[0-9a-f]{61}([0-9a-f]{2})([0-9a-f])""")
     val m = r.find(url) ?: return "a"
 
-    val g = m.groupValues.let { it[2]+it[1] }.toIntOrNull(b)
+    val g = m.groupValues.let { it[2] + it[1] }.toIntOrNull(b)
 
     if (g != null) {
-        retval = (97+ gg.m(g)).toChar().toString() + retval
+        retval = (97 + gg.m(g)).toChar().toString() + retval
     }
 
     return retval
 }
 
-suspend fun urlFromUrl(url: String, base: String? = null) : String {
-    return url.replace(Regex("""//..?\.hitomi\.la/"""), "//${subdomainFromURL(url, base)}.hitomi.la/")
+suspend fun urlFromUrl(url: String, base: String? = null): String {
+    return url.replace(
+        Regex("""//..?\.(?:gold-usergeneratedcontent\.net|hitomi\.la)/"""),
+        "//${subdomainFromURL(url, base)}.gold-usergeneratedcontent.net/"
+    )
 }
 
-suspend fun fullPathFromHash(hash: String) : String =
+suspend fun fullPathFromHash(hash: String): String =
     "${gg.b()}${gg.s(hash)}/$hash"
 
 fun realFullPathFromHash(hash: String): String =
     hash.replace(Regex("""^.*(..)(.)$"""), "$2/$1/$hash")
 
-suspend fun urlFromHash(galleryID: Int, image: GalleryFiles, dir: String? = null, ext: String? = null) : String {
+suspend fun urlFromHash(
+    galleryID: Int,
+    image: GalleryFiles,
+    dir: String? = null,
+    ext: String? = null,
+): String {
     val ext = ext ?: dir ?: image.name.takeLastWhile { it != '.' }
     val dir = dir ?: "images"
-    return "https://a.hitomi.la/$dir/${fullPathFromHash(image.hash)}.$ext"
+    return "https://a.gold-usergeneratedcontent.net/$dir/${fullPathFromHash(image.hash)}.$ext"
 }
 
-suspend fun urlFromUrlFromHash(galleryID: Int, image: GalleryFiles, dir: String? = null, ext: String? = null, base: String? = null) =
+suspend fun urlFromUrlFromHash(
+    galleryID: Int,
+    image: GalleryFiles,
+    dir: String? = null,
+    ext: String? = null,
+    base: String? = null,
+) =
     if (base == "tn")
-        urlFromUrl("https://a.hitomi.la/$dir/${realFullPathFromHash(image.hash)}.$ext", base)
+        urlFromUrl(
+            "https://a.gold-usergeneratedcontent.net/$dir/${realFullPathFromHash(image.hash)}.$ext",
+            base
+        )
     else
         urlFromUrl(urlFromHash(galleryID, image, dir, ext), base)
 
-suspend fun rewriteTnPaths(html: String) {
-    html.replace(Regex("""//tn\.hitomi\.la/[^/]+/[0-9a-f]/[0-9a-f]{2}/[0-9a-f]{64}""")) { url ->
-        runBlocking {
-            urlFromUrl(url.value, "tn")
-        }
-    }
-}
-
-suspend fun imageUrlFromImage(galleryID: Int, image: GalleryFiles, noWebp: Boolean) : String {
+suspend fun imageUrlFromImage(galleryID: Int, image: GalleryFiles, noWebp: Boolean): String {
     return urlFromUrlFromHash(galleryID, image, "webp", null, "a")
 //    return when {
 //        noWebp ->
