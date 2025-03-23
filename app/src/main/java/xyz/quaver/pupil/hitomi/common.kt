@@ -218,30 +218,38 @@ object gg {
     }
 }
 
-suspend fun subdomainFromURL(url: String, base: String? = null): String {
-    var retval = "b"
+suspend fun subdomainFromURL(url: String, base: String? = null, dir: String? = null): String {
+    var retval = ""
 
-    if (!base.isNullOrBlank())
-        retval = base
+    if (!base.isNullOrBlank()) {
+        when {
+            dir == "webp" -> retval = "w"
+            dir == "avif" -> retval = "a"
+        }
+    }
 
     val b = 16
 
     val r = Regex("""/[0-9a-f]{61}([0-9a-f]{2})([0-9a-f])""")
-    val m = r.find(url) ?: return "a"
+    val m = r.find(url) ?: return ""
 
     val g = m.groupValues.let { it[2] + it[1] }.toIntOrNull(b)
 
     if (g != null) {
-        retval = (97 + gg.m(g)).toChar().toString() + retval
+        retval = if (base.isNullOrEmpty()) {
+            (97 + gg.m(g)).toChar().toString() + base
+        } else {
+            retval + (1 + gg.m(g)).toString()
+        }
     }
 
     return retval
 }
 
-suspend fun urlFromUrl(url: String, base: String? = null): String {
+suspend fun urlFromUrl(url: String, base: String? = null, dir: String? = null): String {
     return url.replace(
         Regex("""//..?\.(?:gold-usergeneratedcontent\.net|hitomi\.la)/"""),
-        "//${subdomainFromURL(url, base)}.gold-usergeneratedcontent.net/"
+        "//${subdomainFromURL(url, base, dir)}.gold-usergeneratedcontent.net/"
     )
 }
 
@@ -258,8 +266,16 @@ suspend fun urlFromHash(
     ext: String? = null,
 ): String {
     val ext = ext ?: dir ?: image.name.takeLastWhile { it != '.' }
-    val dir = dir ?: "images"
-    return "https://a.gold-usergeneratedcontent.net/$dir/${fullPathFromHash(image.hash)}.$ext"
+    return buildString {
+        append("https://a.gold-usergeneratedcontent.net/")
+        if (dir != "webp" && dir != "avif") {
+            append(dir)
+            append("/")
+        }
+        append(fullPathFromHash(image.hash))
+        append(".")
+        append(ext)
+    }
 }
 
 suspend fun urlFromUrlFromHash(
@@ -272,10 +288,10 @@ suspend fun urlFromUrlFromHash(
     if (base == "tn")
         urlFromUrl(
             "https://a.gold-usergeneratedcontent.net/$dir/${realFullPathFromHash(image.hash)}.$ext",
-            base
+            base,
         )
     else
-        urlFromUrl(urlFromHash(galleryID, image, dir, ext), base)
+        urlFromUrl(urlFromHash(galleryID, image, dir, ext), base, dir)
 
 suspend fun imageUrlFromImage(galleryID: Int, image: GalleryFiles, noWebp: Boolean): String {
     return urlFromUrlFromHash(galleryID, image, "webp", null, "a")
