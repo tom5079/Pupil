@@ -237,9 +237,9 @@ suspend fun subdomainFromURL(url: String, base: String? = null, dir: String? = n
 
     if (g != null) {
         retval = if (base.isNullOrEmpty()) {
-            (97 + gg.m(g)).toChar().toString() + base
-        } else {
             retval + (1 + gg.m(g)).toString()
+        } else {
+            (97 + gg.m(g)).toChar().toString() + base
         }
     }
 
