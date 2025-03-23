@@ -130,7 +130,7 @@ fun getGalleryInfo(galleryID: Int) =
     )
 
 //common.js
-const val domain = "ltn.hitomi.la"
+const val domain = "ltn.gold-usergeneratedcontent.net"
 const val galleryblockextension = ".html"
 const val galleryblockdir = "galleryblock"
 const val nozomiextension = ".nozomi"
@@ -152,7 +152,7 @@ object gg {
         mutex.withLock {
             if (lastRetrieval == null || (lastRetrieval!! + 60000) < System.currentTimeMillis()) {
                 val ggjs: String = suspendCancellableCoroutine { continuation ->
-                    val call = client.newCall(Request.Builder().url("https://ltn.hitomi.la/gg.js").build())
+                    val call = client.newCall(Request.Builder().url("https://ltn.gold-usergeneratedcontent.net/gg.js").build())
 
                     call.enqueue(object: Callback {
                         override fun onFailure(call: Call, e: IOException) {
