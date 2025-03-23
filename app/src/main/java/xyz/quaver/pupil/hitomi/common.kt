@@ -221,7 +221,7 @@ object gg {
 suspend fun subdomainFromURL(url: String, base: String? = null, dir: String? = null): String {
     var retval = ""
 
-    if (!base.isNullOrBlank()) {
+    if (base.isNullOrBlank()) {
         when {
             dir == "webp" -> retval = "w"
             dir == "avif" -> retval = "a"
@@ -294,7 +294,7 @@ suspend fun urlFromUrlFromHash(
         urlFromUrl(urlFromHash(galleryID, image, dir, ext), base, dir)
 
 suspend fun imageUrlFromImage(galleryID: Int, image: GalleryFiles, noWebp: Boolean): String {
-    return urlFromUrlFromHash(galleryID, image, "webp", null, "a")
+    return urlFromUrlFromHash(galleryID, image, "webp")
 //    return when {
 //        noWebp ->
 //            urlFromUrlFromHash(galleryID, image)
